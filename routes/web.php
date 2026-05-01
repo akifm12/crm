@@ -68,7 +68,19 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('/settings/staff/{user}/toggle',   [SettingsController::class, 'toggleStaff'])->name('settings.staff.toggle');
 
     // ── Other admin stubs ─────────────────────────────────────────────────
-    Route::get('/marketing', fn() => view('admin.marketing.index'))->name('marketing.index');
+    Route::any('/marketing/api/{path?}', function (Request $request, $path = '') {
+    $url   = 'https://mailer.bluearrow.ae/contacts.php';
+    $query = $request->getQueryString();
+    if ($query) $url .= '?' . $query;
+
+    $response = Http::withOptions(['verify' => false])
+        ->withBasicAuth(env('MAILER_USER'), env('MAILER_PASSWORD'))
+        ->withHeaders(['Content-Type' => 'application/json'])
+        ->{strtolower($request->method())}($url, $request->all());
+
+    return response($response->body(), $response->status())
+        ->header('Content-Type', 'application/json');
+})->name('marketing.api')->where('path', '.*');
     // ── Screening ─────────────────────────────────────────────────────────
     Route::get('/screening',                              [ScreeningController::class, 'index'])->name('screening.index');
     Route::post('/screening/run',                         [ScreeningController::class, 'run'])->name('screening.run');
