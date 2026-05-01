@@ -84,3 +84,19 @@ Route::prefix('{slug}')
         Route::get('/goaml',        fn() => view('tenant.stub', ['module' => 'goAML Reports',     'tenant' => app('tenant')]))->name('goaml');
         Route::get('/settings',     fn() => view('tenant.stub', ['module' => 'Settings',          'tenant' => app('tenant')]))->name('settings');
     });
+
+
+// Document generation
+    Route::get('/crm/slas/{sla}/download',             [DocumentController::class, 'generateSla'])->name('sla.download');
+    Route::get('/crm/quotations/{quotation}/download',  [DocumentController::class, 'generateQuotation'])->name('crm.quotations.download');
+
+    // Standalone quotations
+    Route::get('/quotations',              [DocumentController::class, 'quotationIndex'])->name('quotations.index');
+    Route::get('/quotations/new',          [DocumentController::class, 'quotationCreate'])->name('quotations.create');
+    Route::post('/quotations',             [DocumentController::class, 'quotationStore'])->name('quotations.store');
+    Route::get('/quotations/{quotation}',  [DocumentController::class, 'quotationShow'])->name('quotations.show');
+    Route::get('/quotations/{quotation}/download', [DocumentController::class, 'generateStandaloneQuotation'])->name('quotations.download');
+    Route::patch('/quotations/{quotation}/status', function(Request $request, CrmQuotation $quotation) {
+        $quotation->update(['status' => $request->status]);
+        return back()->with('success', 'Status updated.');
+    })->name('quotations.status');
