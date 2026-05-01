@@ -13,8 +13,8 @@ return [
             'host'      => env('DB_HOST', '127.0.0.1'),
             'port'      => env('DB_PORT', '3306'),
             'database'  => env('DB_DATABASE', 'bluearrow_portal'),
-            'username'  => env('DB_USERNAME', 'root'),
-            'password'  => env('DB_PASSWORD', ''),
+            'username'  => env('DB_USERNAME', 'akif'),
+            'password'  => env('DB_PASSWORD', 'Guddoo@71'),
             'charset'   => 'utf8mb4',
             'collation' => 'utf8mb4_unicode_ci',
             'prefix'    => '',
@@ -35,19 +35,6 @@ return [
             'schema'   => 'public',
         ],
 
-        // ── El Torro Real Estate (existing PostgreSQL) ─────────────────────
-        'eltorro' => [
-            'driver'   => 'pgsql',
-            'host'     => env('ELTORRO_DB_HOST', '127.0.0.1'),
-            'port'     => env('ELTORRO_DB_PORT', '5432'),
-            'database' => env('ELTORRO_DB_DATABASE', 'eltorro_db'),
-            'username' => env('ELTORRO_DB_USERNAME', 'postgres'),
-            'password' => env('ELTORRO_DB_PASSWORD', ''),
-            'charset'  => 'utf8',
-            'prefix'   => '',
-            'schema'   => 'public',
-        ],
-
         // ── CRM data (existing MySQL) ──────────────────────────────────────
         'crm' => [
             'driver'    => 'mysql',
@@ -61,6 +48,19 @@ return [
             'prefix'    => '',
             'strict'    => true,
         ],
+		
+		'legacy' => [
+			'driver'    => 'mysql',
+			'host'      => env('LEGACY_DB_HOST', '127.0.0.1'),
+			'port'      => env('LEGACY_DB_PORT', '3306'),
+			'database'  => env('LEGACY_DB_DATABASE', 'bamc'),
+			'username'  => env('LEGACY_DB_USERNAME', 'akif'),
+			'password'  => env('LEGACY_DB_PASSWORD', 'Guddoo@71'),
+			'charset'   => 'utf8mb4',
+			'collation' => 'utf8mb4_unicode_ci',
+			'prefix'    => '',
+			'strict'    => false,
+		],
 
     ],
 
