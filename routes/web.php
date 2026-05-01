@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\CrmController;
+use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Tenant\DashboardController as TenantDashboard;
 use App\Http\Controllers\Tenant\ClientController;
 
@@ -20,26 +21,34 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/crm',         [CrmController::class, 'store'])->name('crm.store');
     Route::get('/crm/{crm}',    [CrmController::class, 'show'])->name('crm.show');
     Route::patch('/crm/{crm}/stage', [CrmController::class, 'updateStage'])->name('crm.stage');
-
-    // Notes
     Route::post('/crm/{crm}/notes',            [CrmController::class, 'addNote'])->name('crm.notes.store');
-
-    // Tasks
     Route::post('/crm/{crm}/tasks',            [CrmController::class, 'addTask'])->name('crm.tasks.store');
     Route::patch('/crm/tasks/{task}/complete', [CrmController::class, 'completeTask'])->name('crm.tasks.complete');
-
-    // Documents
     Route::post('/crm/{crm}/documents',            [CrmController::class, 'uploadDocument'])->name('crm.documents.upload');
     Route::get('/crm/documents/{document}/download',[CrmController::class, 'downloadDocument'])->name('crm.documents.download');
     Route::delete('/crm/documents/{document}',      [CrmController::class, 'deleteDocument'])->name('crm.documents.delete');
-
-    // SLAs
     Route::post('/crm/{crm}/slas',              [CrmController::class, 'createSla'])->name('crm.slas.store');
     Route::patch('/crm/slas/{sla}/status',      [CrmController::class, 'updateSlaStatus'])->name('crm.slas.status');
     Route::post('/crm/slas/{sla}/upload',       [CrmController::class, 'uploadSignedSla'])->name('crm.slas.upload');
-
-    // Quotations
     Route::post('/crm/{crm}/quotations',        [CrmController::class, 'createQuotation'])->name('crm.quotations.store');
+
+    // ── Settings ──────────────────────────────────────────────────────────
+    Route::get('/settings',              [SettingsController::class, 'index'])->name('settings.index');
+
+    Route::get('/settings/sla/new',      [SettingsController::class, 'createSlaTemplate'])->name('settings.sla.create');
+    Route::post('/settings/sla',         [SettingsController::class, 'storeSlaTemplate'])->name('settings.sla.store');
+    Route::get('/settings/sla/{template}/edit', [SettingsController::class, 'editSlaTemplate'])->name('settings.sla.edit');
+    Route::put('/settings/sla/{template}',      [SettingsController::class, 'updateSlaTemplate'])->name('settings.sla.update');
+    Route::patch('/settings/sla/{template}/toggle', [SettingsController::class, 'toggleSlaTemplate'])->name('settings.sla.toggle');
+
+    Route::get('/settings/qt/new',       [SettingsController::class, 'createQtTemplate'])->name('settings.qt.create');
+    Route::post('/settings/qt',          [SettingsController::class, 'storeQtTemplate'])->name('settings.qt.store');
+    Route::get('/settings/qt/{template}/edit', [SettingsController::class, 'editQtTemplate'])->name('settings.qt.edit');
+    Route::put('/settings/qt/{template}',      [SettingsController::class, 'updateQtTemplate'])->name('settings.qt.update');
+    Route::patch('/settings/qt/{template}/toggle', [SettingsController::class, 'toggleQtTemplate'])->name('settings.qt.toggle');
+
+    Route::post('/settings/staff',           [SettingsController::class, 'storeStaff'])->name('settings.staff.store');
+    Route::patch('/settings/staff/{user}/toggle', [SettingsController::class, 'toggleStaff'])->name('settings.staff.toggle');
 
     // ── Other admin stubs ─────────────────────────────────────────────────
     Route::get('/marketing',   fn() => view('admin.stub', ['module' => 'Marketing']))->name('marketing.index');
