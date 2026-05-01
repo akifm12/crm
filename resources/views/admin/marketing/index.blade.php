@@ -764,7 +764,7 @@ function MailApp() {
     return (<>
         <Toasts toasts={toasts} />
 
-        {{-- Tab bar --}}
+        {/* Tab bar */}
         <div className="flex gap-1 bg-white rounded-xl border border-gray-200 p-1 mb-5 overflow-x-auto">
             {TABS.map(t => <button key={t.id} onClick={() => setTab(t.id)}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap flex items-center gap-1.5 ${tab === t.id ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'}`}>
@@ -772,14 +772,14 @@ function MailApp() {
                 {COUNTS[t.id] !== undefined && <span className={`text-xs px-1.5 py-0.5 rounded-full font-mono ${tab === t.id ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-500'}`}>{COUNTS[t.id]}</span>}
             </button>)}
 
-            {{-- Live data indicator --}}
+            {/* Live data indicator */}
             <div className="ml-auto flex items-center gap-1.5 px-3">
                 <span className={`w-2 h-2 rounded-full ${contacts.length > 0 ? 'bg-green-500' : 'bg-amber-400'}`} />
                 <span className="text-xs text-gray-400">{contacts.length > 0 ? 'Live DB' : 'No data'}</span>
             </div>
         </div>
 
-        {{-- Tab content --}}
+        {/* Tab content */}
         {tab === 'contacts' && <ContactsPage contacts={contacts} loading={loading} onRefresh={fetchContacts} apiEndpoint={settings.apiEndpoint} addToast={addToast} />}
         {tab === 'groups'   && <GroupsPage contacts={contacts} logs={logs} />}
         {tab === 'compose'  && <ComposePage contacts={contacts} settings={settings} addLog={addLog} addToast={addToast} />}
