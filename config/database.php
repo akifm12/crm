@@ -61,6 +61,19 @@ return [
 			'prefix'    => '',
 			'strict'    => false,
 		],
+		
+		'mailer' => [
+			'driver'    => 'mysql',
+			'host'      => env('MAILER_DB_HOST', '127.0.0.1'),
+			'port'      => env('MAILER_DB_PORT', '3306'),
+			'database'  => env('MAILER_DB_DATABASE', 'mark'),
+			'username'  => env('MAILER_DB_USERNAME', 'root'),
+			'password'  => env('MAILER_DB_PASSWORD', ''),
+			'charset'   => 'utf8mb4',
+			'collation' => 'utf8mb4_unicode_ci',
+			'prefix'    => '',
+			'strict'    => false,
+		],
 
     ],
 

@@ -743,7 +743,7 @@ function MailApp() {
     const fetchContacts = async () => {
         setLoading(true);
         try {
-            const r = await fetch(API);
+            const r = await fetch('/marketing/api/contacts');
             const d = await r.json();
             if (Array.isArray(d)) { setContacts(d); addToast(`Loaded ${d.length} subscribers`, 'success'); }
             else throw new Error('Expected array');

@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\CrmController;
@@ -67,20 +68,33 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/settings/staff',                  [SettingsController::class, 'storeStaff'])->name('settings.staff.store');
     Route::patch('/settings/staff/{user}/toggle',   [SettingsController::class, 'toggleStaff'])->name('settings.staff.toggle');
 
-    // ── Other admin stubs ─────────────────────────────────────────────────
-    Route::any('/marketing/api/{path?}', function (Request $request, $path = '') {
-    $url   = 'https://mailer.bluearrow.ae/contacts.php';
-    $query = $request->getQueryString();
-    if ($query) $url .= '?' . $query;
+	// ── Marketing ────────────────────────────────────────────────────────────
+	Route::get('/marketing', fn() => view('admin.marketing.index'))->name('marketing.index');
 
-    $response = Http::withOptions(['verify' => false])
-        ->withBasicAuth(env('MAILER_USER'), env('MAILER_PASSWORD'))
-        ->withHeaders(['Content-Type' => 'application/json'])
-        ->{strtolower($request->method())}($url, $request->all());
+	// Contacts — served directly from DB (fast)
+	Route::get('/marketing/api/contacts', function () {
+		$contacts = DB::connection('mailer')
+			->table('subscribers')
+			->orderBy('id')
+			->get(['id','list_id','company','name','phone','email','subscribed_at']);
+		return response()->json($contacts);
+	})->name('marketing.contacts');
 
-    return response($response->body(), $response->status())
-        ->header('Content-Type', 'application/json');
-})->name('marketing.api')->where('path', '.*');
+	// Everything else — proxied to contacts.php
+	Route::any('/marketing/api/{path?}', function (Request $request, $path = '') {
+		$url   = 'https://mailer.bluearrow.ae/contacts.php';
+		$query = $request->getQueryString();
+		if ($query) $url .= '?' . $query;
+
+		$response = Http::timeout(60)
+			->withOptions(['verify' => false])
+			->withHeaders(['Content-Type' => 'application/json'])
+			->{strtolower($request->method())}($url, $request->all());
+
+		return response($response->body(), $response->status())
+			->header('Content-Type', 'application/json');
+	})->name('marketing.api')->where('path', '.*');
+	
     // ── Screening ─────────────────────────────────────────────────────────
     Route::get('/screening',                              [ScreeningController::class, 'index'])->name('screening.index');
     Route::post('/screening/run',                         [ScreeningController::class, 'run'])->name('screening.run');
