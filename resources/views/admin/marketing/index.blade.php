@@ -33,6 +33,7 @@
 
 <div id="mc-root"></div>
 
+@verbatim
 <script type="text/babel">
 const {useState, useEffect, useRef, useMemo} = React;
 
@@ -791,5 +792,5 @@ function MailApp() {
 
 ReactDOM.createRoot(document.getElementById('mc-root')).render(<MailApp />);
 </script>
-
+@endverbatim
 @endsection
