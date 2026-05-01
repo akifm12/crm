@@ -16,12 +16,10 @@ class SentinelService
 
     public function __construct()
     {
-        $this->baseUrl = config('sentinel.base_url', 'http://127.0.0.1:8085/api');
-        $this->email   = config('sentinel.email');
-        $this->password= config('sentinel.password');
+        $this->baseUrl  = config('sentinel.base_url', 'http://127.0.0.1:8085/api');
+        $this->email    = config('sentinel.email');
+        $this->password = config('sentinel.password');
     }
-
-    // ── Auth ───────────────────────────────────────────────────────────────
 
     private function token(): ?string
     {
@@ -30,116 +28,85 @@ class SentinelService
                 'email'    => $this->email,
                 'password' => $this->password,
             ]);
-
             if ($response->successful() && isset($response->json()['token'])) {
                 return $response->json()['token'];
             }
-
-            Log::error('Sentinel auth failed', ['status' => $response->status(), 'body' => $response->body()]);
+            Log::error('Sentinel auth failed', ['status' => $response->status()]);
             return null;
         });
     }
 
     private function http()
     {
-        return Http::timeout(30)
-            ->withToken($this->token())
-            ->acceptJson();
+        return Http::timeout(30)->withToken($this->token())->acceptJson();
     }
 
-    // ── Screen entity (corporate) ──────────────────────────────────────────
+    private function doScreen(array $payload): array
+    {
+        try {
+            $response = $this->http()->post("{$this->baseUrl}/screen", $payload);
+
+            if ($response->status() === 401) {
+                Cache::forget($this->cacheKey);
+                $response = $this->http()->post("{$this->baseUrl}/screen", $payload);
+            }
+
+            if ($response->successful()) {
+                return ['success' => true, 'data' => $response->json()];
+            }
+
+            return ['success' => false, 'error' => 'API error ' . $response->status() . ': ' . $response->body()];
+
+        } catch (\Exception $e) {
+            Log::error('Sentinel screen failed', ['error' => $e->getMessage()]);
+            return ['success' => false, 'error' => $e->getMessage()];
+        }
+    }
 
     public function screenEntity(array $params): array
     {
-        // params: query, trade_license, country_of_issue, license_number, date_of_issue
-        try {
-            $payload = array_filter([
-                'query'           => $params['query'],
-                'entityType'      => 'entity',
-                'threshold'       => 65,
-                'selectedLists'   => [],
-            ]);
+        $payload = [
+            'query'         => $params['query'],
+            'country'       => $params['country_of_issue'] ?? $params['country'] ?? 'UAE',
+            'entityType'    => 'entity',
+            'threshold'     => 65,
+            'selectedLists' => [],
+        ];
 
-            // Add entity-specific fields if provided
-            if (!empty($params['trade_license']))    $payload['trade_license']    = $params['trade_license'];
-            if (!empty($params['country_of_issue'])) $payload['country_of_issue'] = $params['country_of_issue'];
-            if (!empty($params['license_number']))   $payload['license_number']   = $params['license_number'];
-            if (!empty($params['date_of_issue']))    $payload['date_of_issue']    = $params['date_of_issue'];
+        if (!empty($params['license_number'])) $payload['license_number'] = $params['license_number'];
+        if (!empty($params['date_of_issue']))  $payload['date_of_issue']  = $params['date_of_issue'];
 
-            $response = $this->http()->post("{$this->baseUrl}/screen", $payload);
-
-            if ($response->successful()) {
-                return ['success' => true, 'data' => $response->json()];
-            }
-
-            // Token might have expired — clear cache and retry once
-            if ($response->status() === 401) {
-                Cache::forget($this->cacheKey);
-                $response = $this->http()->post("{$this->baseUrl}/screen", $payload);
-                if ($response->successful()) {
-                    return ['success' => true, 'data' => $response->json()];
-                }
-            }
-
-            return ['success' => false, 'error' => 'Screening API error: ' . $response->status(), 'data' => $response->json()];
-
-        } catch (\Exception $e) {
-            Log::error('Sentinel screen entity failed', ['error' => $e->getMessage()]);
-            return ['success' => false, 'error' => $e->getMessage()];
-        }
+        return $this->doScreen($payload);
     }
-
-    // ── Screen individual ──────────────────────────────────────────────────
 
     public function screenIndividual(array $params): array
     {
-        // params: query, dob, nationality
-        try {
-            $payload = array_filter([
-                'query'         => $params['query'],
-                'entityType'    => 'individual',
-                'threshold'     => 65,
-                'selectedLists' => [],
-            ]);
+        $payload = [
+            'query'         => $params['query'],
+            'country'       => $params['nationality'] ?? $params['country'] ?? 'UAE',
+            'entityType'    => 'individual',
+            'threshold'     => 65,
+            'selectedLists' => [],
+        ];
 
-            if (!empty($params['dob']))         $payload['dob']         = $params['dob'];
-            if (!empty($params['nationality'])) $payload['nationality'] = $params['nationality'];
+        if (!empty($params['dob'])) $payload['dob'] = $params['dob'];
 
-            $response = $this->http()->post("{$this->baseUrl}/screen", $payload);
-
-            if ($response->successful()) {
-                return ['success' => true, 'data' => $response->json()];
-            }
-
-            if ($response->status() === 401) {
-                Cache::forget($this->cacheKey);
-                $response = $this->http()->post("{$this->baseUrl}/screen", $payload);
-                if ($response->successful()) {
-                    return ['success' => true, 'data' => $response->json()];
-                }
-            }
-
-            return ['success' => false, 'error' => 'Screening API error: ' . $response->status()];
-
-        } catch (\Exception $e) {
-            Log::error('Sentinel screen individual failed', ['error' => $e->getMessage()]);
-            return ['success' => false, 'error' => $e->getMessage()];
-        }
+        return $this->doScreen($payload);
     }
-
-    // ── Get screening summary from result ──────────────────────────────────
 
     public static function summarise(array $data): array
     {
-        $hits    = $data['hits']    ?? $data['results']    ?? $data['matches']    ?? [];
-        $total   = $data['total']   ?? $data['totalHits']  ?? count($hits);
-        $status  = $total > 0 ? 'match' : 'clear';
+        // Sentinel returns 'results' key
+        $hits   = $data['results'] ?? $data['hits'] ?? $data['matches'] ?? [];
+        $total  = count($hits);
+        $status = $total > 0 ? 'match' : 'clear';
 
         return [
-            'status'    => $status,
-            'total_hits'=> $total,
-            'hits'      => array_slice($hits, 0, 10), // store top 10
-            'raw'       => $data,
+            'status'     => $status,
+            'total_hits' => $total,
+            'hits'       => array_slice($hits, 0, 10),
+            'session_id' => $data['sessionId'] ?? null,
+            'raw'        => $data,
         ];
     }
 }
