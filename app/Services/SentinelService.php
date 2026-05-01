@@ -68,7 +68,7 @@ class SentinelService
     public function screenEntity(array $params): array
     {
         $payload = [
-            'query'         => $params['query'],
+            'query'         => (string) trim($params['query']),
             'country'       => $params['country_of_issue'] ?? $params['country'] ?? 'UAE',
             'entityType'    => 'entity',
             'threshold'     => 65,
@@ -84,7 +84,7 @@ class SentinelService
     public function screenIndividual(array $params): array
     {
         $payload = [
-            'query'         => $params['query'],
+            'query'         => (string) trim($params['query']),
             'country'       => $params['nationality'] ?? $params['country'] ?? 'UAE',
             'entityType'    => 'individual',
             'threshold'     => 65,
