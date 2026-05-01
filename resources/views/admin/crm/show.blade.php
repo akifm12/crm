@@ -63,17 +63,25 @@
 </div>
 
 {{-- Tabs --}}
+@php
+    $docCount   = ($crm->documents ?? collect())->count();
+    $noteCount  = ($crm->notes ?? collect())->count();
+    $taskOpen   = ($crm->tasks ?? collect())->whereIn('status', ['pending','in_progress'])->count();
+    $slaCount   = ($crm->slas ?? collect())->count();
+    $qtCount    = ($crm->quotations ?? collect())->count();
+@endphp
+
 <div x-data="{ tab: 'overview' }">
     <div class="flex gap-1 bg-white rounded-xl border border-gray-200 p-1 mb-5 overflow-x-auto">
         @foreach([
-            ['overview',     'Overview'],
-            ['profile',      'Profile'],
-			['documents',    'Documents ('.($crm->documents?->count() ?? 0).')'],
-			['notes',        'Communications ('.($crm->notes?->count() ?? 0).')'],
-			['tasks',        'Tasks ('.($crm->tasks?->whereIn('status',['pending','in_progress'])->count() ?? 0).' open)'],
-			['slas',         'SLAs ('.($crm->slas?->count() ?? 0).')'],
-			['quotations',   'Quotations ('.($crm->quotations?->count() ?? 0).')'],
-            ['portal',       'Portal'],
+            ['overview',   'Overview'],
+            ['profile',    'Profile'],
+            ['documents',  'Documents ('.$docCount.')'],
+            ['notes',      'Communications ('.$noteCount.')'],
+            ['tasks',      'Tasks ('.$taskOpen.' open)'],
+            ['slas',       'SLAs ('.$slaCount.')'],
+            ['quotations', 'Quotations ('.$qtCount.')'],
+            ['portal',     'Portal'],
         ] as [$key,$label])
         <button @click="tab='{{ $key }}'"
                 :class="tab==='{{ $key }}' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'"
@@ -91,18 +99,18 @@
                 <div class="p-5">
                     <dl class="grid grid-cols-2 gap-4 text-sm">
                         @foreach([
-                            ['Licence no.',     $crm->license_number],
-                            ['Licence expiry',  $crm->license_expiry?->format('d M Y')],
-                            ['Legal form',      $crm->legal_status],
-                            ['Country',         $crm->country_inc],
-                            ['TRN',             $crm->trn],
-                            ['Ejari',           $crm->ejari],
-                            ['Regulator',       $crm->regulator],
-                            ['Contact person',  $crm->contact_person],
-                            ['Email',           $crm->email],
-                            ['Telephone',       $crm->telephone],
-                            ['Website',         $crm->website],
-                            ['Client since',    $crm->client_since?->format('d M Y')],
+                            ['Licence no.',    $crm->license_number],
+                            ['Licence expiry', $crm->license_expiry?->format('d M Y')],
+                            ['Legal form',     $crm->legal_status],
+                            ['Country',        $crm->country_inc],
+                            ['TRN',            $crm->trn],
+                            ['Ejari',          $crm->ejari],
+                            ['Regulator',      $crm->regulator],
+                            ['Contact person', $crm->contact_person],
+                            ['Email',          $crm->email],
+                            ['Telephone',      $crm->telephone],
+                            ['Website',        $crm->website],
+                            ['Client since',   $crm->client_since?->format('d M Y')],
                         ] as [$k,$v])
                         <div><dt class="text-xs text-gray-400">{{ $k }}</dt><dd class="mt-0.5 text-gray-800">{{ $v ?? '—' }}</dd></div>
                         @endforeach
@@ -116,16 +124,15 @@
                 </div>
             </div>
             <div class="space-y-4">
-                {{-- Quick stats --}}
                 <div class="bg-white rounded-xl border border-gray-200 p-4">
                     <h3 class="text-sm font-semibold text-gray-700 mb-3">At a glance</h3>
                     <div class="space-y-2.5">
                         @foreach([
-                            ['Services',      $crm->services ? implode(', ', $crm->services) : 'None recorded', 'bg-gray-100 text-gray-600'],
-                            ['Assigned to',   $crm->assignee?->name ?? 'Unassigned', 'bg-gray-100 text-gray-600'],
-                            ['Active SLA',    $crm->activeSla()?->sla_reference ?? 'None', $crm->activeSla() ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'],
-                            ['Open tasks',    $crm->tasks->whereIn('status',['pending','in_progress'])->count().' tasks', $crm->pendingTasksCount() > 0 ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-500'],
-                            ['Documents',     $crm->documents->count().' files', 'bg-gray-100 text-gray-600'],
+                            ['Services',    $crm->services ? implode(', ', $crm->services) : 'None recorded', 'bg-gray-100 text-gray-600'],
+                            ['Assigned to', $crm->assignee?->name ?? 'Unassigned',                            'bg-gray-100 text-gray-600'],
+                            ['Active SLA',  $crm->activeSla()?->sla_reference ?? 'None',                      $crm->activeSla() ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'],
+                            ['Open tasks',  $taskOpen.' tasks',                                                $taskOpen > 0 ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-500'],
+                            ['Documents',   $docCount.' files',                                                'bg-gray-100 text-gray-600'],
                         ] as [$label,$value,$cls])
                         <div class="flex items-center justify-between">
                             <span class="text-xs text-gray-500">{{ $label }}</span>
@@ -134,12 +141,15 @@
                         @endforeach
                     </div>
                 </div>
-                {{-- Recent note --}}
-                @if($crm->notes?->first())
+
+                @php $latestNote = ($crm->notes ?? collect())->first(); @endphp
+                @if($latestNote)
                 <div class="bg-white rounded-xl border border-gray-200 p-4">
                     <h3 class="text-sm font-semibold text-gray-700 mb-2">Latest note</h3>
-                    <p class="text-xs text-gray-500 mb-1">{{ $crm->notes?->first()?->author?->name }} · {{ $crm->notes->first()->created_at->diffForHumans() }}</p>
-                    <p class="text-sm text-gray-700 line-clamp-3">{{ $crm->notes?->first()?->body }}</p>
+                    <p class="text-xs text-gray-500 mb-1">
+                        {{ $latestNote->author?->name ?? 'Unknown' }} · {{ $latestNote->created_at->diffForHumans() }}
+                    </p>
+                    <p class="text-sm text-gray-700 line-clamp-3">{{ $latestNote->body }}</p>
                 </div>
                 @endif
             </div>
@@ -149,18 +159,20 @@
     {{-- ── PROFILE ───────────────────────────────────────────────────────── --}}
     <div x-show="tab==='profile'" x-cloak>
         <div class="space-y-5">
-            @if($crm->shareholders->count())
+            @if(($crm->shareholders ?? collect())->count())
             <div class="bg-white rounded-xl border border-gray-200">
                 <div class="px-5 py-4 border-b border-gray-100"><h3 class="text-sm font-semibold text-gray-700">Shareholders</h3></div>
                 <div class="divide-y divide-gray-100">
-                    @foreach($crm->shareholders as $sh)
+                    @foreach($crm->shareholders ?? [] as $sh)
                     <div class="px-5 py-3 grid grid-cols-2 md:grid-cols-5 gap-3 text-sm">
                         <div><span class="text-xs text-gray-400 block">Name</span>{{ $sh->shareholder_name }}</div>
                         <div><span class="text-xs text-gray-400 block">Nationality</span>{{ $sh->nationality ?? '—' }}</div>
                         <div><span class="text-xs text-gray-400 block">Passport</span>{{ $sh->passport ?? '—' }}</div>
                         <div><span class="text-xs text-gray-400 block">Passport expiry</span>
                             @if($sh->passport_expiry)
-                                <span class="{{ $sh->passport_expiry->isPast() ? 'text-red-600 font-semibold' : '' }}">{{ $sh->passport_expiry->format('d M Y') }}</span>
+                                <span class="{{ $sh->passport_expiry->isPast() ? 'text-red-600 font-semibold' : '' }}">
+                                    {{ $sh->passport_expiry->format('d M Y') }}
+                                </span>
                             @else —
                             @endif
                         </div>
@@ -175,8 +187,8 @@
             @endif
 
             <div class="bg-white rounded-xl border border-gray-200 p-5">
-                <h3 class="text-sm font-semibold text-gray-700 mb-3">Notes</h3>
-                <p class="text-sm text-gray-700">{{ $crm->notes ?? '—' }}</p>
+                <h3 class="text-sm font-semibold text-gray-700 mb-3">General notes</h3>
+                <p class="text-sm text-gray-700">{{ $crm->notes_text ?? '—' }}</p>
             </div>
         </div>
     </div>
@@ -192,9 +204,9 @@
                     Upload
                 </button>
             </div>
-            @if($crm->documents->count())
+            @if($docCount)
             <div class="divide-y divide-gray-100">
-                @foreach($crm->documents as $doc)
+                @foreach($crm->documents ?? [] as $doc)
                 <div class="px-5 py-3.5 flex items-center justify-between gap-4">
                     <div class="flex items-center gap-3 min-w-0">
                         <div class="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
@@ -273,7 +285,6 @@
     {{-- ── COMMUNICATIONS ────────────────────────────────────────────────── --}}
     <div x-show="tab==='notes'" x-cloak>
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
-            {{-- Add note form --}}
             <div class="bg-white rounded-xl border border-gray-200 p-5">
                 <h3 class="text-sm font-semibold text-gray-700 mb-4">Log interaction</h3>
                 <form method="POST" action="{{ route('crm.notes.store', $crm->id) }}" class="space-y-3">
@@ -305,9 +316,8 @@
                 </form>
             </div>
 
-            {{-- Notes timeline --}}
             <div class="lg:col-span-2 space-y-3">
-                @forelse($crm->notes as $note)
+                @forelse($crm->notes ?? [] as $note)
                 <div class="bg-white rounded-xl border border-gray-200 p-4">
                     <div class="flex items-start justify-between gap-3">
                         <div class="flex items-center gap-2.5 min-w-0">
@@ -342,7 +352,6 @@
     {{-- ── TASKS ─────────────────────────────────────────────────────────── --}}
     <div x-show="tab==='tasks'" x-cloak>
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
-            {{-- Add task form --}}
             <div class="bg-white rounded-xl border border-gray-200 p-5">
                 <h3 class="text-sm font-semibold text-gray-700 mb-4">Add task</h3>
                 <form method="POST" action="{{ route('crm.tasks.store', $crm->id) }}" class="space-y-3">
@@ -376,11 +385,9 @@
                 </form>
             </div>
 
-            {{-- Task list --}}
             <div class="lg:col-span-2 space-y-2">
-                @forelse($crm->tasks->sortBy('due_date') as $task)
+                @forelse(($crm->tasks ?? collect())->sortBy('due_date') as $task)
                 <div class="bg-white rounded-xl border {{ $task->isOverdue() ? 'border-red-200' : 'border-gray-200' }} p-4 flex items-start gap-3">
-                    {{-- Complete checkbox --}}
                     @if($task->status !== 'completed')
                     <form method="POST" action="{{ route('crm.tasks.complete', $task->id) }}" class="mt-0.5">
                         @csrf @method('PATCH')
@@ -391,7 +398,6 @@
                         <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
                     </div>
                     @endif
-
                     <div class="flex-1 min-w-0">
                         <p class="text-sm text-gray-800 {{ $task->status === 'completed' ? 'line-through text-gray-400' : 'font-medium' }}">
                             {{ $task->task_description }}
@@ -420,7 +426,6 @@
     {{-- ── SLAs ──────────────────────────────────────────────────────────── --}}
     <div x-show="tab==='slas'" x-cloak>
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
-            {{-- Create SLA form --}}
             <div class="bg-white rounded-xl border border-gray-200 p-5">
                 <h3 class="text-sm font-semibold text-gray-700 mb-4">Create SLA from template</h3>
                 <form method="POST" action="{{ route('crm.slas.store', $crm->id) }}" class="space-y-3">
@@ -453,9 +458,8 @@
                 @endif
             </div>
 
-            {{-- SLA list --}}
             <div class="lg:col-span-2 space-y-3">
-                @forelse($crm->slas as $sla)
+                @forelse($crm->slas ?? [] as $sla)
                 <div class="bg-white rounded-xl border border-gray-200 p-4">
                     <div class="flex items-start justify-between gap-3 mb-3">
                         <div>
@@ -468,7 +472,6 @@
                         <span class="px-2 py-0.5 rounded-full text-xs font-semibold {{ $sla->statusBadge() }}">{{ ucfirst($sla->status) }}</span>
                     </div>
                     <div class="flex items-center gap-2 flex-wrap">
-                        {{-- Status update --}}
                         <form method="POST" action="{{ route('crm.slas.status', $sla->id) }}" class="flex items-center gap-2">
                             @csrf @method('PATCH')
                             <select name="status" class="text-xs border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-500">
@@ -478,8 +481,6 @@
                             </select>
                             <button type="submit" class="text-xs text-blue-600 hover:underline">Update</button>
                         </form>
-
-                        {{-- Upload signed copy --}}
                         @if(!$sla->signed_copy_path)
                         <button onclick="document.getElementById('sla-upload-{{ $sla->id }}').classList.remove('hidden')"
                                 class="text-xs text-purple-600 hover:underline">Upload signed copy</button>
@@ -487,8 +488,6 @@
                         <span class="text-xs text-green-600 font-medium">✓ Signed copy uploaded</span>
                         @endif
                     </div>
-
-                    {{-- Upload signed copy form --}}
                     <div id="sla-upload-{{ $sla->id }}" class="hidden mt-3 pt-3 border-t border-gray-100">
                         <form method="POST" action="{{ route('crm.slas.upload', $sla->id) }}" enctype="multipart/form-data" class="flex items-center gap-2">
                             @csrf
@@ -531,7 +530,7 @@
             </div>
 
             <div class="lg:col-span-2 space-y-3">
-                @forelse($crm->quotations as $qt)
+                @forelse($crm->quotations ?? [] as $qt)
                 <div class="bg-white rounded-xl border border-gray-200 p-4">
                     <div class="flex items-start justify-between gap-3">
                         <div>
@@ -543,14 +542,12 @@
                         </div>
                         <span class="px-2 py-0.5 rounded-full text-xs font-semibold {{ $qt->statusBadge() }}">{{ ucfirst($qt->status) }}</span>
                     </div>
-                    <div class="mt-3 flex items-center justify-between">
-                        <div class="text-sm">
-                            <span class="text-gray-500">Subtotal: </span><span class="font-medium">AED {{ number_format($qt->subtotal, 2) }}</span>
-                            <span class="text-gray-400 mx-2">+</span>
-                            <span class="text-gray-500">VAT: </span><span class="font-medium">AED {{ number_format($qt->vat_amount, 2) }}</span>
-                            <span class="text-gray-400 mx-2">=</span>
-                            <span class="text-gray-700 font-bold">AED {{ number_format($qt->total_amount, 2) }}</span>
-                        </div>
+                    <div class="mt-3 text-sm">
+                        <span class="text-gray-500">Subtotal: </span><span class="font-medium">AED {{ number_format($qt->subtotal, 2) }}</span>
+                        <span class="text-gray-400 mx-2">+</span>
+                        <span class="text-gray-500">VAT: </span><span class="font-medium">AED {{ number_format($qt->vat_amount, 2) }}</span>
+                        <span class="text-gray-400 mx-2">=</span>
+                        <span class="text-gray-700 font-bold">AED {{ number_format($qt->total_amount, 2) }}</span>
                     </div>
                 </div>
                 @empty
@@ -566,12 +563,14 @@
             @if($crm->tenant)
             <h3 class="text-sm font-semibold text-gray-700 mb-4">Tenant portal</h3>
             <dl class="space-y-3 text-sm">
-                <div class="flex justify-between"><dt class="text-gray-400">Portal URL</dt>
+                <div class="flex justify-between">
+                    <dt class="text-gray-400">Portal URL</dt>
                     <dd><a href="{{ $crm->tenant->portalUrl() }}" target="_blank" class="text-blue-600 hover:underline">{{ $crm->tenant->portalUrl() }}</a></dd>
                 </div>
                 <div class="flex justify-between"><dt class="text-gray-400">Slug</dt><dd class="font-mono text-gray-700">{{ $crm->tenant->slug }}</dd></div>
                 <div class="flex justify-between"><dt class="text-gray-400">Type</dt><dd>{{ ucfirst($crm->portal_type) }}</dd></div>
-                <div class="flex justify-between"><dt class="text-gray-400">Status</dt>
+                <div class="flex justify-between">
+                    <dt class="text-gray-400">Status</dt>
                     <dd><span class="px-2 py-0.5 rounded-full text-xs font-semibold {{ $crm->tenant->is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
                         {{ $crm->tenant->is_active ? 'Active' : 'Inactive' }}</span></dd>
                 </div>
@@ -590,5 +589,5 @@
         </div>
     </div>
 
-</div>{{-- end tabs --}}
+</div>
 @endsection
