@@ -67,7 +67,7 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('/settings/staff/{user}/toggle',   [SettingsController::class, 'toggleStaff'])->name('settings.staff.toggle');
 
     // ── Other admin stubs ─────────────────────────────────────────────────
-    Route::get('/marketing',  fn() => view('admin.stub', ['module' => 'Marketing']))->name('marketing.index');
+    Route::get('/marketing', fn() => view('admin.marketing.index'))->name('marketing.index');
     // ── Screening ─────────────────────────────────────────────────────────
     Route::get('/screening',                              [ScreeningController::class, 'index'])->name('screening.index');
     Route::post('/screening/run',                         [ScreeningController::class, 'run'])->name('screening.run');
