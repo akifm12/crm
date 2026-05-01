@@ -30,14 +30,14 @@ class ScreeningController extends Controller
 
         if ($type === 'individual') {
             $result = $this->sentinel->screenIndividual([
-                'query'       => $request->query,
+                'query'       => $request->input('search_query'),
                 'country'     => $request->country ?? 'UAE',
                 'dob'         => $request->dob,
                 'nationality' => $request->nationality,
             ]);
         } else {
             $result = $this->sentinel->screenEntity([
-                'query'       => $request->query,
+                'query'       => $request->input('search_query'),
                 'country'     => $request->country ?? 'UAE',
                 'trade_license'   => $request->trade_license,
                 'country_of_issue'=> $request->country_of_issue,
@@ -54,7 +54,7 @@ class ScreeningController extends Controller
 
         return view('admin.screening.index', [
             'result'  => $summary,
-            'query'       => $request->query,
+            'query'       => $request->input('search_query'),
                 'country'     => $request->country ?? 'UAE',
             'rawData' => $result['data'],
         ]);
