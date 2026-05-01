@@ -24,25 +24,26 @@ class ScreeningController extends Controller
 
     public function run(Request $request)
     {
-        $request->validate(['query' => 'required|string|min:2']);
+        $request->validate(['search_query' => 'required|string|min:2']);
 
-        $type = $request->entity_type ?? 'entity';
+        $type    = $request->input('entity_type', 'entity');
+        $query   = $request->input('search_query');
+        $country = $request->input('country', 'UAE');
 
         if ($type === 'individual') {
             $result = $this->sentinel->screenIndividual([
-                'query'       => $request->input('search_query'),
-                'country'     => $request->country ?? 'UAE',
-                'dob'         => $request->dob,
-                'nationality' => $request->nationality,
+                'query'       => $query,
+                'country'     => $country,
+                'dob'         => $request->input('dob'),
+                'nationality' => $request->input('nationality'),
             ]);
         } else {
             $result = $this->sentinel->screenEntity([
-                'query'       => $request->input('search_query'),
-                'country'     => $request->country ?? 'UAE',
-                'trade_license'   => $request->trade_license,
-                'country_of_issue'=> $request->country_of_issue,
-                'license_number'  => $request->license_number,
-                'date_of_issue'   => $request->date_of_issue,
+                'query'            => $query,
+                'country'          => $country,
+                'country_of_issue' => $country,
+                'license_number'   => $request->input('license_number'),
+                'date_of_issue'    => $request->input('date_of_issue'),
             ]);
         }
 
@@ -54,8 +55,7 @@ class ScreeningController extends Controller
 
         return view('admin.screening.index', [
             'result'  => $summary,
-            'query'       => $request->input('search_query'),
-                'country'     => $request->country ?? 'UAE',
+            'query'   => $query,
             'rawData' => $result['data'],
         ]);
     }
@@ -65,11 +65,11 @@ class ScreeningController extends Controller
     public function screenClient(Request $request, CrmClient $crm)
     {
         $result = $this->sentinel->screenEntity([
-            'query'            => $crm->company_name,
-            'trade_license'    => $crm->license_number,
-            'country_of_issue' => $crm->country_inc,
-            'license_number'   => $crm->license_number,
-            'date_of_issue'    => $crm->license_issue?->format('Y-m-d'),
+            'query'            => (string) $crm->company_name,
+            'country'          => (string) ($crm->country_inc ?? 'UAE'),
+            'country_of_issue' => (string) ($crm->country_inc ?? 'UAE'),
+            'license_number'   => (string) ($crm->license_number ?? ''),
+            'date_of_issue'    => $crm->license_issue?->format('Y-m-d') ?? '',
         ]);
 
         if (!$result['success']) {
@@ -97,9 +97,10 @@ class ScreeningController extends Controller
     public function screenShareholder(Request $request, CrmShareholder $shareholder)
     {
         $result = $this->sentinel->screenIndividual([
-            'query'       => $shareholder->shareholder_name,
-            'dob'         => $shareholder->birthdate?->format('Y-m-d'),
-            'nationality' => $shareholder->nationality,
+            'query'       => (string) $shareholder->shareholder_name,
+            'country'     => (string) ($shareholder->nationality ?? 'UAE'),
+            'nationality' => (string) ($shareholder->nationality ?? ''),
+            'dob'         => $shareholder->birthdate?->format('Y-m-d') ?? '',
         ]);
 
         if (!$result['success']) {
@@ -109,10 +110,9 @@ class ScreeningController extends Controller
         $summary  = SentinelService::summarise($result['data']);
         $existing = $shareholder->client->screening_result ?? [];
 
-        // Store shareholder result alongside client result
         $existing['shareholders'][$shareholder->id] = array_merge($summary, [
-            'name'       => $shareholder->shareholder_name,
-            'screened_at'=> now()->toDateTimeString(),
+            'name'        => $shareholder->shareholder_name,
+            'screened_at' => now()->toDateTimeString(),
         ]);
 
         $shareholder->client->update(['screening_result' => $existing]);
