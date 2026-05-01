@@ -2,11 +2,6 @@
 namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 
-class QuotationTemplate extends Model {
-    protected $fillable = ['name','service_type','description','line_items','terms','validity_days','is_active','created_by'];
-    protected $casts = ['line_items'=>'array','is_active'=>'boolean'];
-}
-
 class CrmQuotation extends Model {
     protected $fillable = ['crm_client_id','quotation_template_id','quotation_reference','subject','line_items','subtotal','vat_amount','total_amount','terms','issued_date','valid_until','status','created_by'];
     protected $casts = ['line_items'=>'array','subtotal'=>'decimal:2','vat_amount'=>'decimal:2','total_amount'=>'decimal:2','issued_date'=>'date','valid_until'=>'date'];
