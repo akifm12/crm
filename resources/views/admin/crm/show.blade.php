@@ -135,11 +135,11 @@
                     </div>
                 </div>
                 {{-- Recent note --}}
-                @if($crm->notes->first())
+                @if($crm->notes?->first())
                 <div class="bg-white rounded-xl border border-gray-200 p-4">
                     <h3 class="text-sm font-semibold text-gray-700 mb-2">Latest note</h3>
-                    <p class="text-xs text-gray-500 mb-1">{{ $crm->notes->first()->author?->name }} · {{ $crm->notes->first()->created_at->diffForHumans() }}</p>
-                    <p class="text-sm text-gray-700 line-clamp-3">{{ $crm->notes->first()->body }}</p>
+                    <p class="text-xs text-gray-500 mb-1">{{ $crm->notes?->first()?->author?->name }} · {{ $crm->notes->first()->created_at->diffForHumans() }}</p>
+                    <p class="text-sm text-gray-700 line-clamp-3">{{ $crm->notes?->first()?->body }}</p>
                 </div>
                 @endif
             </div>
