@@ -188,7 +188,7 @@ class DocumentController extends Controller
 
         file_put_contents($dataFile, json_encode($data));
 
-        $scriptPath = base_path('scripts/' . $script . '.js');
+		$scriptPath = base_path('scripts/' . $script . '.cjs');
         $nodeCmd    = 'node ' . escapeshellarg($scriptPath)
                     . ' ' . escapeshellarg($dataFile)
                     . ' ' . escapeshellarg($outputFile)
