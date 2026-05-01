@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\CrmController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\ScreeningController;
+use App\Http\Controllers\Admin\WhatsAppController;
 use App\Http\Controllers\Admin\DocumentController;
 use App\Http\Controllers\Tenant\DashboardController as TenantDashboard;
 use App\Http\Controllers\Tenant\ClientController;
@@ -73,7 +74,19 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/screening/run',                         [ScreeningController::class, 'run'])->name('screening.run');
     Route::post('/crm/{crm}/screen',                      [ScreeningController::class, 'screenClient'])->name('screening.client');
     Route::post('/crm/shareholders/{shareholder}/screen', [ScreeningController::class, 'screenShareholder'])->name('screening.shareholder');
-    Route::get('/whatsapp',   fn() => view('admin.stub', ['module' => 'WhatsApp']))->name('whatsapp.index');
+    // ── WhatsApp ──────────────────────────────────────────────────────────
+    Route::get('/whatsapp',                          [WhatsAppController::class, 'index'])->name('whatsapp.index');
+    Route::get('/whatsapp/api/status',               [WhatsAppController::class, 'status'])->name('wa.status');
+    Route::get('/whatsapp/api/groups',               [WhatsAppController::class, 'groups'])->name('wa.groups');
+    Route::post('/whatsapp/api/groups/refresh',      [WhatsAppController::class, 'refreshGroups'])->name('wa.groups.refresh');
+    Route::get('/whatsapp/api/schedules',            [WhatsAppController::class, 'schedules'])->name('wa.schedules');
+    Route::post('/whatsapp/api/schedules',           [WhatsAppController::class, 'addSchedule'])->name('wa.schedules.add');
+    Route::put('/whatsapp/api/schedules/{id}',      [WhatsAppController::class, 'updateSchedule'])->name('wa.schedules.update');
+    Route::delete('/whatsapp/api/schedules/{id}',   [WhatsAppController::class, 'deleteSchedule'])->name('wa.schedules.delete');
+    Route::post('/whatsapp/api/send/immediate',      [WhatsAppController::class, 'sendImmediate'])->name('wa.send');
+    Route::post('/whatsapp/api/reconnect',           [WhatsAppController::class, 'reconnect'])->name('wa.reconnect');
+    Route::post('/whatsapp/api/disconnect',          [WhatsAppController::class, 'disconnect'])->name('wa.disconnect');
+    Route::get('/whatsapp/api/logs',                 [WhatsAppController::class, 'logs'])->name('wa.logs');
     Route::get('/accounting', fn() => view('admin.stub', ['module' => 'Accounting']))->name('admin.accounting');
     Route::get('/kyc',                          fn() => view('admin.stub', ['module' => 'KYC Submissions']))->name('kyc.index');
     Route::get('/kyc/submissions',              fn() => view('admin.stub', ['module' => 'KYC Submissions']))->name('kyc.submissions');
@@ -82,20 +95,6 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/kyc/tenants',                 fn() => back())->name('kyc.tenants.create');
     Route::patch('/kyc/submissions/{id}/approve', fn() => back())->name('kyc.approve');
     Route::patch('/kyc/submissions/{id}/reject',  fn() => back())->name('kyc.reject');
-	
-		// Marketing API proxy
-	Route::any('/marketing/api/{path?}', function (Request $request, $path = '') {
-		$url      = 'https://mailer.bluearrow.ae/contacts.php';
-		$query    = $request->getQueryString();
-		if ($query) $url .= '?' . $query;
-
-		$response = Http::withOptions(['verify' => false])
-			->withHeaders(['Content-Type' => 'application/json'])
-			->{strtolower($request->method())}($url, $request->all());
-
-		return response($response->body(), $response->status())
-			->header('Content-Type', 'application/json');
-	})->name('marketing.api')->where('path', '.*');
 
 }); // ← end auth middleware group
 
