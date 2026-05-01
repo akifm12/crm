@@ -23,7 +23,7 @@ class SentinelService
 
     private function token(): ?string
     {
-        return Cache::remember($this->cacheKey, now()->addMinutes(55), function () {
+        return Cache::remember($this->cacheKey, now()->addMinutes(5), function () {
             $response = Http::timeout(10)->post("{$this->baseUrl}/auth/login", [
                 'email'    => $this->email,
                 'password' => $this->password,
@@ -41,27 +41,29 @@ class SentinelService
         return Http::timeout(30)->withToken($this->token())->acceptJson();
     }
 
-    private function doScreen(array $payload): array
-    {
-        try {
-            $response = $this->http()->post("{$this->baseUrl}/screen", $payload);
+	private function doScreen(array $payload): array
+	{
+		try {
+			$response = $this->http()->post("{$this->baseUrl}/screen", $payload);
 
-            if ($response->status() === 401) {
-                Cache::forget($this->cacheKey);
-                $response = $this->http()->post("{$this->baseUrl}/screen", $payload);
-            }
+			// Handle expired session — clear cache and retry
+			if ($response->status() === 401 || 
+				str_contains($response->body(), 'SESSION_EXPIRED')) {
+				Cache::forget($this->cacheKey);
+				$response = $this->http()->post("{$this->baseUrl}/screen", $payload);
+			}
 
-            if ($response->successful()) {
-                return ['success' => true, 'data' => $response->json()];
-            }
+			if ($response->successful()) {
+				return ['success' => true, 'data' => $response->json()];
+			}
 
-            return ['success' => false, 'error' => 'API error ' . $response->status() . ': ' . $response->body()];
+			return ['success' => false, 'error' => 'API error ' . $response->status() . ': ' . $response->body()];
 
-        } catch (\Exception $e) {
-            Log::error('Sentinel screen failed', ['error' => $e->getMessage()]);
-            return ['success' => false, 'error' => $e->getMessage()];
-        }
-    }
+		} catch (\Exception $e) {
+			Log::error('Sentinel screen failed', ['error' => $e->getMessage()]);
+			return ['success' => false, 'error' => $e->getMessage()];
+		}
+	}
 
     public function screenEntity(array $params): array
     {
