@@ -68,11 +68,11 @@
         @foreach([
             ['overview',     'Overview'],
             ['profile',      'Profile'],
-            ['documents',    'Documents ('.$crm->documents->count().')'],
-            ['notes',        'Communications ('.$crm->notes->count().')'],
-            ['tasks',        'Tasks ('.$crm->tasks->whereIn('status',['pending','in_progress'])->count().' open)'],
-            ['slas',         'SLAs ('.$crm->slas->count().')'],
-            ['quotations',   'Quotations ('.$crm->quotations->count().')'],
+			['documents',    'Documents ('.($crm->documents?->count() ?? 0).')'],
+			['notes',        'Communications ('.($crm->notes?->count() ?? 0).')'],
+			['tasks',        'Tasks ('.($crm->tasks?->whereIn('status',['pending','in_progress'])->count() ?? 0).' open)'],
+			['slas',         'SLAs ('.($crm->slas?->count() ?? 0).')'],
+			['quotations',   'Quotations ('.($crm->quotations?->count() ?? 0).')'],
             ['portal',       'Portal'],
         ] as [$key,$label])
         <button @click="tab='{{ $key }}'"
