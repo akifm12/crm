@@ -82,6 +82,7 @@
             ['slas',       'SLAs ('.$slaCount.')'],
             ['quotations', 'Quotations ('.$qtCount.')'],
             ['portal',     'Portal'],
+			['screening',  'Screening'],
         ] as [$key,$label])
         <button @click="tab='{{ $key }}'"
                 :class="tab==='{{ $key }}' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'"
@@ -602,6 +603,11 @@
             @endif
         </div>
     </div>
+
+	{{-- ── SCREENING ────────────────────────────────────────────────────────── --}}
+	<div x-show="tab==='screening'" x-cloak>
+		@include('admin.crm._screening_tab')
+	</div>
 
 </div>
 @endsection

@@ -5,6 +5,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\CrmController;
 use App\Http\Controllers\Admin\SettingsController;
+use App\Http\Controllers\Admin\ScreeningController;
 use App\Http\Controllers\Admin\DocumentController;
 use App\Http\Controllers\Tenant\DashboardController as TenantDashboard;
 use App\Http\Controllers\Tenant\ClientController;
@@ -67,7 +68,11 @@ Route::middleware(['auth'])->group(function () {
 
     // ── Other admin stubs ─────────────────────────────────────────────────
     Route::get('/marketing',  fn() => view('admin.stub', ['module' => 'Marketing']))->name('marketing.index');
-    Route::get('/screening',  fn() => view('admin.stub', ['module' => 'Screening']))->name('screening.index');
+    // ── Screening ─────────────────────────────────────────────────────────
+    Route::get('/screening',                              [ScreeningController::class, 'index'])->name('screening.index');
+    Route::post('/screening/run',                         [ScreeningController::class, 'run'])->name('screening.run');
+    Route::post('/crm/{crm}/screen',                      [ScreeningController::class, 'screenClient'])->name('screening.client');
+    Route::post('/crm/shareholders/{shareholder}/screen', [ScreeningController::class, 'screenShareholder'])->name('screening.shareholder');
     Route::get('/whatsapp',   fn() => view('admin.stub', ['module' => 'WhatsApp']))->name('whatsapp.index');
     Route::get('/accounting', fn() => view('admin.stub', ['module' => 'Accounting']))->name('admin.accounting');
     Route::get('/kyc',                          fn() => view('admin.stub', ['module' => 'KYC Submissions']))->name('kyc.index');
