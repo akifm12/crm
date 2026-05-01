@@ -82,6 +82,20 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/kyc/tenants',                 fn() => back())->name('kyc.tenants.create');
     Route::patch('/kyc/submissions/{id}/approve', fn() => back())->name('kyc.approve');
     Route::patch('/kyc/submissions/{id}/reject',  fn() => back())->name('kyc.reject');
+	
+		// Marketing API proxy
+	Route::any('/marketing/api/{path?}', function (Request $request, $path = '') {
+		$url      = 'https://mailer.bluearrow.ae/contacts.php';
+		$query    = $request->getQueryString();
+		if ($query) $url .= '?' . $query;
+
+		$response = Http::withOptions(['verify' => false])
+			->withHeaders(['Content-Type' => 'application/json'])
+			->{strtolower($request->method())}($url, $request->all());
+
+		return response($response->body(), $response->status())
+			->header('Content-Type', 'application/json');
+	})->name('marketing.api')->where('path', '.*');
 
 }); // ← end auth middleware group
 

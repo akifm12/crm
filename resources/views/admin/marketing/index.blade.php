@@ -38,7 +38,7 @@
 const {useState, useEffect, useRef, useMemo} = React;
 
 /* ── Constants ── */
-const API        = 'https://mailer.bluearrow.ae/contacts.php';
+const API = '/marketing/api';
 const ADMIN_CONTACT = { id: 'admin', name: 'Blue Arrow Admin', email: 'contact@bluearrow.ae', company: 'Blue Arrow' };
 
 /* ── Utils ── */
