@@ -34,36 +34,31 @@
                     <input type="hidden" name="entity_type" :value="type">
                 </div>
 
-                {{-- Name / query --}}
+                {{-- Name --}}
                 <div>
                     <label class="block text-xs font-medium text-gray-600 mb-1">
                         <span x-show="type==='entity'">Company name</span>
                         <span x-show="type==='individual'">Full name</span>
                         <span class="text-red-500">*</span>
                     </label>
-                    <input type="text" name="search_query" value="{{ old('query') }}" required
+                    <input type="text" name="search_query" value="{{ old('search_query') }}" required
                            placeholder="Enter name to screen..."
                            class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
 
-				<div>
-					<label class="block text-xs font-medium text-gray-600 mb-1">Country <span class="text-red-500">*</span></label>
-					<input type="text" name="country" value="{{ old('country', 'UAE') }}" required
-						   placeholder="e.g. UAE, UK, US"
-						   class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-				</div>
+                {{-- Country (required by Sentinel) --}}
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Country <span class="text-red-500">*</span></label>
+                    <input type="text" name="country" value="{{ old('country', 'UAE') }}" required
+                           placeholder="e.g. UAE, UK, US"
+                           class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
 
                 {{-- Entity fields --}}
                 <div x-show="type==='entity'" class="space-y-3">
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-1">Trade licence number</label>
                         <input type="text" name="license_number" value="{{ old('license_number') }}"
-                               class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-gray-600 mb-1">Country of issue</label>
-                        <input type="text" name="country_of_issue" value="{{ old('country_of_issue') }}"
-                               placeholder="e.g. UAE"
                                class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
                     <div>
@@ -97,7 +92,7 @@
                 </button>
             </form>
 
-            {{-- Link to full Sentinel app --}}
+            {{-- Link to full Sentinel --}}
             <div class="mt-5 pt-4 border-t border-gray-100">
                 <a href="https://aml.bluearrow.ae" target="_blank"
                    class="flex items-center justify-between text-sm text-blue-600 hover:underline">
@@ -127,7 +122,7 @@
                 </div>
                 <div>
                     <p class="font-bold text-red-800">Potential match found</p>
-                    <p class="text-sm text-red-600">{{ $result['total_hits'] }} hit(s) returned for "{{ $query }}" — review required</p>
+                    <p class="text-sm text-red-600">{{ $result['total_hits'] }} hit(s) for "{{ $query }}" — review required</p>
                 </div>
                 @else
                 <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
@@ -137,7 +132,7 @@
                 </div>
                 <div>
                     <p class="font-bold text-green-800">Clear — no matches found</p>
-                    <p class="text-sm text-green-600">No sanctions, PEP or adverse media hits for "{{ $query }}"</p>
+                    <p class="text-sm text-green-600">No hits for "{{ $query }}"</p>
                 </div>
                 @endif
             </div>
@@ -147,46 +142,50 @@
         @if(!empty($result['hits']))
         <div class="bg-white rounded-xl border border-gray-200 mb-5">
             <div class="px-5 py-4 border-b border-gray-100">
-                <h3 class="text-sm font-semibold text-gray-700">Screening hits</h3>
+                <h3 class="text-sm font-semibold text-gray-700">Screening hits ({{ count($result['hits']) }})</h3>
             </div>
             <div class="divide-y divide-gray-100">
                 @foreach($result['hits'] as $hit)
                 <div class="px-5 py-4">
-                    <div class="flex items-start justify-between gap-4">
-                        <div class="flex-1 min-w-0">
-                            <p class="font-semibold text-gray-800">{{ $hit['name'] ?? $hit['entity_name'] ?? $hit['fullName'] ?? 'Unknown' }}</p>
-
-                            @if(!empty($hit['type']) || !empty($hit['entityType']))
-                            <span class="inline-block text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full mt-1">
-                                {{ $hit['type'] ?? $hit['entityType'] ?? '' }}
-                            </span>
-                            @endif
-
-                            @if(!empty($hit['listName']) || !empty($hit['source']) || !empty($hit['list']))
-                            <span class="inline-block text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full mt-1 ml-1">
-                                {{ $hit['listName'] ?? $hit['source'] ?? $hit['list'] ?? '' }}
-                            </span>
-                            @endif
-
-                            @if(!empty($hit['score']) || !empty($hit['matchScore']))
-                            <p class="text-xs text-gray-400 mt-1">
-                                Match score: <span class="font-semibold text-gray-600">{{ $hit['score'] ?? $hit['matchScore'] }}%</span>
-                            </p>
-                            @endif
-
-                            @if(!empty($hit['nationality']) || !empty($hit['country']))
-                            <p class="text-xs text-gray-400 mt-0.5">
-                                {{ $hit['nationality'] ?? $hit['country'] ?? '' }}
-                            </p>
-                            @endif
-
-                            @if(!empty($hit['reason']) || !empty($hit['remarks']))
-                            <p class="text-xs text-gray-500 mt-1 line-clamp-2">
-                                {{ $hit['reason'] ?? $hit['remarks'] ?? '' }}
-                            </p>
-                            @endif
-                        </div>
+                    <p class="font-semibold text-gray-800">
+                        {{ $hit['name'] ?? $hit['fullName'] ?? 'Unknown' }}
+                    </p>
+                    <div class="flex flex-wrap gap-1.5 mt-1.5">
+                        @if(!empty($hit['type']))
+                        <span class="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">
+                            {{ $hit['type'] }}
+                        </span>
+                        @endif
+                        @if(!empty($hit['riskLevel']))
+                        <span class="text-xs px-2 py-0.5 rounded-full
+                            {{ $hit['riskLevel'] === 'CRITICAL' ? 'bg-red-100 text-red-700' : ($hit['riskLevel'] === 'HIGH' ? 'bg-orange-100 text-orange-700' : 'bg-amber-100 text-amber-700') }}">
+                            {{ $hit['riskLevel'] }}
+                        </span>
+                        @endif
+                        @if(!empty($hit['list']['name']))
+                        <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                            {{ $hit['list']['name'] }}
+                        </span>
+                        @endif
+                        @if(!empty($hit['matchScore']))
+                        <span class="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">
+                            {{ $hit['matchScore'] }}% match
+                        </span>
+                        @endif
+                        @if(!empty($hit['matchType']))
+                        <span class="text-xs bg-purple-50 text-purple-600 px-2 py-0.5 rounded-full">
+                            {{ ucfirst($hit['matchType']) }}
+                        </span>
+                        @endif
                     </div>
+                    @if(!empty($hit['programs']) && is_array($hit['programs']))
+                    <p class="text-xs text-gray-500 mt-1">
+                        {{ implode(', ', $hit['programs']) }}
+                    </p>
+                    @endif
+                    @if(!empty($hit['reason']))
+                    <p class="text-xs text-gray-400 mt-0.5">{{ $hit['reason'] }}</p>
+                    @endif
                 </div>
                 @endforeach
             </div>
