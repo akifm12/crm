@@ -1,0 +1,133 @@
+<?php
+// app/Http/Controllers/Tenant/ClientController.php
+
+namespace App\Http\Controllers\Tenant;
+
+use App\Http\Controllers\Controller;
+use App\Models\BullionClient;
+use App\Models\ClientDocument;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+
+class ClientController extends Controller
+{
+    public function index(Request $request)
+    {
+        $tenant = app('tenant');
+        $query  = BullionClient::where('tenant_id', $tenant->id);
+
+        if ($request->filled('search')) {
+            $s = $request->search;
+            $query->where(function ($q) use ($s) {
+                $q->where('company_name', 'like', "%{$s}%")
+                  ->orWhere('full_name',  'like', "%{$s}%")
+                  ->orWhere('trade_license_no', 'like', "%{$s}%")
+                  ->orWhere('email', 'like', "%{$s}%");
+            });
+        }
+
+        if ($request->filled('status')) $query->where('status', $request->status);
+        if ($request->filled('risk'))   $query->where('risk_rating', $request->risk);
+
+        $clients = $query->latest()->paginate(20)->withQueryString();
+
+        return view('tenant.clients.index', compact('tenant', 'clients'));
+    }
+
+    public function create()
+    {
+        $tenant = app('tenant');
+        return view('tenant.clients.create', compact('tenant'));
+    }
+
+    public function store(Request $request)
+    {
+        $tenant = app('tenant');
+
+        $client = BullionClient::create(array_merge(
+            $request->except(['signatories', 'shareholders', 'ubos', 'documents', 'doc_labels', 'doc_expiry', 'doc_required', '_token']),
+            ['tenant_id' => $tenant->id, 'created_by' => auth()->id()]
+        ));
+
+        foreach ($request->input('signatories', []) as $sig) {
+            if (!empty($sig['full_name'])) $client->signatories()->create($sig);
+        }
+        foreach ($request->input('shareholders', []) as $sh) {
+            if (!empty($sh['name'])) $client->shareholders()->create($sh);
+        }
+        foreach ($request->input('ubos', []) as $ubo) {
+            if (!empty($ubo['full_name'])) $client->ubos()->create($ubo);
+        }
+
+        if ($request->hasFile('documents')) {
+            foreach ($request->file('documents') as $docType => $file) {
+                if (!$file || !$file->isValid()) continue;
+                $path = $file->store("tenants/{$tenant->id}/clients/{$client->id}", 'private');
+                ClientDocument::create([
+                    'bullion_client_id' => $client->id,
+                    'tenant_id'         => $tenant->id,
+                    'document_type'     => $docType,
+                    'document_label'    => $request->input("doc_labels.{$docType}", $docType),
+                    'file_path'         => $path,
+                    'file_name'         => $file->getClientOriginalName(),
+                    'mime_type'         => $file->getMimeType(),
+                    'file_size'         => $file->getSize(),
+                    'expiry_date'       => $request->input("doc_expiry.{$docType}") ?: null,
+                    'is_required'       => (bool) $request->input("doc_required.{$docType}", false),
+                    'uploaded_by'       => auth()->id(),
+                ]);
+            }
+        }
+
+        return redirect()
+            ->route('tenant.clients.show', [$tenant->slug, $client->id])
+            ->with('success', 'Client record created. Please run a screening check.');
+    }
+
+    public function show(string $slug, BullionClient $client)
+    {
+        $tenant = app('tenant');
+        abort_if($client->tenant_id !== $tenant->id, 404);
+        $client->load(['signatories', 'shareholders', 'ubos', 'creator']);
+        $documents = ClientDocument::where('bullion_client_id', $client->id)->orderBy('document_type')->get();
+        return view('tenant.clients.show', compact('tenant', 'client', 'documents'));
+    }
+
+    public function uploadDocument(Request $request, string $slug, BullionClient $client)
+    {
+        $tenant = app('tenant');
+        abort_if($client->tenant_id !== $tenant->id, 404);
+        $request->validate(['file' => 'required|file|max:10240', 'document_type' => 'required|string', 'document_label' => 'required|string', 'expiry_date' => 'nullable|date']);
+        $file = $request->file('file');
+        $path = $file->store("tenants/{$tenant->id}/clients/{$client->id}", 'private');
+        ClientDocument::create([
+            'bullion_client_id' => $client->id,
+            'tenant_id'         => $tenant->id,
+            'document_type'     => $request->document_type,
+            'document_label'    => $request->document_label,
+            'file_path'         => $path,
+            'file_name'         => $file->getClientOriginalName(),
+            'mime_type'         => $file->getMimeType(),
+            'file_size'         => $file->getSize(),
+            'expiry_date'       => $request->expiry_date,
+            'uploaded_by'       => auth()->id(),
+        ]);
+        return back()->with('success', 'Document uploaded.');
+    }
+
+    public function downloadDocument(string $slug, ClientDocument $document)
+    {
+        $tenant = app('tenant');
+        abort_if($document->tenant_id !== $tenant->id, 404);
+        return Storage::disk('private')->download($document->file_path, $document->file_name);
+    }
+
+    public function deleteDocument(string $slug, ClientDocument $document)
+    {
+        $tenant = app('tenant');
+        abort_if($document->tenant_id !== $tenant->id, 404);
+        Storage::disk('private')->delete($document->file_path);
+        $document->delete();
+        return back()->with('success', 'Document deleted.');
+    }
+}
