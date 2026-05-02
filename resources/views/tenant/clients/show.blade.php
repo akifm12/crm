@@ -420,10 +420,17 @@ $isCorporate = $client->client_type !== 'individual';
                 <div class="bg-white rounded-xl border border-gray-200 p-4">
                     <h3 class="text-sm font-semibold text-gray-700 mb-2">Screen this client</h3>
                     <p class="text-xs text-gray-400 mb-3">{{ $client->displayName() }}</p>
+                    <form method="POST" action="{{ route('tenant.clients.screen', [$tenant->slug, $client->id]) }}">
+                        @csrf
+                        <button type="submit"
+                                class="w-full flex items-center justify-center gap-2 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                            Screen now
+                        </button>
+                    </form>
                     <a href="{{ route('tenant.screening', $tenant->slug) }}?client={{ $client->id }}"
-                       class="w-full flex items-center justify-center gap-2 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                        Run screening now
+                       class="mt-2 w-full flex items-center justify-center gap-2 py-2 text-sm font-medium text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50 transition">
+                        Advanced screening
                     </a>
                 </div>
             </div>

@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\WhatsAppController;
 use App\Http\Controllers\Admin\DocumentController;
 use App\Http\Controllers\Tenant\DashboardController as TenantDashboard;
 use App\Http\Controllers\Tenant\ClientController;
+use App\Http\Controllers\Tenant\ScreeningController as TenantScreeningController;
 use App\Models\CrmQuotation;
 
 require __DIR__.'/auth.php';
@@ -114,7 +115,9 @@ Route::prefix('{slug}')
         Route::post('/clients/{client}/documents',   [ClientController::class, 'uploadDocument'])->name('docs.upload');
         Route::get('/documents/{document}/download', [ClientController::class, 'downloadDocument'])->name('docs.download');
         Route::delete('/documents/{document}',       [ClientController::class, 'deleteDocument'])->name('docs.delete');
-        Route::get('/screening',    fn() => view('tenant.stub', ['module' => 'Screening',         'tenant' => app('tenant')]))->name('screening');
+        Route::get('/screening',                          [TenantScreeningController::class, 'index'])->name('screening');
+        Route::post('/screening/run',                      [TenantScreeningController::class, 'run'])->name('screening.run');
+        Route::post('/clients/{client}/screen',           [TenantScreeningController::class, 'screenClient'])->name('clients.screen');
         Route::get('/risk',         fn() => view('tenant.stub', ['module' => 'Risk Assessment',   'tenant' => app('tenant')]))->name('risk');
         Route::get('/docs/company', fn() => view('tenant.stub', ['module' => 'Company Documents', 'tenant' => app('tenant')]))->name('docs.company');
         Route::get('/docs/clients', fn() => view('tenant.stub', ['module' => 'Client Documents',  'tenant' => app('tenant')]))->name('docs.clients');
