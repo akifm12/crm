@@ -58,9 +58,9 @@ class BullionClient extends Model
 
     public function displayName(): string
     {
-        return $this->client_type === 'corporate'
-            ? $this->company_name
-            : $this->full_name;
+        return $this->client_type === 'individual'
+            ? ($this->full_name ?? 'Unnamed Individual')
+            : ($this->company_name ?? 'Unnamed Company');
     }
 
     public function riskBadgeColor(): string
