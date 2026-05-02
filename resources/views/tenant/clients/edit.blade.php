@@ -232,8 +232,8 @@ $typeLabels  = ['corporate_local'=>'Corporate — Local','corporate_import'=>'Co
                 @include('tenant.clients._field', ['name'=>'purpose_of_relationship','label'=>'Purpose of business relationship','required'=>true,'value'=>$client->purpose_of_relationship])
                 @include('tenant.clients._field', ['name'=>'expected_monthly_volume','label'=>'Expected monthly volume (AED)','type'=>'number','value'=>$client->expected_monthly_volume])
                 @include('tenant.clients._select', ['name'=>'expected_monthly_frequency','label'=>'Transaction frequency','value'=>$client->expected_monthly_frequency,'options'=>['1-5'=>'1–5 per month','6-15'=>'6–15 per month','16-30'=>'16–30 per month','30+'=>'More than 30 per month']])
-                @include('tenant.clients._select', ['name'=>'cdd_type','label'=>'CDD type','default'=>$client->cdd_type ?? 'standard','options'=>['standard'=>'Standard CDD','enhanced'=>'Enhanced Due Diligence (EDD)']))
-            </div>
+				@include('tenant.clients._select', ['name'=>'cdd_type','label'=>'CDD type','default'=>$client->cdd_type ?? 'standard','options'=>['standard'=>'Standard CDD','enhanced'=>'Enhanced Due Diligence (EDD)']])
+			</div>
 
             {{-- Source of funds --}}
             <div>
