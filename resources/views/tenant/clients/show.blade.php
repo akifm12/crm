@@ -521,7 +521,13 @@ $isCorporate = $client->client_type !== 'individual';
 
             {{-- Update risk form --}}
             <div class="bg-white rounded-xl border border-gray-200 p-5">
-                <h3 class="text-sm font-semibold text-gray-700 mb-4">Update risk assessment</h3>
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-sm font-semibold text-gray-700">Update risk assessment</h3>
+                    <a href="{{ route('tenant.risk.assess', [$tenant->slug, $client->id]) }}"
+                       class="px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition">
+                        Full assessment form →
+                    </a>
+                </div>
                 <form method="POST" action="{{ route('tenant.clients.risk', [$tenant->slug, $client->id]) }}" class="space-y-4">
                     @csrf @method('PATCH')
                     <div>

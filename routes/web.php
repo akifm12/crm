@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\DocumentController;
 use App\Http\Controllers\Tenant\DashboardController as TenantDashboard;
 use App\Http\Controllers\Tenant\ClientController;
 use App\Http\Controllers\Tenant\ScreeningController as TenantScreeningController;
+use App\Http\Controllers\Tenant\RiskController;
 use App\Models\CrmQuotation;
 
 require __DIR__.'/auth.php';
@@ -120,7 +121,9 @@ Route::prefix('{slug}')
         Route::get('/screening',                          [TenantScreeningController::class, 'index'])->name('screening');
         Route::post('/screening/run',                      [TenantScreeningController::class, 'run'])->name('screening.run');
         Route::post('/clients/{client}/screen',           [TenantScreeningController::class, 'screenClient'])->name('clients.screen');
-        Route::get('/risk',         fn() => view('tenant.stub', ['module' => 'Risk Assessment',   'tenant' => app('tenant')]))->name('risk');
+        Route::get('/risk',                          [RiskController::class, 'index'])->name('risk');
+        Route::get('/risk/{client}/assess',          [RiskController::class, 'assess'])->name('risk.assess');
+        Route::post('/risk/{client}/assess',         [RiskController::class, 'saveAssessment'])->name('risk.save');
         Route::get('/docs/company', fn() => view('tenant.stub', ['module' => 'Company Documents', 'tenant' => app('tenant')]))->name('docs.company');
         Route::get('/docs/clients', fn() => view('tenant.stub', ['module' => 'Client Documents',  'tenant' => app('tenant')]))->name('docs.clients');
         Route::get('/goaml',        fn() => view('tenant.stub', ['module' => 'goAML Reports',     'tenant' => app('tenant')]))->name('goaml');

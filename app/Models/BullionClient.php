@@ -23,7 +23,7 @@ class BullionClient extends Model
         'status', 'screening_status', 'screening_date', 'screening_reference', 'screening_result',
         'decl_pep', 'decl_supply_chain', 'decl_cahra', 'decl_source_of_funds',
         'decl_sanctions', 'decl_ubo', 'decl_master_signed', 'master_declaration_path',
-        'created_by',
+        'created_by', 'risk_assessment_data', 'risk_assessed_at', 'risk_assessed_by',
     ];
 
     protected $casts = [
@@ -46,6 +46,8 @@ class BullionClient extends Model
         'decl_sanctions'        => 'boolean',
         'decl_ubo'              => 'boolean',
         'decl_master_signed'    => 'boolean',
+        'risk_assessment_data'  => 'array',
+        'risk_assessed_at'      => 'datetime',
     ];
 
     public function tenant(): BelongsTo    { return $this->belongsTo(Tenant::class); }
