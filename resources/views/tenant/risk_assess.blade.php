@@ -20,6 +20,14 @@ $countryRisk = in_array($clientCountry, $highRiskCountries) ? 3 : (in_array($cli
 @endphp
 
 <form method="POST" action="{{ route('tenant.risk.save', [$tenant->slug, $client->id]) }}" x-data="riskForm()">
+@if($errors->any())
+<div class="mb-5 p-4 bg-red-50 border border-red-200 rounded-xl">
+    <p class="text-sm font-semibold text-red-700 mb-2">Please fix the following:</p>
+    <ul class="text-sm text-red-600 space-y-1 list-disc list-inside">
+        @foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach
+    </ul>
+</div>
+@endif
 @csrf
 
 {{-- Client info header --}}

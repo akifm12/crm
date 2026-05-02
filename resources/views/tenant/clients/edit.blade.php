@@ -51,7 +51,7 @@ $typeLabels  = ['corporate_local'=>'Corporate — Local','corporate_import'=>'Co
                 @include('tenant.clients._field', ['name'=>'trn_number','label'=>'TRN number','value'=>$client->trn_number])
                 @include('tenant.clients._field', ['name'=>'ejari_number','label'=>'Ejari number','value'=>$client->ejari_number])
                 @include('tenant.clients._select', ['name'=>'legal_form','label'=>'Legal form','value'=>$client->legal_form,'options'=>['LLC'=>'LLC','FZE'=>'FZE','FZCO'=>'FZCO','Sole Establishment'=>'Sole Establishment','Civil Company'=>'Civil Company','Branch'=>'Branch (Foreign)','Other'=>'Other']])
-                @include('tenant.clients._field', ['name'=>'country_of_incorporation','label'=>'Country of incorporation','required'=>true,'value'=>$client->country_of_incorporation])
+                @include('tenant.clients._country', ['name'=>'country_of_incorporation','label'=>'Country of incorporation','required'=>true,'value'=>$client->country_of_incorporation])
                 @include('tenant.clients._field', ['name'=>'business_activity','label'=>'Business activity','required'=>true,'value'=>$client->business_activity])
                 @include('tenant.clients._field', ['name'=>'nature_of_business','label'=>'Nature of business','value'=>$client->nature_of_business])
                 @include('tenant.clients._field', ['name'=>'email','label'=>'Email','type'=>'email','value'=>$client->email])
@@ -66,7 +66,7 @@ $typeLabels  = ['corporate_local'=>'Corporate — Local','corporate_import'=>'Co
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 @include('tenant.clients._field', ['name'=>'full_name','label'=>'Full name','required'=>true,'value'=>$client->full_name])
                 @include('tenant.clients._field', ['name'=>'name_arabic','label'=>'Name in Arabic','value'=>$client->name_arabic])
-                @include('tenant.clients._field', ['name'=>'nationality','label'=>'Nationality','required'=>true,'value'=>$client->nationality])
+                @include('tenant.clients._country', ['name'=>'nationality','label'=>'Nationality','required'=>true,'value'=>$client->nationality])
                 @include('tenant.clients._field', ['name'=>'dob','label'=>'Date of birth','type'=>'date','value'=>$client->dob?->format('Y-m-d')])
                 @include('tenant.clients._field', ['name'=>'passport_number','label'=>'Passport number','required'=>true,'value'=>$client->passport_number])
                 @include('tenant.clients._field', ['name'=>'passport_expiry','label'=>'Passport expiry','type'=>'date','value'=>$client->passport_expiry?->format('Y-m-d')])
@@ -232,8 +232,8 @@ $typeLabels  = ['corporate_local'=>'Corporate — Local','corporate_import'=>'Co
                 @include('tenant.clients._field', ['name'=>'purpose_of_relationship','label'=>'Purpose of business relationship','required'=>true,'value'=>$client->purpose_of_relationship])
                 @include('tenant.clients._field', ['name'=>'expected_monthly_volume','label'=>'Expected monthly volume (AED)','type'=>'number','value'=>$client->expected_monthly_volume])
                 @include('tenant.clients._select', ['name'=>'expected_monthly_frequency','label'=>'Transaction frequency','value'=>$client->expected_monthly_frequency,'options'=>['1-5'=>'1–5 per month','6-15'=>'6–15 per month','16-30'=>'16–30 per month','30+'=>'More than 30 per month']])
-				@include('tenant.clients._select', ['name'=>'cdd_type','label'=>'CDD type','default'=>$client->cdd_type ?? 'standard','options'=>['standard'=>'Standard CDD','enhanced'=>'Enhanced Due Diligence (EDD)']])
-			</div>
+                @include('tenant.clients._select', ['name'=>'cdd_type','label'=>'CDD type','default'=>$client->cdd_type ?? 'standard','options'=>['standard'=>'Standard CDD','enhanced'=>'Enhanced Due Diligence (EDD)']])
+            </div>
 
             {{-- Source of funds --}}
             <div>

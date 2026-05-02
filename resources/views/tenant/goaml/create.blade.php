@@ -32,6 +32,15 @@ $dir_phone                = old('d_tph_number', $client?->phone ?? '');
 <form method="POST" action="{{ route('tenant.goaml.store', $tenant->slug) }}" novalidate>
 @csrf
 
+@if($errors->any())
+<div class="mb-5 p-4 bg-red-50 border border-red-200 rounded-xl">
+    <p class="text-sm font-semibold text-red-700 mb-2">Please fix the following errors:</p>
+    <ul class="text-sm text-red-600 space-y-1 list-disc list-inside">
+        @foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach
+    </ul>
+</div>
+@endif
+
 {{-- Client picker (if not pre-loaded) --}}
 @if(!$client)
 <div class="bg-white rounded-xl border border-gray-200 p-5 mb-5">
@@ -140,10 +149,13 @@ $dir_phone                = old('d_tph_number', $client?->phone ?? '');
                    class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
         </div>
         <div>
-            <label class="block text-xs font-medium text-gray-600 mb-1">Passport country (2-letter ISO) <span class="text-red-500">*</span></label>
-            <input type="text" name="passport_country" value="{{ $dir_passport_country }}"
-                   required maxlength="2" placeholder="AE / GB / IN"
-                   class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase">
+            <label class="block text-xs font-medium text-gray-600 mb-1">Passport country <span class="text-red-500">*</span></label>
+            <select name="passport_country" required class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                <option value="">— Select country —</option>
+                @foreach($countries as $code => $name)
+                <option value="{{ $code }}" {{ old('passport_country', $dir_passport_country) === $code ? 'selected' : '' }}>{{ $name }}</option>
+                @endforeach
+            </select>
         </div>
         <div>
             <label class="block text-xs font-medium text-gray-600 mb-1">ID number <span class="text-red-500">*</span></label>

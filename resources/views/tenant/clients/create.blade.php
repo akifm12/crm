@@ -111,7 +111,7 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             @include('tenant.clients._select', ['name'=>'legal_form','label'=>'Legal form','options'=>['LLC'=>'LLC','Sole Establishment'=>'Sole Establishment','Free Zone LLC'=>'Free Zone LLC','Free Zone Establishment'=>'Free Zone Establishment','Public Joint Stock'=>'Public Joint Stock','Branch'=>'Branch of Foreign Company','Other'=>'Other']])
             @include('tenant.clients._field', ['name'=>'ejari_number','label'=>'Ejari number'])
-            @include('tenant.clients._field', ['name'=>'country_of_incorporation','label'=>'Country of incorporation','value'=>'UAE'])
+            @include('tenant.clients._country', ['name'=>'country_of_incorporation','label'=>'Country of incorporation','required'=>true,'value'=>'AE'])
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             @include('tenant.clients._field', ['name'=>'business_activity','label'=>'Business activity','required'=>true])
@@ -339,7 +339,7 @@
             @include('tenant.clients._field', ['name'=>'name_arabic','label'=>'Name in Arabic'])
         </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            @include('tenant.clients._field', ['name'=>'nationality','label'=>'Nationality','required'=>true])
+            @include('tenant.clients._country', ['name'=>'nationality','label'=>'Nationality','required'=>true])
             @include('tenant.clients._field', ['name'=>'dob','label'=>'Date of birth','required'=>true,'type'=>'date'])
             @include('tenant.clients._field', ['name'=>'email','label'=>'Email address','type'=>'email'])
         </div>
