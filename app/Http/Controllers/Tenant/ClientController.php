@@ -58,9 +58,9 @@ class ClientController extends Controller
             [
                 'tenant_id'   => $tenant->id,
                 'created_by'  => auth()->id(),
-				'cdd_type'    => $request->input('cdd_type') ?: 'standard',
-				'risk_rating' => $request->input('risk_rating') ?: 'low',
-				'status'      => $request->input('status') ?: 'pending',
+                'cdd_type'    => $request->input('cdd_type', 'standard'),
+                'risk_rating' => $request->input('risk_rating', 'low'),
+                'status'      => $request->input('status', 'pending'),
             ]
         ));
 
@@ -184,6 +184,62 @@ class ClientController extends Controller
             'decl_master_signed'  => $request->boolean('decl_master_signed'),
         ]);
         return back()->with('success', 'Declarations updated.');
+    }
+
+
+    // ── Edit form ──────────────────────────────────────────────────────────
+
+    public function edit(string $slug, BullionClient $client)
+    {
+        $tenant = app('tenant');
+        abort_if($client->tenant_id !== $tenant->id, 404);
+        $client->load(['signatories', 'shareholders', 'ubos']);
+        return view('tenant.clients.edit', compact('tenant', 'client'));
+    }
+
+    // ── Update ─────────────────────────────────────────────────────────────
+
+    public function update(Request $request, string $slug, BullionClient $client)
+    {
+        $tenant = app('tenant');
+        abort_if($client->tenant_id !== $tenant->id, 404);
+
+        $client->update(array_merge(
+            $request->except(['_token', '_method', 'signatories', 'shareholders', 'ubos']),
+            [
+                'cdd_type'    => $request->input('cdd_type') ?: 'standard',
+                'risk_rating' => $request->input('risk_rating') ?: $client->risk_rating,
+                'status'      => $request->input('status') ?: $client->status,
+            ]
+        ));
+
+        // Sync signatories — delete and recreate
+        if ($request->has('signatories')) {
+            $client->signatories()->delete();
+            foreach ($request->input('signatories', []) as $sig) {
+                if (!empty($sig['full_name'])) $client->signatories()->create($sig);
+            }
+        }
+
+        // Sync shareholders
+        if ($request->has('shareholders')) {
+            $client->shareholders()->delete();
+            foreach ($request->input('shareholders', []) as $sh) {
+                if (!empty($sh['name'])) $client->shareholders()->create($sh);
+            }
+        }
+
+        // Sync UBOs
+        if ($request->has('ubos')) {
+            $client->ubos()->delete();
+            foreach ($request->input('ubos', []) as $ubo) {
+                if (!empty($ubo['full_name'])) $client->ubos()->create($ubo);
+            }
+        }
+
+        return redirect()
+            ->route('tenant.clients.show', [$slug, $client->id])
+            ->with('success', 'Client record updated successfully.');
     }
 
 }
