@@ -510,19 +510,64 @@ function clientForm() {
         clientType: 'corporate_local',
         step: 1,
         indStep: 1,
+        stepErrors:    {1:false,2:false,3:false,4:false,5:false,6:false,7:false},
+        indStepErrors: {1:false,2:false,3:false,4:false,5:false},
         signatories:  [{ full_name:'', position:'', nationality:'', passport_number:'', passport_expiry:'', eid_number:'' }],
         shareholders: [{ type:'individual', name:'', nationality:'', ownership_percentage:'', passport_number:'', is_ubo:false }],
         ubos:         [{ full_name:'', nationality:'', dob:'', passport_number:'', ownership_percentage:'', country_of_residence:'', pep_status:false }],
-        setType(t) { this.clientType=t; this.step=1; this.indStep=1; window.scrollTo(0,0); },
-        nextStep() { if(this.clientType!=='individual'&&this.step<7){this.step++;} else if(this.clientType==='individual'&&this.indStep<5){this.indStep++;} window.scrollTo(0,0); },
-        prevStep() { if(this.clientType!=='individual'&&this.step>1){this.step--;} else if(this.clientType==='individual'&&this.indStep>1){this.indStep--;} window.scrollTo(0,0); },
+        setType(t) {
+            this.clientType=t; this.step=1; this.indStep=1;
+            this.stepErrors={1:false,2:false,3:false,4:false,5:false,6:false,7:false};
+            this.indStepErrors={1:false,2:false,3:false,4:false,5:false};
+            window.scrollTo(0,0);
+        },
+        nextStep() {
+            if(this.clientType!=='individual'&&this.step<7){this.step++;}
+            else if(this.clientType==='individual'&&this.indStep<5){this.indStep++;}
+            window.scrollTo(0,0);
+        },
+        prevStep() {
+            if(this.clientType!=='individual'&&this.step>1){this.step--;}
+            else if(this.clientType==='individual'&&this.indStep>1){this.indStep--;}
+            window.scrollTo(0,0);
+        },
         addSig()    { this.signatories.push({full_name:'',position:'',nationality:'',passport_number:'',passport_expiry:'',eid_number:''}); },
         removeSig(i){ this.signatories.splice(i,1); },
         addSh()     { this.shareholders.push({type:'individual',name:'',nationality:'',ownership_percentage:'',passport_number:'',is_ubo:false}); },
         removeSh(i) { this.shareholders.splice(i,1); },
         addUbo()    { this.ubos.push({full_name:'',nationality:'',dob:'',passport_number:'',ownership_percentage:'',country_of_residence:'',pep_status:false}); },
         removeUbo(i){ this.ubos.splice(i,1); },
-        submitForm(){ this.$el.submit(); },
+        validateAndSubmit() {
+            const isInd    = this.clientType === 'individual';
+            const total    = isInd ? 5 : 7;
+            const attr     = isInd ? 'data-ind-step' : 'data-corp-step';
+            const errors   = {};
+            let   first    = null;
+
+            for (let s = 1; s < total; s++) {
+                const sec = document.querySelector('[' + attr + '="' + s + '"]');
+                if (!sec) continue;
+                let bad = false;
+                sec.querySelectorAll('input[required],select[required],textarea[required]').forEach(function(inp) {
+                    if (!inp.value || inp.value.trim() === '') bad = true;
+                });
+                if (bad) { errors[s] = true; if (!first) first = s; }
+            }
+
+            if (isInd) {
+                this.indStepErrors = Object.assign({1:false,2:false,3:false,4:false,5:false}, errors);
+            } else {
+                this.stepErrors = Object.assign({1:false,2:false,3:false,4:false,5:false,6:false,7:false}, errors);
+            }
+
+            if (first !== null) {
+                if (isInd) { this.indStep = first; } else { this.step = first; }
+                window.scrollTo(0, 0);
+                return;
+            }
+
+            document.querySelector('form[novalidate]').submit();
+        },
     }
 }
 </script>
