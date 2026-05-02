@@ -58,9 +58,9 @@ class ClientController extends Controller
             [
                 'tenant_id'   => $tenant->id,
                 'created_by'  => auth()->id(),
-                'cdd_type'    => $request->input('cdd_type', 'standard'),
-                'risk_rating' => $request->input('risk_rating', 'low'),
-                'status'      => $request->input('status', 'pending'),
+				'cdd_type'    => $request->input('cdd_type') ?: 'standard',
+				'risk_rating' => $request->input('risk_rating') ?: 'low',
+				'status'      => $request->input('status') ?: 'pending',
             ]
         ));
 
