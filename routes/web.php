@@ -149,6 +149,12 @@ Route::prefix('{slug}')
         Route::post('/risk/{client}/assess',         [RiskController::class, 'saveAssessment'])->name('risk.save');
         Route::get('/docs/company', fn() => view('tenant.stub', ['module' => 'Company Documents', 'tenant' => app('tenant')]))->name('docs.company');
         Route::get('/docs/clients', fn() => view('tenant.stub', ['module' => 'Client Documents',  'tenant' => app('tenant')]))->name('docs.clients');
-        Route::get('/goaml',        fn() => view('tenant.stub', ['module' => 'goAML Reports',     'tenant' => app('tenant')]))->name('goaml');
+		Route::get('/goaml',                   [\App\Http\Controllers\Tenant\GoamlController::class, 'index'])->name('goaml');
+		Route::get('/goaml/settings',          [\App\Http\Controllers\Tenant\GoamlController::class, 'settings'])->name('goaml.settings');
+		Route::post('/goaml/settings',         [\App\Http\Controllers\Tenant\GoamlController::class, 'saveSettings'])->name('goaml.settings.save');
+		Route::get('/goaml/create',            [\App\Http\Controllers\Tenant\GoamlController::class, 'create'])->name('goaml.create');
+		Route::post('/goaml',                  [\App\Http\Controllers\Tenant\GoamlController::class, 'store'])->name('goaml.store');
+		Route::get('/goaml/{report}/download', [\App\Http\Controllers\Tenant\GoamlController::class, 'download'])->name('goaml.download');
+		Route::delete('/goaml/{report}',       [\App\Http\Controllers\Tenant\GoamlController::class, 'destroy'])->name('goaml.destroy');      
         Route::get('/settings',     fn() => view('tenant.stub', ['module' => 'Settings',          'tenant' => app('tenant')]))->name('settings');
     });
