@@ -11,6 +11,11 @@ use Illuminate\Support\Facades\Storage;
 
 class ClientController extends Controller
 {
+    private function countries(): array
+    {
+        return \App\Models\Country::orderBy('country_name')->pluck('country_name', 'country_code')->toArray();
+    }
+
     public function index(Request $request)
     {
         $tenant = app('tenant');
@@ -32,21 +37,21 @@ class ClientController extends Controller
 
         $clients = $query->latest()->paginate(20)->withQueryString();
 
-        // Type counts for tab badges
         $typeCounts = BullionClient::where('tenant_id', $tenant->id)
             ->selectRaw('client_type, count(*) as total')
             ->groupBy('client_type')
             ->pluck('total', 'client_type')
             ->toArray();
-        $typeCounts[''] = array_sum($typeCounts); // All count
+        $typeCounts[''] = array_sum($typeCounts);
 
         return view('tenant.clients.index', compact('tenant', 'clients', 'typeCounts'));
     }
 
     public function create()
     {
-        $tenant = app('tenant');
-        return view('tenant.clients.create', compact('tenant'));
+        $tenant    = app('tenant');
+        $countries = $this->countries();
+        return view('tenant.clients.create', compact('tenant', 'countries'));
     }
 
     public function store(Request $request)
@@ -58,9 +63,9 @@ class ClientController extends Controller
             [
                 'tenant_id'   => $tenant->id,
                 'created_by'  => auth()->id(),
-                'cdd_type'    => $request->input('cdd_type', 'standard'),
-                'risk_rating' => $request->input('risk_rating', 'low'),
-                'status'      => $request->input('status', 'pending'),
+                'cdd_type'    => $request->input('cdd_type') ?: 'standard',
+                'risk_rating' => $request->input('risk_rating') ?: 'low',
+                'status'      => $request->input('status') ?: 'pending',
             ]
         ));
 
@@ -108,6 +113,61 @@ class ClientController extends Controller
         return view('tenant.clients.show', compact('tenant', 'client', 'documents'));
     }
 
+    public function edit(string $slug, BullionClient $client)
+    {
+        $tenant = app('tenant');
+        abort_if($client->tenant_id !== $tenant->id, 404);
+        $client->load(['signatories', 'shareholders', 'ubos']);
+        $countries = $this->countries();
+        return view('tenant.clients.edit', compact('tenant', 'client', 'countries'));
+    }
+
+    public function update(Request $request, string $slug, BullionClient $client)
+    {
+        $tenant = app('tenant');
+        abort_if($client->tenant_id !== $tenant->id, 404);
+
+        $data = $request->except(['_token', '_method', 'signatories', 'shareholders', 'ubos']);
+
+        // Protect nullable fields from overwriting with empty string
+        foreach (['country_of_incorporation', 'nationality', 'cdd_type', 'risk_rating', 'status'] as $field) {
+            if (isset($data[$field]) && $data[$field] === '') {
+                unset($data[$field]);
+            }
+        }
+
+        $data['cdd_type']    = $request->input('cdd_type') ?: $client->cdd_type ?: 'standard';
+        $data['risk_rating'] = $request->input('risk_rating') ?: $client->risk_rating ?: 'low';
+        $data['status']      = $request->input('status') ?: $client->status ?: 'pending';
+
+        $client->update($data);
+
+        if ($request->has('signatories')) {
+            $client->signatories()->delete();
+            foreach ($request->input('signatories', []) as $sig) {
+                if (!empty($sig['full_name'])) $client->signatories()->create($sig);
+            }
+        }
+
+        if ($request->has('shareholders')) {
+            $client->shareholders()->delete();
+            foreach ($request->input('shareholders', []) as $sh) {
+                if (!empty($sh['name'])) $client->shareholders()->create($sh);
+            }
+        }
+
+        if ($request->has('ubos')) {
+            $client->ubos()->delete();
+            foreach ($request->input('ubos', []) as $ubo) {
+                if (!empty($ubo['full_name'])) $client->ubos()->create($ubo);
+            }
+        }
+
+        return redirect()
+            ->route('tenant.clients.show', [$slug, $client->id])
+            ->with('success', 'Client record updated successfully.');
+    }
+
     public function uploadDocument(Request $request, string $slug, BullionClient $client)
     {
         $tenant = app('tenant');
@@ -146,8 +206,6 @@ class ClientController extends Controller
         return back()->with('success', 'Document deleted.');
     }
 
-    // ── Update risk rating ─────────────────────────────────────────────────
-
     public function updateRisk(Request $request, string $slug, BullionClient $client)
     {
         $tenant = app('tenant');
@@ -157,8 +215,6 @@ class ClientController extends Controller
         return back()->with('success', 'Risk rating updated.');
     }
 
-    // ── Update status ──────────────────────────────────────────────────────
-
     public function updateStatus(Request $request, string $slug, BullionClient $client)
     {
         $tenant = app('tenant');
@@ -167,8 +223,6 @@ class ClientController extends Controller
         $client->update(['status' => $request->status]);
         return back()->with('success', 'Status updated.');
     }
-
-    // ── Update declarations ────────────────────────────────────────────────
 
     public function updateDeclarations(Request $request, string $slug, BullionClient $client)
     {
@@ -185,61 +239,4 @@ class ClientController extends Controller
         ]);
         return back()->with('success', 'Declarations updated.');
     }
-
-
-    // ── Edit form ──────────────────────────────────────────────────────────
-
-    public function edit(string $slug, BullionClient $client)
-    {
-        $tenant = app('tenant');
-        abort_if($client->tenant_id !== $tenant->id, 404);
-        $client->load(['signatories', 'shareholders', 'ubos']);
-        return view('tenant.clients.edit', compact('tenant', 'client'));
-    }
-
-    // ── Update ─────────────────────────────────────────────────────────────
-
-    public function update(Request $request, string $slug, BullionClient $client)
-    {
-        $tenant = app('tenant');
-        abort_if($client->tenant_id !== $tenant->id, 404);
-
-        $client->update(array_merge(
-            $request->except(['_token', '_method', 'signatories', 'shareholders', 'ubos']),
-            [
-                'cdd_type'    => $request->input('cdd_type') ?: 'standard',
-                'risk_rating' => $request->input('risk_rating') ?: $client->risk_rating,
-                'status'      => $request->input('status') ?: $client->status,
-            ]
-        ));
-
-        // Sync signatories — delete and recreate
-        if ($request->has('signatories')) {
-            $client->signatories()->delete();
-            foreach ($request->input('signatories', []) as $sig) {
-                if (!empty($sig['full_name'])) $client->signatories()->create($sig);
-            }
-        }
-
-        // Sync shareholders
-        if ($request->has('shareholders')) {
-            $client->shareholders()->delete();
-            foreach ($request->input('shareholders', []) as $sh) {
-                if (!empty($sh['name'])) $client->shareholders()->create($sh);
-            }
-        }
-
-        // Sync UBOs
-        if ($request->has('ubos')) {
-            $client->ubos()->delete();
-            foreach ($request->input('ubos', []) as $ubo) {
-                if (!empty($ubo['full_name'])) $client->ubos()->create($ubo);
-            }
-        }
-
-        return redirect()
-            ->route('tenant.clients.show', [$slug, $client->id])
-            ->with('success', 'Client record updated successfully.');
-    }
-
 }
