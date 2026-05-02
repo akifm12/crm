@@ -722,7 +722,6 @@ function MailApp() {
         { id: 'logs',     label: 'Send Logs' },
         { id: 'bounces',  label: 'Bounce Log' },
         { id: 'ai',       label: 'AI Flyer' },
-        { id: 'settings', label: 'Settings' },
     ];
 
     const [tab, setTab]           = useState('contacts');
@@ -743,7 +742,7 @@ function MailApp() {
     const fetchContacts = async () => {
         setLoading(true);
         try {
-            const r = await fetch('/marketing/api/contacts');
+				const r = await fetch('/marketing/api/contacts'); 	
             const d = await r.json();
             if (Array.isArray(d)) { setContacts(d); addToast(`Loaded ${d.length} subscribers`, 'success'); }
             else throw new Error('Expected array');
@@ -786,7 +785,6 @@ function MailApp() {
         {tab === 'logs'     && <LogsPage logs={logs} />}
         {tab === 'bounces'  && <BouncePage />}
         {tab === 'ai'       && <AIFlyerPage addToast={addToast} onUseHtml={html => { setComposeHtml(html); setTab('compose'); addToast('HTML ready in Compose!', 'success'); }} />}
-        {tab === 'settings' && <SettingsPage settings={settings} />}
     </>);
 }
 
