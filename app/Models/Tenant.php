@@ -28,6 +28,11 @@ class Tenant extends Model
         return $this->hasMany(KycSubmission::class);
     }
 
+    public function documents(): HasMany
+    {
+        return $this->hasMany(TenantDocument::class);
+    }
+
     public function clients(): HasMany
     {
         return $this->hasMany(ClientUser::class);
