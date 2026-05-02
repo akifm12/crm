@@ -28,10 +28,19 @@ class ClientController extends Controller
 
         if ($request->filled('status')) $query->where('status', $request->status);
         if ($request->filled('risk'))   $query->where('risk_rating', $request->risk);
+        if ($request->filled('type'))   $query->where('client_type', $request->type);
 
         $clients = $query->latest()->paginate(20)->withQueryString();
 
-        return view('tenant.clients.index', compact('tenant', 'clients'));
+        // Type counts for tab badges
+        $typeCounts = BullionClient::where('tenant_id', $tenant->id)
+            ->selectRaw('client_type, count(*) as total')
+            ->groupBy('client_type')
+            ->pluck('total', 'client_type')
+            ->toArray();
+        $typeCounts[''] = array_sum($typeCounts); // All count
+
+        return view('tenant.clients.index', compact('tenant', 'clients', 'typeCounts'));
     }
 
     public function create()

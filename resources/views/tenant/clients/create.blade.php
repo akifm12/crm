@@ -12,30 +12,40 @@
 <input type="hidden" name="client_type" :value="clientType">
 
 {{-- ── TYPE SELECTOR ────────────────────────────────────────────────────────── --}}
-<div class="bg-white rounded-xl border border-gray-200 p-5 mb-5 flex flex-wrap items-center gap-4">
-    <p class="text-sm font-semibold text-gray-700 flex-shrink-0">Client type:</p>
-    <div class="flex gap-3">
-        <button type="button" @click="setType('corporate')"
-                :class="clientType==='corporate' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-200 hover:border-blue-400'"
-                class="px-5 py-2 rounded-lg border text-sm font-semibold transition-all">
-            Corporate / Company
+<div class="bg-white rounded-xl border border-gray-200 p-5 mb-5">
+    <p class="text-sm font-semibold text-gray-700 mb-3">Client type</p>
+    <div class="flex flex-wrap gap-3">
+        <button type="button" @click="setType('corporate_local')"
+                :class="clientType==='corporate_local' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-200 hover:border-blue-400'"
+                class="px-5 py-2.5 rounded-lg border text-sm font-semibold transition-all">
+            Corporate — Local
+        </button>
+        <button type="button" @click="setType('corporate_import')"
+                :class="clientType==='corporate_import' ? 'bg-purple-600 text-white border-purple-600' : 'bg-white text-gray-600 border-gray-200 hover:border-purple-400'"
+                class="px-5 py-2.5 rounded-lg border text-sm font-semibold transition-all">
+            Corporate — Import
+        </button>
+        <button type="button" @click="setType('corporate_export')"
+                :class="clientType==='corporate_export' ? 'bg-amber-600 text-white border-amber-600' : 'bg-white text-gray-600 border-gray-200 hover:border-amber-400'"
+                class="px-5 py-2.5 rounded-lg border text-sm font-semibold transition-all">
+            Corporate — Export
         </button>
         <button type="button" @click="setType('individual')"
-                :class="clientType==='individual' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-200 hover:border-blue-400'"
-                class="px-5 py-2 rounded-lg border text-sm font-semibold transition-all">
+                :class="clientType==='individual' ? 'bg-gray-700 text-white border-gray-700' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'"
+                class="px-5 py-2.5 rounded-lg border text-sm font-semibold transition-all">
             Individual
         </button>
     </div>
-    <p class="text-xs text-gray-400">
-        <span x-show="clientType==='corporate'">7 steps — profile · signatories · shareholders · AML/CDD · declarations · documents · review</span>
+    <p class="text-xs text-gray-400 mt-3">
         <span x-show="clientType==='individual'">5 steps — profile · AML/CDD · declarations · documents · review</span>
+        <span x-show="clientType!=='individual'">7 steps — profile · signatories · shareholders · AML/CDD · declarations · documents · review</span>
     </p>
 </div>
 
 {{-- ── STEP INDICATORS ──────────────────────────────────────────────────────── --}}
 <div class="mb-5">
     {{-- Corporate --}}
-    <div x-show="clientType==='corporate'" class="flex items-center">
+    <div x-show="clientType!=='individual'" class="flex items-center">
         @php $cs = [1=>'Profile',2=>'Signatories',3=>'Shareholders',4=>'AML / CDD',5=>'Declarations',6=>'Documents',7=>'Review']; @endphp
         @foreach($cs as $n => $label)
         <div class="flex items-center {{ $n < count($cs) ? 'flex-1' : '' }}">
@@ -80,7 +90,7 @@
 <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
 
 {{-- ══ CORP 1 — Company Profile ══════════════════════════════════════════════ --}}
-<div x-show="clientType==='corporate' && step===1" x-cloak>
+<div x-show="clientType!=='individual' && step===1" x-cloak>
     <div class="px-6 py-4 border-b border-gray-100">
         <h2 class="font-semibold text-gray-800">Company profile</h2>
         <p class="text-xs text-gray-400 mt-0.5">Registration and contact details</p>
@@ -117,7 +127,7 @@
 </div>
 
 {{-- ══ CORP 2 — Signatories ═══════════════════════════════════════════════════ --}}
-<div x-show="clientType==='corporate' && step===2" x-cloak>
+<div x-show="clientType!=='individual' && step===2" x-cloak>
     <div class="px-6 py-4 border-b border-gray-100">
         <h2 class="font-semibold text-gray-800">Authorised signatories</h2>
         <p class="text-xs text-gray-400 mt-0.5">All persons authorised to sign on behalf of the company</p>
@@ -156,7 +166,7 @@
 </div>
 
 {{-- ══ CORP 3 — Shareholders & UBOs ═══════════════════════════════════════════ --}}
-<div x-show="clientType==='corporate' && step===3" x-cloak>
+<div x-show="clientType!=='individual' && step===3" x-cloak>
     <div class="px-6 py-4 border-b border-gray-100">
         <h2 class="font-semibold text-gray-800">Shareholders & UBOs</h2>
         <p class="text-xs text-gray-400 mt-0.5">Ownership structure — UBO threshold is 25%+ effective ownership</p>
@@ -237,7 +247,7 @@
 </div>
 
 {{-- ══ AML/CDD — shared (Corp 4, Ind 2) ══════════════════════════════════════ --}}
-<div x-show="(clientType==='corporate' && step===4) || (clientType==='individual' && indStep===2)" x-cloak>
+<div x-show="(clientType!=='individual' && step===4) || (clientType==='individual' && indStep===2)" x-cloak>
     <div class="px-6 py-4 border-b border-gray-100">
         <h2 class="font-semibold text-gray-800">AML / CDD details</h2>
         <p class="text-xs text-gray-400 mt-0.5">Risk profile, source of funds and transaction information</p>
@@ -288,7 +298,7 @@
 </div>
 
 {{-- ══ Declarations — shared (Corp 5, Ind 3) ══════════════════════════════════ --}}
-<div x-show="(clientType==='corporate' && step===5) || (clientType==='individual' && indStep===3)" x-cloak>
+<div x-show="(clientType!=='individual' && step===5) || (clientType==='individual' && indStep===3)" x-cloak>
     <div class="px-6 py-4 border-b border-gray-100">
         <h2 class="font-semibold text-gray-800">Declarations</h2>
         <p class="text-xs text-gray-400 mt-0.5">Confirm each declaration has been received and acknowledged</p>
@@ -359,7 +369,7 @@
 </div>
 
 {{-- ══ Documents — shared (Corp 6, Ind 4) ════════════════════════════════════ --}}
-<div x-show="(clientType==='corporate' && step===6) || (clientType==='individual' && indStep===4)" x-cloak>
+<div x-show="(clientType!=='individual' && step===6) || (clientType==='individual' && indStep===4)" x-cloak>
     <div class="px-6 py-4 border-b border-gray-100">
         <h2 class="font-semibold text-gray-800">Document upload</h2>
         <p class="text-xs text-gray-400 mt-0.5">Upload all available documents now. You can add more from the client profile later.</p>
@@ -367,7 +377,7 @@
     <div class="p-6 space-y-3">
 
         {{-- Corporate document list --}}
-        <div x-show="clientType==='corporate'">
+        <div x-show="clientType!=='individual'">
             @php
             $corpDocs = [
                 ['type'=>'trade_license',       'label'=>'Trade licence',                    'required'=>true,  'has_expiry'=>true],
@@ -409,7 +419,7 @@
 </div>
 
 {{-- ══ Review — shared (Corp 7, Ind 5) ══════════════════════════════════════ --}}
-<div x-show="(clientType==='corporate' && step===7) || (clientType==='individual' && indStep===5)" x-cloak>
+<div x-show="(clientType!=='individual' && step===7) || (clientType==='individual' && indStep===5)" x-cloak>
     <div class="px-6 py-4 border-b border-gray-100">
         <h2 class="font-semibold text-gray-800">Review & submit</h2>
         <p class="text-xs text-gray-400 mt-0.5">Confirm everything before creating the client record</p>
@@ -426,7 +436,7 @@
         </div>
 
         {{-- Corporate summary --}}
-        <template x-if="clientType==='corporate'">
+        <template x-if="clientType!=='individual'">
         <div class="space-y-2">
             @foreach([[1,'Company profile','Basic details, trade licence, addresses'],[2,'Authorised signatories','Persons authorised to sign'],[3,'Shareholders & UBOs','Ownership structure and beneficial owners'],[4,'AML / CDD','Risk rating, source of funds, transaction profile'],[5,'Declarations','All 6 compliance declarations'],[6,'Documents','Uploaded client documents']] as [$n,$t,$d])
             <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
@@ -464,24 +474,24 @@
 {{-- ── NAV BUTTONS ──────────────────────────────────────────────────────────── --}}
 <div class="px-6 py-4 border-t border-gray-100 bg-gray-50 flex items-center justify-between">
     <button type="button"
-            x-show="(clientType==='corporate' && step>1) || (clientType==='individual' && indStep>1)"
+            x-show="(clientType!=='individual' && step>1) || (clientType==='individual' && indStep>1)"
             @click="prevStep"
             class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg> Previous
     </button>
-    <div x-show="(clientType==='corporate' && step===1) || (clientType==='individual' && indStep===1)"></div>
+    <div x-show="(clientType!=='individual' && step===1) || (clientType==='individual' && indStep===1)"></div>
 
     <div class="flex items-center gap-3">
         <span class="text-xs text-gray-400"
-              x-text="clientType==='corporate' ? 'Step '+step+' of 7' : 'Step '+indStep+' of 5'"></span>
+              x-text="clientType!=='individual' ? 'Step '+step+' of 7' : 'Step '+indStep+' of 5'"></span>
         <button type="button"
-                x-show="(clientType==='corporate' && step<7) || (clientType==='individual' && indStep<5)"
+                x-show="(clientType!=='individual' && step<7) || (clientType==='individual' && indStep<5)"
                 @click="nextStep"
                 class="flex items-center gap-2 px-5 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition">
             Next <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
         </button>
         <button type="submit"
-                x-show="(clientType==='corporate' && step===7) || (clientType==='individual' && indStep===5)"
+                x-show="(clientType!=='individual' && step===7) || (clientType==='individual' && indStep===5)"
                 class="flex items-center gap-2 px-6 py-2 text-sm font-semibold text-white bg-green-600 rounded-lg hover:bg-green-700 transition">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg> Create client record
         </button>
@@ -494,15 +504,15 @@
 <script>
 function clientForm() {
     return {
-        clientType: 'corporate',
+        clientType: 'corporate_local',
         step: 1,
         indStep: 1,
         signatories:  [{ full_name:'', position:'', nationality:'', passport_number:'', passport_expiry:'', eid_number:'' }],
         shareholders: [{ type:'individual', name:'', nationality:'', ownership_percentage:'', passport_number:'', is_ubo:false }],
         ubos:         [{ full_name:'', nationality:'', dob:'', passport_number:'', ownership_percentage:'', country_of_residence:'', pep_status:false }],
         setType(t) { this.clientType=t; this.step=1; this.indStep=1; window.scrollTo(0,0); },
-        nextStep() { if(this.clientType==='corporate'&&this.step<7){this.step++;} else if(this.clientType==='individual'&&this.indStep<5){this.indStep++;} window.scrollTo(0,0); },
-        prevStep() { if(this.clientType==='corporate'&&this.step>1){this.step--;} else if(this.clientType==='individual'&&this.indStep>1){this.indStep--;} window.scrollTo(0,0); },
+        nextStep() { if(this.clientType!=='individual'&&this.step<7){this.step++;} else if(this.clientType==='individual'&&this.indStep<5){this.indStep++;} window.scrollTo(0,0); },
+        prevStep() { if(this.clientType!=='individual'&&this.step>1){this.step--;} else if(this.clientType==='individual'&&this.indStep>1){this.indStep--;} window.scrollTo(0,0); },
         addSig()    { this.signatories.push({full_name:'',position:'',nationality:'',passport_number:'',passport_expiry:'',eid_number:''}); },
         removeSig(i){ this.signatories.splice(i,1); },
         addSh()     { this.shareholders.push({type:'individual',name:'',nationality:'',ownership_percentage:'',passport_number:'',is_ubo:false}); },
