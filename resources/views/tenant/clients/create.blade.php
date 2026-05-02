@@ -7,6 +7,7 @@
 
 <form method="POST" action="{{ route('tenant.clients.store', $tenant->slug) }}"
       enctype="multipart/form-data"
+      novalidate
       x-data="clientForm()">
 @csrf
 <input type="hidden" name="client_type" :value="clientType">
@@ -51,12 +52,13 @@
         <div class="flex items-center {{ $n < count($cs) ? 'flex-1' : '' }}">
             <div class="flex flex-col items-center">
                 <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all"
-                     :class="step==={{$n}} ? 'bg-blue-600 text-white' : (step>{{$n}} ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-400')">
-                    <template x-if="step > {{$n}}"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg></template>
-                    <template x-if="step <= {{$n}}"><span>{{$n}}</span></template>
+                     :class="stepErrors[{{$n}}] ? 'bg-red-500 text-white' : (step==={{$n}} ? 'bg-blue-600 text-white' : (step>{{$n}} ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-400'))">
+                    <template x-if="stepErrors[{{$n}}]"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg></template>
+                    <template x-if="!stepErrors[{{$n}}] && step > {{$n}}"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg></template>
+                    <template x-if="!stepErrors[{{$n}}] && step <= {{$n}}"><span>{{$n}}</span></template>
                 </div>
                 <span class="text-xs mt-1 font-medium hidden sm:block whitespace-nowrap"
-                      :class="step==={{$n}} ? 'text-blue-600' : (step>{{$n}} ? 'text-green-600' : 'text-gray-400')">{{ $label }}</span>
+                      :class="stepErrors[{{$n}}] ? 'text-red-600' : (step==={{$n}} ? 'text-blue-600' : (step>{{$n}} ? 'text-green-600' : 'text-gray-400'))">{{ $label }}</span>
             </div>
             @if($n < count($cs))
             <div class="flex-1 h-px mx-1 mt-0 sm:-mt-4" :class="step > {{$n}} ? 'bg-green-400' : 'bg-gray-200'"></div>
@@ -71,12 +73,13 @@
         <div class="flex items-center {{ $n < count($is) ? 'flex-1' : '' }}">
             <div class="flex flex-col items-center">
                 <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all"
-                     :class="indStep==={{$n}} ? 'bg-blue-600 text-white' : (indStep>{{$n}} ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-400')">
-                    <template x-if="indStep > {{$n}}"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg></template>
-                    <template x-if="indStep <= {{$n}}"><span>{{$n}}</span></template>
+                     :class="indStepErrors[{{$n}}] ? 'bg-red-500 text-white' : (indStep==={{$n}} ? 'bg-blue-600 text-white' : (indStep>{{$n}} ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-400'))">
+                    <template x-if="indStepErrors[{{$n}}]"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg></template>
+                    <template x-if="!indStepErrors[{{$n}}] && indStep > {{$n}}"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg></template>
+                    <template x-if="!indStepErrors[{{$n}}] && indStep <= {{$n}}"><span>{{$n}}</span></template>
                 </div>
                 <span class="text-xs mt-1 font-medium hidden sm:block whitespace-nowrap"
-                      :class="indStep==={{$n}} ? 'text-blue-600' : (indStep>{{$n}} ? 'text-green-600' : 'text-gray-400')">{{ $label }}</span>
+                      :class="indStepErrors[{{$n}}] ? 'text-red-600' : (indStep==={{$n}} ? 'text-blue-600' : (indStep>{{$n}} ? 'text-green-600' : 'text-gray-400'))">{{ $label }}</span>
             </div>
             @if($n < count($is))
             <div class="flex-1 h-px mx-1 mt-0 sm:-mt-4" :class="indStep > {{$n}} ? 'bg-green-400' : 'bg-gray-200'"></div>
@@ -90,7 +93,7 @@
 <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
 
 {{-- ══ CORP 1 — Company Profile ══════════════════════════════════════════════ --}}
-<div x-show="clientType!=='individual' && step===1" x-cloak>
+<div x-show="clientType!=='individual' && step===1" x-cloak data-corp-step="1">
     <div class="px-6 py-4 border-b border-gray-100">
         <h2 class="font-semibold text-gray-800">Company profile</h2>
         <p class="text-xs text-gray-400 mt-0.5">Registration and contact details</p>
@@ -127,7 +130,7 @@
 </div>
 
 {{-- ══ CORP 2 — Signatories ═══════════════════════════════════════════════════ --}}
-<div x-show="clientType!=='individual' && step===2" x-cloak>
+<div x-show="clientType!=='individual' && step===2" x-cloak data-corp-step="2">
     <div class="px-6 py-4 border-b border-gray-100">
         <h2 class="font-semibold text-gray-800">Authorised signatories</h2>
         <p class="text-xs text-gray-400 mt-0.5">All persons authorised to sign on behalf of the company</p>
@@ -166,7 +169,7 @@
 </div>
 
 {{-- ══ CORP 3 — Shareholders & UBOs ═══════════════════════════════════════════ --}}
-<div x-show="clientType!=='individual' && step===3" x-cloak>
+<div x-show="clientType!=='individual' && step===3" x-cloak data-corp-step="3">
     <div class="px-6 py-4 border-b border-gray-100">
         <h2 class="font-semibold text-gray-800">Shareholders & UBOs</h2>
         <p class="text-xs text-gray-400 mt-0.5">Ownership structure — UBO threshold is 25%+ effective ownership</p>
@@ -247,7 +250,7 @@
 </div>
 
 {{-- ══ AML/CDD — shared (Corp 4, Ind 2) ══════════════════════════════════════ --}}
-<div x-show="(clientType!=='individual' && step===4) || (clientType==='individual' && indStep===2)" x-cloak>
+<div x-show="(clientType!=='individual' && step===4) || (clientType==='individual' && indStep===2)" x-cloak data-corp-step="4" data-ind-step="2">
     <div class="px-6 py-4 border-b border-gray-100">
         <h2 class="font-semibold text-gray-800">AML / CDD details</h2>
         <p class="text-xs text-gray-400 mt-0.5">Risk profile, source of funds and transaction information</p>
@@ -298,7 +301,7 @@
 </div>
 
 {{-- ══ Declarations — shared (Corp 5, Ind 3) ══════════════════════════════════ --}}
-<div x-show="(clientType!=='individual' && step===5) || (clientType==='individual' && indStep===3)" x-cloak>
+<div x-show="(clientType!=='individual' && step===5) || (clientType==='individual' && indStep===3)" x-cloak data-corp-step="5" data-ind-step="3">
     <div class="px-6 py-4 border-b border-gray-100">
         <h2 class="font-semibold text-gray-800">Declarations</h2>
         <p class="text-xs text-gray-400 mt-0.5">Confirm each declaration has been received and acknowledged</p>
@@ -325,7 +328,7 @@
 </div>
 
 {{-- ══ IND 1 — Individual Profile ═════════════════════════════════════════════ --}}
-<div x-show="clientType==='individual' && indStep===1" x-cloak>
+<div x-show="clientType==='individual' && indStep===1" x-cloak data-ind-step="1">
     <div class="px-6 py-4 border-b border-gray-100">
         <h2 class="font-semibold text-gray-800">Personal profile</h2>
         <p class="text-xs text-gray-400 mt-0.5">Individual client details as per official documents</p>
@@ -369,7 +372,7 @@
 </div>
 
 {{-- ══ Documents — shared (Corp 6, Ind 4) ════════════════════════════════════ --}}
-<div x-show="(clientType!=='individual' && step===6) || (clientType==='individual' && indStep===4)" x-cloak>
+<div x-show="(clientType!=='individual' && step===6) || (clientType==='individual' && indStep===4)" x-cloak data-corp-step="6" data-ind-step="4">
     <div class="px-6 py-4 border-b border-gray-100">
         <h2 class="font-semibold text-gray-800">Document upload</h2>
         <p class="text-xs text-gray-400 mt-0.5">Upload all available documents now. You can add more from the client profile later.</p>
@@ -490,7 +493,7 @@
                 class="flex items-center gap-2 px-5 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition">
             Next <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
         </button>
-        <button type="submit"
+        <button type="button" @click="validateAndSubmit()"
                 x-show="(clientType!=='individual' && step===7) || (clientType==='individual' && indStep===5)"
                 class="flex items-center gap-2 px-6 py-2 text-sm font-semibold text-white bg-green-600 rounded-lg hover:bg-green-700 transition">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg> Create client record
@@ -519,6 +522,7 @@ function clientForm() {
         removeSh(i) { this.shareholders.splice(i,1); },
         addUbo()    { this.ubos.push({full_name:'',nationality:'',dob:'',passport_number:'',ownership_percentage:'',country_of_residence:'',pep_status:false}); },
         removeUbo(i){ this.ubos.splice(i,1); },
+        submitForm(){ this.$el.submit(); },
     }
 }
 </script>
