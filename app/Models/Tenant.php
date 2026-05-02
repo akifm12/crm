@@ -9,13 +9,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Tenant extends Model
 {
     protected $fillable = [
-        'name',         // e.g. "Acme Real Estate"
-        'slug',         // e.g. "acme"  → bluearrow.ae/acme
-        'logo_url',
-        'primary_color',// hex for branding
-        'contact_email',
-        'is_active',
-        'settings',     // JSON: custom fields, required docs, etc.
+        'name', 'slug', 'logo_url', 'primary_color',
+        'contact_email', 'phone', 'address',
+        'trade_license_no', 'dnfbp_reg_no',
+        'mlro_name', 'mlro_email', 'mlro_phone',
+        'is_active', 'settings',
     ];
 
     protected $casts = [
