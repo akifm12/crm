@@ -7,7 +7,7 @@
 
 <form method="POST" action="{{ route('tenant.clients.store', $tenant->slug) }}"
       enctype="multipart/form-data"
-      x-data="clientForm()" @submit.prevent="submitForm">
+      x-data="clientForm()">
 @csrf
 <input type="hidden" name="client_type" :value="clientType">
 
@@ -519,7 +519,6 @@ function clientForm() {
         removeSh(i) { this.shareholders.splice(i,1); },
         addUbo()    { this.ubos.push({full_name:'',nationality:'',dob:'',passport_number:'',ownership_percentage:'',country_of_residence:'',pep_status:false}); },
         removeUbo(i){ this.ubos.splice(i,1); },
-        submitForm(){ this.$el.submit(); },
     }
 }
 </script>
