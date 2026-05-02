@@ -139,4 +139,45 @@ class ClientController extends Controller
         $document->delete();
         return back()->with('success', 'Document deleted.');
     }
+
+    // ── Update risk rating ─────────────────────────────────────────────────
+
+    public function updateRisk(Request $request, string $slug, BullionClient $client)
+    {
+        $tenant = app('tenant');
+        abort_if($client->tenant_id !== $tenant->id, 404);
+        $request->validate(['risk_rating' => 'required|in:low,medium,high', 'cdd_type' => 'required|in:standard,enhanced', 'next_review_date' => 'nullable|date', 'risk_notes' => 'nullable|string']);
+        $client->update($request->only(['risk_rating', 'cdd_type', 'next_review_date', 'risk_notes']));
+        return back()->with('success', 'Risk rating updated.');
+    }
+
+    // ── Update status ──────────────────────────────────────────────────────
+
+    public function updateStatus(Request $request, string $slug, BullionClient $client)
+    {
+        $tenant = app('tenant');
+        abort_if($client->tenant_id !== $tenant->id, 404);
+        $request->validate(['status' => 'required|in:active,pending,inactive,suspended']);
+        $client->update(['status' => $request->status]);
+        return back()->with('success', 'Status updated.');
+    }
+
+    // ── Update declarations ────────────────────────────────────────────────
+
+    public function updateDeclarations(Request $request, string $slug, BullionClient $client)
+    {
+        $tenant = app('tenant');
+        abort_if($client->tenant_id !== $tenant->id, 404);
+        $client->update([
+            'decl_pep'            => $request->boolean('decl_pep'),
+            'decl_supply_chain'   => $request->boolean('decl_supply_chain'),
+            'decl_cahra'          => $request->boolean('decl_cahra'),
+            'decl_source_of_funds'=> $request->boolean('decl_source_of_funds'),
+            'decl_sanctions'      => $request->boolean('decl_sanctions'),
+            'decl_ubo'            => $request->boolean('decl_ubo'),
+            'decl_master_signed'  => $request->boolean('decl_master_signed'),
+        ]);
+        return back()->with('success', 'Declarations updated.');
+    }
+
 }

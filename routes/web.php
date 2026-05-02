@@ -1,7 +1,6 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\CrmController;
@@ -68,33 +67,8 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/settings/staff',                  [SettingsController::class, 'storeStaff'])->name('settings.staff.store');
     Route::patch('/settings/staff/{user}/toggle',   [SettingsController::class, 'toggleStaff'])->name('settings.staff.toggle');
 
-	// ── Marketing ────────────────────────────────────────────────────────────
-	Route::get('/marketing', fn() => view('admin.marketing.index'))->name('marketing.index');
-
-	// Contacts — served directly from DB (fast)
-	Route::get('/marketing/api/contacts', function () {
-		$contacts = DB::connection('mailer')
-			->table('subscribers')
-			->orderBy('id')
-			->get(['id','list_id','company','name','phone','email','subscribed_at']);
-		return response()->json($contacts);
-	})->name('marketing.contacts');
-
-	// Everything else — proxied to contacts.php
-	Route::any('/marketing/api/{path?}', function (Request $request, $path = '') {
-		$url   = 'https://mailer.bluearrow.ae/contacts.php';
-		$query = $request->getQueryString();
-		if ($query) $url .= '?' . $query;
-
-		$response = Http::timeout(60)
-			->withOptions(['verify' => false])
-			->withHeaders(['Content-Type' => 'application/json'])
-			->{strtolower($request->method())}($url, $request->all());
-
-		return response($response->body(), $response->status())
-			->header('Content-Type', 'application/json');
-	})->name('marketing.api')->where('path', '.*');
-	
+    // ── Other admin stubs ─────────────────────────────────────────────────
+    Route::get('/marketing', fn() => view('admin.marketing.index'))->name('marketing.index');
     // ── Screening ─────────────────────────────────────────────────────────
     Route::get('/screening',                              [ScreeningController::class, 'index'])->name('screening.index');
     Route::post('/screening/run',                         [ScreeningController::class, 'run'])->name('screening.run');
@@ -134,6 +108,9 @@ Route::prefix('{slug}')
         Route::get('/clients/new',  [ClientController::class, 'create'])->name('clients.create');
         Route::post('/clients',     [ClientController::class, 'store'])->name('clients.store');
         Route::get('/clients/{client}', [ClientController::class, 'show'])->name('clients.show');
+        Route::patch('/clients/{client}/risk',         [ClientController::class, 'updateRisk'])->name('clients.risk');
+        Route::patch('/clients/{client}/status',       [ClientController::class, 'updateStatus'])->name('clients.status');
+        Route::patch('/clients/{client}/declarations', [ClientController::class, 'updateDeclarations'])->name('clients.declarations');
         Route::post('/clients/{client}/documents',   [ClientController::class, 'uploadDocument'])->name('docs.upload');
         Route::get('/documents/{document}/download', [ClientController::class, 'downloadDocument'])->name('docs.download');
         Route::delete('/documents/{document}',       [ClientController::class, 'deleteDocument'])->name('docs.delete');
