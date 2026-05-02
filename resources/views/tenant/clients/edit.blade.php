@@ -10,7 +10,16 @@ $typeLabels  = ['corporate_local'=>'Corporate — Local','corporate_import'=>'Co
 @section('page-subtitle', $typeLabels[$client->client_type] ?? $client->client_type)
 
 @section('content')
-
+@if($errors->any())
+<div class="mb-5 p-4 bg-red-50 border border-red-200 rounded-xl">
+    <p class="text-sm font-semibold text-red-700 mb-1">Please fix the following:</p>
+    <ul class="text-sm text-red-600 list-disc list-inside space-y-0.5">
+        @foreach($errors->all() as $error)
+        <li>{{ $error }}</li>
+        @endforeach
+    </ul>
+</div>
+@endif
 <form method="POST" action="{{ route('tenant.clients.update', [$tenant->slug, $client->id]) }}"
       enctype="multipart/form-data" novalidate>
 @csrf

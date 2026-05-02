@@ -126,6 +126,19 @@ class ClientController extends Controller
     {
         $tenant = app('tenant');
         abort_if($client->tenant_id !== $tenant->id, 404);
+		
+		    // Validate required fields
+		$isCorporate = $client->client_type !== 'individual';
+		$rules = $isCorporate ? [
+			'company_name'              => 'required|string',
+			'country_of_incorporation'  => 'required|string',
+			'business_activity'         => 'required|string',
+		] : [
+			'full_name'   => 'required|string',
+			'nationality' => 'required|string',
+		];
+
+		$request->validate($rules);
 
         $data = $request->except(['_token', '_method', 'signatories', 'shareholders', 'ubos']);
 
