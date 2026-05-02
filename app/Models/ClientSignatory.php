@@ -12,6 +12,7 @@ class ClientSignatory extends Model
         'full_name',
         'position',
         'nationality',
+        'dob',
         'passport_number',
         'passport_expiry',
         'eid_number',
@@ -19,6 +20,7 @@ class ClientSignatory extends Model
 
     protected $casts = [
         'passport_expiry' => 'date',
+        'dob'             => 'date',
     ];
 
     public function client(): BelongsTo

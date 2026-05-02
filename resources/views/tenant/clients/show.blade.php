@@ -148,7 +148,7 @@ $isCorporate = $client->client_type !== 'individual';
                                 ['Licence issue',    $client->trade_license_issue?->format('d M Y')],
                                 ['Licence expiry',   $client->trade_license_expiry?->format('d M Y')],
                                 ['Legal form',       $client->legal_form],
-                                ['Country',          $client->country_of_incorporation],
+                                ['Country',          $countryName($client->country_of_incorporation)],
                                 ['Business activity',$client->business_activity],
                                 ['TRN',              $client->trn_number],
                                 ['Ejari',            $client->ejari_number],
@@ -162,7 +162,7 @@ $isCorporate = $client->client_type !== 'individual';
                             @foreach([
                                 ['Full name',        $client->full_name],
                                 ['Arabic name',      $client->name_arabic],
-                                ['Nationality',      $client->nationality],
+                                ['Nationality',      $countryName($client->nationality)],
                                 ['Date of birth',    $client->dob?->format('d M Y')],
                                 ['Passport no.',     $client->passport_number],
                                 ['Passport expiry',  $client->passport_expiry?->format('d M Y')],
@@ -236,14 +236,18 @@ $isCorporate = $client->client_type !== 'individual';
                 <div class="px-5 py-4 border-b border-gray-100"><h3 class="text-sm font-semibold text-gray-700">Authorised signatories</h3></div>
                 <div class="divide-y divide-gray-100">
                     @foreach($client->signatories as $sig)
-                    <div class="px-5 py-3 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                    <div class="px-5 py-3 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 text-sm">
                         <div><span class="text-xs text-gray-400 block">Name</span>{{ $sig->full_name }}</div>
                         <div><span class="text-xs text-gray-400 block">Position</span>{{ $sig->position ?? '—' }}</div>
+                        <div><span class="text-xs text-gray-400 block">Nationality</span>{{ $countryName($sig->nationality) }}</div>
+                        <div><span class="text-xs text-gray-400 block">Date of birth</span>
+                            {{ $sig->dob ? $sig->dob->format('d M Y') : '—' }}
+                        </div>
                         <div><span class="text-xs text-gray-400 block">Passport</span>{{ $sig->passport_number ?? '—' }}</div>
                         <div><span class="text-xs text-gray-400 block">Passport expiry</span>
                             @if($sig->passport_expiry)
-                                <span class="{{ \Carbon\Carbon::parse($sig->passport_expiry)->isPast() ? 'text-red-600 font-semibold' : '' }}">
-                                    {{ \Carbon\Carbon::parse($sig->passport_expiry)->format('d M Y') }}
+                                <span class="{{ $sig->passport_expiry->isPast() ? 'text-red-600 font-semibold' : '' }}">
+                                    {{ $sig->passport_expiry->format('d M Y') }}
                                 </span>
                             @else —
                             @endif
@@ -259,9 +263,13 @@ $isCorporate = $client->client_type !== 'individual';
                 <div class="px-5 py-4 border-b border-gray-100"><h3 class="text-sm font-semibold text-gray-700">Shareholders</h3></div>
                 <div class="divide-y divide-gray-100">
                     @foreach($client->shareholders as $sh)
-                    <div class="px-5 py-3 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                    <div class="px-5 py-3 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 text-sm">
                         <div><span class="text-xs text-gray-400 block">Name</span>{{ $sh->name }}</div>
                         <div><span class="text-xs text-gray-400 block">Type</span>{{ ucfirst($sh->shareholder_type) }}</div>
+                        <div><span class="text-xs text-gray-400 block">Nationality</span>{{ $countryName($sh->nationality) }}</div>
+                        <div><span class="text-xs text-gray-400 block">Date of birth</span>
+                            {{ $sh->dob ? $sh->dob->format('d M Y') : '—' }}
+                        </div>
                         <div><span class="text-xs text-gray-400 block">Ownership</span>{{ $sh->ownership_percentage ? $sh->ownership_percentage.'%' : '—' }}</div>
                         <div><span class="text-xs text-gray-400 block">UBO</span>
                             @if($sh->is_ubo)<span class="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-medium">Yes</span>@else <span class="text-gray-400">No</span>@endif

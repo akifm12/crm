@@ -152,6 +152,8 @@
                     <input type="text" :name="'signatories['+i+'][position]'" x-model="sig.position" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
                 <div><label class="block text-xs font-medium text-gray-600 mb-1">Nationality</label>
                     <input type="text" :name="'signatories['+i+'][nationality]'" x-model="sig.nationality" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
+                <div><label class="block text-xs font-medium text-gray-600 mb-1">Date of birth</label>
+                    <input type="date" :name="'signatories['+i+'][dob]'" x-model="sig.dob" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
                 <div><label class="block text-xs font-medium text-gray-600 mb-1">Passport number</label>
                     <input type="text" :name="'signatories['+i+'][passport_number]'" x-model="sig.passport_number" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
                 <div><label class="block text-xs font-medium text-gray-600 mb-1">Passport expiry</label>
@@ -512,8 +514,8 @@ function clientForm() {
         indStep: 1,
         stepErrors:    {1:false,2:false,3:false,4:false,5:false,6:false,7:false},
         indStepErrors: {1:false,2:false,3:false,4:false,5:false},
-        signatories:  [{ full_name:'', position:'', nationality:'', passport_number:'', passport_expiry:'', eid_number:'' }],
-        shareholders: [{ type:'individual', name:'', nationality:'', ownership_percentage:'', passport_number:'', is_ubo:false }],
+        signatories:  [{ full_name:'', position:'', nationality:'', dob:'', passport_number:'', passport_expiry:'', eid_number:'' }],
+        shareholders: [{ type:'individual', name:'', nationality:'', dob:'', ownership_percentage:'', passport_number:'', is_ubo:false }],
         ubos:         [{ full_name:'', nationality:'', dob:'', passport_number:'', ownership_percentage:'', country_of_residence:'', pep_status:false }],
         setType(t) {
             this.clientType=t; this.step=1; this.indStep=1;
@@ -531,9 +533,9 @@ function clientForm() {
             else if(this.clientType==='individual'&&this.indStep>1){this.indStep--;}
             window.scrollTo(0,0);
         },
-        addSig()    { this.signatories.push({full_name:'',position:'',nationality:'',passport_number:'',passport_expiry:'',eid_number:''}); },
+        addSig()    { this.signatories.push({full_name:'',position:'',nationality:'',dob:'',passport_number:'',passport_expiry:'',eid_number:''}); },
         removeSig(i){ this.signatories.splice(i,1); },
-        addSh()     { this.shareholders.push({type:'individual',name:'',nationality:'',ownership_percentage:'',passport_number:'',is_ubo:false}); },
+        addSh()     { this.shareholders.push({type:'individual',name:'',nationality:'',dob:'',ownership_percentage:'',passport_number:'',is_ubo:false}); },
         removeSh(i) { this.shareholders.splice(i,1); },
         addUbo()    { this.ubos.push({full_name:'',nationality:'',dob:'',passport_number:'',ownership_percentage:'',country_of_residence:'',pep_status:false}); },
         removeUbo(i){ this.ubos.splice(i,1); },

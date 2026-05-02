@@ -12,6 +12,7 @@ class ClientShareholder extends Model
         'shareholder_type',
         'name',
         'nationality',
+        'dob',
         'ownership_percentage',
         'passport_number',
         'is_ubo',
@@ -20,6 +21,7 @@ class ClientShareholder extends Model
     protected $casts = [
         'is_ubo'               => 'boolean',
         'ownership_percentage' => 'decimal:2',
+        'dob'                  => 'date',
     ];
 
     public function client(): BelongsTo

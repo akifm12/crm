@@ -10,16 +10,7 @@ $typeLabels  = ['corporate_local'=>'Corporate — Local','corporate_import'=>'Co
 @section('page-subtitle', $typeLabels[$client->client_type] ?? $client->client_type)
 
 @section('content')
-@if($errors->any())
-<div class="mb-5 p-4 bg-red-50 border border-red-200 rounded-xl">
-    <p class="text-sm font-semibold text-red-700 mb-1">Please fix the following:</p>
-    <ul class="text-sm text-red-600 list-disc list-inside space-y-0.5">
-        @foreach($errors->all() as $error)
-        <li>{{ $error }}</li>
-        @endforeach
-    </ul>
-</div>
-@endif
+
 <form method="POST" action="{{ route('tenant.clients.update', [$tenant->slug, $client->id]) }}"
       enctype="multipart/form-data" novalidate>
 @csrf
@@ -99,7 +90,7 @@ $typeLabels  = ['corporate_local'=>'Corporate — Local','corporate_import'=>'Co
     {{-- ── SIGNATORIES ───────────────────────────────────────────────────── --}}
     @if($isCorporate)
     <div x-show="tab==='signatories'" x-cloak
-         x-data="{ sigs: {{ json_encode($client->signatories->map(fn($s) => ['full_name'=>$s->full_name,'position'=>$s->position,'nationality'=>$s->nationality,'passport_number'=>$s->passport_number,'passport_expiry'=>$s->passport_expiry?->format('Y-m-d'),'eid_number'=>$s->eid_number])->toArray()) }} }">
+         x-data="{ sigs: {{ json_encode($client->signatories->map(fn($s) => ['full_name'=>$s->full_name,'position'=>$s->position,'nationality'=>$s->nationality,'dob'=>$s->dob?->format('Y-m-d'),'passport_number'=>$s->passport_number,'passport_expiry'=>$s->passport_expiry?->format('Y-m-d'),'eid_number'=>$s->eid_number])->toArray()) }} }">
         <div class="bg-white rounded-xl border border-gray-200 p-5">
             <div class="flex items-center justify-between mb-4 pb-2 border-b border-gray-100">
                 <h3 class="text-sm font-semibold text-gray-700">Authorised signatories</h3>
@@ -122,6 +113,9 @@ $typeLabels  = ['corporate_local'=>'Corporate — Local','corporate_import'=>'Co
                         <div><label class="block text-xs font-medium text-gray-600 mb-1">Nationality</label>
                             <input type="text" :name="'signatories['+i+'][nationality]'" x-model="sig.nationality"
                                    class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
+                        <div><label class="block text-xs font-medium text-gray-600 mb-1">Date of birth</label>
+                            <input type="date" :name="'signatories['+i+'][dob]'" x-model="sig.dob"
+                                   class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
                         <div><label class="block text-xs font-medium text-gray-600 mb-1">Passport number</label>
                             <input type="text" :name="'signatories['+i+'][passport_number]'" x-model="sig.passport_number"
                                    class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
@@ -141,7 +135,7 @@ $typeLabels  = ['corporate_local'=>'Corporate — Local','corporate_import'=>'Co
     {{-- ── SHAREHOLDERS & UBOs ───────────────────────────────────────────── --}}
     <div x-show="tab==='shareholders'" x-cloak
          x-data="{
-            shareholders: {{ json_encode($client->shareholders->map(fn($s) => ['shareholder_type'=>$s->shareholder_type,'name'=>$s->name,'nationality'=>$s->nationality,'ownership_percentage'=>$s->ownership_percentage,'passport_number'=>$s->passport_number,'is_ubo'=>(bool)$s->is_ubo])->toArray()) }},
+            shareholders: {{ json_encode($client->shareholders->map(fn($s) => ['shareholder_type'=>$s->shareholder_type,'name'=>$s->name,'nationality'=>$s->nationality,'dob'=>$s->dob?->format('Y-m-d'),'ownership_percentage'=>$s->ownership_percentage,'passport_number'=>$s->passport_number,'is_ubo'=>(bool)$s->is_ubo])->toArray()) }},
             ubos: {{ json_encode($client->ubos->map(fn($u) => ['full_name'=>$u->full_name,'nationality'=>$u->nationality,'dob'=>$u->dob?->format('Y-m-d'),'passport_number'=>$u->passport_number,'ownership_percentage'=>$u->ownership_percentage,'country_of_residence'=>$u->country_of_residence,'pep_status'=>(bool)$u->pep_status])->toArray()) }}
          }">
         <div class="space-y-5">
@@ -169,6 +163,9 @@ $typeLabels  = ['corporate_local'=>'Corporate — Local','corporate_import'=>'Co
                                        class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
                             <div><label class="block text-xs font-medium text-gray-600 mb-1">Nationality</label>
                                 <input type="text" :name="'shareholders['+i+'][nationality]'" x-model="sh.nationality"
+                                       class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
+                            <div><label class="block text-xs font-medium text-gray-600 mb-1">Date of birth</label>
+                                <input type="date" :name="'shareholders['+i+'][dob]'" x-model="sh.dob"
                                        class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
                             <div><label class="block text-xs font-medium text-gray-600 mb-1">Ownership %</label>
                                 <input type="number" step="0.01" :name="'shareholders['+i+'][ownership_percentage]'" x-model="sh.ownership_percentage"
