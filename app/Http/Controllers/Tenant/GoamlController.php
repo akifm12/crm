@@ -64,7 +64,8 @@ class GoamlController extends Controller
         $clients = BullionClient::where('tenant_id', $tenant->id)
             ->orderBy('company_name')->get();
 
-        return view('tenant.goaml.create', compact('tenant', 'config', 'client', 'clients'));
+		$countries = \App\Models\Country::orderBy('country_name')->pluck('country_name', 'country_code')->toArray();
+		return view('tenant.goaml.create', compact('tenant', 'config', 'client', 'clients', 'countries'));
     }
 
     // ── Generate XML + save record ─────────────────────────────────────────
