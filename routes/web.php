@@ -12,8 +12,6 @@ use App\Http\Controllers\Tenant\DashboardController as TenantDashboard;
 use App\Http\Controllers\Tenant\ClientController;
 use App\Http\Controllers\Tenant\ScreeningController as TenantScreeningController;
 use App\Http\Controllers\Tenant\RiskController;
-use App\Http\Controllers\Tenant\TenantDocumentController;
-use App\Http\Controllers\Tenant\GoamlController;
 use App\Models\CrmQuotation;
 
 require __DIR__.'/auth.php';
@@ -71,8 +69,31 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/settings/staff',                  [SettingsController::class, 'storeStaff'])->name('settings.staff.store');
     Route::patch('/settings/staff/{user}/toggle',   [SettingsController::class, 'toggleStaff'])->name('settings.staff.toggle');
 
-    // ── Other admin stubs ─────────────────────────────────────────────────
-    Route::get('/marketing', fn() => view('admin.marketing.index'))->name('marketing.index');
+	Route::get('/marketing', fn() => view('admin.marketing.index'))->name('marketing.index');
+
+	// Marketing API — contacts direct from DB, everything else proxied
+	Route::get('/marketing/api/contacts', function () {
+		$contacts = \Illuminate\Support\Facades\DB::connection('mailer')
+			->table('subscribers')
+			->orderBy('id')
+			->get(['id','list_id','company','name','phone','email','subscribed_at']);
+		return response()->json($contacts);
+	})->name('marketing.contacts');
+
+	Route::any('/marketing/api/{path?}', function (Request $request, $path = '') {
+		$url   = 'https://mailer.bluearrow.ae/contacts.php';
+		$query = $request->getQueryString();
+		if ($query) $url .= '?' . $query;
+
+		$response = \Illuminate\Support\Facades\Http::timeout(60)
+			->withOptions(['verify' => false])
+			->withHeaders(['Content-Type' => 'application/json'])
+			->{strtolower($request->method())}($url, $request->all());
+
+		return response($response->body(), $response->status())
+			->header('Content-Type', 'application/json');
+	})->name('marketing.api')->where('path', '.*');
+	
     // ── Screening ─────────────────────────────────────────────────────────
     Route::get('/screening',                              [ScreeningController::class, 'index'])->name('screening.index');
     Route::post('/screening/run',                         [ScreeningController::class, 'run'])->name('screening.run');
@@ -126,21 +147,8 @@ Route::prefix('{slug}')
         Route::get('/risk',                          [RiskController::class, 'index'])->name('risk');
         Route::get('/risk/{client}/assess',          [RiskController::class, 'assess'])->name('risk.assess');
         Route::post('/risk/{client}/assess',         [RiskController::class, 'saveAssessment'])->name('risk.save');
-        // ── Documents ──────────────────────────────────────────────────────────
-        Route::get('/docs/company',                         [TenantDocumentController::class, 'companyIndex'])->name('docs.company');
-        Route::post('/docs/company/upload',                 [TenantDocumentController::class, 'companyUpload'])->name('docs.company.upload');
-        Route::get('/docs/company/{document}/download',     [TenantDocumentController::class, 'companyDownload'])->name('docs.company.download');
-        Route::delete('/docs/company/{document}',           [TenantDocumentController::class, 'companyDelete'])->name('docs.company.delete');
-        Route::get('/docs/clients',                         [TenantDocumentController::class, 'clientIndex'])->name('docs.clients');
-        Route::get('/docs/clients/{document}/download',     [TenantDocumentController::class, 'clientDownload'])->name('docs.client.download');
-        Route::delete('/docs/clients/{document}',           [TenantDocumentController::class, 'clientDelete'])->name('docs.client.delete');
-        // ── goAML ──────────────────────────────────────────────────────────────
-        Route::get('/goaml',                   [GoamlController::class, 'index'])->name('goaml');
-        Route::get('/goaml/create',            [GoamlController::class, 'create'])->name('goaml.create');
-        Route::post('/goaml',                  [GoamlController::class, 'store'])->name('goaml.store');
-        Route::get('/goaml/{report}/download', [GoamlController::class, 'download'])->name('goaml.download');
-        Route::delete('/goaml/{report}',       [GoamlController::class, 'destroy'])->name('goaml.destroy');
-        Route::get('/goaml/settings',          [GoamlController::class, 'settings'])->name('goaml.settings');
-        Route::post('/goaml/settings',         [GoamlController::class, 'saveSettings'])->name('goaml.settings.save');
+        Route::get('/docs/company', fn() => view('tenant.stub', ['module' => 'Company Documents', 'tenant' => app('tenant')]))->name('docs.company');
+        Route::get('/docs/clients', fn() => view('tenant.stub', ['module' => 'Client Documents',  'tenant' => app('tenant')]))->name('docs.clients');
+        Route::get('/goaml',        fn() => view('tenant.stub', ['module' => 'goAML Reports',     'tenant' => app('tenant')]))->name('goaml');
         Route::get('/settings',     fn() => view('tenant.stub', ['module' => 'Settings',          'tenant' => app('tenant')]))->name('settings');
     });

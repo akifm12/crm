@@ -7,7 +7,8 @@ $typeLabels = [
     'corporate_export'  => 'Corporate — Export',
     'individual'        => 'Individual',
 ];
-$isCorporate = $client->client_type !== 'individual';
+$isCorporate  = $client->client_type !== 'individual';
+$countryName  = fn($code) => $code ? (\App\Models\Country::find($code)?->country_name ?? $code) : '—';
 @endphp
 
 @section('title', $client->displayName() . ' — ' . $tenant->name)
