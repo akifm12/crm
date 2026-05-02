@@ -5,71 +5,94 @@ namespace App\Http\Controllers\Tenant;
 
 use App\Http\Controllers\Controller;
 use App\Models\BullionClient;
-use Carbon\Carbon;
+use App\Models\ClientDocument;
+use App\Models\GoamlReport;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
-    public function index(Request $request)
+    public function index()
     {
-        $tenant = app('tenant');
+        $tenant    = app('tenant');
+        $tid       = $tenant->id;
+        $base      = BullionClient::where('tenant_id', $tid);
 
-        $clients = BullionClient::where('tenant_id', $tenant->id);
+        // ── Core stats ──────────────────────────────────────────────────────
+        $total   = (clone $base)->count();
+        $active  = (clone $base)->where('status', 'active')->count();
+        $pending = (clone $base)->where('status', 'pending')->count();
 
-        $stats = [
-            'total'     => (clone $clients)->count(),
-            'active'    => (clone $clients)->where('status', 'active')->count(),
-            'pending'   => (clone $clients)->where('status', 'pending')->count(),
-            'high_risk' => (clone $clients)->where('risk_rating', 'high')->count(),
+        // ── Risk breakdown ───────────────────────────────────────────────────
+        $riskHigh   = (clone $base)->where('risk_rating', 'high')->count();
+        $riskMedium = (clone $base)->where('risk_rating', 'medium')->count();
+        $riskLow    = (clone $base)->where('risk_rating', 'low')->count();
+        $riskUnrated= (clone $base)->whereNull('risk_rating')->count();
 
-            // Expiring within 30 days
-            'expiring_soon' => (clone $clients)
-                ->whereNotNull('trade_license_expiry')
-                ->whereBetween('trade_license_expiry', [now(), now()->addDays(30)])
-                ->count(),
+        // ── Compliance alerts ─────────────────────────────────────────────────
+        $licenceExpired  = (clone $base)->whereNotNull('trade_license_expiry')->where('trade_license_expiry', '<', now())->count();
+        $licenceExpiring = (clone $base)->whereNotNull('trade_license_expiry')->whereBetween('trade_license_expiry', [now(), now()->addDays(30)])->count();
+        $reviewOverdue   = (clone $base)->whereNotNull('next_review_date')->where('next_review_date', '<', now())->count();
+        $reviewDueSoon   = (clone $base)->whereNotNull('next_review_date')->whereBetween('next_review_date', [now(), now()->addDays(30)])->count();
+        $unscreened      = (clone $base)->where('screening_status', 'not_screened')->count();
+        $screeningMatch  = (clone $base)->where('screening_status', 'match')->count();
+        $edd             = (clone $base)->where('cdd_type', 'enhanced')->count();
 
-            // Already expired
-            'expired' => (clone $clients)
-                ->whereNotNull('trade_license_expiry')
-                ->where('trade_license_expiry', '<', now())
-                ->count(),
+        // ── Document alerts ───────────────────────────────────────────────────
+        $docsExpired  = ClientDocument::where('tenant_id', $tid)->where('expiry_date', '<', now())->count();
+        $docsExpiring = ClientDocument::where('tenant_id', $tid)->whereBetween('expiry_date', [now(), now()->addDays(30)])->count();
 
-            // KYC review due (past due or within 30 days)
-            'review_due' => (clone $clients)
-                ->whereNotNull('next_review_date')
-                ->where('next_review_date', '<=', now()->addDays(30))
-                ->count(),
+        // ── goAML ─────────────────────────────────────────────────────────────
+        $goamlTotal = GoamlReport::where('tenant_id', $tid)->count();
+        $goamlMonth = GoamlReport::where('tenant_id', $tid)->where('created_at', '>=', now()->startOfMonth())->count();
 
-            // Not yet screened
-            'unscreened' => (clone $clients)
-                ->where('screening_status', 'not_screened')
-                ->count(),
-        ];
+        // ── Type breakdown ───────────────────────────────────────────────────
+        $typeBreakdown = BullionClient::where('tenant_id', $tid)
+            ->selectRaw('client_type, count(*) as count')
+            ->groupBy('client_type')
+            ->pluck('count', 'client_type')
+            ->toArray();
 
-        // Recent additions
-        $recent = BullionClient::where('tenant_id', $tenant->id)
-            ->latest()
-            ->take(8)
-            ->get();
+        $stats = compact(
+            'total', 'active', 'pending',
+            'riskHigh', 'riskMedium', 'riskLow', 'riskUnrated',
+            'licenceExpired', 'licenceExpiring',
+            'reviewOverdue', 'reviewDueSoon',
+            'unscreened', 'screeningMatch', 'edd',
+            'docsExpired', 'docsExpiring',
+            'goamlTotal', 'goamlMonth',
+            'typeBreakdown'
+        );
 
-        // Expiry alerts (next 60 days)
-        $expiry_alerts = BullionClient::where('tenant_id', $tenant->id)
+        // ── Alert lists ───────────────────────────────────────────────────────
+        $expiry_alerts = BullionClient::where('tenant_id', $tid)
             ->whereNotNull('trade_license_expiry')
             ->where('trade_license_expiry', '<=', now()->addDays(60))
             ->orderBy('trade_license_expiry')
-            ->take(5)
-            ->get();
+            ->take(6)->get();
 
-        // Review due alerts
-        $review_alerts = BullionClient::where('tenant_id', $tenant->id)
+        $review_alerts = BullionClient::where('tenant_id', $tid)
             ->whereNotNull('next_review_date')
             ->where('next_review_date', '<=', now()->addDays(30))
             ->orderBy('next_review_date')
-            ->take(5)
-            ->get();
+            ->take(6)->get();
+
+        $doc_alerts = ClientDocument::where('tenant_id', $tid)
+            ->whereNotNull('expiry_date')
+            ->where('expiry_date', '<=', now()->addDays(30))
+            ->with('client')
+            ->orderBy('expiry_date')
+            ->take(6)->get();
+
+        $recent = BullionClient::where('tenant_id', $tid)
+            ->latest()->take(6)->get();
+
+        $recent_goaml = GoamlReport::where('tenant_id', $tid)
+            ->with('client')->latest()->take(5)->get();
 
         return view('tenant.dashboard', compact(
-            'tenant', 'stats', 'recent', 'expiry_alerts', 'review_alerts'
+            'tenant', 'stats',
+            'expiry_alerts', 'review_alerts', 'doc_alerts',
+            'recent', 'recent_goaml'
         ));
     }
 }
