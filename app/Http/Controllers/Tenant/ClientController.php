@@ -55,7 +55,13 @@ class ClientController extends Controller
 
         $client = BullionClient::create(array_merge(
             $request->except(['signatories', 'shareholders', 'ubos', 'documents', 'doc_labels', 'doc_expiry', 'doc_required', '_token']),
-            ['tenant_id' => $tenant->id, 'created_by' => auth()->id()]
+            [
+                'tenant_id'   => $tenant->id,
+                'created_by'  => auth()->id(),
+                'cdd_type'    => $request->input('cdd_type', 'standard'),
+                'risk_rating' => $request->input('risk_rating', 'low'),
+                'status'      => $request->input('status', 'pending'),
+            ]
         ));
 
         foreach ($request->input('signatories', []) as $sig) {

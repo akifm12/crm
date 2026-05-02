@@ -280,13 +280,13 @@
             @include('tenant.clients._field', ['name'=>'purpose_of_relationship','label'=>'Purpose of business relationship','required'=>true])
             @include('tenant.clients._field', ['name'=>'expected_monthly_volume','label'=>'Expected monthly volume (AED)','type'=>'number'])
             @include('tenant.clients._select', ['name'=>'expected_monthly_frequency','label'=>'Transaction frequency','options'=>['1-5'=>'1–5 per month','6-15'=>'6–15 per month','16-30'=>'16–30 per month','30+'=>'More than 30 per month']])
-            @include('tenant.clients._select', ['name'=>'cdd_type','label'=>'CDD type','options'=>['standard'=>'Standard CDD','enhanced'=>'Enhanced Due Diligence (EDD)']])
+            @include('tenant.clients._select', ['name'=>'cdd_type','label'=>'CDD type','options'=>['standard'=>'Standard CDD','enhanced'=>'Enhanced Due Diligence (EDD)'],'default'=>'standard'])
         </div>
         <div>
             <label class="block text-sm font-semibold text-gray-700 mb-2">Customer risk rating</label>
             <div class="flex gap-3">
                 <label class="flex-1 border border-green-200 bg-green-50 rounded-xl p-4 cursor-pointer text-center hover:opacity-80 transition">
-                    <input type="radio" name="risk_rating" value="low" class="sr-only"><span class="text-sm font-semibold text-green-700">Low risk</span>
+                    <input type="radio" name="risk_rating" value="low" class="sr-only" checked><span class="text-sm font-semibold text-green-700">Low risk</span>
                 </label>
                 <label class="flex-1 border border-amber-200 bg-amber-50 rounded-xl p-4 cursor-pointer text-center hover:opacity-80 transition">
                     <input type="radio" name="risk_rating" value="medium" class="sr-only"><span class="text-sm font-semibold text-amber-700">Medium risk</span>
