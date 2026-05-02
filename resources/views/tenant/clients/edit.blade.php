@@ -111,8 +111,14 @@ $typeLabels  = ['corporate_local'=>'Corporate — Local','corporate_import'=>'Co
                             <input type="text" :name="'signatories['+i+'][position]'" x-model="sig.position"
                                    class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
                         <div><label class="block text-xs font-medium text-gray-600 mb-1">Nationality</label>
-                            <input type="text" :name="'signatories['+i+'][nationality]'" x-model="sig.nationality"
-                                   class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
+                            <select :name="'signatories['+i+'][nationality]'" x-model="sig.nationality"
+                                    class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                                <option value="">— Select —</option>
+                                @php $countryOpts = \App\Models\Country::orderBy('country_name')->get(['country_code','country_name']); @endphp
+                        @foreach($countryOpts as $_c)
+                        <option value="{{ $_c->country_code }}">{{ $_c->country_name }}</option>
+                        @endforeach
+                            </select></div>
                         <div><label class="block text-xs font-medium text-gray-600 mb-1">Date of birth</label>
                             <input type="date" :name="'signatories['+i+'][dob]'" x-model="sig.dob"
                                    class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
@@ -162,8 +168,14 @@ $typeLabels  = ['corporate_local'=>'Corporate — Local','corporate_import'=>'Co
                                 <input type="text" :name="'shareholders['+i+'][name]'" x-model="sh.name"
                                        class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
                             <div><label class="block text-xs font-medium text-gray-600 mb-1">Nationality</label>
-                                <input type="text" :name="'shareholders['+i+'][nationality]'" x-model="sh.nationality"
-                                       class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
+                                <select :name="'shareholders['+i+'][nationality]'" x-model="sh.nationality"
+                                        class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                                    <option value="">— Select —</option>
+                                    @php $countryOpts = \App\Models\Country::orderBy('country_name')->get(['country_code','country_name']); @endphp
+                        @foreach($countryOpts as $_c)
+                        <option value="{{ $_c->country_code }}">{{ $_c->country_name }}</option>
+                        @endforeach
+                                </select></div>
                             <div><label class="block text-xs font-medium text-gray-600 mb-1">Date of birth</label>
                                 <input type="date" :name="'shareholders['+i+'][dob]'" x-model="sh.dob"
                                        class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
@@ -202,8 +214,14 @@ $typeLabels  = ['corporate_local'=>'Corporate — Local','corporate_import'=>'Co
                                 <input type="text" :name="'ubos['+i+'][full_name]'" x-model="ubo.full_name"
                                        class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
                             <div><label class="block text-xs font-medium text-gray-600 mb-1">Nationality</label>
-                                <input type="text" :name="'ubos['+i+'][nationality]'" x-model="ubo.nationality"
-                                       class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
+                                <select :name="'ubos['+i+'][nationality]'" x-model="ubo.nationality"
+                                        class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                                    <option value="">— Select —</option>
+                                    @php $countryOpts = \App\Models\Country::orderBy('country_name')->get(['country_code','country_name']); @endphp
+                        @foreach($countryOpts as $_c)
+                        <option value="{{ $_c->country_code }}">{{ $_c->country_name }}</option>
+                        @endforeach
+                                </select></div>
                             <div><label class="block text-xs font-medium text-gray-600 mb-1">Date of birth</label>
                                 <input type="date" :name="'ubos['+i+'][dob]'" x-model="ubo.dob"
                                        class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></div>

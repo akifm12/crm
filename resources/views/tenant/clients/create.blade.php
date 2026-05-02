@@ -151,7 +151,11 @@
                 <div><label class="block text-xs font-medium text-gray-600 mb-1">Position</label>
                     <input type="text" :name="'signatories['+i+'][position]'" x-model="sig.position" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
                 <div><label class="block text-xs font-medium text-gray-600 mb-1">Nationality</label>
-                    <input type="text" :name="'signatories['+i+'][nationality]'" x-model="sig.nationality" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
+                    <select :name="'signatories['+i+'][nationality]'" x-model="sig.nationality" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"><option value="">— Select —</option>
+                        @php if(!isset($countryOpts)) $countryOpts = \App\Models\Country::orderBy('country_name')->get(['country_code','country_name']); @endphp
+                        @foreach($countryOpts as $_c)
+                        <option value="{{ $_c->country_code }}">{{ $_c->country_name }}</option>
+                        @endforeach</select></div>
                 <div><label class="block text-xs font-medium text-gray-600 mb-1">Date of birth</label>
                     <input type="date" :name="'signatories['+i+'][dob]'" x-model="sig.dob" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
                 <div><label class="block text-xs font-medium text-gray-600 mb-1">Passport number</label>
@@ -195,7 +199,11 @@
                     <div class="md:col-span-2"><label class="block text-xs font-medium text-gray-600 mb-1">Name <span class="text-red-500">*</span></label>
                         <input type="text" :name="'shareholders['+i+'][name]'" x-model="sh.name" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
                     <div><label class="block text-xs font-medium text-gray-600 mb-1">Nationality / country</label>
-                        <input type="text" :name="'shareholders['+i+'][nationality]'" x-model="sh.nationality" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
+                        <select :name="'shareholders['+i+'][nationality]'" x-model="sh.nationality" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"><option value="">— Select —</option>
+                        @php if(!isset($countryOpts)) $countryOpts = \App\Models\Country::orderBy('country_name')->get(['country_code','country_name']); @endphp
+                        @foreach($countryOpts as $_c)
+                        <option value="{{ $_c->country_code }}">{{ $_c->country_name }}</option>
+                        @endforeach</select></div>
                     <div><label class="block text-xs font-medium text-gray-600 mb-1">Ownership %</label>
                         <input type="number" step="0.01" :name="'shareholders['+i+'][ownership_percentage]'" x-model="sh.ownership_percentage" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
                     <div><label class="block text-xs font-medium text-gray-600 mb-1">Passport / Reg. no.</label>
@@ -228,7 +236,11 @@
                     <div class="md:col-span-2"><label class="block text-xs font-medium text-gray-600 mb-1">Full name <span class="text-red-500">*</span></label>
                         <input type="text" :name="'ubos['+i+'][full_name]'" x-model="ubo.full_name" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"></div>
                     <div><label class="block text-xs font-medium text-gray-600 mb-1">Nationality</label>
-                        <input type="text" :name="'ubos['+i+'][nationality]'" x-model="ubo.nationality" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"></div>
+                        <select :name="'ubos['+i+'][nationality]'" x-model="ubo.nationality" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"><option value="">— Select —</option>
+                        @php if(!isset($countryOpts)) $countryOpts = \App\Models\Country::orderBy('country_name')->get(['country_code','country_name']); @endphp
+                        @foreach($countryOpts as $_c)
+                        <option value="{{ $_c->country_code }}">{{ $_c->country_name }}</option>
+                        @endforeach</select></div>
                     <div><label class="block text-xs font-medium text-gray-600 mb-1">Date of birth</label>
                         <input type="date" :name="'ubos['+i+'][dob]'" x-model="ubo.dob" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"></div>
                     <div><label class="block text-xs font-medium text-gray-600 mb-1">Passport number</label>
