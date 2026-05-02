@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Tenant;
 
 use App\Http\Controllers\Controller;
 use App\Models\BullionClient;
+use App\Models\Country;
 use App\Models\GoamlReport;
 use App\Models\GoamlStaticConfig;
 use Illuminate\Http\Request;
@@ -55,17 +56,20 @@ class GoamlController extends Controller
                 ->with('error', 'Please complete your goAML configuration before filing a report.');
         }
 
-        // Pre-load client if passed
+        // Pre-load client with signatories and shareholders
         $client = null;
         if ($request->filled('client')) {
-            $client = BullionClient::where('tenant_id', $tenant->id)->find($request->client);
+            $client = BullionClient::where('tenant_id', $tenant->id)
+                ->with(['signatories', 'shareholders'])
+                ->find($request->client);
         }
 
         $clients = BullionClient::where('tenant_id', $tenant->id)
             ->orderBy('company_name')->get();
 
-		$countries = \App\Models\Country::orderBy('country_name')->pluck('country_name', 'country_code')->toArray();
-		return view('tenant.goaml.create', compact('tenant', 'config', 'client', 'clients', 'countries'));
+        $countries = Country::orderBy('country_name')->pluck('country_name', 'country_code')->toArray();
+
+        return view('tenant.goaml.create', compact('tenant', 'config', 'client', 'clients', 'countries'));
     }
 
     // ── Generate XML + save record ─────────────────────────────────────────
@@ -76,42 +80,40 @@ class GoamlController extends Controller
         $config = GoamlStaticConfig::where('tenant_id', $tenant->id)->firstOrFail();
 
         $request->validate([
-            'report_type'       => 'required|in:DPMSR,STR,SAR',
-            'entity_reference'  => 'required|string|max:100',
-            'estimated_value'   => 'required|numeric|min:0',
-            'disposed_value'    => 'required|numeric|min:0',
-            'currency_code'     => 'required|in:AED,USD',
-            'size'              => 'required|numeric|min:0',
-            'size_uom'          => 'required|string',
-            'registration_date' => 'required|date|before_or_equal:today',
-            // Client/entity
+            'report_type'               => 'required|in:DPMSR,STR,SAR',
+            'entity_reference'          => 'required|string|max:100',
+            'estimated_value'           => 'required|numeric|min:0',
+            'disposed_value'            => 'required|numeric|min:0',
+            'currency_code'             => 'required|in:AED,USD',
+            'size'                      => 'required|numeric|min:0',
+            'size_uom'                  => 'required|string',
+            'registration_date'         => 'required|date|before_or_equal:today',
             'name'                      => 'required|string',
             'commercial_name'           => 'required|string',
             'incorporation_number'      => 'required|string',
-            'incorporation_country_code'=> 'required|string|max:3',
+            'incorporation_country_code'=> 'required|string|max:2',
             'e_tph_number'              => 'required|string',
-            // Director
-            'first_name'     => 'required|string',
-            'last_name'      => 'required|string',
-            'birthdate'      => 'required|date',
-            'passport_number'=> 'required|string',
-            'passport_country'=> 'required|string|max:3',
-            'id_number'      => 'required|string',
-            'nationality1'   => 'required|string|max:3',
-            'residence'      => 'required|string|max:3',
-            'd_tph_number'   => 'required|string',
+            'first_name'                => 'required|string',
+            'last_name'                 => 'required|string',
+            'birthdate'                 => 'required|date',
+            'passport_number'           => 'required|string',
+            'passport_country'          => 'required|string|max:2',
+            'id_number'                 => 'required|string',
+            'nationality1'              => 'required|string|max:2',
+            'residence'                 => 'required|string|max:2',
+            'd_tph_number'              => 'required|string',
         ]);
 
         // Generate XML
-        $xml      = new \DOMDocument('1.0', 'utf-8');
+        $xml    = new \DOMDocument('1.0', 'utf-8');
         $xml->formatOutput = true;
-        $report   = $xml->createElement('report');
+        $report = $xml->createElement('report');
         $xml->appendChild($report);
 
         $submissionDate = now()->format('Y-m-d\TH:i:s');
         $reportCode     = $request->report_type;
 
-        // Top-level report fields
+        // Top-level fields
         foreach ([
             'rentity_id'          => $config->rentity_id,
             'submission_code'     => 'E',
@@ -153,7 +155,9 @@ class GoamlController extends Controller
         }
 
         // Reason + action
-        $reason = $reportCode === 'DPMSR' ? 'Sale Above AED 55000' : ($request->reason ?? 'Suspicious transaction');
+        $reason = $reportCode === 'DPMSR'
+            ? 'Sale Above AED 55000'
+            : ($request->reason ?? 'Suspicious transaction');
         $action = 'KYC Documents Collected from Counterparty';
         $report->appendChild($xml->createElement('reason', htmlspecialchars($reason, ENT_QUOTES, 'UTF-8')));
         $report->appendChild($xml->createElement('action', htmlspecialchars($action, ENT_QUOTES, 'UTF-8')));
@@ -234,19 +238,19 @@ class GoamlController extends Controller
         $report_party->appendChild($xml->createElement('comments', htmlspecialchars($request->comments ?? '', ENT_QUOTES, 'UTF-8')));
 
         // Goods & services
-        $goods  = $xml->createElement('goods_services');
+        $goods   = $xml->createElement('goods_services');
         $activity->appendChild($goods);
-        $item   = $xml->createElement('item');
+        $item    = $xml->createElement('item');
         $goods->appendChild($item);
         $regDate = substr($request->registration_date, 0, 10) . 'T00:00:00';
         foreach ([
-            'item_type'        => 'GOLD',
-            'estimated_value'  => $request->estimated_value,
-            'disposed_value'   => $request->disposed_value,
-            'currency_code'    => $request->currency_code,
-            'size'             => $request->size,
-            'size_uom'         => $request->size_uom,
-            'registration_date'=> $regDate,
+            'item_type'         => 'GOLD',
+            'estimated_value'   => $request->estimated_value,
+            'disposed_value'    => $request->disposed_value,
+            'currency_code'     => $request->currency_code,
+            'size'              => $request->size,
+            'size_uom'          => $request->size_uom,
+            'registration_date' => $regDate,
         ] as $k => $v) {
             $item->appendChild($xml->createElement($k, htmlspecialchars($v, ENT_QUOTES, 'UTF-8')));
         }
@@ -256,7 +260,7 @@ class GoamlController extends Controller
         $report->appendChild($indicators);
         $indicators->appendChild($xml->createElement('indicator', 'DPMSJ'));
 
-        // Save XML
+        // Save XML file
         $clientSlug = preg_replace('/[^a-zA-Z0-9]/', '', substr($request->name, 0, 6)) ?: 'REPT';
         $filename   = strtoupper($reportCode) . '-' . $request->entity_reference . '-' . now()->format('Ymd') . '.xml';
         $path       = "goaml/{$tenant->id}/{$clientSlug}/{$filename}";
@@ -264,25 +268,26 @@ class GoamlController extends Controller
 
         // Save DB record
         $saved = GoamlReport::create([
-            'tenant_id'          => $tenant->id,
-            'bullion_client_id'  => $request->bullion_client_id ?: null,
-            'report_type'        => $reportCode,
-            'entity_reference'   => $request->entity_reference,
-            'client_name'        => $request->name,
-            'estimated_value'    => $request->estimated_value,
-            'disposed_value'     => $request->disposed_value,
-            'currency_code'      => $request->currency_code,
-            'size'               => $request->size,
-            'size_uom'           => $request->size_uom,
-            'registration_date'  => $request->registration_date,
-            'reason'             => $reason,
-            'comments'           => $request->comments,
-            'xml_file_path'      => $path,
-            'xml_file_name'      => $filename,
-            'generated_by'       => auth()->id(),
+            'tenant_id'         => $tenant->id,
+            'bullion_client_id' => $request->bullion_client_id ?: null,
+            'report_type'       => $reportCode,
+            'entity_reference'  => $request->entity_reference,
+            'client_name'       => $request->name,
+            'estimated_value'   => $request->estimated_value,
+            'disposed_value'    => $request->disposed_value,
+            'currency_code'     => $request->currency_code,
+            'size'              => $request->size,
+            'size_uom'          => $request->size_uom,
+            'registration_date' => $request->registration_date,
+            'reason'            => $reason,
+            'comments'          => $request->comments,
+            'xml_file_path'     => $path,
+            'xml_file_name'     => $filename,
+            'generated_by'      => auth()->id(),
         ]);
 
-        return redirect()->route('tenant.goaml.download', [$tenant->slug, $saved->id])
+        return redirect()
+            ->route('tenant.goaml.download', [$tenant->slug, $saved->id])
             ->with('success', "{$reportCode} report generated — {$filename}");
     }
 
@@ -300,32 +305,33 @@ class GoamlController extends Controller
         return Storage::disk('local')->download($report->xml_file_path, $report->xml_file_name);
     }
 
-    // ── Settings (one-time static config) ─────────────────────────────────
+    // ── Settings ───────────────────────────────────────────────────────────
 
     public function settings()
     {
-        $tenant = app('tenant');
-        $config = GoamlStaticConfig::where('tenant_id', $tenant->id)->first();
-        return view('tenant.goaml.settings', compact('tenant', 'config'));
+        $tenant  = app('tenant');
+        $config  = GoamlStaticConfig::where('tenant_id', $tenant->id)->first();
+        $countries = Country::orderBy('country_name')->pluck('country_name', 'country_code')->toArray();
+        return view('tenant.goaml.settings', compact('tenant', 'config', 'countries'));
     }
 
     public function saveSettings(Request $request)
     {
         $tenant = app('tenant');
         $request->validate([
-            'rentity_id'         => 'required|string',
-            'entity_name'        => 'required|string',
-            'entity_address'     => 'required|string',
-            'entity_city'        => 'required|string',
-            'entity_country_code'=> 'required|string|max:3',
-            'mlro_gender'        => 'required|in:M,F',
-            'mlro_first_name'    => 'required|string',
-            'mlro_last_name'     => 'required|string',
-            'mlro_ssn'           => 'required|string',
-            'mlro_id_number'     => 'required|string',
-            'mlro_nationality'   => 'required|string|max:3',
-            'mlro_email'         => 'required|email',
-            'mlro_occupation'    => 'required|string',
+            'rentity_id'          => 'required|string',
+            'entity_name'         => 'required|string',
+            'entity_address'      => 'required|string',
+            'entity_city'         => 'required|string',
+            'entity_country_code' => 'required|string|max:2',
+            'mlro_gender'         => 'required|in:M,F',
+            'mlro_first_name'     => 'required|string',
+            'mlro_last_name'      => 'required|string',
+            'mlro_ssn'            => 'required|string',
+            'mlro_id_number'      => 'required|string',
+            'mlro_nationality'    => 'required|string|max:2',
+            'mlro_email'          => 'required|email',
+            'mlro_occupation'     => 'required|string',
         ]);
 
         GoamlStaticConfig::updateOrCreate(
