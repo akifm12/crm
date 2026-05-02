@@ -19,7 +19,7 @@ $clientCountry = $client->country_of_incorporation ?? $client->nationality ?? ''
 $countryRisk = in_array($clientCountry, $highRiskCountries) ? 3 : (in_array($clientCountry, $mediumRiskCountries) ? 2 : 1);
 @endphp
 
-<form method="POST" action="{{ route('tenant.risk.save', [$tenant->slug, $client->id]) }}" x-data="riskForm()" @submit.prevent="submitForm">
+<form method="POST" action="{{ route('tenant.risk.save', [$tenant->slug, $client->id]) }}" x-data="riskForm()">
 @csrf
 
 {{-- Client info header --}}
@@ -51,7 +51,7 @@ $countryRisk = in_array($clientCountry, $highRiskCountries) ? 3 : (in_array($cli
         <div>
             <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Overall risk score</p>
             <div class="flex items-center gap-3">
-                <p class="text-4xl font-bold font-mono" :class="scoreColor" x-text="score.toFixed(2)">—</p>
+                <p class="text-4xl font-bold font-mono" :class="scoreColor" x-text="score.toFixed(2)" @change.window="recalc()">—</p>
                 <div>
                     <p class="text-sm font-bold" :class="scoreColor" x-text="suggestedRating.toUpperCase() + ' RISK'"></p>
                     <p class="text-xs text-gray-400">Suggested rating</p>
@@ -291,25 +291,23 @@ $countryRisk = in_array($clientCountry, $highRiskCountries) ? 3 : (in_array($cli
 <script>
 function riskForm() {
     return {
-        factors: @json($saved['factors'] ?? []),
         overrideRating: '{{ $saved['final_rating'] ?? '' }}',
 
-        weights: {
-            customer: 0.30, geographic: 0.25, product: 0.20,
-            transaction: 0.15, channel: 0.05, supply_chain: 0.05
-        },
+        weights: { customer:0.30, geographic:0.25, product:0.20, transaction:0.15, channel:0.05, supply_chain:0.05 },
 
         get catScores() {
             const cats = {};
             for (const cat in this.weights) {
-                const catFactors = Object.entries(this.factors)
-                    .filter(([k]) => k.startsWith(cat + '_'))
-                    .map(([, v]) => parseFloat(v) || 0);
-                cats[cat] = catFactors.length
-                    ? catFactors.reduce((a, b) => a + b, 0) / catFactors.length
-                    : 0;
+                const inputs = document.querySelectorAll(`input[name^="factors[${cat}_"]:checked`);
+                const vals   = [...inputs].map(i => parseFloat(i.value)).filter(v => v > 0);
+                cats[cat]    = vals.length ? vals.reduce((a,b) => a+b, 0) / vals.length : 0;
             }
             return cats;
+        },
+
+        recalc() {
+            // trigger Alpine reactivity
+            this.overrideRating = this.overrideRating;
         },
 
         get score() {
@@ -329,27 +327,6 @@ function riskForm() {
         get scoreColor() {
             return this.score >= 2.4 ? 'text-red-600' : this.score >= 1.7 ? 'text-amber-600' : 'text-green-600';
         },
-
-        setFactor(key, value) {
-            this.factors[key] = parseInt(value);
-            if (!this.overrideRating) this.overrideRating = this.suggestedRating;
-        },
-
-        submitForm() {
-            // Inject factor values as hidden inputs
-            const form = this.$el;
-            for (const [k, v] of Object.entries(this.factors)) {
-                let inp = form.querySelector(`input[name="factors[${k}]"]`);
-                if (!inp) {
-                    inp = document.createElement('input');
-                    inp.type = 'hidden';
-                    inp.name = `factors[${k}]`;
-                    form.appendChild(inp);
-                }
-                inp.value = v;
-            }
-            form.submit();
-        }
     }
 }
 </script>

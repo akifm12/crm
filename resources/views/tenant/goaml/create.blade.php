@@ -52,18 +52,18 @@ $dir_phone                = old('d_tph_number', $client?->phone ?? '');
 {{-- Report type --}}
 <div class="bg-white rounded-xl border border-gray-200 p-5 mb-5">
     <h3 class="text-sm font-semibold text-gray-700 mb-3">Report type & invoice</h3>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4" x-data="{ reportType: '{{ old('report_type','DPMSR') }}' }">
         <div>
             <label class="block text-xs font-medium text-gray-600 mb-2">Report type <span class="text-red-500">*</span></label>
+            <input type="hidden" name="report_type" :value="reportType">
             <div class="flex gap-3">
                 @foreach(['DPMSR'=>['bg-blue-600','Designated Payment > AED 55k'],'STR'=>['bg-red-600','Suspicious Transaction'],'SAR'=>['bg-orange-600','Suspicious Activity']] as $type=>[$color,$desc])
-                <label class="flex-1 border rounded-xl p-3 cursor-pointer text-center hover:opacity-80 transition">
-                    <input type="radio" name="report_type" value="{{ $type }}"
-                           {{ old('report_type','DPMSR') === $type ? 'checked' : '' }}
-                           class="sr-only" required>
-                    <p class="text-sm font-bold text-gray-700">{{ $type }}</p>
-                    <p class="text-xs text-gray-400 mt-0.5">{{ $desc }}</p>
-                </label>
+                <div @click="reportType='{{ $type }}'"
+                     :class="reportType==='{{ $type }}' ? '{{ $color }} text-white border-transparent' : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'"
+                     class="flex-1 border rounded-xl p-3 cursor-pointer text-center transition">
+                    <p class="text-sm font-bold">{{ $type }}</p>
+                    <p class="text-xs mt-0.5 opacity-80">{{ $desc }}</p>
+                </div>
                 @endforeach
             </div>
         </div>
@@ -74,7 +74,6 @@ $dir_phone                = old('d_tph_number', $client?->phone ?? '');
                    class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
         </div>
     </div>
-</div>
 
 {{-- Entity / counterparty details --}}
 <div class="bg-white rounded-xl border border-gray-200 p-5 mb-5">
@@ -141,9 +140,9 @@ $dir_phone                = old('d_tph_number', $client?->phone ?? '');
                    class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
         </div>
         <div>
-            <label class="block text-xs font-medium text-gray-600 mb-1">Passport country (3-letter) <span class="text-red-500">*</span></label>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Passport country (2-letter ISO) <span class="text-red-500">*</span></label>
             <input type="text" name="passport_country" value="{{ $dir_passport_country }}"
-                   required maxlength="3" placeholder="ARE / GBR / IND"
+                   required maxlength="2" placeholder="AE / GB / IN"
                    class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase">
         </div>
         <div>

@@ -29,7 +29,7 @@
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-1">Country code <span class="text-red-500">*</span></label>
                         <input type="text" name="entity_country_code" value="{{ old('entity_country_code', $config?->entity_country_code ?? 'ARE') }}"
-                               required maxlength="3" placeholder="ARE"
+                               required maxlength="2" placeholder="AE"
                                class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase">
                     </div>
                 </div>
@@ -95,7 +95,7 @@
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-1">Nationality (3-letter code) <span class="text-red-500">*</span></label>
                         <input type="text" name="mlro_nationality" value="{{ old('mlro_nationality', $config?->mlro_nationality) }}"
-                               required maxlength="3" placeholder="ARE / GBR / IND"
+                               required maxlength="2" placeholder="AE / GB / IN"
                                class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase">
                     </div>
                     <div>

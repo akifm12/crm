@@ -77,7 +77,7 @@ class ClientController extends Controller
         if ($request->hasFile('documents')) {
             foreach ($request->file('documents') as $docType => $file) {
                 if (!$file || !$file->isValid()) continue;
-                $path = $file->store("tenants/{$tenant->id}/clients/{$client->id}", 'private');
+                $path = $file->store("tenants/{$tenant->id}/clients/{$client->id}", 'local');
                 ClientDocument::create([
                     'bullion_client_id' => $client->id,
                     'tenant_id'         => $tenant->id,
@@ -114,7 +114,7 @@ class ClientController extends Controller
         abort_if($client->tenant_id !== $tenant->id, 404);
         $request->validate(['file' => 'required|file|max:10240', 'document_type' => 'required|string', 'document_label' => 'required|string', 'expiry_date' => 'nullable|date']);
         $file = $request->file('file');
-        $path = $file->store("tenants/{$tenant->id}/clients/{$client->id}", 'private');
+        $path = $file->store("tenants/{$tenant->id}/clients/{$client->id}", 'local');
         ClientDocument::create([
             'bullion_client_id' => $client->id,
             'tenant_id'         => $tenant->id,
@@ -134,14 +134,14 @@ class ClientController extends Controller
     {
         $tenant = app('tenant');
         abort_if($document->tenant_id !== $tenant->id, 404);
-        return Storage::disk('private')->download($document->file_path, $document->file_name);
+        return Storage::disk('local')->download($document->file_path, $document->file_name);
     }
 
     public function deleteDocument(string $slug, ClientDocument $document)
     {
         $tenant = app('tenant');
         abort_if($document->tenant_id !== $tenant->id, 404);
-        Storage::disk('private')->delete($document->file_path);
+        Storage::disk('local')->delete($document->file_path);
         $document->delete();
         return back()->with('success', 'Document deleted.');
     }
