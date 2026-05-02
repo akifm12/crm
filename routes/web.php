@@ -13,6 +13,7 @@ use App\Http\Controllers\Tenant\ClientController;
 use App\Http\Controllers\Tenant\ScreeningController as TenantScreeningController;
 use App\Http\Controllers\Tenant\RiskController;
 use App\Http\Controllers\Tenant\TenantDocumentController;
+use App\Http\Controllers\Tenant\GoamlController;
 use App\Models\CrmQuotation;
 
 require __DIR__.'/auth.php';
@@ -133,6 +134,13 @@ Route::prefix('{slug}')
         Route::get('/docs/clients',                         [TenantDocumentController::class, 'clientIndex'])->name('docs.clients');
         Route::get('/docs/clients/{document}/download',     [TenantDocumentController::class, 'clientDownload'])->name('docs.client.download');
         Route::delete('/docs/clients/{document}',           [TenantDocumentController::class, 'clientDelete'])->name('docs.client.delete');
-        Route::get('/goaml',        fn() => view('tenant.stub', ['module' => 'goAML Reports',     'tenant' => app('tenant')]))->name('goaml');
+        // ── goAML ──────────────────────────────────────────────────────────────
+        Route::get('/goaml',                   [GoamlController::class, 'index'])->name('goaml');
+        Route::get('/goaml/create',            [GoamlController::class, 'create'])->name('goaml.create');
+        Route::post('/goaml',                  [GoamlController::class, 'store'])->name('goaml.store');
+        Route::get('/goaml/{report}/download', [GoamlController::class, 'download'])->name('goaml.download');
+        Route::delete('/goaml/{report}',       [GoamlController::class, 'destroy'])->name('goaml.destroy');
+        Route::get('/goaml/settings',          [GoamlController::class, 'settings'])->name('goaml.settings');
+        Route::post('/goaml/settings',         [GoamlController::class, 'saveSettings'])->name('goaml.settings.save');
         Route::get('/settings',     fn() => view('tenant.stub', ['module' => 'Settings',          'tenant' => app('tenant')]))->name('settings');
     });
