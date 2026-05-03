@@ -15,6 +15,7 @@ use App\Http\Controllers\Tenant\RiskController;
 use App\Http\Controllers\Tenant\TenantDocumentController;
 use App\Http\Controllers\Tenant\GoamlController;
 use App\Http\Controllers\Tenant\SettingsController as TenantSettingsController;
+use App\Http\Controllers\Tenant\ReportController;
 use App\Models\CrmQuotation;
 
 require __DIR__.'/auth.php';
@@ -144,6 +145,8 @@ Route::prefix('{slug}')
         Route::get('/goaml/settings',          [GoamlController::class, 'settings'])->name('goaml.settings');
         Route::post('/goaml/settings',         [GoamlController::class, 'saveSettings'])->name('goaml.settings.save');
         Route::get('/settings',                    [TenantSettingsController::class, 'index'])->name('settings');
+        Route::get('/clients/{client}/screening-pdf',  [ReportController::class, 'screeningPdf'])->name('clients.screening.pdf');
+        Route::get('/clients/{client}/declaration/{type}', [ReportController::class, 'declaration'])->name('clients.declaration');
         Route::patch('/settings/profile',          [TenantSettingsController::class, 'updateProfile'])->name('settings.profile');
         Route::patch('/settings/mlro',             [TenantSettingsController::class, 'updateMlro'])->name('settings.mlro');
         Route::post('/settings/logo',              [TenantSettingsController::class, 'uploadLogo'])->name('settings.logo');

@@ -7,8 +7,7 @@ $typeLabels = [
     'corporate_export'  => 'Corporate — Export',
     'individual'        => 'Individual',
 ];
-$isCorporate  = $client->client_type !== 'individual';
-$countryName  = fn($code) => $code ? (\App\Models\Country::find($code)?->country_name ?? $code) : '—';
+$isCorporate = $client->client_type !== 'individual';
 @endphp
 
 @section('title', $client->displayName() . ' — ' . $tenant->name)
@@ -456,6 +455,13 @@ $countryName  = fn($code) => $code ? (\App\Models\Country::find($code)?->country
                        class="mt-2 w-full flex items-center justify-center gap-2 py-2 text-sm font-medium text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50 transition">
                         Advanced screening
                     </a>
+                    @if($client->screening_result)
+                    <a href="{{ route('tenant.clients.screening.pdf', [$tenant->slug, $client->id]) }}" target="_blank"
+                       class="mt-2 w-full flex items-center justify-center gap-2 py-2 text-sm font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                        Download screening report
+                    </a>
+                    @endif
                 </div>
             </div>
 
@@ -589,6 +595,15 @@ $countryName  = fn($code) => $code ? (\App\Models\Country::find($code)?->country
                     <button type="submit" class="px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition">
                         Save declarations
                     </button>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    @foreach(['pep'=>'PEP','supply_chain'=>'Supply Chain','cahra'=>'CAHRA','source_of_funds'=>'Source of Funds','sanctions'=>'Sanctions','ubo'=>'UBO'] as $dt=>$dl)
+                    <a href="{{ route('tenant.clients.declaration', [$tenant->slug, $client->id, $dt]) }}"
+                       class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition">
+                        <svg class="w-3.5 h-3.5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        Decl. {{ $dl }}
+                    </a>
+                    @endforeach
                 </div>
                 <div class="divide-y divide-gray-100">
                     @foreach([
