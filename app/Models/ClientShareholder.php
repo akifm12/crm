@@ -16,12 +16,17 @@ class ClientShareholder extends Model
         'ownership_percentage',
         'passport_number',
         'is_ubo',
+        'is_resident',
+        'eid_number',
+        'eid_expiry',
     ];
 
     protected $casts = [
         'is_ubo'               => 'boolean',
+        'is_resident'          => 'boolean',
         'ownership_percentage' => 'decimal:2',
         'dob'                  => 'date',
+        'eid_expiry'           => 'date',
     ];
 
     public function client(): BelongsTo

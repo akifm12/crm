@@ -50,6 +50,7 @@ $typeLabels  = ['corporate_local'=>'Corporate — Local','corporate_import'=>'Co
                 @include('tenant.clients._field', ['name'=>'trade_license_expiry','label'=>'Licence expiry date','type'=>'date','value'=>$client->trade_license_expiry?->format('Y-m-d')])
                 @include('tenant.clients._field', ['name'=>'trn_number','label'=>'TRN number','value'=>$client->trn_number])
                 @include('tenant.clients._field', ['name'=>'ejari_number','label'=>'Ejari number','value'=>$client->ejari_number])
+                @include('tenant.clients._field', ['name'=>'ejari_expiry','label'=>'Ejari expiry date','type'=>'date','value'=>$client->ejari_expiry?->format('Y-m-d')])
                 @include('tenant.clients._select', ['name'=>'legal_form','label'=>'Legal form','value'=>$client->legal_form,'options'=>['LLC'=>'LLC','FZE'=>'FZE','FZCO'=>'FZCO','Sole Establishment'=>'Sole Establishment','Civil Company'=>'Civil Company','Branch'=>'Branch (Foreign)','Other'=>'Other']])
                 @include('tenant.clients._country', ['name'=>'country_of_incorporation','label'=>'Country of incorporation','required'=>true,'value'=>$client->country_of_incorporation])
                 @include('tenant.clients._field', ['name'=>'business_activity','label'=>'Business activity','required'=>true,'value'=>$client->business_activity])
@@ -141,7 +142,7 @@ $typeLabels  = ['corporate_local'=>'Corporate — Local','corporate_import'=>'Co
     {{-- ── SHAREHOLDERS & UBOs ───────────────────────────────────────────── --}}
     <div x-show="tab==='shareholders'" x-cloak
          x-data="{
-            shareholders: {{ json_encode($client->shareholders->map(fn($s) => ['shareholder_type'=>$s->shareholder_type,'name'=>$s->name,'nationality'=>$s->nationality,'dob'=>$s->dob?->format('Y-m-d'),'ownership_percentage'=>$s->ownership_percentage,'passport_number'=>$s->passport_number,'is_ubo'=>(bool)$s->is_ubo])->toArray()) }},
+            shareholders: {{ json_encode($client->shareholders->map(fn($s) => ['shareholder_type'=>$s->shareholder_type,'name'=>$s->name,'nationality'=>$s->nationality,'dob'=>$s->dob?->format('Y-m-d'),'ownership_percentage'=>$s->ownership_percentage,'passport_number'=>$s->passport_number,'is_ubo'=>(bool)$s->is_ubo,'is_resident'=>(bool)$s->is_resident,'eid_number'=>$s->eid_number,'eid_expiry'=>$s->eid_expiry?->format('Y-m-d')])->toArray()) }},
             ubos: {{ json_encode($client->ubos->map(fn($u) => ['full_name'=>$u->full_name,'nationality'=>$u->nationality,'dob'=>$u->dob?->format('Y-m-d'),'passport_number'=>$u->passport_number,'ownership_percentage'=>$u->ownership_percentage,'country_of_residence'=>$u->country_of_residence,'pep_status'=>(bool)$u->pep_status])->toArray()) }}
          }">
         <div class="space-y-5">
@@ -190,6 +191,21 @@ $typeLabels  = ['corporate_local'=>'Corporate — Local','corporate_import'=>'Co
                                        class="rounded border-gray-300 text-blue-600">
                                 <label class="text-xs text-gray-600">Is UBO</label>
                             </div>
+                            <div class="flex items-center gap-2 mt-4">
+                                <input type="checkbox" :name="'shareholders['+i+'][is_resident]'" value="1" x-model="sh.is_resident"
+                                       class="rounded border-gray-300 text-blue-600">
+                                <label class="text-xs text-gray-600">UAE resident</label>
+                            </div>
+                            <template x-if="sh.is_resident">
+                                <div class="col-span-2 grid grid-cols-2 gap-3 mt-1">
+                                    <div><label class="block text-xs font-medium text-gray-600 mb-1">Emirates ID <span class="text-red-500">*</span></label>
+                                        <input type="text" :name="'shareholders['+i+'][eid_number]'" x-model="sh.eid_number" :required="sh.is_resident"
+                                               class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
+                                    <div><label class="block text-xs font-medium text-gray-600 mb-1">EID expiry <span class="text-red-500">*</span></label>
+                                        <input type="date" :name="'shareholders['+i+'][eid_expiry]'" x-model="sh.eid_expiry" :required="sh.is_resident"
+                                               class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
+                                </div>
+                            </template>
                         </div>
                     </div>
                 </template>

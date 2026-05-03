@@ -31,6 +31,8 @@ class DashboardController extends Controller
         // ── Compliance alerts ─────────────────────────────────────────────────
         $licenceExpired  = (clone $base)->whereNotNull('trade_license_expiry')->where('trade_license_expiry', '<', now())->count();
         $licenceExpiring = (clone $base)->whereNotNull('trade_license_expiry')->whereBetween('trade_license_expiry', [now(), now()->addDays(30)])->count();
+        $ejariExpired    = (clone $base)->whereNotNull('ejari_expiry')->where('ejari_expiry', '<', now())->count();
+        $ejariExpiring   = (clone $base)->whereNotNull('ejari_expiry')->whereBetween('ejari_expiry', [now(), now()->addDays(30)])->count();
         $reviewOverdue   = (clone $base)->whereNotNull('next_review_date')->where('next_review_date', '<', now())->count();
         $reviewDueSoon   = (clone $base)->whereNotNull('next_review_date')->whereBetween('next_review_date', [now(), now()->addDays(30)])->count();
         $unscreened      = (clone $base)->where('screening_status', 'not_screened')->count();
@@ -55,7 +57,7 @@ class DashboardController extends Controller
         $stats = compact(
             'total', 'active', 'pending',
             'riskHigh', 'riskMedium', 'riskLow', 'riskUnrated',
-            'licenceExpired', 'licenceExpiring',
+            'licenceExpired', 'licenceExpiring', 'ejariExpired', 'ejariExpiring',
             'reviewOverdue', 'reviewDueSoon',
             'unscreened', 'screeningMatch', 'edd',
             'docsExpired', 'docsExpiring',

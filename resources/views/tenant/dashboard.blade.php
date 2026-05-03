@@ -39,15 +39,15 @@ $riskPct = fn($n) => $total > 0 ? round($n / $total * 100) : 0;
         </p>
     </div>
 
-    <div class="bg-white rounded-xl border {{ ($stats['licenceExpired'] + $stats['docsExpired']) > 0 ? 'border-red-200 bg-red-50' : ($stats['licenceExpiring'] > 0 ? 'border-amber-200 bg-amber-50' : 'border-gray-200') }} p-4">
-        <p class="text-xs font-semibold {{ ($stats['licenceExpired'] + $stats['docsExpired']) > 0 ? 'text-red-500' : 'text-gray-400' }} uppercase tracking-wide mb-1">Doc expiry</p>
-        <p class="text-3xl font-bold text-gray-900">{{ $stats['licenceExpired'] + $stats['docsExpired'] }}</p>
+    @php $totalExpired = $stats['licenceExpired'] + $stats['docsExpired'] + $stats['ejariExpired']; @endphp
+    <div class="bg-white rounded-xl border {{ $totalExpired > 0 ? 'border-red-200 bg-red-50' : 'border-gray-200' }} p-4">
+        <p class="text-xs font-semibold {{ $totalExpired > 0 ? 'text-red-500' : 'text-gray-400' }} uppercase tracking-wide mb-1">Doc expiry</p>
+        <p class="text-3xl font-bold text-gray-900">{{ $totalExpired }}</p>
         <p class="text-xs mt-1">
-            @if($stats['licenceExpired'] > 0)<span class="text-red-600 font-semibold">{{ $stats['licenceExpired'] }} licence expired</span>@endif
-            @if($stats['docsExpired'] > 0) · <span class="text-red-600 font-semibold">{{ $stats['docsExpired'] }} doc expired</span>@endif
-            @if(!$stats['licenceExpired'] && !$stats['docsExpired'])
-            <span class="{{ $stats['licenceExpiring'] > 0 ? 'text-amber-600' : 'text-gray-400' }}">{{ $stats['licenceExpiring'] + $stats['docsExpiring'] }} expiring soon</span>
-            @endif
+            @if($stats['licenceExpired'] > 0)<span class="text-red-600 font-semibold">{{ $stats['licenceExpired'] }} licence</span> @endif
+            @if($stats['ejariExpired'] > 0)<span class="text-red-600 font-semibold">{{ $stats['ejariExpired'] }} ejari</span> @endif
+            @if($stats['docsExpired'] > 0)<span class="text-red-600 font-semibold">{{ $stats['docsExpired'] }} docs</span> @endif
+            @if($totalExpired === 0)<span class="text-gray-400">{{ $stats['licenceExpiring'] + $stats['ejariExpiring'] + $stats['docsExpiring'] }} expiring soon</span>@endif
         </p>
     </div>
 

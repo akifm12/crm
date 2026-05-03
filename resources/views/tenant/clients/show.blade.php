@@ -104,6 +104,17 @@ $countryName = fn($code) => $code ? (\App\Models\Country::find($code)?->country_
         Trade licence expiring on {{ $client->trade_license_expiry->format('d M Y') }}.
     </div>
     @endif
+    @if($client->isEjariExpired())
+    <div class="mt-2 flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+        <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        Ejari expired on {{ $client->ejari_expiry->format('d M Y') }}. Renewal required.
+    </div>
+    @elseif($client->isEjariExpiringSoon())
+    <div class="mt-2 flex items-center gap-2 p-3 bg-orange-50 border border-orange-200 rounded-lg text-sm text-orange-700">
+        <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        Ejari expiring on {{ $client->ejari_expiry->format('d M Y') }}.
+    </div>
+    @endif
     @if($client->isReviewDue())
     <div class="mt-2 flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700">
         <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
@@ -153,6 +164,7 @@ $countryName = fn($code) => $code ? (\App\Models\Country::find($code)?->country_
                                 ['Business activity',$client->business_activity],
                                 ['TRN',              $client->trn_number],
                                 ['Ejari',            $client->ejari_number],
+                                ['Ejari expiry',     $client->ejari_expiry?->format('d M Y')],
                                 ['Email',            $client->email],
                                 ['Phone',            $client->phone],
                                 ['Website',          $client->website],
@@ -275,6 +287,19 @@ $countryName = fn($code) => $code ? (\App\Models\Country::find($code)?->country_
                         <div><span class="text-xs text-gray-400 block">UBO</span>
                             @if($sh->is_ubo)<span class="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-medium">Yes</span>@else <span class="text-gray-400">No</span>@endif
                         </div>
+                    </div>
+                    @if($sh->is_resident)
+                    <div class="px-5 pb-3 grid grid-cols-3 gap-3 text-sm bg-green-50/50">
+                        <div><span class="text-xs text-gray-400 block">UAE resident</span><span class="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-medium">Yes</span></div>
+                        <div><span class="text-xs text-gray-400 block">Emirates ID</span>{{ $sh->eid_number ?? '—' }}</div>
+                        <div><span class="text-xs text-gray-400 block">EID expiry</span>
+                            @if($sh->eid_expiry)
+                            <span class="{{ $sh->eid_expiry->isPast() ? 'text-red-600 font-semibold' : '' }}">{{ $sh->eid_expiry->format('d M Y') }}</span>
+                            @else —
+                            @endif
+                        </div>
+                    </div>
+                    @endif
                     </div>
                     @endforeach
                 </div>
@@ -630,6 +655,7 @@ $countryName = fn($code) => $code ? (\App\Models\Country::find($code)?->country_
                         </a>
                         @endforeach
                     </div>
+                </div>
                 </div>
                 <div class="divide-y divide-gray-100">
                     @foreach([

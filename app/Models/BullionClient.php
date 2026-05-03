@@ -12,7 +12,7 @@ class BullionClient extends Model
 {
     protected $fillable = [
         'tenant_id', 'client_type', 'company_name', 'trade_license_no',
-        'trade_license_issue', 'trade_license_expiry', 'trn_number', 'ejari_number',
+        'trade_license_issue', 'trade_license_expiry', 'trn_number', 'ejari_number', 'ejari_expiry',
         'legal_form', 'country_of_incorporation', 'business_activity', 'nature_of_business',
         'registered_address', 'operating_address', 'phone', 'email', 'website',
         'full_name', 'name_arabic', 'nationality', 'dob', 'passport_number', 'passport_expiry',
@@ -29,6 +29,7 @@ class BullionClient extends Model
     protected $casts = [
         'trade_license_issue'   => 'date',
         'trade_license_expiry'  => 'date',
+        'ejari_expiry'          => 'date',
         'dob'                   => 'date',
         'passport_expiry'       => 'date',
         'eid_expiry'            => 'date',
@@ -91,6 +92,19 @@ class BullionClient extends Model
         if (!$this->trade_license_expiry) return false;
         return $this->trade_license_expiry->diffInDays(now()) <= 30
             && $this->trade_license_expiry->isFuture();
+    }
+
+    public function isEjariExpired(): bool
+    {
+        if (!$this->ejari_expiry) return false;
+        return $this->ejari_expiry->isPast();
+    }
+
+    public function isEjariExpiringSoon(): bool
+    {
+        if (!$this->ejari_expiry) return false;
+        return $this->ejari_expiry->isFuture()
+            && $this->ejari_expiry->diffInDays(now()) <= 30;
     }
 
     public function isLicenseExpired(): bool

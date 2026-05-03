@@ -111,6 +111,7 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             @include('tenant.clients._select', ['name'=>'legal_form','label'=>'Legal form','options'=>['LLC'=>'LLC','Sole Establishment'=>'Sole Establishment','Free Zone LLC'=>'Free Zone LLC','Free Zone Establishment'=>'Free Zone Establishment','Public Joint Stock'=>'Public Joint Stock','Branch'=>'Branch of Foreign Company','Other'=>'Other']])
             @include('tenant.clients._field', ['name'=>'ejari_number','label'=>'Ejari number'])
+                @include('tenant.clients._field', ['name'=>'ejari_expiry','label'=>'Ejari expiry date','type'=>'date'])
             @include('tenant.clients._country', ['name'=>'country_of_incorporation','label'=>'Country of incorporation','required'=>true,'value'=>'AE'])
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -531,7 +532,7 @@ function clientForm() {
         stepErrors:    {1:false,2:false,3:false,4:false,5:false,6:false,7:false},
         indStepErrors: {1:false,2:false,3:false,4:false,5:false},
         signatories:  [{ full_name:'', position:'', nationality:'', dob:'', passport_number:'', passport_expiry:'', eid_number:'' }],
-        shareholders: [{ type:'individual', name:'', nationality:'', dob:'', ownership_percentage:'', passport_number:'', is_ubo:false }],
+        shareholders: [{ shareholder_type:'individual', name:'', nationality:'', dob:'', ownership_percentage:'', passport_number:'', is_ubo:false, is_resident:false, eid_number:'', eid_expiry:'' }],
         ubos:         [{ full_name:'', nationality:'', dob:'', passport_number:'', ownership_percentage:'', country_of_residence:'', pep_status:false }],
         setType(t) {
             this.clientType=t; this.step=1; this.indStep=1;
@@ -551,7 +552,7 @@ function clientForm() {
         },
         addSig()    { this.signatories.push({full_name:'',position:'',nationality:'',dob:'',passport_number:'',passport_expiry:'',eid_number:''}); },
         removeSig(i){ this.signatories.splice(i,1); },
-        addSh()     { this.shareholders.push({type:'individual',name:'',nationality:'',dob:'',ownership_percentage:'',passport_number:'',is_ubo:false}); },
+        addSh()     { this.shareholders.push({shareholder_type:'individual',name:'',nationality:'',dob:'',ownership_percentage:'',passport_number:'',is_ubo:false,is_resident:false,eid_number:'',eid_expiry:''}); },
         removeSh(i) { this.shareholders.splice(i,1); },
         addUbo()    { this.ubos.push({full_name:'',nationality:'',dob:'',passport_number:'',ownership_percentage:'',country_of_residence:'',pep_status:false}); },
         removeUbo(i){ this.ubos.splice(i,1); },
