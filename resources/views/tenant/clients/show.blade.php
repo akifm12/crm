@@ -1,13 +1,8 @@
 @extends('layouts.tenant')
 
 @php
-$typeLabels = [
-    'corporate_local'   => 'Corporate — Local',
-    'corporate_import'  => 'Corporate — Import',
-    'corporate_export'  => 'Corporate — Export',
-    'individual'        => 'Individual',
-];
-$isCorporate = $client->client_type !== 'individual';
+$typeLabels   = $sector['client_types'];
+$isCorporate  = $client->client_type !== 'individual';
 $countryName = fn($code) => $code ? (\App\Models\Country::find($code)?->country_name ?? $code) : '—';
 @endphp
 

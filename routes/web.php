@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\CrmController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\ScreeningController;
 use App\Http\Controllers\Admin\WhatsAppController;
+use App\Http\Controllers\Admin\TenantController;
 use App\Http\Controllers\Admin\DocumentController;
 use App\Http\Controllers\Tenant\DashboardController as TenantDashboard;
 use App\Http\Controllers\Tenant\ClientController;
@@ -97,8 +98,12 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/kyc',                          fn() => view('admin.stub', ['module' => 'KYC Submissions']))->name('kyc.index');
     Route::get('/kyc/submissions',              fn() => view('admin.stub', ['module' => 'KYC Submissions']))->name('kyc.submissions');
     Route::get('/kyc/submissions/{id}',         fn() => view('admin.stub', ['module' => 'KYC Review']))->name('kyc.review');
-    Route::get('/kyc/tenants',                  fn() => view('admin.stub', ['module' => 'Tenants']))->name('kyc.tenants');
-    Route::post('/kyc/tenants',                 fn() => back())->name('kyc.tenants.create');
+    Route::get('/kyc/tenants',                   [TenantController::class, 'index'])->name('kyc.tenants');
+    Route::get('/kyc/tenants/create',            [TenantController::class, 'create'])->name('kyc.tenants.create');
+    Route::post('/kyc/tenants',                  [TenantController::class, 'store'])->name('kyc.tenants.store');
+    Route::get('/kyc/tenants/{tenant}/edit',     [TenantController::class, 'edit'])->name('kyc.tenants.edit');
+    Route::patch('/kyc/tenants/{tenant}',        [TenantController::class, 'update'])->name('kyc.tenants.update');
+    Route::patch('/kyc/tenants/{tenant}/toggle', [TenantController::class, 'toggle'])->name('kyc.tenants.toggle');
     Route::patch('/kyc/submissions/{id}/approve', fn() => back())->name('kyc.approve');
     Route::patch('/kyc/submissions/{id}/reject',  fn() => back())->name('kyc.reject');
 

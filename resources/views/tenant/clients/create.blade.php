@@ -274,7 +274,7 @@
         <div>
             <label class="block text-sm font-semibold text-gray-700 mb-2">Source of funds <span class="text-red-500">*</span></label>
             <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
-                @foreach(['trading_revenue'=>'Gold / bullion trading revenue','salary'=>'Salary / employment income','business_income'=>'Business income','investment'=>'Investment income','inheritance'=>'Inheritance','asset_sale'=>'Sale of assets','shareholder_loan'=>'Shareholder / equity contribution','bank_finance'=>'Bank / trade finance','other'=>'Other'] as $v=>$l)
+                @foreach($sector['source_of_funds'] as $v=>$l)
                 <label class="flex items-center gap-2 p-2.5 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 text-sm">
                     <input type="checkbox" name="source_of_funds[]" value="{{ $v }}" class="rounded border-gray-300 text-blue-600"> {{ $l }}
                 </label>

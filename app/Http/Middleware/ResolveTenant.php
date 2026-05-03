@@ -28,6 +28,11 @@ class ResolveTenant
         // Share with all Blade views automatically
         view()->share('tenant', $tenant);
 
+        // Share sector config so all tenant views can use $sector
+        $sector = $tenant->sectorConfig();
+        App::instance('sector', $sector);
+        view()->share('sector', $sector);
+
         return $next($request);
     }
 }

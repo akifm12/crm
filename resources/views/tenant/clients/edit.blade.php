@@ -281,7 +281,7 @@ $typeLabels  = ['corporate_local'=>'Corporate — Local','corporate_import'=>'Co
             <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-2">Source of funds</label>
                 <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
-                    @foreach(['trading_revenue'=>'Trading revenue','salary'=>'Salary','investment'=>'Investment returns','inheritance'=>'Inheritance','loan'=>'Loan / financing','other'=>'Other'] as $v=>$l)
+                    @foreach($sector['source_of_funds'] as $v=>$l)
                     <label class="flex items-center gap-2 p-2 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
                         <input type="checkbox" name="source_of_funds[]" value="{{ $v }}"
                                {{ is_array($client->source_of_funds) && in_array($v, $client->source_of_funds) ? 'checked' : '' }}
@@ -296,7 +296,7 @@ $typeLabels  = ['corporate_local'=>'Corporate — Local','corporate_import'=>'Co
             <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-2">Source of wealth</label>
                 <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
-                    @foreach(['uae_business'=>'UAE business','foreign_business'=>'Foreign business','salary'=>'Salary / employment','real_estate'=>'Real estate','inheritance'=>'Inheritance','savings'=>'Savings','investment'=>'Investment returns','other'=>'Other'] as $v=>$l)
+                    @foreach($sector['source_of_wealth'] as $v=>$l)
                     <label class="flex items-center gap-2 p-2 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
                         <input type="checkbox" name="source_of_wealth[]" value="{{ $v }}"
                                {{ is_array($client->source_of_wealth) && in_array($v, $client->source_of_wealth) ? 'checked' : '' }}
