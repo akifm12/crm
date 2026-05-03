@@ -631,7 +631,6 @@ $countryName = fn($code) => $code ? (\App\Models\Country::find($code)?->country_
                         @endforeach
                     </div>
                 </div>
-                </div>
                 <div class="divide-y divide-gray-100">
                     @foreach([
                         ['decl_pep',            'PEP declaration',                      'Politically Exposed Person declaration',          true],
