@@ -299,10 +299,14 @@ class CrmController extends Controller
         ]);
 
         // Link CRM client to tenant
+        $portalType = in_array($request->business_type, ['bullion','real_estate']) 
+            ? $request->business_type 
+            : 'other';
+
         $crm->update([
             'tenant_id'   => $tenant->id,
-            'portal_type' => $request->business_type,
-            'stage'       => 'client',
+            'portal_type' => $portalType,
+            'stage'       => 'active',
         ]);
 
         return back()->with('success',
