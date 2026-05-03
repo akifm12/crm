@@ -292,10 +292,12 @@
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             @include('tenant.clients._field', ['name'=>'purpose_of_relationship','label'=>'Purpose of business relationship','required'=>true])
-            @if(request()->get('type') !== 'individual')
-            @include('tenant.clients._field', ['name'=>'expected_monthly_volume','label'=>'Expected monthly volume (AED)','type'=>'number'])
-            @include('tenant.clients._select', ['name'=>'expected_monthly_frequency','label'=>'Transaction frequency','options'=>['1-5'=>'1–5 per month','6-15'=>'6–15 per month','16-30'=>'16–30 per month','30+'=>'More than 30 per month']])
-            @endif
+            <template x-if="clientType !== 'individual'">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    @include('tenant.clients._field', ['name'=>'expected_monthly_volume','label'=>'Expected monthly volume (AED)','type'=>'number'])
+                    @include('tenant.clients._select', ['name'=>'expected_monthly_frequency','label'=>'Transaction frequency','options'=>['1-5'=>'1–5 per month','6-15'=>'6–15 per month','16-30'=>'16–30 per month','30+'=>'More than 30 per month']])
+                </div>
+            </template>
             @include('tenant.clients._select', ['name'=>'cdd_type','label'=>'CDD type','options'=>['standard'=>'Standard CDD','enhanced'=>'Enhanced Due Diligence (EDD)'],'default'=>'standard'])
         </div>
         <div>
