@@ -147,6 +147,7 @@ Route::prefix('{slug}')
         Route::get('/settings',                    [TenantSettingsController::class, 'index'])->name('settings');
         Route::get('/clients/{client}/screening-pdf',  [ReportController::class, 'screeningPdf'])->name('clients.screening.pdf');
         Route::get('/clients/{client}/declaration/{type}', [ReportController::class, 'declaration'])->name('clients.declaration');
+        Route::get('/clients/{client}/combined-declaration',   [ReportController::class, 'combinedDeclaration'])->name('clients.declaration.combined');
         Route::patch('/settings/profile',          [TenantSettingsController::class, 'updateProfile'])->name('settings.profile');
         Route::patch('/settings/mlro',             [TenantSettingsController::class, 'updateMlro'])->name('settings.mlro');
         Route::post('/settings/logo',              [TenantSettingsController::class, 'uploadLogo'])->name('settings.logo');

@@ -22,7 +22,58 @@ class ReportController extends Controller
         return view('tenant.reports.screening_pdf', compact('tenant', 'client'));
     }
 
-    // ── Declaration Word docs ──────────────────────────────────────────────
+    // ── Combined declaration Word doc ──────────────────────────────────────
+
+    public function combinedDeclaration(string $slug, BullionClient $client)
+    {
+        $tenant = app('tenant');
+        abort_if($client->tenant_id !== $tenant->id, 404);
+        $client->load(['signatories', 'shareholders', 'ubos']);
+
+        $sig = $client->signatories->first();
+
+        $data = json_encode([
+            'client_name'     => $client->client_type !== 'individual' ? $client->company_name : $client->full_name,
+            'client_type'     => $client->client_type,
+            'trade_license'   => $client->trade_license_no ?? $client->passport_number ?? '',
+            'country'         => $client->country_of_incorporation ?? $client->nationality ?? '',
+            'signatory_name'  => $sig?->full_name ?? $client->displayName(),
+            'signatory_title' => $sig?->position ?? 'Authorised Signatory',
+            'mlro_name'       => $tenant->mlro_name ?? '',
+            'mlro_title'      => 'Money Laundering Reporting Officer (MLRO)',
+            'entity_name'     => $tenant->name,
+            'entity_address'  => $tenant->address ?? '',
+            'date'            => now()->format('d F Y'),
+            'ubos'            => $client->ubos->map(fn($u) => [
+                'name'       => $u->full_name,
+                'nationality'=> $u->nationality,
+                'ownership'  => $u->ownership_percentage,
+            ])->toArray(),
+        ], JSON_UNESCAPED_UNICODE);
+
+        $filename   = 'COMBINED-DECL-' . Str::upper(Str::slug($client->displayName())) . '.docx';
+        $outPath    = storage_path("app/tmp/{$filename}");
+        $scriptPath = base_path('scripts/generate-combined-declaration.cjs');
+
+        if (!file_exists(dirname($outPath))) {
+            mkdir(dirname($outPath), 0755, true);
+        }
+
+        $tmpData = storage_path('app/tmp/combined_' . uniqid() . '.json');
+        file_put_contents($tmpData, $data);
+
+        $cmd    = "node {$scriptPath} " . escapeshellarg($tmpData) . " " . escapeshellarg($outPath) . " 2>&1";
+        $output = shell_exec($cmd);
+
+        @unlink($tmpData);
+
+        if (!file_exists($outPath)) {
+            \Log::error("Combined declaration failed: {$output}");
+            return back()->with('error', 'Failed to generate declaration. ' . $output);
+        }
+
+        return response()->download($outPath, $filename)->deleteFileAfterSend(true);
+    }
 
     public function declaration(string $slug, BullionClient $client, string $type)
     {
