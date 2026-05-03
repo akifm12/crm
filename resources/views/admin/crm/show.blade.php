@@ -82,7 +82,6 @@
             ['slas',       'SLAs ('.$slaCount.')'],
             ['quotations', 'Quotations ('.$qtCount.')'],
             ['portal',     'Portal'],
-			['screening',  'Screening'],
         ] as [$key,$label])
         <button @click="tab='{{ $key }}'"
                 :class="tab==='{{ $key }}' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'"
@@ -488,13 +487,6 @@
                         @else
                         <span class="text-xs text-green-600 font-medium">✓ Signed copy uploaded</span>
                         @endif
-						<a href="{{ route('sla.download', $sla->id) }}"
-						   class="text-xs font-semibold text-green-600 hover:underline flex items-center gap-1">
-							<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-							</svg>
-							Download SLA doc
-						</a>
                     </div>
                     <div id="sla-upload-{{ $sla->id }}" class="hidden mt-3 pt-3 border-t border-gray-100">
                         <form method="POST" action="{{ route('crm.slas.upload', $sla->id) }}" enctype="multipart/form-data" class="flex items-center gap-2">
@@ -549,13 +541,6 @@
                             </p>
                         </div>
                         <span class="px-2 py-0.5 rounded-full text-xs font-semibold {{ $qt->statusBadge() }}">{{ ucfirst($qt->status) }}</span>
-						<a href="{{ route('crm.quotations.download', $qt->id) }}"
-						   class="text-xs font-semibold text-green-600 hover:underline flex items-center gap-1">
-							<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-							</svg>
-							Download
-						</a>
                     </div>
                     <div class="mt-3 text-sm">
                         <span class="text-gray-500">Subtotal: </span><span class="font-medium">AED {{ number_format($qt->subtotal, 2) }}</span>
@@ -575,39 +560,91 @@
     {{-- ── PORTAL ────────────────────────────────────────────────────────── --}}
     <div x-show="tab==='portal'" x-cloak>
         <div class="bg-white rounded-xl border border-gray-200 p-6 max-w-lg">
+
             @if($crm->tenant)
-            <h3 class="text-sm font-semibold text-gray-700 mb-4">Tenant portal</h3>
-            <dl class="space-y-3 text-sm">
+            {{-- Already converted --}}
+            <div class="flex items-center gap-3 mb-5 p-3 bg-green-50 border border-green-200 rounded-lg">
+                <svg class="w-5 h-5 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <p class="text-sm font-semibold text-green-700">Portal active</p>
+            </div>
+            <dl class="space-y-3 text-sm mb-5">
                 <div class="flex justify-between">
                     <dt class="text-gray-400">Portal URL</dt>
-                    <dd><a href="{{ $crm->tenant->portalUrl() }}" target="_blank" class="text-blue-600 hover:underline">{{ $crm->tenant->portalUrl() }}</a></dd>
+                    <dd><a href="{{ $crm->tenant->portalUrl() }}" target="_blank" class="text-blue-600 hover:underline font-mono text-xs">{{ $crm->tenant->portalUrl() }}</a></dd>
                 </div>
-                <div class="flex justify-between"><dt class="text-gray-400">Slug</dt><dd class="font-mono text-gray-700">{{ $crm->tenant->slug }}</dd></div>
-                <div class="flex justify-between"><dt class="text-gray-400">Type</dt><dd>{{ ucfirst($crm->portal_type) }}</dd></div>
+                <div class="flex justify-between">
+                    <dt class="text-gray-400">Sector</dt>
+                    <dd class="font-medium">{{ $crm->tenant->sectorLabel() }}</dd>
+                </div>
                 <div class="flex justify-between">
                     <dt class="text-gray-400">Status</dt>
                     <dd><span class="px-2 py-0.5 rounded-full text-xs font-semibold {{ $crm->tenant->is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
                         {{ $crm->tenant->is_active ? 'Active' : 'Inactive' }}</span></dd>
                 </div>
             </dl>
-            <a href="{{ $crm->tenant->portalUrl() }}" target="_blank"
-               class="mt-5 inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition">
-                Open client portal
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
-            </a>
-            @else
-            <div class="text-center py-8">
-                <p class="text-gray-500 text-sm mb-2">No portal created for this client.</p>
-                <p class="text-xs text-gray-400">Portal type was set to None when client was created.</p>
+            <div class="flex gap-3">
+                <a href="{{ $crm->tenant->portalUrl() }}" target="_blank"
+                   class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition">
+                    Open portal
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                </a>
+                <a href="{{ route('kyc.tenants.edit', $crm->tenant->id) }}"
+                   class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
+                    Edit portal settings
+                </a>
             </div>
+
+            @else
+            {{-- Convert to portal --}}
+            <h3 class="text-sm font-semibold text-gray-700 mb-1">Create compliance portal</h3>
+            <p class="text-xs text-gray-400 mb-5">This will create a tenant portal for <strong>{{ $crm->company_name }}</strong> and set up their login credentials.</p>
+
+            @if(session('success') && str_contains(session('success'), 'Portal created'))
+            <div class="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700">
+                {{ session('success') }}
+            </div>
+            @endif
+
+            <form method="POST" action="{{ route('crm.convert.portal', $crm->id) }}" class="space-y-4">
+                @csrf
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Business sector <span class="text-red-500">*</span></label>
+                    <select name="business_type" required
+                            class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                        <option value="">— Select sector —</option>
+                        @foreach(\App\Support\SectorConfig::sectors() as $key => $label)
+                        <option value="{{ $key }}">{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Portal admin name <span class="text-red-500">*</span></label>
+                    <input type="text" name="admin_name"
+                           value="{{ $crm->contact_person ?? '' }}"
+                           class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Portal login email <span class="text-red-500">*</span></label>
+                    <input type="email" name="admin_email" required
+                           value="{{ $crm->email ?? '' }}"
+                           class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Initial password <span class="text-red-500">*</span></label>
+                    <input type="text" name="admin_password" required minlength="8"
+                           value="{{ \Illuminate\Support\Str::random(10) }}"
+                           class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono">
+                    <p class="text-xs text-gray-400 mt-1">Copy this before submitting — it won't be shown again.</p>
+                </div>
+                <button type="submit"
+                        class="w-full py-2.5 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition flex items-center justify-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    Create compliance portal
+                </button>
+            </form>
             @endif
         </div>
     </div>
-
-	{{-- ── SCREENING ────────────────────────────────────────────────────────── --}}
-	<div x-show="tab==='screening'" x-cloak>
-		@include('admin.crm._screening_tab')
-	</div>
 
 </div>
 @endsection

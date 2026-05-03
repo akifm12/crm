@@ -256,4 +256,58 @@ class CrmController extends Controller
         $crm->update(['stage' => $request->stage]);
         return back()->with('success', 'Stage updated.');
     }
+
+    // ── Convert CRM client to tenant portal ───────────────────────────────
+
+    public function convertToPortal(Request $request, CrmClient $crm)
+    {
+        $request->validate([
+            'business_type'  => 'required|in:' . implode(',', array_keys(\App\Support\SectorConfig::sectors())),
+            'admin_email'    => 'required|email|unique:users,email',
+            'admin_password' => 'required|string|min:8',
+        ]);
+
+        if ($crm->tenant_id) {
+            return back()->with('error', 'This client already has a portal.');
+        }
+
+        // Generate slug from company name
+        $base = \Illuminate\Support\Str::slug($crm->company_name);
+        $slug = $base;
+        $i = 2;
+        while (\App\Models\Tenant::where('slug', $slug)->exists()) {
+            $slug = $base . '-' . $i++;
+        }
+
+        // Create tenant
+        $tenant = \App\Models\Tenant::create([
+            'name'          => $crm->company_name,
+            'slug'          => $slug,
+            'business_type' => $request->business_type,
+            'contact_email' => $crm->email ?? $request->admin_email,
+            'phone'         => $crm->telephone,
+            'address'       => $crm->address,
+            'is_active'     => true,
+        ]);
+
+        // Create portal login user
+        \App\Models\User::create([
+            'name'     => $request->admin_name ?? $crm->contact_person ?? $crm->company_name,
+            'email'    => $request->admin_email,
+            'password' => \Illuminate\Support\Facades\Hash::make($request->admin_password),
+            'role'     => 'admin',
+        ]);
+
+        // Link CRM client to tenant
+        $crm->update([
+            'tenant_id'   => $tenant->id,
+            'portal_type' => $request->business_type,
+            'stage'       => 'client',
+        ]);
+
+        return back()->with('success',
+            "Portal created: {$tenant->portalUrl()} — Login: {$request->admin_email} / {$request->admin_password}"
+        );
+    }
+
 }

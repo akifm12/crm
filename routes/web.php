@@ -33,6 +33,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/crm',         [CrmController::class, 'store'])->name('crm.store');
     Route::get('/crm/{crm}',    [CrmController::class, 'show'])->name('crm.show');
     Route::patch('/crm/{crm}/stage',               [CrmController::class, 'updateStage'])->name('crm.stage');
+    Route::post('/crm/{crm}/convert-portal',       [CrmController::class, 'convertToPortal'])->name('crm.convert.portal');
     Route::post('/crm/{crm}/notes',                [CrmController::class, 'addNote'])->name('crm.notes.store');
     Route::post('/crm/{crm}/tasks',                [CrmController::class, 'addTask'])->name('crm.tasks.store');
     Route::patch('/crm/tasks/{task}/complete',     [CrmController::class, 'completeTask'])->name('crm.tasks.complete');
