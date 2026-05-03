@@ -621,11 +621,8 @@ $countryName = fn($code) => $code ? (\App\Models\Country::find($code)?->country_
                     <div>
                         <p class="text-sm font-semibold text-blue-800">Combined declaration (recommended)</p>
                         <p class="text-xs text-blue-600">
-                            @if($isCorporate)
-                            All 6 declarations in one document — single signature
-                            @else
-                            PEP + Source of Funds + Sanctions + CAHRA — single signature
-                            @endif
+                            @php $declCount = count($isCorporate ? ($sector['declarations_corporate'] ?? []) : ($sector['declarations_individual'] ?? [])); @endphp
+                            All {{ $declCount }} declarations in one document — single signature
                         </p>
                     </div>
                     <a href="{{ route('tenant.clients.declaration.combined', [$tenant->slug, $client->id]) }}"
@@ -638,47 +635,59 @@ $countryName = fn($code) => $code ? (\App\Models\Country::find($code)?->country_
                     <p class="text-xs text-gray-400 mb-2">Or download individual declarations:</p>
                     <div class="flex flex-wrap gap-2">
                         @php
-                            $declLinks = $isCorporate
-                                ? ['pep'=>'PEP','supply_chain'=>'Supply Chain','cahra'=>'CAHRA','source_of_funds'=>'Source of Funds','sanctions'=>'Sanctions','ubo'=>'UBO']
-                                : ['pep'=>'PEP','source_of_funds'=>'Source of Funds / Wealth','sanctions'=>'Sanctions','cahra'=>'CAHRA'];
+                        $declLabels = ['pep'=>'PEP','supply_chain'=>'Supply Chain','cahra'=>'CAHRA','source_of_funds'=>'Source of Funds','sanctions'=>'Sanctions','ubo'=>'UBO','property'=>'Property','beneficial_ownership'=>'Beneficial Ownership','client_funds'=>'Client Funds'];
+                        $activeLinks = $isCorporate
+                            ? ($sector['declarations_corporate'] ?? ['pep','source_of_funds','sanctions','ubo'])
+                            : ($sector['declarations_individual'] ?? ['pep','source_of_funds','sanctions']);
                         @endphp
-                        @foreach($declLinks as $dt=>$dl)
+                        @foreach($activeLinks as $dt)
                         <a href="{{ route('tenant.clients.declaration', [$tenant->slug, $client->id, $dt]) }}"
                            class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition">
                             <svg class="w-3 h-3 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                            {{ $dl }}
+                            {{ $declLabels[$dt] ?? $dt }}
                         </a>
                         @endforeach
                     </div>
                 </div>
                 </div>
                 <div class="divide-y divide-gray-100">
-                    @foreach([
-                        ['decl_pep',            'PEP declaration',                      'Politically Exposed Person declaration',          true],
-                        ['decl_supply_chain',   'Declaration — Gold supply chain',       'Supply chain sourcing declaration',               $isCorporate],
-                        ['decl_cahra',          'Declaration — No CAHRA imports',        'Conflict-affected areas declaration',             true],
-                        ['decl_source_of_funds','Declaration — Source of funds',         'Source of funds & wealth declaration',            true],
-                        ['decl_sanctions',      'Declaration — Sanctions compliance',    'Sanctions compliance declaration',                true],
-                        ['decl_ubo',            'Declaration — Beneficial ownership',    'UBO disclosure declaration',                      $isCorporate],
-                    ] as [$field, $title, $desc, $show])
-                    @if($show)
-                    <label class="flex items-center justify-between px-5 py-4 cursor-pointer hover:bg-gray-50 transition">
-                        <div class="flex-1">
-                            <p class="text-sm font-semibold text-gray-800">{{ $title }}</p>
-                            <p class="text-xs text-gray-400">{{ $desc }}</p>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            @if($client->$field)
-                            <span class="text-xs font-semibold text-green-700 bg-green-100 px-2.5 py-1 rounded-full">Received</span>
-                            @else
-                            <span class="text-xs font-semibold text-amber-700 bg-amber-100 px-2.5 py-1 rounded-full">Pending</span>
-                            @endif
-                            <input type="checkbox" name="{{ $field }}" value="1" {{ $client->$field ? 'checked' : '' }}
-                                   class="w-5 h-5 rounded border-gray-300 text-blue-600 cursor-pointer">
-                        </div>
-                    </label>
-                    @endif
-                    @endforeach
+                @php
+                $allDeclarations = [
+                    'pep'            => ['PEP declaration',                    'Politically Exposed Person declaration'],
+                    'supply_chain'   => ['Declaration — Gold supply chain',    'Supply chain sourcing declaration'],
+                    'cahra'          => ['Declaration — No CAHRA imports',     'Conflict-affected areas declaration'],
+                    'source_of_funds'=> ['Declaration — Source of funds',      'Source of funds & wealth declaration'],
+                    'sanctions'      => ['Declaration — Sanctions compliance', 'Sanctions compliance declaration'],
+                    'ubo'            => ['Declaration — Beneficial ownership', 'UBO disclosure declaration'],
+                    'property'       => ['Declaration — Property transaction', 'Real estate transaction declaration'],
+                    'beneficial_ownership' => ['Declaration — Beneficial ownership structure', 'Ownership disclosure declaration'],
+                    'client_funds'   => ['Declaration — Client funds handling', 'Client monies declaration'],
+                ];
+                $activeDecls = $isCorporate
+                    ? ($sector['declarations_corporate'] ?? ['pep','source_of_funds','sanctions','ubo'])
+                    : ($sector['declarations_individual'] ?? ['pep','source_of_funds','sanctions']);
+                @endphp
+                @foreach($activeDecls as $dt)
+                @php
+                    $field = 'decl_' . $dt;
+                    [$title, $desc] = $allDeclarations[$dt] ?? [ucfirst($dt) . ' declaration', ''];
+                @endphp
+                <label class="flex items-center justify-between px-5 py-4 cursor-pointer hover:bg-gray-50 transition">
+                    <div class="flex-1">
+                        <p class="text-sm font-semibold text-gray-800">{{ $title }}</p>
+                        <p class="text-xs text-gray-400">{{ $desc }}</p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        @if($client->$field ?? false)
+                        <span class="text-xs font-semibold text-green-700 bg-green-100 px-2.5 py-1 rounded-full">Received</span>
+                        @else
+                        <span class="text-xs font-semibold text-amber-700 bg-amber-100 px-2.5 py-1 rounded-full">Pending</span>
+                        @endif
+                        <input type="checkbox" name="{{ $field }}" value="1" {{ ($client->$field ?? false) ? 'checked' : '' }}
+                               class="w-5 h-5 rounded border-gray-300 text-blue-600 cursor-pointer">
+                    </div>
+                </label>
+                @endforeach
 
                     {{-- Master declaration --}}
                     <label class="flex items-center justify-between px-5 py-4 cursor-pointer hover:bg-gray-50 bg-gray-50 transition">
