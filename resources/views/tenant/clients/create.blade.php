@@ -1,7 +1,7 @@
 @extends('layouts.tenant')
 @section('title', 'Add Client — ' . $tenant->name)
 @section('page-title', 'Add new client')
-@section('page-subtitle', 'Complete all steps to onboard a new bullion client')
+@section('page-subtitle', 'Complete all steps to onboard a new ' . ($sector['label'] ?? 'compliance') . ' client')
 
 @section('content')
 
@@ -326,15 +326,26 @@
         <p class="text-xs text-gray-400 mt-0.5">Confirm each declaration has been received and acknowledged</p>
     </div>
     <div class="p-6 space-y-3">
-        @foreach([
-            ['decl_pep','Declaration 1 — PEP','Client confirmed PEP status and signed the declaration.'],
-            ['decl_supply_chain','Declaration 2 — Gold supply chain sourcing','Client confirmed legitimate sourcing.'],
-            ['decl_cahra','Declaration 3 — No CAHRA imports','Client confirmed no gold from conflict-affected areas.'],
-            ['decl_source_of_funds','Declaration 4 — Source of funds & wealth','Client confirmed and declared source of funds.'],
-            ['decl_sanctions','Declaration 5 — Sanctions compliance','Client confirmed no applicable sanctions exposure.'],
-            ['decl_ubo','Declaration 6 — Beneficial ownership','Client disclosed all UBOs accurately.'],
-        ] as [$f,$t,$d])
-        <label class="flex items-start gap-4 p-4 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 transition">
+        @php
+        $allDeclLabels = [
+            'pep'            => ['PEP declaration',                    'Client confirmed PEP status and signed the declaration.'],
+            'supply_chain'   => ['Gold supply chain sourcing',         'Client confirmed legitimate sourcing.'],
+            'cahra'          => ['No CAHRA imports',                   'Client confirmed no gold from conflict-affected areas.'],
+            'source_of_funds'=> ['Source of funds & wealth',           'Client confirmed and declared source of funds.'],
+            'sanctions'      => ['Sanctions compliance',               'Client confirmed no applicable sanctions exposure.'],
+            'ubo'            => ['Beneficial ownership',               'Client disclosed all UBOs accurately.'],
+            'property'       => ['Property transaction declaration',   'Client confirmed property transaction details.'],
+            'beneficial_ownership' => ['Beneficial ownership structure','Client confirmed beneficial ownership structure.'],
+            'client_funds'   => ['Client funds handling',              'Client confirmed client monies arrangements.'],
+        ];
+        $corpDecls = $sector['declarations_corporate'] ?? ['pep','source_of_funds','sanctions','ubo'];
+        $indDecls  = $sector['declarations_individual'] ?? ['pep','source_of_funds','sanctions'];
+        $activeDecls = $clientType !== 'individual' ? $corpDecls : $indDecls;
+        @endphp
+        @foreach($corpDecls as $dt)
+        @php $f = 'decl_' . $dt; [$t,$d] = $allDeclLabels[$dt] ?? [ucfirst($dt), '']; @endphp
+        <label class="flex items-start gap-4 p-4 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 transition"
+               x-show="clientType !== 'individual' || {{ json_encode(in_array($dt, $indDecls)) }}">
             <input type="checkbox" name="{{ $f }}" value="1" class="mt-0.5 rounded border-gray-300 text-blue-600 w-5 h-5 flex-shrink-0">
             <div><p class="text-sm font-semibold text-gray-800">{{ $t }}</p><p class="text-xs text-gray-500 mt-0.5">{{ $d }}</p></div>
         </label>

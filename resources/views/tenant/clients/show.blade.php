@@ -12,6 +12,13 @@ $countryName = fn($code) => $code ? (\App\Models\Country::find($code)?->country_
 
 @section('content')
 
+@if(app()->environment('local') || auth()->user()?->role === 'admin')
+<pre style="font-size:10px;background:#f0f0f0;padding:8px;margin-bottom:8px">
+SECTOR: {{ $sector['label'] ?? 'NOT SET' }}
+CORP DECLS: {{ implode(', ', $sector['declarations_corporate'] ?? []) }}
+</pre>
+@endif
+
 {{-- ── HEADER CARD ──────────────────────────────────────────────────────────── --}}
 <div class="bg-white rounded-xl border border-gray-200 p-5 mb-5">
     <div class="flex flex-wrap items-start justify-between gap-4">
