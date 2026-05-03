@@ -17,7 +17,7 @@ return new class extends Migration
         // Add resident fields to client_shareholders
         Schema::table('client_shareholders', function (Blueprint $table) {
             $table->boolean('is_resident')->default(false)->after('is_ubo');
-            $table->string('eid_number')->nullable()->after('is_resident');
+            // eid_number already exists from original migration
             $table->date('eid_expiry')->nullable()->after('eid_number');
         });
     }
