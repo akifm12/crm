@@ -16,26 +16,13 @@
 <div class="bg-white rounded-xl border border-gray-200 p-5 mb-5">
     <p class="text-sm font-semibold text-gray-700 mb-3">Client type</p>
     <div class="flex flex-wrap gap-3">
-        <button type="button" @click="setType('corporate_local')"
-                :class="clientType==='corporate_local' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-200 hover:border-blue-400'"
-                class="px-5 py-2.5 rounded-lg border text-sm font-semibold transition-all">
-            Corporate — Local
-        </button>
-        <button type="button" @click="setType('corporate_import')"
-                :class="clientType==='corporate_import' ? 'bg-purple-600 text-white border-purple-600' : 'bg-white text-gray-600 border-gray-200 hover:border-purple-400'"
-                class="px-5 py-2.5 rounded-lg border text-sm font-semibold transition-all">
-            Corporate — Import
-        </button>
-        <button type="button" @click="setType('corporate_export')"
-                :class="clientType==='corporate_export' ? 'bg-amber-600 text-white border-amber-600' : 'bg-white text-gray-600 border-gray-200 hover:border-amber-400'"
-                class="px-5 py-2.5 rounded-lg border text-sm font-semibold transition-all">
-            Corporate — Export
-        </button>
-        <button type="button" @click="setType('individual')"
-                :class="clientType==='individual' ? 'bg-gray-700 text-white border-gray-700' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'"
-                class="px-5 py-2.5 rounded-lg border text-sm font-semibold transition-all">
-            Individual
-        </button>
+		@foreach($sector['client_types'] as $typeKey => $typeLabel)
+		<button type="button" @click="setType('{{ $typeKey }}')"
+				:class="clientType==='{{ $typeKey }}' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-200 hover:border-blue-400'"
+				class="flex-1 py-2 px-3 text-sm font-semibold border rounded-lg transition">
+			{{ $typeLabel }}
+		</button>
+		@endforeach
     </div>
     <p class="text-xs text-gray-400 mt-3">
         <span x-show="clientType==='individual'">5 steps — profile · AML/CDD · declarations · documents · review</span>
