@@ -53,7 +53,12 @@ class ReportController extends Controller
 
         $filename   = 'COMBINED-DECL-' . Str::upper(Str::slug($client->displayName())) . '.docx';
         $outPath    = storage_path("app/tmp/{$filename}");
-        $scriptPath = base_path('scripts/generate-combined-declaration.cjs');
+
+        // Use individual script for individual clients
+        $scriptName = $client->client_type === 'individual'
+            ? 'generate-combined-declaration-individual.cjs'
+            : 'generate-combined-declaration.cjs';
+        $scriptPath = base_path("scripts/{$scriptName}");
 
         if (!file_exists(dirname($outPath))) {
             mkdir(dirname($outPath), 0755, true);

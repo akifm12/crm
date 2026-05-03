@@ -254,8 +254,10 @@ $typeLabels  = ['corporate_local'=>'Corporate — Local','corporate_import'=>'Co
             <h3 class="text-sm font-semibold text-gray-700 pb-2 border-b border-gray-100">AML / CDD details</h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 @include('tenant.clients._field', ['name'=>'purpose_of_relationship','label'=>'Purpose of business relationship','required'=>true,'value'=>$client->purpose_of_relationship])
+                @if($isCorporate)
                 @include('tenant.clients._field', ['name'=>'expected_monthly_volume','label'=>'Expected monthly volume (AED)','type'=>'number','value'=>$client->expected_monthly_volume])
                 @include('tenant.clients._select', ['name'=>'expected_monthly_frequency','label'=>'Transaction frequency','value'=>$client->expected_monthly_frequency,'options'=>['1-5'=>'1–5 per month','6-15'=>'6–15 per month','16-30'=>'16–30 per month','30+'=>'More than 30 per month']])
+                @endif
                 @include('tenant.clients._select', ['name'=>'cdd_type','label'=>'CDD type','default'=>$client->cdd_type ?? 'standard','options'=>['standard'=>'Standard CDD','enhanced'=>'Enhanced Due Diligence (EDD)']])
             </div>
 
@@ -278,7 +280,7 @@ $typeLabels  = ['corporate_local'=>'Corporate — Local','corporate_import'=>'Co
             <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-2">Source of wealth</label>
                 <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
-                    @foreach(['uae_business'=>'UAE business','foreign_business'=>'Foreign business','real_estate'=>'Real estate','inheritance'=>'Inheritance','savings'=>'Savings','other'=>'Other'] as $v=>$l)
+                    @foreach(['uae_business'=>'UAE business','foreign_business'=>'Foreign business','salary'=>'Salary / employment','real_estate'=>'Real estate','inheritance'=>'Inheritance','savings'=>'Savings','investment'=>'Investment returns','other'=>'Other'] as $v=>$l)
                     <label class="flex items-center gap-2 p-2 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
                         <input type="checkbox" name="source_of_wealth[]" value="{{ $v }}"
                                {{ is_array($client->source_of_wealth) && in_array($v, $client->source_of_wealth) ? 'checked' : '' }}

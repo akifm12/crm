@@ -611,7 +611,11 @@ $countryName = fn($code) => $code ? (\App\Models\Country::find($code)?->country_
                 <div class="px-5 py-2 border-b border-gray-100">
                     <p class="text-xs text-gray-400 mb-2">Or download individual declarations:</p>
                     <div class="flex flex-wrap gap-2">
+                        @if($isCorporate)
                         @foreach(['pep'=>'PEP','supply_chain'=>'Supply Chain','cahra'=>'CAHRA','source_of_funds'=>'Source of Funds','sanctions'=>'Sanctions','ubo'=>'UBO'] as $dt=>$dl)
+                        @else
+                        @foreach(['pep'=>'PEP','source_of_funds'=>'Source of Funds / Wealth','sanctions'=>'Sanctions','cahra'=>'CAHRA'] as $dt=>$dl)
+                        @endif
                         <a href="{{ route('tenant.clients.declaration', [$tenant->slug, $client->id, $dt]) }}"
                            class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition">
                             <svg class="w-3 h-3 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
@@ -622,13 +626,14 @@ $countryName = fn($code) => $code ? (\App\Models\Country::find($code)?->country_
                 </div>
                 <div class="divide-y divide-gray-100">
                     @foreach([
-                        ['decl_pep',            'Declaration 1 — PEP',                  'Politically Exposed Person declaration'],
-                        ['decl_supply_chain',   'Declaration 2 — Gold supply chain',    'Supply chain sourcing declaration'],
-                        ['decl_cahra',          'Declaration 3 — No CAHRA imports',     'Conflict-affected areas declaration'],
-                        ['decl_source_of_funds','Declaration 4 — Source of funds',      'Source of funds & wealth declaration'],
-                        ['decl_sanctions',      'Declaration 5 — Sanctions compliance', 'Sanctions compliance declaration'],
-                        ['decl_ubo',            'Declaration 6 — Beneficial ownership', 'UBO disclosure declaration'],
-                    ] as [$field, $title, $desc])
+                        ['decl_pep',            'PEP declaration',                      'Politically Exposed Person declaration',          true],
+                        ['decl_supply_chain',   'Declaration — Gold supply chain',       'Supply chain sourcing declaration',               $isCorporate],
+                        ['decl_cahra',          'Declaration — No CAHRA imports',        'Conflict-affected areas declaration',             true],
+                        ['decl_source_of_funds','Declaration — Source of funds',         'Source of funds & wealth declaration',            true],
+                        ['decl_sanctions',      'Declaration — Sanctions compliance',    'Sanctions compliance declaration',                true],
+                        ['decl_ubo',            'Declaration — Beneficial ownership',    'UBO disclosure declaration',                      $isCorporate],
+                    ] as [$field, $title, $desc, $show])
+                    @if($show)
                     <label class="flex items-center justify-between px-5 py-4 cursor-pointer hover:bg-gray-50 transition">
                         <div class="flex-1">
                             <p class="text-sm font-semibold text-gray-800">{{ $title }}</p>
@@ -644,6 +649,7 @@ $countryName = fn($code) => $code ? (\App\Models\Country::find($code)?->country_
                                    class="w-5 h-5 rounded border-gray-300 text-blue-600 cursor-pointer">
                         </div>
                     </label>
+                    @endif
                     @endforeach
 
                     {{-- Master declaration --}}

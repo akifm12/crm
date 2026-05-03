@@ -273,7 +273,7 @@
         <div>
             <label class="block text-sm font-semibold text-gray-700 mb-2">Source of funds <span class="text-red-500">*</span></label>
             <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
-                @foreach(['trading_revenue'=>'Gold / bullion trading revenue','business_income'=>'Business income','investment'=>'Investment income','asset_sale'=>'Sale of assets','shareholder_loan'=>'Shareholder / equity contribution','bank_finance'=>'Bank / trade finance','other'=>'Other'] as $v=>$l)
+                @foreach(['trading_revenue'=>'Gold / bullion trading revenue','salary'=>'Salary / employment income','business_income'=>'Business income','investment'=>'Investment income','inheritance'=>'Inheritance','asset_sale'=>'Sale of assets','shareholder_loan'=>'Shareholder / equity contribution','bank_finance'=>'Bank / trade finance','other'=>'Other'] as $v=>$l)
                 <label class="flex items-center gap-2 p-2.5 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 text-sm">
                     <input type="checkbox" name="source_of_funds[]" value="{{ $v }}" class="rounded border-gray-300 text-blue-600"> {{ $l }}
                 </label>
@@ -283,7 +283,7 @@
         <div>
             <label class="block text-sm font-semibold text-gray-700 mb-2">Source of wealth</label>
             <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
-                @foreach(['uae_business'=>'UAE business operations','foreign_business'=>'Foreign business operations','inheritance'=>'Inheritance','property_sale'=>'Property sale','professional'=>'Professional income','other'=>'Other'] as $v=>$l)
+                @foreach(['uae_business'=>'UAE business operations','foreign_business'=>'Foreign business operations','salary'=>'Salary / employment','inheritance'=>'Inheritance','property_sale'=>'Property sale','investment'=>'Investment returns','professional'=>'Professional income','other'=>'Other'] as $v=>$l)
                 <label class="flex items-center gap-2 p-2.5 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 text-sm">
                     <input type="checkbox" name="source_of_wealth[]" value="{{ $v }}" class="rounded border-gray-300 text-blue-600"> {{ $l }}
                 </label>
@@ -292,8 +292,10 @@
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             @include('tenant.clients._field', ['name'=>'purpose_of_relationship','label'=>'Purpose of business relationship','required'=>true])
+            @if(request()->get('type') !== 'individual')
             @include('tenant.clients._field', ['name'=>'expected_monthly_volume','label'=>'Expected monthly volume (AED)','type'=>'number'])
             @include('tenant.clients._select', ['name'=>'expected_monthly_frequency','label'=>'Transaction frequency','options'=>['1-5'=>'1–5 per month','6-15'=>'6–15 per month','16-30'=>'16–30 per month','30+'=>'More than 30 per month']])
+            @endif
             @include('tenant.clients._select', ['name'=>'cdd_type','label'=>'CDD type','options'=>['standard'=>'Standard CDD','enhanced'=>'Enhanced Due Diligence (EDD)'],'default'=>'standard'])
         </div>
         <div>
