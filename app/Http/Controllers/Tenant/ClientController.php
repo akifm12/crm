@@ -58,8 +58,15 @@ class ClientController extends Controller
     {
         $tenant = app('tenant');
 
-        $client = BullionClient::create(array_merge(
-            $request->except(['signatories', 'shareholders', 'ubos', 'documents', 'doc_labels', 'doc_expiry', 'doc_required', '_token']),
+		$data = $request->except(['signatories', 'shareholders', 'ubos', 'documents', 'doc_labels', 'doc_expiry', 'doc_required', '_token']);
+
+		// Strip empty strings to avoid NOT NULL violations
+		foreach (['company_name', 'trade_license_no', 'country_of_incorporation', 'full_name', 'nationality'] as $field) {
+			if (isset($data[$field]) && $data[$field] === '') unset($data[$field]);
+		}
+
+		$client = BullionClient::create(array_merge(
+			$data,
             [
                 'tenant_id'   => $tenant->id,
                 'created_by'  => auth()->id(),
