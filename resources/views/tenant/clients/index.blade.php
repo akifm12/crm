@@ -6,13 +6,7 @@
 @section('content')
 
 @php
-$typeLabels = [
-    ''                  => 'All',
-    'corporate_local'   => 'Corporate — Local',
-    'corporate_import'  => 'Corporate — Import',
-    'corporate_export'  => 'Corporate — Export',
-    'individual'        => 'Individual',
-];
+$typeLabels  = array_merge(['' => 'All'], $sector['client_types'] ?? []);
 $currentType = request('type', '');
 @endphp
 
@@ -103,17 +97,9 @@ $currentType = request('type', '');
                 <td class="px-4 py-3 hidden md:table-cell">
                     @php
                         $typeLabel = [
-                            'corporate_local'   => 'Local',
-                            'corporate_import'  => 'Import',
-                            'corporate_export'  => 'Export',
-                            'individual'        => 'Individual',
-                        ][$client->client_type] ?? $client->client_type;
-                        $typeColor = [
-                            'corporate_local'   => 'bg-blue-100 text-blue-700',
-                            'corporate_import'  => 'bg-purple-100 text-purple-700',
-                            'corporate_export'  => 'bg-amber-100 text-amber-700',
-                            'individual'        => 'bg-gray-100 text-gray-600',
-                        ][$client->client_type] ?? 'bg-gray-100 text-gray-500';
+                        $typeLabel = $sector['client_types'][$client->client_type] ?? ucfirst(str_replace('_',' ',$client->client_type));
+                        $typeColors = ['corporate_local'=>'bg-blue-100 text-blue-700','corporate_import'=>'bg-purple-100 text-purple-700','corporate_export'=>'bg-amber-100 text-amber-700','buyer'=>'bg-blue-100 text-blue-700','seller'=>'bg-green-100 text-green-700','developer'=>'bg-purple-100 text-purple-700','landlord'=>'bg-amber-100 text-amber-700','tenant_client'=>'bg-teal-100 text-teal-700','individual'=>'bg-gray-100 text-gray-600'];
+                        $typeColor = $typeColors[$client->client_type] ?? 'bg-gray-100 text-gray-500';
                     @endphp
                     <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold {{ $typeColor }}">
                         {{ $typeLabel }}

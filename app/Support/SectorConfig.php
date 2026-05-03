@@ -43,7 +43,6 @@ class SectorConfig
                 'corporate_export' => 'Corporate — Export',
                 'individual'       => 'Individual',
             ],
-            'show_ejari'          => true,
             'show_supply_chain'   => true,
             'show_cahra'          => true,
             'show_expected_volume'=> true,
@@ -97,11 +96,8 @@ class SectorConfig
         return [
             'label'        => 'Real Estate',
             'client_types' => [
-                'buyer'       => 'Buyer',
-                'seller'      => 'Seller',
-                'developer'   => 'Developer',
-                'landlord'    => 'Landlord',
-                'tenant_client' => 'Tenant (Lessee)',
+                'corporate' => 'Corporate',
+                'individual' => 'Individual',
             ],
             'show_ejari'          => false,
             'show_supply_chain'   => false,
@@ -230,9 +226,8 @@ class SectorConfig
         return [
             'label'        => 'Accountants & Auditors',
             'client_types' => [
-                'corporate_local'  => 'Corporate — Local',
-                'corporate_foreign'=> 'Corporate — Foreign',
-                'individual'       => 'Individual',
+                'corporate' => 'Corporate',
+                'individual' => 'Individual',
             ],
             'show_ejari'          => false,
             'show_supply_chain'   => false,
@@ -293,9 +288,8 @@ class SectorConfig
         return [
             'label'        => 'Other DNFBP',
             'client_types' => [
-                'corporate_local'  => 'Corporate — Local',
-                'corporate_foreign'=> 'Corporate — Foreign',
-                'individual'       => 'Individual',
+                'corporate' => 'Corporate',
+                'individual' => 'Individual',
             ],
             'show_ejari'          => false,
             'show_supply_chain'   => false,
