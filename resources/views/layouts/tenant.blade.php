@@ -20,6 +20,7 @@
         .nav-btn:not(.active) { color:rgba(255,255,255,0.6); }
         .nav-btn:not(.active):hover { background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.9); }
         .nav-btn.active { background:rgba(255,255,255,0.15);color:#fff; }
+        .nav-btn svg:last-child { width:10px !important;height:10px !important;opacity:0.5;flex-shrink:0; }
     </style>
 </head>
 <body class="h-full bg-gray-50 flex overflow-hidden">
