@@ -292,10 +292,11 @@ class CrmController extends Controller
 
         // Create portal login user
         \App\Models\User::create([
-            'name'     => $request->admin_name ?? $crm->contact_person ?? $crm->company_name,
-            'email'    => $request->admin_email,
-            'password' => \Illuminate\Support\Facades\Hash::make($request->admin_password),
-            'role'     => 'admin',
+            'name'      => $request->admin_name ?? $crm->contact_person ?? $crm->company_name,
+            'email'     => $request->admin_email,
+            'password'  => \Illuminate\Support\Facades\Hash::make($request->admin_password),
+            'role'      => 'admin',
+            'tenant_id' => $tenant->id,
         ]);
 
         // Link CRM client to tenant

@@ -50,12 +50,13 @@ class TenantController extends Controller
             'is_active'     => true,
         ]);
 
-        // Create portal login user (uses standard users table)
+        // Create portal login user
         User::create([
-            'name'     => $request->admin_name,
-            'email'    => $request->admin_email,
-            'password' => Hash::make($request->admin_password),
-            'role'     => 'admin',
+            'name'      => $request->admin_name,
+            'email'     => $request->admin_email,
+            'password'  => Hash::make($request->admin_password),
+            'role'      => 'admin',
+            'tenant_id' => $tenant->id,
         ]);
 
         return redirect()->route('kyc.tenants')
