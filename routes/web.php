@@ -81,6 +81,28 @@ Route::middleware(['auth', \App\Http\Middleware\EnsureAdminUser::class])->group(
 
     // ── Other admin stubs ─────────────────────────────────────────────────
     Route::get('/marketing', fn() => view('admin.marketing.index'))->name('marketing.index');
+
+    // Marketing contacts — direct from mailer DB — PERMANENT, do not remove
+    Route::get('/marketing/api/contacts', function () {
+        $contacts = \Illuminate\Support\Facades\DB::connection('mailer')
+            ->table('subscribers')
+            ->orderBy('id')
+            ->get(['id','list_id','company','name','phone','email','subscribed_at']);
+        return response()->json($contacts);
+    })->name('marketing.contacts');
+
+    // Marketing proxy — forward to mailer.bluearrow.ae — PERMANENT, do not remove
+    Route::any('/marketing/api/{path?}', function (Request $request, $path = '') {
+        $url   = 'https://mailer.bluearrow.ae/contacts.php';
+        $query = $request->getQueryString();
+        if ($query) $url .= '?' . $query;
+        $response = \Illuminate\Support\Facades\Http::timeout(60)
+            ->withOptions(['verify' => false])
+            ->withHeaders(['Content-Type' => 'application/json'])
+            ->{strtolower($request->method())}($url, $request->all());
+        return response($response->body(), $response->status())
+            ->header('Content-Type', 'application/json');
+    })->name('marketing.api')->where('path', '.*');
     // ── Screening ─────────────────────────────────────────────────────────
     Route::get('/screening',                              [ScreeningController::class, 'index'])->name('screening.index');
     Route::post('/screening/run',                         [ScreeningController::class, 'run'])->name('screening.run');
