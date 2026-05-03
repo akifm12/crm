@@ -20,7 +20,6 @@
         .nav-btn:not(.active) { color:rgba(255,255,255,0.6); }
         .nav-btn:not(.active):hover { background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.9); }
         .nav-btn.active { background:rgba(255,255,255,0.15);color:#fff; }
-		.nav-btn svg { width: 12px !important; height: 12px !important; }
     </style>
 </head>
 <body class="h-full bg-gray-50 flex overflow-hidden">
@@ -31,7 +30,7 @@
     {{-- Logo --}}
     <div style="padding:16px;border-bottom:1px solid rgba(255,255,255,0.1);flex-shrink:0">
         @if($tenant->logo_url ?? false)
-            <img src="{{ $tenant->logo_url }}" alt="{{ $tenant->name }}" style="height:32px;object-fit:contain">
+            <img src="{{ Storage::url($tenant->logo_url) }}" alt="{{ $tenant->name }}" style="height:32px;object-fit:contain">
         @else
             <p style="font-weight:700;font-size:14px;color:#fff;line-height:1.2">{{ $tenant->name }}</p>
         @endif
@@ -69,22 +68,12 @@
                    class="nav-sub {{ request()->routeIs('tenant.clients.index') && !request('type') ? 'active' : '' }}">
                     All clients
                 </a>
-                <a href="{{ route('tenant.clients.index', $slug) }}?type=corporate_local"
-                   class="nav-sub {{ request('type') === 'corporate_local' ? 'active' : '' }}">
-                    Corporate — Local
+                @foreach($sector['client_types'] as $typeKey => $typeLabel)
+                <a href="{{ route('tenant.clients.index', $slug) }}?type={{ $typeKey }}"
+                   class="nav-sub {{ request('type') === $typeKey ? 'active' : '' }}">
+                    {{ $typeLabel }}
                 </a>
-                <a href="{{ route('tenant.clients.index', $slug) }}?type=corporate_import"
-                   class="nav-sub {{ request('type') === 'corporate_import' ? 'active' : '' }}">
-                    Corporate — Import
-                </a>
-                <a href="{{ route('tenant.clients.index', $slug) }}?type=corporate_export"
-                   class="nav-sub {{ request('type') === 'corporate_export' ? 'active' : '' }}">
-                    Corporate — Export
-                </a>
-                <a href="{{ route('tenant.clients.index', $slug) }}?type=individual"
-                   class="nav-sub {{ request('type') === 'individual' ? 'active' : '' }}">
-                    Individual
-                </a>
+                @endforeach
                 <div style="border-top:1px solid rgba(255,255,255,0.08);margin:6px 0"></div>
                 <a href="{{ route('tenant.clients.create', $slug) }}"
                    class="nav-sub {{ request()->routeIs('tenant.clients.create') ? 'active' : '' }}">
@@ -119,7 +108,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z"/>
                 </svg>
                 <span style="flex:1">Documents</span>
-                <svg style="width:12px;height:12px;flex-shrink:0;transition:transform .15s" :style="open ? 'transform:rotate(180deg)' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg style="width:11px;height:11px;flex-shrink:0;transition:transform .15s" :style="open ? 'transform:rotate(180deg)' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                 </svg>
             </button>

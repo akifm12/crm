@@ -16,13 +16,13 @@
 <div class="bg-white rounded-xl border border-gray-200 p-5 mb-5">
     <p class="text-sm font-semibold text-gray-700 mb-3">Client type</p>
     <div class="flex flex-wrap gap-3">
-		@foreach($sector['client_types'] as $typeKey => $typeLabel)
-		<button type="button" @click="setType('{{ $typeKey }}')"
-				:class="clientType==='{{ $typeKey }}' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-200 hover:border-blue-400'"
-				class="flex-1 py-2 px-3 text-sm font-semibold border rounded-lg transition">
-			{{ $typeLabel }}
-		</button>
-		@endforeach
+        @foreach($sector['client_types'] as $typeKey => $typeLabel)
+        <button type="button" @click="setType('{{ $typeKey }}')"
+                :class="clientType==='{{ $typeKey }}' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-200 hover:border-blue-400'"
+                class="px-5 py-2.5 rounded-lg border text-sm font-semibold transition-all">
+            {{ $typeLabel }}
+        </button>
+        @endforeach
     </div>
     <p class="text-xs text-gray-400 mt-3">
         <span x-show="clientType==='individual'">5 steps — profile · AML/CDD · declarations · documents · review</span>
@@ -327,12 +327,22 @@
         ];
         $corpDecls = $sector['declarations_corporate'] ?? ['pep','source_of_funds','sanctions','ubo'];
         $indDecls  = $sector['declarations_individual'] ?? ['pep','source_of_funds','sanctions'];
-        $activeDecls = $clientType !== 'individual' ? $corpDecls : $indDecls;
+        // Render all unique declarations — Alpine hides irrelevant ones per client type
+        $allDecls = array_unique(array_merge($corpDecls, $indDecls));
         @endphp
-        @foreach($corpDecls as $dt)
-        @php $f = 'decl_' . $dt; [$t,$d] = $allDeclLabels[$dt] ?? [ucfirst($dt), '']; @endphp
+        @foreach($allDecls as $dt)
+        @php
+            $f = 'decl_' . $dt;
+            [$t,$d] = $allDeclLabels[$dt] ?? [ucfirst($dt), ''];
+            $inCorp = in_array($dt, $corpDecls);
+            $inInd  = in_array($dt, $indDecls);
+            // Build Alpine x-show expression
+            if ($inCorp && $inInd) $xshow = 'true';
+            elseif ($inCorp)       $xshow = "clientType !== 'individual'";
+            else                   $xshow = "clientType === 'individual'";
+        @endphp
         <label class="flex items-start gap-4 p-4 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 transition"
-               x-show="clientType !== 'individual' || {{ json_encode(in_array($dt, $indDecls)) }}">
+               x-show="{{ $xshow }}">
             <input type="checkbox" name="{{ $f }}" value="1" class="mt-0.5 rounded border-gray-300 text-blue-600 w-5 h-5 flex-shrink-0">
             <div><p class="text-sm font-semibold text-gray-800">{{ $t }}</p><p class="text-xs text-gray-500 mt-0.5">{{ $d }}</p></div>
         </label>
@@ -524,7 +534,7 @@
 <script>
 function clientForm() {
     return {
-        clientType: '{{ array_key_first($sector['client_types']) }}',
+        clientType: '{{ array_key_first($sector["client_types"]) }}',
         step: 1,
         indStep: 1,
         stepErrors:    {1:false,2:false,3:false,4:false,5:false,6:false,7:false},
