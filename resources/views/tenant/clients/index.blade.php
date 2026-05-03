@@ -96,7 +96,6 @@ $currentType = request('type', '');
                 </td>
                 <td class="px-4 py-3 hidden md:table-cell">
                     @php
-                        $typeLabel = [
                         $typeLabel = $sector['client_types'][$client->client_type] ?? ucfirst(str_replace('_',' ',$client->client_type));
                         $typeColors = ['corporate_local'=>'bg-blue-100 text-blue-700','corporate_import'=>'bg-purple-100 text-purple-700','corporate_export'=>'bg-amber-100 text-amber-700','buyer'=>'bg-blue-100 text-blue-700','seller'=>'bg-green-100 text-green-700','developer'=>'bg-purple-100 text-purple-700','landlord'=>'bg-amber-100 text-amber-700','tenant_client'=>'bg-teal-100 text-teal-700','individual'=>'bg-gray-100 text-gray-600'];
                         $typeColor = $typeColors[$client->client_type] ?? 'bg-gray-100 text-gray-500';
