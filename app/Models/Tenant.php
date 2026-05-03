@@ -43,7 +43,7 @@ class Tenant extends Model
 
     public function clients(): HasMany
     {
-        return $this->hasMany(ClientUser::class);
+        return $this->hasMany(BullionClient::class);
     }
 
     /**
