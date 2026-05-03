@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Tenant;
 use App\Http\Controllers\Controller;
 use App\Models\BullionClient;
 use App\Models\ClientDocument;
+use App\Models\ClientShareholder;
 use App\Models\GoamlReport;
 use Illuminate\Http\Request;
 
@@ -16,6 +17,7 @@ class DashboardController extends Controller
         $tenant    = app('tenant');
         $tid       = $tenant->id;
         $base      = BullionClient::where('tenant_id', $tid);
+        $clientIds = (clone $base)->pluck('id');
 
         // ── Core stats ──────────────────────────────────────────────────────
         $total   = (clone $base)->count();
@@ -23,10 +25,10 @@ class DashboardController extends Controller
         $pending = (clone $base)->where('status', 'pending')->count();
 
         // ── Risk breakdown ───────────────────────────────────────────────────
-        $riskHigh   = (clone $base)->where('risk_rating', 'high')->count();
-        $riskMedium = (clone $base)->where('risk_rating', 'medium')->count();
-        $riskLow    = (clone $base)->where('risk_rating', 'low')->count();
-        $riskUnrated= (clone $base)->whereNull('risk_rating')->count();
+        $riskHigh    = (clone $base)->where('risk_rating', 'high')->count();
+        $riskMedium  = (clone $base)->where('risk_rating', 'medium')->count();
+        $riskLow     = (clone $base)->where('risk_rating', 'low')->count();
+        $riskUnrated = (clone $base)->whereNull('risk_rating')->count();
 
         // ── Compliance alerts ─────────────────────────────────────────────────
         $licenceExpired  = (clone $base)->whereNotNull('trade_license_expiry')->where('trade_license_expiry', '<', now())->count();
@@ -43,6 +45,14 @@ class DashboardController extends Controller
         $docsExpired  = ClientDocument::where('tenant_id', $tid)->where('expiry_date', '<', now())->count();
         $docsExpiring = ClientDocument::where('tenant_id', $tid)->whereBetween('expiry_date', [now(), now()->addDays(30)])->count();
 
+        // ── Shareholder EID alerts ─────────────────────────────────────────────
+        $eidExpired  = ClientShareholder::whereIn('bullion_client_id', $clientIds)
+            ->where('is_resident', true)->whereNotNull('eid_expiry')
+            ->where('eid_expiry', '<', now())->count();
+        $eidExpiring = ClientShareholder::whereIn('bullion_client_id', $clientIds)
+            ->where('is_resident', true)->whereNotNull('eid_expiry')
+            ->whereBetween('eid_expiry', [now(), now()->addDays(30)])->count();
+
         // ── goAML ─────────────────────────────────────────────────────────────
         $goamlTotal = GoamlReport::where('tenant_id', $tid)->count();
         $goamlMonth = GoamlReport::where('tenant_id', $tid)->where('created_at', '>=', now()->startOfMonth())->count();
@@ -57,7 +67,9 @@ class DashboardController extends Controller
         $stats = compact(
             'total', 'active', 'pending',
             'riskHigh', 'riskMedium', 'riskLow', 'riskUnrated',
-            'licenceExpired', 'licenceExpiring', 'ejariExpired', 'ejariExpiring',
+            'licenceExpired', 'licenceExpiring',
+            'ejariExpired', 'ejariExpiring',
+            'eidExpired', 'eidExpiring',
             'reviewOverdue', 'reviewDueSoon',
             'unscreened', 'screeningMatch', 'edd',
             'docsExpired', 'docsExpiring',
@@ -69,31 +81,37 @@ class DashboardController extends Controller
         $expiry_alerts = BullionClient::where('tenant_id', $tid)
             ->whereNotNull('trade_license_expiry')
             ->where('trade_license_expiry', '<=', now()->addDays(60))
-            ->orderBy('trade_license_expiry')
-            ->take(6)->get();
+            ->orderBy('trade_license_expiry')->take(6)->get();
+
+        $ejari_alerts = BullionClient::where('tenant_id', $tid)
+            ->whereNotNull('ejari_expiry')
+            ->where('ejari_expiry', '<=', now()->addDays(60))
+            ->orderBy('ejari_expiry')->take(6)->get();
+
+        $eid_alerts = ClientShareholder::whereIn('bullion_client_id', $clientIds)
+            ->where('is_resident', true)->whereNotNull('eid_expiry')
+            ->where('eid_expiry', '<=', now()->addDays(60))
+            ->with('client')->orderBy('eid_expiry')->take(6)->get();
 
         $review_alerts = BullionClient::where('tenant_id', $tid)
             ->whereNotNull('next_review_date')
             ->where('next_review_date', '<=', now()->addDays(30))
-            ->orderBy('next_review_date')
-            ->take(6)->get();
+            ->orderBy('next_review_date')->take(6)->get();
 
         $doc_alerts = ClientDocument::where('tenant_id', $tid)
             ->whereNotNull('expiry_date')
             ->where('expiry_date', '<=', now()->addDays(30))
-            ->with('client')
-            ->orderBy('expiry_date')
-            ->take(6)->get();
+            ->with('client')->orderBy('expiry_date')->take(6)->get();
 
-        $recent = BullionClient::where('tenant_id', $tid)
-            ->latest()->take(6)->get();
+        $recent = BullionClient::where('tenant_id', $tid)->latest()->take(6)->get();
 
         $recent_goaml = GoamlReport::where('tenant_id', $tid)
             ->with('client')->latest()->take(5)->get();
 
         return view('tenant.dashboard', compact(
             'tenant', 'stats',
-            'expiry_alerts', 'review_alerts', 'doc_alerts',
+            'expiry_alerts', 'ejari_alerts', 'eid_alerts',
+            'review_alerts', 'doc_alerts',
             'recent', 'recent_goaml'
         ));
     }
