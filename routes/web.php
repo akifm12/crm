@@ -121,8 +121,9 @@ Route::middleware(['auth', \App\Http\Middleware\EnsureAdminUser::class])->group(
     Route::post('/whatsapp/api/reconnect',           [WhatsAppController::class, 'reconnect'])->name('wa.reconnect');
     Route::post('/whatsapp/api/disconnect',          [WhatsAppController::class, 'disconnect'])->name('wa.disconnect');
     Route::get('/whatsapp/api/logs',                 [WhatsAppController::class, 'logs'])->name('wa.logs');
-    Route::get('/accounting', fn() => view('admin.stub', ['module' => 'Accounting']))->name('admin.accounting');
-    Route::get('/kyc',                          fn() => view('admin.stub', ['module' => 'KYC Submissions']))->name('kyc.index');
+	Route::get('/accounting', fn() => view('admin.stub', ['module' => 'Accounting']))->name('admin.accounting');
+    Route::get('/accounting/launch', [\App\Http\Controllers\Admin\AccountingController::class, 'launch'])->name('accounting.launch');
+	Route::get('/kyc',                          fn() => view('admin.stub', ['module' => 'KYC Submissions']))->name('kyc.index');
     Route::get('/kyc/submissions',              fn() => view('admin.stub', ['module' => 'KYC Submissions']))->name('kyc.submissions');
     Route::get('/kyc/submissions/{id}',         fn() => view('admin.stub', ['module' => 'KYC Review']))->name('kyc.review');
     Route::get('/kyc/tenants',                   [TenantController::class, 'index'])->name('kyc.tenants');

@@ -13,7 +13,15 @@ return [
     | a conventional file to locate the various service credentials.
     |
     */
-
+	'accounting' => [
+		'secret' => env('ACCOUNTING_SECRET'),
+		'url'    => env('ACCOUNTING_URL', 'https://accounts.bluearrow.ae'),
+	],
+	
+	'portal' => [
+    'secret' => env('PORTAL_SECRET'),
+	],
+	
     'postmark' => [
         'key' => env('POSTMARK_API_KEY'),
     ],
