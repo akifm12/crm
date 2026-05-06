@@ -138,15 +138,24 @@ class WhatsAppController extends Controller
 
     public function addSchedule(Request $request)
     {
+        $data = $request->all();
+        // groupIds must be JSON string for multer-based WA manager
+        if (isset($data['groupIds']) && is_array($data['groupIds'])) {
+            $data['groupIds'] = json_encode($data['groupIds']);
+        }
         return $this->retryWithFreshSession(fn($http) =>
-            $http->post("{$this->baseUrl}/api/schedules", $request->all())
+            $http->asForm()->post("{$this->baseUrl}/api/schedules", $data)
         );
     }
 
     public function updateSchedule(Request $request, string $id)
     {
+        $data = $request->all();
+        if (isset($data['groupIds']) && is_array($data['groupIds'])) {
+            $data['groupIds'] = json_encode($data['groupIds']);
+        }
         return $this->retryWithFreshSession(fn($http) =>
-            $http->put("{$this->baseUrl}/api/schedules/{$id}", $request->all())
+            $http->asForm()->put("{$this->baseUrl}/api/schedules/{$id}", $data)
         );
     }
 
