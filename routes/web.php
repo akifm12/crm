@@ -36,6 +36,8 @@ Route::middleware(['auth', \App\Http\Middleware\EnsureAdminUser::class])->group(
     Route::get('/crm/new',      [CrmController::class, 'create'])->name('crm.create');
     Route::post('/crm',         [CrmController::class, 'store'])->name('crm.store');
     Route::get('/crm/{crm}',    [CrmController::class, 'show'])->name('crm.show');
+    Route::get('/crm/{crm}/edit', [CrmController::class, 'edit'])->name('crm.edit');
+    Route::patch('/crm/{crm}',    [CrmController::class, 'update'])->name('crm.update');
     Route::patch('/crm/{crm}/stage',               [CrmController::class, 'updateStage'])->name('crm.stage');
     Route::post('/crm/{crm}/convert-portal',       [CrmController::class, 'convertToPortal'])->name('crm.convert.portal');
     Route::post('/crm/{crm}/notes',                [CrmController::class, 'addNote'])->name('crm.notes.store');

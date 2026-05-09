@@ -102,6 +102,43 @@ class CrmController extends Controller
             ->with('success', 'Client created. Tenant portal auto-generated.');
     }
 
+    // ── Edit client ────────────────────────────────────────────────────────
+    public function edit(CrmClient $crm)
+    {
+        $crm->load(['shareholders', 'contacts']);
+        $stages = ['lead'=>'Lead','qualified'=>'Qualified','proposal_sent'=>'Proposal Sent','negotiation'=>'Negotiation','onboarding'=>'Onboarding','active'=>'Active','inactive'=>'Inactive'];
+        return view('admin.crm.edit', compact('crm', 'stages'));
+    }
+
+    public function update(Request $request, CrmClient $crm)
+    {
+        $request->validate([
+            'company_name' => 'required|string|max:255',
+        ]);
+
+        $crm->update($request->except(['shareholders', 'contacts', '_token', '_method']));
+
+        // Update shareholders
+        $crm->shareholders()->delete();
+        foreach ($request->input('shareholders', []) as $sh) {
+            if (!empty($sh['shareholder_name'])) {
+                $crm->shareholders()->create($sh);
+            }
+        }
+
+        // Update contacts
+        $crm->contacts()->delete();
+        foreach ($request->input('contacts', []) as $i => $ct) {
+            if (!empty($ct['name'])) {
+                $crm->contacts()->create(array_merge($ct, ['is_primary' => $i === 0]));
+            }
+        }
+
+        return redirect()
+            ->route('crm.show', $crm->id)
+            ->with('success', 'Client updated successfully.');
+    }
+
     // ── Client profile ─────────────────────────────────────────────────────
     public function show(CrmClient $crm)
     {
