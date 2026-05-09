@@ -158,7 +158,6 @@ class ClientController extends Controller
         $client->load(['signatories', 'shareholders', 'ubos']);
         return view('tenant.clients.confirm', compact('tenant', 'client'));
     }
-    }
 
     public function show(string $slug, BullionClient $client)
     {
