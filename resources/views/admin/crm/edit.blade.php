@@ -150,21 +150,21 @@
 </div>
 </form>
 
+@php
+$shData = $crm->shareholders->map(fn($s) => [
+    'name'                => $s->shareholder_name ?? '',
+    'nationality'         => $s->nationality ?? '',
+    'passport'            => $s->passport ?? '',
+    'passport_expiry'     => $s->passport_expiry ?? '',
+    'ownership_percentage'=> $s->ownership_percentage ?? '',
+    'is_ubo'              => (bool)($s->is_ubo ?? false),
+])->toArray();
+if (empty($shData)) {
+    $shData = [['name'=>'','nationality'=>'','passport'=>'','passport_expiry'=>'','ownership_percentage'=>'','is_ubo'=>false]];
+}
+@endphp
 <script>
 function crmEditForm() {
-    @php
-    $shData = $crm->shareholders->map(fn($s) => [
-        'name'                => $s->shareholder_name ?? '',
-        'nationality'         => $s->nationality ?? '',
-        'passport'            => $s->passport ?? '',
-        'passport_expiry'     => $s->passport_expiry ?? '',
-        'ownership_percentage'=> $s->ownership_percentage ?? '',
-        'is_ubo'              => (bool)($s->is_ubo ?? false),
-    ])->toArray();
-    if (empty($shData)) {
-        $shData = [['name'=>'','nationality'=>'','passport'=>'','passport_expiry'=>'','ownership_percentage'=>'','is_ubo'=>false]];
-    }
-    @endphp
     return {
         shareholders: {!! json_encode($shData) !!},
     }
