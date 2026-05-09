@@ -5,6 +5,20 @@
 
 @section('content')
 
+@php
+$shData = $crm->shareholders->map(fn($s) => [
+    'name'                => $s->shareholder_name ?? '',
+    'nationality'         => $s->nationality ?? '',
+    'passport'            => $s->passport ?? '',
+    'passport_expiry'     => $s->passport_expiry ?? '',
+    'ownership_percentage'=> $s->ownership_percentage ?? '',
+    'is_ubo'              => (bool)($s->is_ubo ?? false),
+])->toArray();
+if (empty($shData)) {
+    $shData = [['name'=>'','nationality'=>'','passport'=>'','passport_expiry'=>'','ownership_percentage'=>'','is_ubo'=>false]];
+}
+@endphp
+
 <div x-data="{ shareholders: {!! json_encode($shData) !!} }">
 <form method="POST" action="{{ route('crm.update', $crm->id) }}">
 @csrf @method('PATCH')
@@ -152,19 +166,7 @@
 </form>
 </div>
 
-@php
-$shData = $crm->shareholders->map(fn($s) => [
-    'name'                => $s->shareholder_name ?? '',
-    'nationality'         => $s->nationality ?? '',
-    'passport'            => $s->passport ?? '',
-    'passport_expiry'     => $s->passport_expiry ?? '',
-    'ownership_percentage'=> $s->ownership_percentage ?? '',
-    'is_ubo'              => (bool)($s->is_ubo ?? false),
-])->toArray();
-if (empty($shData)) {
-    $shData = [['name'=>'','nationality'=>'','passport'=>'','passport_expiry'=>'','ownership_percentage'=>'','is_ubo'=>false]];
-}
-@endphp
+
 
 
 @endsection
