@@ -292,7 +292,14 @@ const letters = ['A','B','C','D','E','F','G','H','I'];
 const sector      = d.sector || 'gold';
 const isIndividual = d.client_type === 'individual';
 const typeKey      = isIndividual ? 'individual' : 'corporate';
-const declList     = declarationMap[sector]?.[typeKey] || declarationMap.other[typeKey];
+
+// Single section mode — generate just one declaration type
+let declList;
+if (d.single_section && d.type) {
+    declList = [d.type];
+} else {
+    declList = declarationMap[sector]?.[typeKey] || declarationMap.other[typeKey];
+}
 
 const clientInfo = isIndividual ? [
     ['Full name',              d.client_name],
@@ -307,7 +314,9 @@ const clientInfo = isIndividual ? [
     ['Declaration date',       d.date],
 ];
 
-const docTitle = isIndividual ? 'INDIVIDUAL CLIENT DECLARATION' : 'COMBINED CLIENT DECLARATION';
+const docTitle = d.single_section
+    ? (sectionLabels[d.type] || 'Client Declaration').toUpperCase()
+    : (isIndividual ? 'INDIVIDUAL CLIENT DECLARATION' : 'COMBINED CLIENT DECLARATION');
 const sectorLabels = {
     gold: 'Precious Metals & Stones',
     real_estate: 'Real Estate',
