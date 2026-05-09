@@ -295,7 +295,6 @@ $countryName = fn($code) => $code ? (\App\Models\Country::find($code)?->country_
                         </div>
                     </div>
                     @endif
-                    </div>
                     @endforeach
                 </div>
             </div>
