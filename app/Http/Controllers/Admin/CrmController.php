@@ -116,7 +116,16 @@ class CrmController extends Controller
             'company_name' => 'required|string|max:255',
         ]);
 
-        $crm->update($request->except(['shareholders', 'contacts', '_token', '_method']));
+        $data = $request->except(['shareholders', 'contacts', '_token', '_method']);
+
+        // Protect enum fields from being set to null/empty
+        foreach (['stage', 'status', 'portal_type'] as $field) {
+            if (empty($data[$field])) {
+                unset($data[$field]);
+            }
+        }
+
+        $crm->update($data);
 
         // Update shareholders
         $crm->shareholders()->delete();
