@@ -5,7 +5,7 @@
 
 @section('content')
 
-<div x-data="crmEditForm()">
+<div x-data="{ shareholders: {!! json_encode($shData) !!} }">
 <form method="POST" action="{{ route('crm.update', $crm->id) }}">
 @csrf @method('PATCH')
 
@@ -165,12 +165,6 @@ if (empty($shData)) {
     $shData = [['name'=>'','nationality'=>'','passport'=>'','passport_expiry'=>'','ownership_percentage'=>'','is_ubo'=>false]];
 }
 @endphp
-<script>
-function crmEditForm() {
-    return {
-        shareholders: {!! json_encode($shData) !!},
-    }
-}
-</script>
+
 
 @endsection
