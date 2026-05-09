@@ -35,12 +35,12 @@ class ReportController extends Controller
         $data = json_encode([
             'client_name'     => $client->client_type !== 'individual' ? $client->company_name : $client->full_name,
             'client_type'     => $client->client_type,
+            'sector'          => $tenant->business_type ?? 'gold',
             'trade_license'   => $client->trade_license_no ?? $client->passport_number ?? '',
             'country'         => $client->country_of_incorporation ?? $client->nationality ?? '',
             'signatory_name'  => $sig?->full_name ?? $client->displayName(),
             'signatory_title' => $sig?->position ?? 'Authorised Signatory',
             'mlro_name'       => $tenant->mlro_name ?? '',
-            'mlro_title'      => 'Money Laundering Reporting Officer (MLRO)',
             'entity_name'     => $tenant->name,
             'entity_address'  => $tenant->address ?? '',
             'date'            => now()->format('d F Y'),
@@ -51,20 +51,15 @@ class ReportController extends Controller
             ])->toArray(),
         ], JSON_UNESCAPED_UNICODE);
 
-        $filename   = 'COMBINED-DECL-' . Str::upper(Str::slug($client->displayName())) . '.docx';
+        $filename   = 'DECLARATION-' . Str::upper(Str::slug($client->displayName())) . '.docx';
         $outPath    = storage_path("app/tmp/{$filename}");
-
-        // Use individual script for individual clients
-        $scriptName = $client->client_type === 'individual'
-            ? 'generate-combined-declaration-individual.cjs'
-            : 'generate-combined-declaration.cjs';
-        $scriptPath = base_path("scripts/{$scriptName}");
+        $scriptPath = base_path('scripts/generate-combined-declaration-universal.cjs');
 
         if (!file_exists(dirname($outPath))) {
             mkdir(dirname($outPath), 0755, true);
         }
 
-        $tmpData = storage_path('app/tmp/combined_' . uniqid() . '.json');
+        $tmpData = storage_path('app/tmp/decl_' . uniqid() . '.json');
         file_put_contents($tmpData, $data);
 
         $cmd    = "node {$scriptPath} " . escapeshellarg($tmpData) . " " . escapeshellarg($outPath) . " 2>&1";
