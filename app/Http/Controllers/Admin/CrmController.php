@@ -192,7 +192,7 @@ class CrmController extends Controller
     {
         $request->validate(['file' => 'required|file|max:10240', 'document_label' => 'required', 'document_type' => 'required']);
         $file = $request->file('file');
-        $path = $file->store("crm/{$crm->id}", 'private');
+        $path = $file->store("crm/{$crm->id}", 'local');
         $crm->documents()->create([
             'document_type'  => $request->document_type,
             'document_label' => $request->document_label,
@@ -210,13 +210,13 @@ class CrmController extends Controller
     // ── Download document ──────────────────────────────────────────────────
     public function downloadDocument(CrmDocument $document)
     {
-        return Storage::disk('private')->download($document->file_path, $document->file_name);
+        return Storage::disk('local')->download($document->file_path, $document->file_name);
     }
 
     // ── Delete document ────────────────────────────────────────────────────
     public function deleteDocument(CrmDocument $document)
     {
-        Storage::disk('private')->delete($document->file_path);
+        Storage::disk('local')->delete($document->file_path);
         $document->delete();
         return back()->with('success', 'Document deleted.');
     }
@@ -259,7 +259,7 @@ class CrmController extends Controller
     {
         $request->validate(['file' => 'required|file|max:10240']);
         $file = $request->file('file');
-        $path = $file->store("crm/slas", 'private');
+        $path = $file->store("crm/slas", 'local');
         $sla->update([
             'signed_copy_path' => $path,
             'signed_date'      => $request->signed_date ?? now()->toDateString(),
