@@ -5,22 +5,9 @@
 
 @section('content')
 
-@php
-$shData = $crm->shareholders->map(fn($s) => [
-    'name'                => $s->shareholder_name ?? '',
-    'nationality'         => $s->nationality ?? '',
-    'passport'            => $s->passport ?? '',
-    'passport_expiry'     => $s->passport_expiry ?? '',
-    'ownership_percentage'=> $s->ownership_percentage ?? '',
-    'is_ubo'              => (bool)($s->is_ubo ?? false),
-])->toArray();
-if (empty($shData)) {
-    $shData = [['name'=>'','nationality'=>'','passport'=>'','passport_expiry'=>'','ownership_percentage'=>'','is_ubo'=>false]];
-}
-@endphp
-
-<div x-data="{ shareholders: {!! json_encode($shData) !!} }">
-<form method="POST" action="{{ route('crm.update', $crm->id) }}">
+<form method="POST" action="{{ route('crm.update', $crm->id) }}" x-data="{
+    shareholders: {{ json_encode($crm->shareholders->count() ? $crm->shareholders->map(fn($s) => ['name'=>$s->shareholder_name??'','nationality'=>$s->nationality??'','passport'=>$s->passport??'','passport_expiry'=>$s->passport_expiry??'','ownership_percentage'=>$s->ownership_percentage??'','is_ubo'=>(bool)($s->is_ubo??false)])->toArray() : [['name'=>'','nationality'=>'','passport'=>'','passport_expiry'=>'','ownership_percentage'=>'','is_ubo'=>false]]) }}
+}">
 @csrf @method('PATCH')
 
 <div class="max-w-4xl space-y-5">
@@ -131,8 +118,6 @@ if (empty($shData)) {
                 @include('admin.crm._select', ['name'=>'stage','label'=>'Pipeline stage','value'=>$crm->stage,'options'=>$stages])
                 @include('admin.crm._field', ['name'=>'client_since','label'=>'Client since','type'=>'date','value'=>$crm->client_since?->format('Y-m-d')])
             </div>
-
-            {{-- Services --}}
             <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-2">Services subscribed to</label>
                 <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
@@ -147,7 +132,6 @@ if (empty($shData)) {
                     @endforeach
                 </div>
             </div>
-
             @include('admin.crm._textarea', ['name'=>'notes','label'=>'Notes','value'=>$crm->notes])
         </div>
     </div>
@@ -164,9 +148,5 @@ if (empty($shData)) {
 
 </div>
 </form>
-</div>
-
-
-
 
 @endsection
