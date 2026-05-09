@@ -79,7 +79,7 @@
                 ['CDD type',        ucfirst($client->cdd_type ?? '—')],
                 ['Screening',       ucfirst(str_replace('_', ' ', $client->screening_status))],
                 ['Next review',     $client->next_review_date?->format('d M Y') ?? '—'],
-                ['Documents',       $client->documents()->count() . ' uploaded'],
+                ['Documents',       \App\Models\ClientDocument::where('bullion_client_id', $client->id)->count() . ' uploaded'],
             ] as [$label, $value])
             <div class="flex items-center justify-between py-1.5 border-b border-gray-50">
                 <span class="text-xs text-gray-400">{{ $label }}</span>
