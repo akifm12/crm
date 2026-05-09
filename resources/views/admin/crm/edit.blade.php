@@ -5,7 +5,8 @@
 
 @section('content')
 
-<form method="POST" action="{{ route('crm.update', $crm->id) }}" x-data="crmEditForm()">
+<div x-data="crmEditForm()">
+<form method="POST" action="{{ route('crm.update', $crm->id) }}">
 @csrf @method('PATCH')
 
 <div class="max-w-4xl space-y-5">
@@ -149,6 +150,7 @@
 
 </div>
 </form>
+</div>
 
 @php
 $shData = $crm->shareholders->map(fn($s) => [
