@@ -323,6 +323,36 @@ $typeLabels  = ['corporate_local'=>'Corporate — Local','corporate_import'=>'Co
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 @include('tenant.clients._field', ['name'=>'next_review_date','label'=>'Next KYC review date','type'=>'date','value'=>$client->next_review_date?->format('Y-m-d')])
                 @include('tenant.clients._textarea', ['name'=>'risk_notes','label'=>'Risk notes','value'=>$client->risk_notes])
+
+                {{-- Sector-specific extra fields --}}
+                @if(!empty($sector['extra_fields']))
+                <div class="border-t border-gray-100 pt-4 mt-2">
+                    <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">{{ $sector['label'] }} — additional details</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        @foreach($sector['extra_fields'] as $fieldKey => $fieldConfig)
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">{{ $fieldConfig['label'] }}</label>
+                            @php $currentVal = $client->extra_data[$fieldKey] ?? ''; @endphp
+                            @if($fieldConfig['type'] === 'select')
+                            <select name="extra_data[{{ $fieldKey }}]"
+                                    class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                                <option value="">— Select —</option>
+                                @foreach($fieldConfig['options'] as $optVal => $optLabel)
+                                <option value="{{ $optVal }}" {{ $currentVal === $optVal ? 'selected' : '' }}>{{ $optLabel }}</option>
+                                @endforeach
+                            </select>
+                            @elseif($fieldConfig['type'] === 'number')
+                            <input type="number" name="extra_data[{{ $fieldKey }}]" value="{{ $currentVal }}"
+                                   class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            @else
+                            <input type="text" name="extra_data[{{ $fieldKey }}]" value="{{ $currentVal }}"
+                                   class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            @endif
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
             </div>
         </div>
     </div>

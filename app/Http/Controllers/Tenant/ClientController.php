@@ -58,14 +58,20 @@ class ClientController extends Controller
     {
         $tenant = app('tenant');
 
+        $data = $request->except(['signatories', 'shareholders', 'ubos', 'documents', 'doc_labels', 'doc_expiry', 'doc_required', '_token', 'extra_data']);
+
+        // Collect extra_data fields from sector config
+        $extraData = $request->input('extra_data', []);
+
         $client = BullionClient::create(array_merge(
-            $request->except(['signatories', 'shareholders', 'ubos', 'documents', 'doc_labels', 'doc_expiry', 'doc_required', '_token']),
+            $data,
             [
                 'tenant_id'   => $tenant->id,
                 'created_by'  => auth()->id(),
                 'cdd_type'    => $request->input('cdd_type') ?: 'standard',
                 'risk_rating' => $request->input('risk_rating') ?: 'low',
                 'status'      => $request->input('status') ?: 'pending',
+                'extra_data'  => !empty($extraData) ? $extraData : null,
             ]
         ));
 
@@ -182,7 +188,7 @@ class ClientController extends Controller
         $tenant = app('tenant');
         abort_if($client->tenant_id !== $tenant->id, 404);
 
-        $data = $request->except(['_token', '_method', 'signatories', 'shareholders', 'ubos']);
+        $data = $request->except(['_token', '_method', 'signatories', 'shareholders', 'ubos', 'extra_data']);
 
         // Protect nullable fields from overwriting with empty string
         foreach (['country_of_incorporation', 'nationality', 'cdd_type', 'risk_rating', 'status'] as $field) {
@@ -194,6 +200,12 @@ class ClientController extends Controller
         $data['cdd_type']    = $request->input('cdd_type') ?: $client->cdd_type ?: 'standard';
         $data['risk_rating'] = $request->input('risk_rating') ?: $client->risk_rating ?: 'low';
         $data['status']      = $request->input('status') ?: $client->status ?: 'pending';
+
+        // Merge extra_data (sector-specific fields)
+        $extraData = $request->input('extra_data', []);
+        if (!empty($extraData)) {
+            $data['extra_data'] = array_merge($client->extra_data ?? [], $extraData);
+        }
 
         $client->update($data);
 

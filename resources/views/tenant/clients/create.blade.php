@@ -303,6 +303,35 @@
             </div>
         </div>
         @include('tenant.clients._field', ['name'=>'next_review_date','label'=>'Next KYC review date','type'=>'date','hint'=>'High risk: 1 year · Medium: 2 years · Low: 3 years'])
+
+        {{-- Sector-specific extra fields --}}
+        @if(!empty($sector['extra_fields']))
+        <div class="border-t border-gray-100 pt-5">
+            <h3 class="text-sm font-semibold text-gray-700 mb-4">{{ $sector['label'] }} — additional details</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                @foreach($sector['extra_fields'] as $fieldKey => $fieldConfig)
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">{{ $fieldConfig['label'] }}</label>
+                    @if($fieldConfig['type'] === 'select')
+                    <select name="extra_data[{{ $fieldKey }}]"
+                            class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                        <option value="">— Select —</option>
+                        @foreach($fieldConfig['options'] as $optVal => $optLabel)
+                        <option value="{{ $optVal }}">{{ $optLabel }}</option>
+                        @endforeach
+                    </select>
+                    @elseif($fieldConfig['type'] === 'number')
+                    <input type="number" name="extra_data[{{ $fieldKey }}]"
+                           class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    @else
+                    <input type="text" name="extra_data[{{ $fieldKey }}]"
+                           class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    @endif
+                </div>
+                @endforeach
+            </div>
+        </div>
+        @endif
     </div>
 </div>
 

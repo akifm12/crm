@@ -320,6 +320,30 @@ $countryName = fn($code) => $code ? (\App\Models\Country::find($code)?->country_
             </div>
             @endif
 
+            {{-- Sector extra fields --}}
+            @if(!empty($sector['extra_fields']) && !empty($client->extra_data))
+            <div class="bg-white rounded-xl border border-gray-200">
+                <div class="px-5 py-4 border-b border-gray-100"><h3 class="text-sm font-semibold text-gray-700">{{ $sector['label'] }} details</h3></div>
+                <div class="p-5 grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                    @foreach($sector['extra_fields'] as $fieldKey => $fieldConfig)
+                    @php $val = $client->extra_data[$fieldKey] ?? null; @endphp
+                    @if($val)
+                    <div>
+                        <span class="text-xs text-gray-400 block">{{ $fieldConfig['label'] }}</span>
+                        @if($fieldConfig['type'] === 'select')
+                        {{ $fieldConfig['options'][$val] ?? $val }}
+                        @elseif($fieldKey === 'property_value')
+                        AED {{ number_format($val) }}
+                        @else
+                        {{ $val }}
+                        @endif
+                    </div>
+                    @endif
+                    @endforeach
+                </div>
+            </div>
+            @endif
+
             {{-- AML/CDD --}}
             <div class="bg-white rounded-xl border border-gray-200">
                 <div class="px-5 py-4 border-b border-gray-100"><h3 class="text-sm font-semibold text-gray-700">AML / CDD details</h3></div>
