@@ -25,8 +25,8 @@
         @endforeach
     </div>
     <p class="text-xs text-gray-400 mt-3">
-        <span x-show="clientType==='individual'">5 steps — profile · AML/CDD · declarations · documents · review</span>
-        <span x-show="clientType!=='individual'">7 steps — profile · signatories · shareholders · AML/CDD · declarations · documents · review</span>
+        <span x-show="clientType==='individual'">6 steps — profile · AML/CDD · documents · declarations · screening · review</span>
+        <span x-show="clientType!=='individual'">8 steps — profile · signatories · shareholders · AML/CDD · documents · declarations · screening · review</span>
     </p>
 </div>
 
@@ -34,7 +34,7 @@
 <div class="mb-5">
     {{-- Corporate --}}
     <div x-show="clientType!=='individual'" class="flex items-center">
-        @php $cs = [1=>'Profile',2=>'Signatories',3=>'Shareholders',4=>'AML / CDD',5=>'Declarations',6=>'Documents',7=>'Review']; @endphp
+        @php $cs = [1=>'Profile',2=>'Signatories',3=>'Shareholders',4=>'AML / CDD',5=>'Documents',6=>'Declarations',7=>'Screening',8=>'Review']; @endphp
         @foreach($cs as $n => $label)
         <div class="flex items-center {{ $n < count($cs) ? 'flex-1' : '' }}">
             <div class="flex flex-col items-center">
@@ -55,7 +55,7 @@
     </div>
     {{-- Individual --}}
     <div x-show="clientType==='individual'" class="flex items-center">
-        @php $is = [1=>'Profile',2=>'AML / CDD',3=>'Declarations',4=>'Documents',5=>'Review']; @endphp
+        @php $is = [1=>'Profile',2=>'AML / CDD',3=>'Documents',4=>'Declarations',5=>'Screening',6=>'Review']; @endphp
         @foreach($is as $n => $label)
         <div class="flex items-center {{ $n < count($is) ? 'flex-1' : '' }}">
             <div class="flex flex-col items-center">
@@ -307,7 +307,7 @@
 </div>
 
 {{-- ══ Declarations — shared (Corp 5, Ind 3) ══════════════════════════════════ --}}
-<div x-show="(clientType!=='individual' && step===5) || (clientType==='individual' && indStep===3)" x-cloak data-corp-step="5" data-ind-step="3">
+<div x-show="(clientType!=='individual' && step===6) || (clientType==='individual' && indStep===4)" x-cloak data-corp-step="6" data-ind-step="4">
     <div class="px-6 py-4 border-b border-gray-100">
         <h2 class="font-semibold text-gray-800">Declarations</h2>
         <p class="text-xs text-gray-400 mt-0.5">Confirm each declaration has been received and acknowledged</p>
@@ -399,7 +399,7 @@
 </div>
 
 {{-- ══ Documents — shared (Corp 6, Ind 4) ════════════════════════════════════ --}}
-<div x-show="(clientType!=='individual' && step===6) || (clientType==='individual' && indStep===4)" x-cloak data-corp-step="6" data-ind-step="4">
+<div x-show="(clientType!=='individual' && step===5) || (clientType==='individual' && indStep===3)" x-cloak data-corp-step="5" data-ind-step="3">
     <div class="px-6 py-4 border-b border-gray-100">
         <h2 class="font-semibold text-gray-800">Document upload</h2>
         <p class="text-xs text-gray-400 mt-0.5">Upload all available documents now. You can add more from the client profile later.</p>
@@ -448,8 +448,109 @@
     </div>
 </div>
 
-{{-- ══ Review — shared (Corp 7, Ind 5) ══════════════════════════════════════ --}}
-<div x-show="(clientType!=='individual' && step===7) || (clientType==='individual' && indStep===5)" x-cloak>
+{{-- ══ Screening — shared (Corp 7, Ind 5) ═══════════════════════════════════ --}}
+<div x-show="(clientType!=='individual' && step===7) || (clientType==='individual' && indStep===5)" x-cloak data-corp-step="7" data-ind-step="5">
+    <div class="px-6 py-4 border-b border-gray-100">
+        <h2 class="font-semibold text-gray-800">AML Screening</h2>
+        <p class="text-xs text-gray-400 mt-0.5">Screen the client and all associated persons against sanctions, PEP and adverse media lists</p>
+    </div>
+    <div class="p-6 space-y-4" x-data="{ screening: false, screeningDone: false, screeningResults: [], hasMatch: false }">
+
+        <div class="bg-blue-50 border border-blue-100 rounded-xl p-4 flex items-start gap-3">
+            <svg class="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <p class="text-sm text-blue-700">Screening checks names against UAE, UN, OFAC, EU and UK sanctions lists, PEP databases, and adverse media. Results are saved with the client record.</p>
+        </div>
+
+        <button type="button"
+            x-show="!screeningDone"
+            :disabled="screening"
+            @click="
+                screening = true;
+                const formData = new FormData(document.querySelector('form[novalidate]'));
+                fetch('{{ route('tenant.clients.screen.preview', $tenant->slug) }}', {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' },
+                    body: formData
+                })
+                .then(r => r.json())
+                .then(data => {
+                    screeningResults = data.results || [];
+                    hasMatch = screeningResults.some(r => r.result && r.result.status === 'match');
+                    screeningDone = true;
+                    screening = false;
+                })
+                .catch(() => { screening = false; alert('Screening failed. Please try again.'); })
+            "
+            class="w-full flex items-center justify-center gap-2 py-3 text-sm font-semibold text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition disabled:opacity-60">
+            <template x-if="!screening">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            </template>
+            <template x-if="screening">
+                <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+            </template>
+            <span x-text="screening ? 'Screening in progress...' : 'Run screening now'"></span>
+        </button>
+
+        {{-- Results --}}
+        <template x-if="screeningDone">
+            <div class="space-y-3">
+
+                <div :class="hasMatch ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'"
+                     class="border rounded-xl p-4 flex items-center gap-3">
+                    <template x-if="hasMatch">
+                        <svg class="w-5 h-5 text-red-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                    </template>
+                    <template x-if="!hasMatch">
+                        <svg class="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </template>
+                    <div>
+                        <p :class="hasMatch ? 'text-red-700' : 'text-green-700'" class="text-sm font-semibold"
+                           x-text="hasMatch ? '⚠ Potential matches found — review before proceeding' : '✓ No sanctions or PEP matches found'"></p>
+                        <p class="text-xs text-gray-500 mt-0.5">You may still proceed — MLRO must review any matches</p>
+                    </div>
+                </div>
+
+                <template x-for="res in screeningResults" :key="res.name">
+                    <div class="border border-gray-200 rounded-xl p-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <div>
+                                <p class="text-sm font-semibold text-gray-800" x-text="res.name"></p>
+                                <p class="text-xs text-gray-400" x-text="res.role"></p>
+                            </div>
+                            <span class="text-xs font-semibold px-2 py-0.5 rounded-full"
+                                  :class="res.result && res.result.status === 'match' ? 'bg-red-100 text-red-700' : (res.result && res.result.status === 'clear' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500')"
+                                  x-text="res.result ? (res.result.total_hits > 0 ? res.result.total_hits + ' hit(s)' : 'Clear') : 'Error'">
+                            </span>
+                        </div>
+                        <template x-if="res.result && res.result.hits && res.result.hits.length > 0">
+                            <div class="mt-2 space-y-1">
+                                <template x-for="hit in res.result.hits" :key="hit.name">
+                                    <div class="flex items-center gap-2 text-xs text-red-700 bg-red-50 rounded-lg px-3 py-1.5">
+                                        <span x-text="hit.name"></span>
+                                        <span class="text-red-400" x-text="hit.type ? '· '+hit.type : ''"></span>
+                                        <span class="text-red-400" x-text="hit.matchScore ? '· '+hit.matchScore+'%' : ''"></span>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+
+                <button type="button" @click="screeningDone=false; screeningResults=[]"
+                        class="text-xs text-blue-600 hover:underline">Re-run screening</button>
+            </div>
+        </template>
+
+        <template x-if="!screeningDone">
+            <p class="text-xs text-gray-400 text-center py-4">Screening not yet run — you can also skip and run from the client profile after submission.</p>
+        </template>
+    </div>
+</div>
+
+{{-- ══ Review — shared (Corp 8, Ind 6) ══════════════════════════════════════ --}}
+<div x-show="(clientType!=='individual' && step===8) || (clientType==='individual' && indStep===6)" x-cloak>
     <div class="px-6 py-4 border-b border-gray-100">
         <h2 class="font-semibold text-gray-800">Review & submit</h2>
         <p class="text-xs text-gray-400 mt-0.5">Confirm everything before creating the client record</p>
@@ -468,7 +569,7 @@
         {{-- Corporate summary --}}
         <template x-if="clientType!=='individual'">
         <div class="space-y-2">
-            @foreach([[1,'Company profile','Basic details, trade licence, addresses'],[2,'Authorised signatories','Persons authorised to sign'],[3,'Shareholders & UBOs','Ownership structure and beneficial owners'],[4,'AML / CDD','Risk rating, source of funds, transaction profile'],[5,'Declarations','All 6 compliance declarations'],[6,'Documents','Uploaded client documents']] as [$n,$t,$d])
+            @foreach([[1,'Company profile','Basic details, trade licence, addresses'],[2,'Authorised signatories','Persons authorised to sign'],[3,'Shareholders & UBOs','Ownership structure and beneficial owners'],[4,'AML / CDD','Risk rating, source of funds, transaction profile'],[5,'Documents','Uploaded client documents'],[6,'Declarations','Compliance declarations checklist'],[7,'Screening','AML sanctions and PEP screening']] as [$n,$t,$d])
             <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
                 <div class="flex items-center gap-3">
                     <div class="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
@@ -485,7 +586,7 @@
         {{-- Individual summary --}}
         <template x-if="clientType==='individual'">
         <div class="space-y-2">
-            @foreach([[1,'Personal profile','Name, passport, Emirates ID, PEP status'],[2,'AML / CDD','Risk rating, source of funds, transaction profile'],[3,'Declarations','All 6 compliance declarations'],[4,'Documents','Uploaded client documents']] as [$n,$t,$d])
+            @foreach([[1,'Personal profile','Name, passport, Emirates ID, PEP status'],[2,'AML / CDD','Risk rating, source of funds, transaction profile'],[3,'Documents','Uploaded client documents'],[4,'Declarations','Compliance declarations checklist'],[5,'Screening','AML sanctions and PEP screening']] as [$n,$t,$d])
             <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
                 <div class="flex items-center gap-3">
                     <div class="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
@@ -513,15 +614,15 @@
 
     <div class="flex items-center gap-3">
         <span class="text-xs text-gray-400"
-              x-text="clientType!=='individual' ? 'Step '+step+' of 7' : 'Step '+indStep+' of 5'"></span>
+              x-text="clientType!=='individual' ? 'Step '+step+' of 8' : 'Step '+indStep+' of 6'"></span>
         <button type="button"
-                x-show="(clientType!=='individual' && step<7) || (clientType==='individual' && indStep<5)"
+                x-show="(clientType!=='individual' && step<8) || (clientType==='individual' && indStep<6)"
                 @click="nextStep"
                 class="flex items-center gap-2 px-5 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition">
             Next <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
         </button>
         <button type="button" @click="validateAndSubmit()"
-                x-show="(clientType!=='individual' && step===7) || (clientType==='individual' && indStep===5)"
+                x-show="(clientType!=='individual' && step===8) || (clientType==='individual' && indStep===6)"
                 class="flex items-center gap-2 px-6 py-2 text-sm font-semibold text-white bg-green-600 rounded-lg hover:bg-green-700 transition">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg> Create client record
         </button>
@@ -537,20 +638,20 @@ function clientForm() {
         clientType: '{{ array_key_first($sector["client_types"]) }}',
         step: 1,
         indStep: 1,
-        stepErrors:    {1:false,2:false,3:false,4:false,5:false,6:false,7:false},
-        indStepErrors: {1:false,2:false,3:false,4:false,5:false},
+        stepErrors:    {1:false,2:false,3:false,4:false,5:false,6:false,7:false,8:false},
+        indStepErrors: {1:false,2:false,3:false,4:false,5:false,6:false},
         signatories:  [{ full_name:'', position:'', nationality:'', dob:'', passport_number:'', passport_expiry:'', eid_number:'' }],
         shareholders: [{ shareholder_type:'individual', name:'', nationality:'', dob:'', ownership_percentage:'', passport_number:'', is_ubo:false, is_resident:false, eid_number:'', eid_expiry:'' }],
         ubos:         [{ full_name:'', nationality:'', dob:'', passport_number:'', ownership_percentage:'', country_of_residence:'', pep_status:false }],
         setType(t) {
             this.clientType=t; this.step=1; this.indStep=1;
-            this.stepErrors={1:false,2:false,3:false,4:false,5:false,6:false,7:false};
-            this.indStepErrors={1:false,2:false,3:false,4:false,5:false};
+            this.stepErrors={1:false,2:false,3:false,4:false,5:false,6:false,7:false,8:false};
+            this.indStepErrors={1:false,2:false,3:false,4:false,5:false,6:false};
             window.scrollTo(0,0);
         },
         nextStep() {
-            if(this.clientType!=='individual'&&this.step<7){this.step++;}
-            else if(this.clientType==='individual'&&this.indStep<5){this.indStep++;}
+            if(this.clientType!=='individual'&&this.step<8){this.step++;}
+            else if(this.clientType==='individual'&&this.indStep<6){this.indStep++;}
             window.scrollTo(0,0);
         },
         prevStep() {
@@ -566,7 +667,7 @@ function clientForm() {
         removeUbo(i){ this.ubos.splice(i,1); },
         validateAndSubmit() {
             const isInd    = this.clientType === 'individual';
-            const total    = isInd ? 5 : 7;
+            const total    = isInd ? 6 : 8;
             const attr     = isInd ? 'data-ind-step' : 'data-corp-step';
             const errors   = {};
             let   first    = null;
@@ -582,9 +683,9 @@ function clientForm() {
             }
 
             if (isInd) {
-                this.indStepErrors = Object.assign({1:false,2:false,3:false,4:false,5:false}, errors);
+                this.indStepErrors = Object.assign({1:false,2:false,3:false,4:false,5:false,6:false}, errors);
             } else {
-                this.stepErrors = Object.assign({1:false,2:false,3:false,4:false,5:false,6:false,7:false}, errors);
+                this.stepErrors = Object.assign({1:false,2:false,3:false,4:false,5:false,6:false,7:false,8:false}, errors);
             }
 
             if (first !== null) {

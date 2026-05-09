@@ -58,15 +58,8 @@ class ClientController extends Controller
     {
         $tenant = app('tenant');
 
-		$data = $request->except(['signatories', 'shareholders', 'ubos', 'documents', 'doc_labels', 'doc_expiry', 'doc_required', '_token']);
-
-		// Strip empty strings to avoid NOT NULL violations
-		foreach (['company_name', 'trade_license_no', 'country_of_incorporation', 'full_name', 'nationality'] as $field) {
-			if (isset($data[$field]) && $data[$field] === '') unset($data[$field]);
-		}
-
-		$client = BullionClient::create(array_merge(
-			$data,
+        $client = BullionClient::create(array_merge(
+            $request->except(['signatories', 'shareholders', 'ubos', 'documents', 'doc_labels', 'doc_expiry', 'doc_required', '_token']),
             [
                 'tenant_id'   => $tenant->id,
                 'created_by'  => auth()->id(),
@@ -107,8 +100,64 @@ class ClientController extends Controller
         }
 
         return redirect()
-            ->route('tenant.clients.show', [$tenant->slug, $client->id])
-            ->with('success', 'Client record created. Please run a screening check.');
+            ->route('tenant.clients.confirm', [$tenant->slug, $client->id])
+            ->with('success', 'Client record created successfully.');
+    }
+
+    // ── Screen preview (during create wizard, before saving) ───────────────
+    public function screenPreview(Request $request, string $slug)
+    {
+        $tenant = app('tenant');
+
+        $service = app(\App\Services\SentinelService::class);
+        $results = [];
+
+        // Screen main entity
+        $name = $request->input('company_name') ?: $request->input('full_name');
+        if ($name) {
+            $res = $service->screen($name, [
+                'type'       => 'entity',
+                'identifier' => $request->input('trade_license_no') ?: $request->input('passport_number'),
+            ]);
+            $results[] = [
+                'name'   => $name,
+                'role'   => $request->input('company_name') ? 'Company' : 'Individual',
+                'result' => $res,
+            ];
+        }
+
+        // Screen signatories
+        foreach ($request->input('signatories', []) as $sig) {
+            if (empty($sig['full_name'])) continue;
+            $res = $service->screen($sig['full_name'], ['type' => 'individual', 'identifier' => $sig['passport_number'] ?? '']);
+            $results[] = ['name' => $sig['full_name'], 'role' => 'Signatory', 'result' => $res];
+        }
+
+        // Screen shareholders
+        foreach ($request->input('shareholders', []) as $sh) {
+            if (empty($sh['name'])) continue;
+            $res = $service->screen($sh['name'], ['type' => 'individual', 'identifier' => $sh['passport_number'] ?? '']);
+            $results[] = ['name' => $sh['name'], 'role' => 'Shareholder', 'result' => $res];
+        }
+
+        // Screen UBOs
+        foreach ($request->input('ubos', []) as $ubo) {
+            if (empty($ubo['full_name'])) continue;
+            $res = $service->screen($ubo['full_name'], ['type' => 'individual', 'identifier' => $ubo['passport_number'] ?? '']);
+            $results[] = ['name' => $ubo['full_name'], 'role' => 'UBO', 'result' => $res];
+        }
+
+        return response()->json(['results' => $results]);
+    }
+
+    // ── Confirmation page after client creation ────────────────────────────
+    public function confirm(string $slug, BullionClient $client)
+    {
+        $tenant = app('tenant');
+        abort_if($client->tenant_id !== $tenant->id, 404);
+        $client->load(['signatories', 'shareholders', 'ubos']);
+        return view('tenant.clients.confirm', compact('tenant', 'client'));
+    }
     }
 
     public function show(string $slug, BullionClient $client)
@@ -133,19 +182,6 @@ class ClientController extends Controller
     {
         $tenant = app('tenant');
         abort_if($client->tenant_id !== $tenant->id, 404);
-		
-		    // Validate required fields
-		$isCorporate = $client->client_type !== 'individual';
-		$rules = $isCorporate ? [
-			'company_name'              => 'required|string',
-			'country_of_incorporation'  => 'required|string',
-			'business_activity'         => 'required|string',
-		] : [
-			'full_name'   => 'required|string',
-			'nationality' => 'required|string',
-		];
-
-		$request->validate($rules);
 
         $data = $request->except(['_token', '_method', 'signatories', 'shareholders', 'ubos']);
 
