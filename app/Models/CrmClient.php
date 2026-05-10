@@ -15,7 +15,7 @@ class CrmClient extends Model
         'license_expiry', 'license_authority', 'legal_status', 'country_inc',
         'regulator', 'ejari', 'trn', 'address', 'contact_person', 'telephone',
         'email', 'website', 'services', 'relationship_manager', 'client_since',
-        'notes', 'tenant_id', 'portal_type', 'created_by', 'assigned_to',
+        'initial_notes', 'tenant_id', 'portal_type', 'created_by', 'assigned_to',
     ];
 
     protected $casts = [

@@ -137,7 +137,7 @@
                 </div>
             </div>
 
-            @include('admin.crm._textarea', ['name'=>'notes','label'=>'Initial notes'])
+            @include('admin.crm._textarea', ['name'=>'initial_notes','label'=>'Initial notes'])
         </div>
     </div>
 
