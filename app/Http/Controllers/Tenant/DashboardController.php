@@ -15,9 +15,10 @@ class DashboardController extends Controller
     public function index()
     {
         $tenant    = app('tenant');
-        $tid       = $tenant->id;
-        $base      = BullionClient::where('tenant_id', $tid);
-        $clientIds = (clone $base)->pluck('id');
+        $tid        = $tenant->id;
+        $base       = BullionClient::where('tenant_id', $tid);
+        $activeBase = BullionClient::where('tenant_id', $tid)->whereIn('status', ['active', 'pending']);
+        $clientIds  = (clone $activeBase)->pluck('id');
 
         // ── Core stats ──────────────────────────────────────────────────────
         $total   = (clone $base)->count();
@@ -31,14 +32,14 @@ class DashboardController extends Controller
         $riskUnrated = (clone $base)->whereNull('risk_rating')->count();
 
         // ── Compliance alerts ─────────────────────────────────────────────────
-        $licenceExpired  = (clone $base)->whereNotNull('trade_license_expiry')->where('trade_license_expiry', '<', now())->count();
-        $licenceExpiring = (clone $base)->whereNotNull('trade_license_expiry')->whereBetween('trade_license_expiry', [now(), now()->addDays(30)])->count();
-        $ejariExpired    = (clone $base)->whereNotNull('ejari_expiry')->where('ejari_expiry', '<', now())->count();
-        $ejariExpiring   = (clone $base)->whereNotNull('ejari_expiry')->whereBetween('ejari_expiry', [now(), now()->addDays(30)])->count();
+        $licenceExpired  = (clone $activeBase)->whereNotNull('trade_license_expiry')->where('trade_license_expiry', '<', now())->count();
+        $licenceExpiring = (clone $activeBase)->whereNotNull('trade_license_expiry')->whereBetween('trade_license_expiry', [now(), now()->addDays(30)])->count();
+        $ejariExpired    = (clone $activeBase)->whereNotNull('ejari_expiry')->where('ejari_expiry', '<', now())->count();
+        $ejariExpiring   = (clone $activeBase)->whereNotNull('ejari_expiry')->whereBetween('ejari_expiry', [now(), now()->addDays(30)])->count();
         $reviewOverdue   = (clone $base)->whereNotNull('next_review_date')->where('next_review_date', '<', now())->count();
-        $reviewDueSoon   = (clone $base)->whereNotNull('next_review_date')->whereBetween('next_review_date', [now(), now()->addDays(30)])->count();
-        $unscreened      = (clone $base)->where('screening_status', 'not_screened')->count();
-        $screeningMatch  = (clone $base)->where('screening_status', 'match')->count();
+        $reviewDueSoon   = (clone $activeBase)->whereNotNull('next_review_date')->whereBetween('next_review_date', [now(), now()->addDays(30)])->count();
+        $unscreened      = (clone $activeBase)->where('screening_status', 'not_screened')->count();
+        $screeningMatch  = (clone $activeBase)->where('screening_status', 'match')->count();
         $edd             = (clone $base)->where('cdd_type', 'enhanced')->count();
 
         // ── Document alerts ───────────────────────────────────────────────────
@@ -78,7 +79,7 @@ class DashboardController extends Controller
         );
 
         // ── Alert lists ───────────────────────────────────────────────────────
-        $expiry_alerts = BullionClient::where('tenant_id', $tid)
+        $expiry_alerts = BullionClient::where('tenant_id', $tid)->whereIn('status', ['active', 'pending'])
             ->whereNotNull('trade_license_expiry')
             ->where('trade_license_expiry', '<=', now()->addDays(60))
             ->orderBy('trade_license_expiry')->take(6)->get();
