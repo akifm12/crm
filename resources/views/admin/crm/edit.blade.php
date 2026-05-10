@@ -132,7 +132,7 @@
                     @endforeach
                 </div>
             </div>
-            @include('admin.crm._textarea', ['name'=>'initial_notes','label'=>'Notes','value'=>$crm->notes])
+            @include('admin.crm._textarea', ['name'=>'initial_notes','label'=>'Notes','value'=>$crm->initial_notes])
         </div>
     </div>
 
