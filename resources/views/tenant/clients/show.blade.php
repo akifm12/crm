@@ -91,29 +91,29 @@ $countryName = fn($code) => $code ? (\App\Models\Country::find($code)?->country_
     @if($client->isLicenseExpired())
     <div class="mt-4 flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
         <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-        Trade licence expired on {{ $client->trade_license_expiry->format('d M Y') }}. Renewal required.
+        Trade licence expired on {{ $client->trade_license_expiry?->format('d M Y') ?? '—' }}. Renewal required.
     </div>
     @elseif($client->isLicenseExpiringSoon())
     <div class="mt-4 flex items-center gap-2 p-3 bg-orange-50 border border-orange-200 rounded-lg text-sm text-orange-700">
         <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-        Trade licence expiring on {{ $client->trade_license_expiry->format('d M Y') }}.
+        Trade licence expiring on {{ $client->trade_license_expiry?->format('d M Y') ?? '—' }}.
     </div>
     @endif
     @if($client->isEjariExpired())
     <div class="mt-2 flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
         <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-        Ejari expired on {{ $client->ejari_expiry->format('d M Y') }}. Renewal required.
+        Ejari expired on {{ $client->ejari_expiry?->format('d M Y') ?? '—' }}. Renewal required.
     </div>
     @elseif($client->isEjariExpiringSoon())
     <div class="mt-2 flex items-center gap-2 p-3 bg-orange-50 border border-orange-200 rounded-lg text-sm text-orange-700">
         <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-        Ejari expiring on {{ $client->ejari_expiry->format('d M Y') }}.
+        Ejari expiring on {{ $client->ejari_expiry?->format('d M Y') ?? '—' }}.
     </div>
     @endif
     @if($client->isReviewDue())
     <div class="mt-2 flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700">
         <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-        KYC review {{ $client->next_review_date->isPast() ? 'was due on' : 'due' }} {{ $client->next_review_date->format('d M Y') }}.
+        KYC review {{ $client->next_review_date?->isPast() ? 'was due on' : 'due' }} {{ $client->next_review_date?->format('d M Y') ?? '—' }}.
     </div>
     @endif
 </div>
@@ -230,7 +230,7 @@ $countryName = fn($code) => $code ? (\App\Models\Country::find($code)?->country_
                 <div class="bg-white rounded-xl border border-gray-200 p-4">
                     <h3 class="text-sm font-semibold text-gray-700 mb-1">Added by</h3>
                     <p class="text-sm text-gray-800">{{ $client->creator?->name ?? '—' }}</p>
-                    <p class="text-xs text-gray-400">{{ $client->created_at->format('d M Y, H:i') }}</p>
+                    <p class="text-xs text-gray-400">{{ $client->created_at?->format('d M Y, H:i') ?? '—' }}</p>
                 </div>
             </div>
         </div>
@@ -256,7 +256,7 @@ $countryName = fn($code) => $code ? (\App\Models\Country::find($code)?->country_
                         <div><span class="text-xs text-gray-400 block">Passport expiry</span>
                             @if($sig->passport_expiry)
                                 <span class="{{ $sig->passport_expiry->isPast() ? 'text-red-600 font-semibold' : '' }}">
-                                    {{ $sig->passport_expiry->format('d M Y') }}
+                                    {{ $sig->passport_expiry?->format('d M Y') ?? '—' }}
                                 </span>
                             @else —
                             @endif
@@ -290,7 +290,7 @@ $countryName = fn($code) => $code ? (\App\Models\Country::find($code)?->country_
                         <div><span class="text-xs text-gray-400 block">Emirates ID</span>{{ $sh->eid_number ?? '—' }}</div>
                         <div><span class="text-xs text-gray-400 block">EID expiry</span>
                             @if($sh->eid_expiry)
-                            <span class="{{ $sh->eid_expiry->isPast() ? 'text-red-600 font-semibold' : '' }}">{{ $sh->eid_expiry->format('d M Y') }}</span>
+                            <span class="{{ $sh->eid_expiry?->isPast() ? 'text-red-600 font-semibold' : '' }}">{{ $sh->eid_expiry?->format('d M Y') ?? '—' }}</span>
                             @else —
                             @endif
                         </div>
@@ -571,7 +571,7 @@ $countryName = fn($code) => $code ? (\App\Models\Country::find($code)?->country_
                         @if($doc->expiry_date)
                         <span class="text-xs font-medium px-2 py-0.5 rounded-full
                             {{ $doc->isExpired() ? 'bg-red-100 text-red-700' : ($doc->isExpiringSoon() ? 'bg-orange-100 text-orange-700' : 'bg-gray-100 text-gray-500') }}">
-                            {{ $doc->isExpired() ? 'Expired' : 'Exp.' }} {{ $doc->expiry_date->format('d M Y') }}
+                            {{ $doc->isExpired() ? 'Expired' : 'Exp.' }} {{ $doc->expiry_date?->format('d M Y') ?? '—' }}
                         </span>
                         @endif
                         <a href="{{ route('tenant.docs.download', [$tenant->slug, $doc->id]) }}"
@@ -646,7 +646,7 @@ $countryName = fn($code) => $code ? (\App\Models\Country::find($code)?->country_
                         {{ ucfirst(str_replace('_', ' ', $client->screening_status)) }}
                     </span>
                     @if($client->screening_date)
-                    <p class="text-xs text-gray-400 mt-2">Last screened: {{ $client->screening_date->format('d M Y, H:i') }}</p>
+                    <p class="text-xs text-gray-400 mt-2">Last screened: {{ $client->screening_date?->format('d M Y, H:i') ?? '—' }}</p>
                     @if($client->screening_reference)<p class="text-xs text-gray-400">Ref: {{ $client->screening_reference }}</p>@endif
                     @else
                     <p class="text-xs text-gray-400 mt-2">Not yet screened</p>
