@@ -134,6 +134,9 @@ Route::middleware(['auth', \App\Http\Middleware\EnsureAdminUser::class])->group(
     Route::get('/kyc/tenants/{tenant}/edit',     [TenantController::class, 'edit'])->name('kyc.tenants.edit');
     Route::patch('/kyc/tenants/{tenant}',        [TenantController::class, 'update'])->name('kyc.tenants.update');
     Route::patch('/kyc/tenants/{tenant}/toggle', [TenantController::class, 'toggle'])->name('kyc.tenants.toggle');
+    Route::post('/kyc/tenants/{tenant}/users',                   [TenantController::class, 'addUser'])->name('kyc.tenants.users.add');
+    Route::patch('/kyc/tenants/{tenant}/users/{user}/password',  [TenantController::class, 'updatePassword'])->name('kyc.tenants.users.password');
+    Route::delete('/kyc/tenants/{tenant}/users/{user}',          [TenantController::class, 'deleteUser'])->name('kyc.tenants.users.delete');
     Route::patch('/kyc/submissions/{id}/approve', fn() => back())->name('kyc.approve');
     Route::patch('/kyc/submissions/{id}/reject',  fn() => back())->name('kyc.reject');
 

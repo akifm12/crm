@@ -10,6 +10,8 @@ use App\Support\SectorConfig;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class TenantController extends Controller
 {
@@ -66,7 +68,8 @@ class TenantController extends Controller
     public function edit(Tenant $tenant)
     {
         $sectors = SectorConfig::sectors();
-        return view('admin.tenants.edit', compact('tenant', 'sectors'));
+        $users   = User::where('tenant_id', $tenant->id)->get();
+        return view('admin.tenants.edit', compact('tenant', 'sectors', 'users'));
     }
 
     public function update(Request $request, Tenant $tenant)
@@ -83,6 +86,49 @@ class TenantController extends Controller
         ]));
 
         return back()->with('success', 'Tenant updated.');
+    }
+
+    public function addUser(Request $request, Tenant $tenant)
+    {
+        $request->validate([
+            'name'     => 'required|string|max:255',
+            'email'    => 'required|email|unique:users,email',
+            'password' => 'required|string|min:6',
+        ]);
+
+        User::create([
+            'name'      => $request->name,
+            'email'     => $request->email,
+            'password'  => Hash::make($request->password),
+            'role'      => 'admin',
+            'tenant_id' => $tenant->id,
+        ]);
+
+        return back()->with('success', "User {$request->email} added.");
+    }
+
+    public function updatePassword(Request $request, Tenant $tenant, User $user)
+    {
+        abort_if($user->tenant_id !== $tenant->id, 403);
+
+        $request->validate(['password' => 'required|string|min:6']);
+
+        $user->update(['password' => Hash::make($request->password)]);
+
+        return back()->with('success', "Password updated for {$user->email}.");
+    }
+
+    public function deleteUser(Tenant $tenant, User $user)
+    {
+        abort_if($user->tenant_id !== $tenant->id, 403);
+
+        // Don't delete if it's the only user
+        if (User::where('tenant_id', $tenant->id)->count() <= 1) {
+            return back()->with('error', 'Cannot delete the only portal user.');
+        }
+
+        $user->delete();
+        return back()->with('success', 'User removed.');
     }
 
     public function toggle(Tenant $tenant)

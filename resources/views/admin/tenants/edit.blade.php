@@ -77,4 +77,66 @@
 </div>
 
 </form>
+
+{{-- ── Portal Users ──────────────────────────────────────────────────── --}}
+<div class="max-w-2xl mt-6 space-y-4">
+
+    @if(session('success'))
+    <div class="p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700">{{ session('success') }}</div>
+    @endif
+    @if(session('error'))
+    <div class="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{{ session('error') }}</div>
+    @endif
+
+    <div class="bg-white rounded-xl border border-gray-200">
+        <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+            <h3 class="text-sm font-semibold text-gray-700">Portal users</h3>
+        </div>
+        <div class="divide-y divide-gray-100">
+            @forelse($users as $u)
+            <div class="px-5 py-3 flex items-center justify-between gap-4">
+                <div>
+                    <p class="text-sm font-medium text-gray-800">{{ $u->name }}</p>
+                    <p class="text-xs text-gray-400">{{ $u->email }}</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <form method="POST" action="{{ route('kyc.tenants.users.password', [$tenant->id, $u->id]) }}"
+                          class="flex items-center gap-2">
+                        @csrf @method('PATCH')
+                        <input type="text" name="password" placeholder="New password" minlength="6" required
+                               class="px-2 py-1.5 text-xs border border-gray-200 rounded-lg w-32 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                        <button type="submit" class="px-3 py-1.5 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700">Update</button>
+                    </form>
+                    <form method="POST" action="{{ route('kyc.tenants.users.delete', [$tenant->id, $u->id]) }}"
+                          onsubmit="return confirm('Remove this user?')">
+                        @csrf @method('DELETE')
+                        <button type="submit" class="text-xs text-red-400 hover:text-red-600">Remove</button>
+                    </form>
+                </div>
+            </div>
+            @empty
+            <div class="px-5 py-4 text-sm text-gray-400">No portal users yet.</div>
+            @endforelse
+        </div>
+        <div class="px-5 py-4 border-t border-gray-100 bg-gray-50">
+            <p class="text-xs font-semibold text-gray-500 mb-3">Add portal user</p>
+            <form method="POST" action="{{ route('kyc.tenants.users.add', $tenant->id) }}" class="space-y-3">
+                @csrf
+                <div class="grid grid-cols-3 gap-3">
+                    <input type="text" name="name" placeholder="Full name" required
+                           class="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <input type="email" name="email" placeholder="Email" required
+                           class="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <input type="text" name="password" placeholder="Password" minlength="6" required
+                           class="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <button type="submit"
+                        class="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-green-600 rounded-lg hover:bg-green-700 transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    Add user
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
 @endsection
