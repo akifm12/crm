@@ -193,7 +193,7 @@
 
             <div class="bg-white rounded-xl border border-gray-200 p-5">
                 <h3 class="text-sm font-semibold text-gray-700 mb-3">General notes</h3>
-                <p class="text-sm text-gray-700">{{ $crm->notes_text ?? '—' }}</p>
+                <p class="text-sm text-gray-700">{{ $crm->initial_notes ?? '—' }}</p>
             </div>
         </div>
     </div>
