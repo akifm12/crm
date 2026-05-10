@@ -8,7 +8,7 @@ $countryName = fn($code) => $code ? (\App\Models\Country::find($code)?->country_
 
 @section('title', $client->displayName() . ' — ' . $tenant->name)
 @section('page-title', $client->displayName())
-@section('page-subtitle', ($typeLabels[$client->client_type] ?? ucfirst($client->client_type)) . ' · Added ' . $client->created_at->format('d M Y'))
+@section('page-subtitle', ($typeLabels[$client->client_type] ?? ucfirst($client->client_type)) . ' · Added ' . ($client->created_at ? $client->created_at->format('d M Y') : '—'))
 
 @section('content')
 
