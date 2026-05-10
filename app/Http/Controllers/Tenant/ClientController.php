@@ -34,8 +34,9 @@ class ClientController extends Controller
         if ($request->filled('status')) $query->where('status', $request->status);
         if ($request->filled('risk'))   $query->where('risk_rating', $request->risk);
         if ($request->filled('type'))   $query->where('client_type', $request->type);
+        if ($request->filled('year'))   $query->whereYear('created_at', $request->year);
 
-        $clients = $query->latest()->paginate(20)->withQueryString();
+        $clients = $query->latest()->paginate(50)->withQueryString();
 
         $typeCounts = BullionClient::where('tenant_id', $tenant->id)
             ->selectRaw('client_type, count(*) as total')
@@ -44,7 +45,16 @@ class ClientController extends Controller
             ->toArray();
         $typeCounts[''] = array_sum($typeCounts);
 
-        return view('tenant.clients.index', compact('tenant', 'clients', 'typeCounts'));
+        // Available years for filter
+        $years = BullionClient::where('tenant_id', $tenant->id)
+            ->whereNotNull('created_at')
+            ->selectRaw('YEAR(created_at) as year')
+            ->groupBy('year')
+            ->orderByDesc('year')
+            ->pluck('year')
+            ->toArray();
+
+        return view('tenant.clients.index', compact('tenant', 'clients', 'typeCounts', 'years'));
     }
 
     public function create()

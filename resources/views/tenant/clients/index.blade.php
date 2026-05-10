@@ -51,11 +51,23 @@ $currentType = request('type', '');
             @endforeach
         </select>
         <button type="submit" class="px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50">Filter</button>
-        @if(request()->hasAny(['search','status','risk']))
+        <select name="year" class="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">All years</option>
+            @foreach($years as $yr)
+            <option value="{{ $yr }}" {{ request('year')===$yr ? 'selected' : '' }}>{{ $yr }}</option>
+            @endforeach
+        </select>
+        @if(request()->hasAny(['search','status','risk','year']))
         <a href="{{ route('tenant.clients.index', $tenant->slug) }}{{ request('type') ? '?type='.request('type') : '' }}"
            class="px-4 py-2 text-sm text-gray-400 hover:text-gray-600">Clear</a>
         @endif
     </form>
+
+    {{-- Total count --}}
+    <p class="text-xs text-gray-400 mt-2 px-1">
+        Showing {{ $clients->firstItem() }}–{{ $clients->lastItem() }} of <span class="font-semibold text-gray-600">{{ $clients->total() }}</span> clients
+        @if(request('year')) · {{ request('year') }} @endif
+    </p>
     <a href="{{ route('tenant.clients.create', $tenant->slug) }}"
        class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -70,17 +82,21 @@ $currentType = request('type', '');
     <table class="min-w-full divide-y divide-gray-100 text-sm">
         <thead class="bg-gray-50">
             <tr>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase w-10">#</th>
                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Client</th>
                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase hidden md:table-cell">Type</th>
                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase hidden lg:table-cell">Risk</th>
                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase hidden lg:table-cell">Screening</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase hidden lg:table-cell">Added</th>
                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Status</th>
                 <th class="px-4 py-3"></th>
             </tr>
         </thead>
         <tbody class="divide-y divide-gray-100">
             @forelse($clients as $client)
+            @php $serial = $clients->firstItem() + $loop->index; @endphp
             <tr class="hover:bg-gray-50 transition">
+                <td class="px-4 py-3 text-xs text-gray-400 font-mono">{{ $serial }}</td>
                 <td class="px-4 py-3">
                     <div class="flex items-center gap-3">
                         <div class="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-sm font-bold text-blue-700 flex-shrink-0">
@@ -121,6 +137,9 @@ $currentType = request('type', '');
                         {{ ucfirst(str_replace('_',' ',$client->screening_status)) }}
                     </span>
                 </td>
+                <td class="px-4 py-3 hidden lg:table-cell text-xs text-gray-400">
+                    {{ $client->created_at ? $client->created_at->format('d M Y') : '—' }}
+                </td>
                 <td class="px-4 py-3">
                     <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold {{ $client->statusBadgeColor() }}">
                         {{ ucfirst($client->status) }}
@@ -133,7 +152,7 @@ $currentType = request('type', '');
             </tr>
             @empty
             <tr>
-                <td colspan="6" class="px-4 py-16 text-center">
+                <td colspan="8" class="px-4 py-16 text-center">
                     <p class="text-gray-400 text-sm mb-3">No clients found.</p>
                     <a href="{{ route('tenant.clients.create', $tenant->slug) }}"
                        class="text-sm text-blue-600 hover:underline">Add your first client</a>
