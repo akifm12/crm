@@ -277,6 +277,65 @@ class ClientController extends Controller
             ->with('success', 'Client record updated successfully.');
     }
 
+    public function bulkUploadDocuments(Request $request, string $slug, BullionClient $client)
+    {
+        $tenant = app('tenant');
+        abort_if($client->tenant_id !== $tenant->id, 404);
+
+        $request->validate(['files.*' => 'required|file|max:20480']);
+
+        $typeMap = [
+            'passport'    => ['passport', 'pp'],
+            'emirates_id' => ['eid', 'emirates', 'emiratesid', 'national_id', 'nationalid'],
+            'visa'        => ['visa', 'residency', 'residence'],
+            'trade_licence' => ['license', 'licence', 'trade', 'tradelic', 'tl'],
+            'moa'         => ['moa', 'memorandum', 'articles', 'incorporation'],
+            'ejari'       => ['ejari', 'tenancy', 'lease'],
+            'bank_statement' => ['bank', 'statement', 'bankstat'],
+            'vat_certificate' => ['vat', 'trn'],
+            'tax_certificate' => ['tax', 'corporate_tax', 'ct'],
+            'power_of_attorney' => ['poa', 'power_of_attorney', 'attorney'],
+            'audited_accounts' => ['audit', 'accounts', 'financial'],
+        ];
+
+        $uploaded = 0;
+        foreach ($request->file('files', []) as $file) {
+            $nameLower = strtolower(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME));
+            $nameLower = preg_replace('/[^a-z0-9]/', '_', $nameLower);
+
+            // Match document type from filename
+            $docType  = 'other';
+            $docLabel = 'Other Document';
+            foreach ($typeMap as $type => $keywords) {
+                foreach ($keywords as $kw) {
+                    if (str_contains($nameLower, $kw)) {
+                        $docType  = $type;
+                        $docLabel = ucwords(str_replace('_', ' ', $type));
+                        break 2;
+                    }
+                }
+            }
+
+            $path = $file->store("tenants/{$tenant->id}/clients/{$client->id}", 'local');
+
+            ClientDocument::create([
+                'bullion_client_id' => $client->id,
+                'tenant_id'         => $tenant->id,
+                'document_type'     => $docType,
+                'document_label'    => $docLabel,
+                'file_path'         => $path,
+                'file_name'         => $file->getClientOriginalName(),
+                'mime_type'         => $file->getMimeType(),
+                'file_size'         => $file->getSize(),
+                'uploaded_by'       => auth()->id(),
+            ]);
+
+            $uploaded++;
+        }
+
+        return back()->with('success', "{$uploaded} file(s) uploaded successfully.");
+    }
+
     public function uploadDocument(Request $request, string $slug, BullionClient $client)
     {
         $tenant = app('tenant');

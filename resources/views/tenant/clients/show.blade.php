@@ -494,6 +494,54 @@ $countryName = fn($code) => $code ? (\App\Models\Country::find($code)?->country_
 
     {{-- ── DOCUMENTS ─────────────────────────────────────────────────────────── --}}
     <div x-show="tab==='documents'" x-cloak>
+
+        {{-- Bulk upload zone --}}
+        <div class="bg-white rounded-xl border border-blue-200 mb-4 overflow-hidden">
+            <div class="px-5 py-4 border-b border-blue-100 bg-blue-50">
+                <h3 class="text-sm font-semibold text-blue-800">Bulk upload</h3>
+                <p class="text-xs text-blue-500 mt-0.5">Drop multiple files — system auto-detects type from filename</p>
+            </div>
+            <form method="POST" action="{{ route('docs.bulk', [$tenant->slug, $client->id]) }}"
+                  enctype="multipart/form-data" class="p-5"
+                  x-data="{ files: [], dragging: false }"
+                  @dragover.prevent="dragging=true"
+                  @dragleave.prevent="dragging=false"
+                  @drop.prevent="dragging=false; files=[...$event.dataTransfer.files]; $refs.bulkInput.files=$event.dataTransfer.files">
+                @csrf
+                <div :class="dragging ? 'border-blue-400 bg-blue-50' : 'border-gray-200 bg-gray-50'"
+                     class="border-2 border-dashed rounded-xl p-8 text-center transition cursor-pointer"
+                     @click="$refs.bulkInput.click()">
+                    <svg class="w-8 h-8 text-gray-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                    </svg>
+                    <p class="text-sm text-gray-500">Drag & drop files here or <span class="text-blue-600 font-medium">browse</span></p>
+                    <p class="text-xs text-gray-400 mt-1">PDF, JPG, PNG — up to 20MB each</p>
+                    <input type="file" name="files[]" multiple x-ref="bulkInput" class="hidden"
+                           @change="files=[...$event.target.files]">
+                </div>
+
+                {{-- File preview --}}
+                <template x-if="files.length > 0">
+                    <div class="mt-4 space-y-2">
+                        <p class="text-xs font-semibold text-gray-500" x-text="files.length + ' file(s) selected'"></p>
+                        <template x-for="f in files" :key="f.name">
+                            <div class="flex items-center gap-3 p-2.5 bg-gray-50 rounded-lg text-sm">
+                                <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                </svg>
+                                <span class="flex-1 text-gray-700 truncate" x-text="f.name"></span>
+                                <span class="text-xs text-gray-400" x-text="(f.size/1024/1024).toFixed(1)+'MB'"></span>
+                            </div>
+                        </template>
+                        <button type="submit"
+                                class="w-full mt-3 py-2.5 text-sm font-semibold text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition">
+                            Upload all files
+                        </button>
+                    </div>
+                </template>
+            </form>
+        </div>
+    <div x-show="tab==='documents'" x-cloak>
         <div class="bg-white rounded-xl border border-gray-200 mb-5">
             <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
                 <h3 class="text-sm font-semibold text-gray-700">Documents</h3>

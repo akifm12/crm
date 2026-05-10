@@ -161,6 +161,7 @@ Route::prefix('{slug}')
         Route::patch('/clients/{client}/risk',         [ClientController::class, 'updateRisk'])->name('clients.risk');
         Route::patch('/clients/{client}/status',       [ClientController::class, 'updateStatus'])->name('clients.status');
         Route::patch('/clients/{client}/declarations', [ClientController::class, 'updateDeclarations'])->name('clients.declarations');
+        Route::post('/clients/{client}/documents/bulk', [ClientController::class, 'bulkUploadDocuments'])->name('docs.bulk');
         Route::post('/clients/{client}/documents',   [ClientController::class, 'uploadDocument'])->name('docs.upload');
         Route::get('/documents/{document}/download', [ClientController::class, 'downloadDocument'])->name('docs.download');
         Route::delete('/documents/{document}',       [ClientController::class, 'deleteDocument'])->name('docs.delete');
