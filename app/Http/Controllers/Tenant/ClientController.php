@@ -110,6 +110,38 @@ class ClientController extends Controller
             ->with('success', 'Client record created successfully.');
     }
 
+    // ── Transactions ──────────────────────────────────────────────────────
+
+    public function addTransaction(Request $request, string $slug, BullionClient $client)
+    {
+        $tenant = app('tenant');
+        abort_if($client->tenant_id !== $tenant->id, 404);
+
+        $request->validate(['visit_date' => 'required|date']);
+
+        \App\Models\ClientTransaction::create([
+            'bullion_client_id' => $client->id,
+            'tenant_id'         => $tenant->id,
+            'visit_date'        => $request->visit_date,
+            'invoice_number'    => $request->invoice_number,
+            'invoice_amount'    => $request->invoice_amount,
+            'transaction_type'  => $request->transaction_type,
+            'notes'             => $request->notes,
+            'created_by'        => auth()->id(),
+        ]);
+
+        return back()->with('success', 'Transaction added.');
+    }
+
+    public function deleteTransaction(Request $request, string $slug, BullionClient $client, \App\Models\ClientTransaction $transaction)
+    {
+        $tenant = app('tenant');
+        abort_if($client->tenant_id !== $tenant->id, 404);
+        abort_if($transaction->bullion_client_id !== $client->id, 404);
+        $transaction->delete();
+        return back()->with('success', 'Transaction removed.');
+    }
+
     // ── Screen preview (during create wizard, before saving) ───────────────
     public function screenPreview(Request $request, string $slug)
     {
@@ -169,7 +201,7 @@ class ClientController extends Controller
     {
         $tenant = app('tenant');
         abort_if($client->tenant_id !== $tenant->id, 404);
-        $client->load(['signatories', 'shareholders', 'ubos', 'creator']);
+        $client->load(['signatories', 'shareholders', 'ubos', 'creator', 'transactions']);
         $documents = ClientDocument::where('bullion_client_id', $client->id)->orderBy('document_type')->get();
         return view('tenant.clients.show', compact('tenant', 'client', 'documents'));
     }

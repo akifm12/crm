@@ -125,6 +125,7 @@ $countryName = fn($code) => $code ? (\App\Models\Country::find($code)?->country_
         @foreach([
             ['overview',     'Overview'],
             ['profile',      'Profile'],
+            ['transactions', 'Transactions ('.($client->transactions->count()).')'],
             ['documents',    'Documents ('.$documents->count().')'],
             ['screening',    'Screening'],
             ['risk',         'Risk & CDD'],
@@ -368,6 +369,126 @@ $countryName = fn($code) => $code ? (\App\Models\Country::find($code)?->country_
                     @endif
                 </div>
             </div>
+        </div>
+    </div>
+
+    {{-- ── TRANSACTIONS ──────────────────────────────────────────────────── --}}
+    <div x-show="tab==='transactions'" x-cloak>
+        <div class="bg-white rounded-xl border border-gray-200 mb-5">
+            <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+                <div>
+                    <h3 class="text-sm font-semibold text-gray-700">Transaction history</h3>
+                    @if($client->transactions->count())
+                    <p class="text-xs text-gray-400 mt-0.5">
+                        {{ $client->transactions->count() }} visits ·
+                        Total: AED {{ number_format($client->transactions->sum('invoice_amount'), 2) }}
+                    </p>
+                    @endif
+                </div>
+            </div>
+
+            {{-- Add transaction form --}}
+            <div class="px-5 py-4 bg-gray-50 border-b border-gray-100">
+                <p class="text-xs font-semibold text-gray-500 mb-3">Add transaction</p>
+                <form method="POST" action="{{ route('tenant.clients.transactions.store', [$tenant->slug, $client->id]) }}"
+                      class="grid grid-cols-2 md:grid-cols-5 gap-3 items-end">
+                    @csrf
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Date <span class="text-red-500">*</span></label>
+                        <input type="date" name="visit_date" value="{{ date('Y-m-d') }}" required
+                               class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Invoice #</label>
+                        <input type="text" name="invoice_number"
+                               class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Amount (AED)</label>
+                        <input type="number" step="0.01" name="invoice_amount"
+                               class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Type</label>
+                        <select name="transaction_type"
+                                class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                            <option value="">— Select —</option>
+                            <option value="buy">Buy</option>
+                            <option value="sell">Sell</option>
+                            <option value="exchange">Exchange</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div>
+                        <button type="submit"
+                                class="w-full py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition">
+                            Add
+                        </button>
+                    </div>
+                    <div class="col-span-2 md:col-span-5">
+                        <input type="text" name="notes" placeholder="Notes (optional)"
+                               class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </form>
+            </div>
+
+            {{-- Transaction list --}}
+            @if($client->transactions->count())
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-sm">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500">Date</th>
+                            <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500">Invoice #</th>
+                            <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500">Type</th>
+                            <th class="px-5 py-3 text-right text-xs font-semibold text-gray-500">Amount (AED)</th>
+                            <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500">Notes</th>
+                            <th class="px-5 py-3"></th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        @foreach($client->transactions as $txn)
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-5 py-3 text-gray-800">{{ $txn->visit_date?->format('d M Y') ?? '—' }}</td>
+                            <td class="px-5 py-3 font-mono text-gray-600">{{ $txn->invoice_number ?? '—' }}</td>
+                            <td class="px-5 py-3">
+                                @if($txn->transaction_type)
+                                <span class="text-xs px-2 py-0.5 rounded-full
+                                    {{ $txn->transaction_type === 'buy' ? 'bg-green-100 text-green-700' : ($txn->transaction_type === 'sell' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600') }}">
+                                    {{ ucfirst($txn->transaction_type) }}
+                                </span>
+                                @else —
+                                @endif
+                            </td>
+                            <td class="px-5 py-3 text-right font-semibold text-gray-800">
+                                {{ $txn->invoice_amount ? 'AED '.number_format($txn->invoice_amount, 2) : '—' }}
+                            </td>
+                            <td class="px-5 py-3 text-gray-500 text-xs">{{ $txn->notes ?? '' }}</td>
+                            <td class="px-5 py-3 text-right">
+                                <form method="POST"
+                                      action="{{ route('tenant.clients.transactions.delete', [$tenant->slug, $client->id, $txn->id]) }}"
+                                      onsubmit="return confirm('Delete this transaction?')">
+                                    @csrf @method('DELETE')
+                                    <button type="submit" class="text-red-400 hover:text-red-600 text-xs">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                    <tfoot class="bg-gray-50">
+                        <tr>
+                            <td colspan="3" class="px-5 py-3 text-xs font-semibold text-gray-500">Total</td>
+                            <td class="px-5 py-3 text-right font-bold text-gray-800">
+                                AED {{ number_format($client->transactions->sum('invoice_amount'), 2) }}
+                            </td>
+                            <td colspan="2"></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            @else
+            <div class="px-5 py-12 text-center text-gray-400 text-sm">No transactions recorded yet.</div>
+            @endif
         </div>
     </div>
 

@@ -149,6 +149,8 @@ Route::prefix('{slug}')
     ->group(function () {
         Route::get('/',             [TenantDashboard::class, 'index'])->name('dashboard');
         Route::get('/clients',      [ClientController::class, 'index'])->name('clients.index');
+        Route::post('/clients/{client}/transactions',  [ClientController::class, 'addTransaction'])->name('clients.transactions.store');
+        Route::delete('/clients/{client}/transactions/{transaction}', [ClientController::class, 'deleteTransaction'])->name('clients.transactions.delete');
         Route::post('/clients/screen-preview',         [ClientController::class, 'screenPreview'])->name('clients.screen.preview');
         Route::get('/clients/new',                     [ClientController::class, 'create'])->name('clients.create');
         Route::post('/clients',                        [ClientController::class, 'store'])->name('clients.store');

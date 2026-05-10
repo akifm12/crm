@@ -89,7 +89,10 @@ class BullionClient extends Model
         };
     }
 
-    public function isLicenseExpiringSoon(): bool
+    public function transactions(): HasMany
+    {
+        return $this->hasMany(\App\Models\ClientTransaction::class)->orderByDesc('visit_date');
+    }
     {
         if (!$this->trade_license_expiry) return false;
         return $this->trade_license_expiry->diffInDays(now()) <= 30
