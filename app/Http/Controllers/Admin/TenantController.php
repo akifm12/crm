@@ -10,8 +10,6 @@ use App\Support\SectorConfig;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 
 class TenantController extends Controller
 {
