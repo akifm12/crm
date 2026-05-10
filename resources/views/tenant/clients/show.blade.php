@@ -501,7 +501,7 @@ $countryName = fn($code) => $code ? (\App\Models\Country::find($code)?->country_
                 <h3 class="text-sm font-semibold text-blue-800">Bulk upload</h3>
                 <p class="text-xs text-blue-500 mt-0.5">Drop multiple files — system auto-detects type from filename</p>
             </div>
-            <form method="POST" action="{{ route('docs.bulk', [$tenant->slug, $client->id]) }}"
+            <form method="POST" action="{{ route('tenant.docs.bulk', [$tenant->slug, $client->id]) }}"
                   enctype="multipart/form-data" class="p-5"
                   x-data="{ files: [], dragging: false }"
                   @dragover.prevent="dragging=true"
