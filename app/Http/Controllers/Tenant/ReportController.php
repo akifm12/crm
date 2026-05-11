@@ -143,6 +143,24 @@ class ReportController extends Controller
         return response()->download($outPath, $filename)->deleteFileAfterSend(true);
     }
 
+    public function declaration(string $slug, BullionClient $client, string $type)
+    {
+        $tenant = app('tenant');
+        abort_if($client->tenant_id !== $tenant->id, 404);
+        $client->load(['signatories', 'shareholders', 'ubos']);
+
+        $declarations = [
+            'pep'                 => 'Politically Exposed Person (PEP) Declaration',
+            'supply_chain'        => 'Gold Supply Chain Declaration',
+            'cahra'               => 'Conflict-Affected & High-Risk Areas (CAHRA) Declaration',
+            'source_of_funds'     => 'Source of Funds & Source of Wealth Declaration',
+            'sanctions'           => 'Sanctions Compliance Declaration',
+            'ubo'                 => 'Ultimate Beneficial Ownership (UBO) Declaration',
+            'property'            => 'Real Estate Transaction Declaration',
+            'beneficial_ownership'=> 'Beneficial Ownership Structure Declaration',
+            'client_funds'        => 'Client Funds Handling Declaration',
+        ];
+
         abort_if(!array_key_exists($type, $declarations), 404);
 
         $sig = $client->signatories->first();
