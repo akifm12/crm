@@ -26,7 +26,7 @@ $currentType = request('type', '');
 
 {{-- Toolbar --}}
 <div class="flex flex-wrap gap-3 mb-5">
-    <form method="GET" class="flex gap-2 flex-1">
+    <form method="GET" class="flex gap-2 flex-1" id="filter-form">
         @if(request('type'))
             <input type="hidden" name="type" value="{{ request('type') }}">
         @endif
@@ -51,11 +51,19 @@ $currentType = request('type', '');
             @endforeach
         </select>
         <button type="submit" class="px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50">Filter</button>
-        <select name="year" class="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <select name="year" onchange="document.getElementById('filter-form').submit()" class="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
             <option value="">All years</option>
             @foreach($years as $yr)
             <option value="{{ $yr }}" {{ request('year')===$yr ? 'selected' : '' }}>{{ $yr }}</option>
             @endforeach
+        </select>
+
+        {{-- Sort --}}
+        <select name="sort" onchange="document.getElementById('filter-form').submit()" class="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="newest" {{ request('sort','newest')==='newest' ? 'selected' : '' }}>Newest first</option>
+            <option value="oldest" {{ request('sort')==='oldest' ? 'selected' : '' }}>Oldest first</option>
+            <option value="az"     {{ request('sort')==='az' ? 'selected' : '' }}>A → Z</option>
+            <option value="za"     {{ request('sort')==='za' ? 'selected' : '' }}>Z → A</option>
         </select>
         @if(request()->hasAny(['search','status','risk','year']))
         <a href="{{ route('tenant.clients.index', $tenant->slug) }}{{ request('type') ? '?type='.request('type') : '' }}"

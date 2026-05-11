@@ -36,7 +36,14 @@ class ClientController extends Controller
         if ($request->filled('type'))   $query->where('client_type', $request->type);
         if ($request->filled('year'))   $query->whereYear('created_at', $request->year);
 
-        $clients = $query->latest()->paginate(50)->withQueryString();
+        $sort = $request->input('sort', 'newest');
+
+        $clients = match($sort) {
+            'az'     => $query->orderBy('company_name')->orderBy('full_name')->paginate(50)->withQueryString(),
+            'za'     => $query->orderByRaw('COALESCE(company_name, full_name) DESC')->paginate(50)->withQueryString(),
+            'oldest' => $query->oldest()->paginate(50)->withQueryString(),
+            default  => $query->latest()->paginate(50)->withQueryString(),
+        };
 
         $typeCounts = BullionClient::where('tenant_id', $tenant->id)
             ->selectRaw('client_type, count(*) as total')
@@ -275,6 +282,77 @@ class ClientController extends Controller
         return redirect()
             ->route('tenant.clients.show', [$slug, $client->id])
             ->with('success', 'Client record updated successfully.');
+    }
+
+    // ── Image compression helper ──────────────────────────────────────────
+    private function storeOptimised(\Illuminate\Http\UploadedFile $file, string $storagePath): string
+    {
+        $mime = $file->getMimeType();
+
+        // Only compress images
+        if (!in_array($mime, ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'])) {
+            return $file->store($storagePath, 'local');
+        }
+
+        $maxWidth   = 1500;
+        $quality    = 82;
+        $srcPath    = $file->getRealPath();
+
+        // Load image
+        $src = match($mime) {
+            'image/png'  => imagecreatefrompng($srcPath),
+            'image/webp' => imagecreatefromwebp($srcPath),
+            default      => imagecreatefromjpeg($srcPath),
+        };
+
+        if (!$src) {
+            return $file->store($storagePath, 'local');
+        }
+
+        $origW = imagesx($src);
+        $origH = imagesy($src);
+
+        // Only resize if wider than max
+        if ($origW > $maxWidth) {
+            $newH  = (int) round($origH * ($maxWidth / $origW));
+            $dst   = imagecreatetruecolor($maxWidth, $newH);
+
+            // Preserve transparency for PNG
+            if ($mime === 'image/png') {
+                imagealphablending($dst, false);
+                imagesavealpha($dst, true);
+            }
+
+            imagecopyresampled($dst, $src, 0, 0, 0, 0, $maxWidth, $newH, $origW, $origH);
+            imagedestroy($src);
+            $src = $dst;
+            $w   = $maxWidth;
+            $h   = $newH;
+        } else {
+            $w = $origW;
+            $h = $origH;
+        }
+
+        // Store compressed
+        $ext      = $mime === 'image/png' ? 'png' : 'jpg';
+        $filename = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME) . '_opt.' . $ext;
+        $fullPath = storage_path("app/local/{$storagePath}");
+
+        if (!file_exists($fullPath)) {
+            mkdir($fullPath, 0755, true);
+        }
+
+        $destFile = "{$fullPath}/{$filename}";
+
+        if ($mime === 'image/png') {
+            imagepng($src, $destFile, (int) round((100 - $quality) / 10));
+        } else {
+            imagejpeg($src, $destFile, $quality);
+        }
+
+        imagedestroy($src);
+
+        return "{$storagePath}/{$filename}";
     }
 
     public function bulkUploadDocuments(Request $request, string $slug, BullionClient $client)
