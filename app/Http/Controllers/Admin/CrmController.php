@@ -102,7 +102,11 @@ class CrmController extends Controller
             ->with('success', 'Client created. Tenant portal auto-generated.');
     }
 
-    // ── Edit client ────────────────────────────────────────────────────────
+    public function destroy(CrmClient $crm)
+    {
+        $crm->delete();
+        return redirect()->route('crm.index')->with('success', 'Client deleted.');
+    }
     public function edit(CrmClient $crm)
     {
         $crm->load(['shareholders', 'contacts']);
