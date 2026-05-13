@@ -584,7 +584,8 @@ $countryName = fn($code) => $code ? (\App\Models\Country::find($code)?->country_
                 </template>
             </form>
         </div>
-    <div>
+
+        {{-- Document list --}}
         <div class="bg-white rounded-xl border border-gray-200 mb-5">
             <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
                 <h3 class="text-sm font-semibold text-gray-700">Documents</h3>
