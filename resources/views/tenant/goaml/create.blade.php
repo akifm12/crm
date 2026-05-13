@@ -89,103 +89,57 @@ $dir_phone                = old('d_tph_number', $client?->phone ?? '');
         </div>
     </div>
 
-{{-- Entity / counterparty details --}}
-<div class="bg-white rounded-xl border border-gray-200 p-5 mb-5">
-    <h3 class="text-sm font-semibold text-gray-700 mb-4 pb-2 border-b border-gray-100">
-        Counterparty entity
-        @if($client)<span class="text-xs font-normal text-gray-400 ml-1">— pre-filled from {{ $client->displayName() }}</span>@endif
-    </h3>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-            <label class="block text-xs font-medium text-gray-600 mb-1">Entity / company name <span class="text-red-500">*</span></label>
-            <input type="text" name="name" value="{{ $name }}" required
-                   class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-        </div>
-        <div>
-            <label class="block text-xs font-medium text-gray-600 mb-1">Commercial / trading name <span class="text-red-500">*</span></label>
-            <input type="text" name="commercial_name" value="{{ $commercial_name }}" required
-                   class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-        </div>
-        <div>
-            <label class="block text-xs font-medium text-gray-600 mb-1">Incorporation / licence number <span class="text-red-500">*</span></label>
-            <input type="text" name="incorporation_number" value="{{ $incorporation_number }}" required
-                   class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-        </div>
-        <div>
-            <label class="block text-xs font-medium text-gray-600 mb-1">Country of incorporation (3-letter) <span class="text-red-500">*</span></label>
-            <input type="text" name="incorporation_country_code" value="{{ $incorporation_country }}"
-                   required maxlength="3" placeholder="ARE / GBR / IND"
-                   class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase">
-        </div>
-        <div>
-            <label class="block text-xs font-medium text-gray-600 mb-1">Entity phone number <span class="text-red-500">*</span></label>
-            <input type="text" name="e_tph_number" value="{{ $e_tph_number }}" required
-                   class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-        </div>
-    </div>
-</div>
+{{-- Missing data alert --}}
+@php
+$missing = [];
+if (!$name)                   $missing[] = 'Company name';
+if (!$incorporation_number)   $missing[] = 'Trade licence number';
+if (!$e_tph_number)           $missing[] = 'Company phone';
+if (!$dir_first)              $missing[] = 'Director first name';
+if (!$dir_last)               $missing[] = 'Director last name';
+if (!$dir_dob)                $missing[] = 'Director date of birth';
+if (!$dir_passport)           $missing[] = 'Director passport number';
+if (!$dir_nationality)        $missing[] = 'Director nationality';
+@endphp
 
-{{-- Director / signatory details --}}
-<div class="bg-white rounded-xl border border-gray-200 p-5 mb-5">
-    <h3 class="text-sm font-semibold text-gray-700 mb-4 pb-2 border-b border-gray-100">
-        Director / authorised signatory
-        @if($director)<span class="text-xs font-normal text-gray-400 ml-1">— pre-filled from first signatory/shareholder</span>@endif
-    </h3>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-            <label class="block text-xs font-medium text-gray-600 mb-1">First name <span class="text-red-500">*</span></label>
-            <input type="text" name="first_name" value="{{ $dir_first }}" required
-                   class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-        </div>
-        <div>
-            <label class="block text-xs font-medium text-gray-600 mb-1">Last name <span class="text-red-500">*</span></label>
-            <input type="text" name="last_name" value="{{ $dir_last }}" required
-                   class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-        </div>
-        <div>
-            <label class="block text-xs font-medium text-gray-600 mb-1">Date of birth <span class="text-red-500">*</span></label>
-            <input type="date" name="birthdate" value="{{ $dir_dob }}" required
-                   max="{{ date('Y-m-d') }}"
-                   class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-        </div>
-        <div>
-            <label class="block text-xs font-medium text-gray-600 mb-1">Passport number <span class="text-red-500">*</span></label>
-            <input type="text" name="passport_number" value="{{ $dir_passport }}" required
-                   class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-        </div>
-        <div>
-            <label class="block text-xs font-medium text-gray-600 mb-1">Passport country <span class="text-red-500">*</span></label>
-            <select name="passport_country" required class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
-                <option value="">— Select country —</option>
-                @foreach($countries as $code => $name)
-                <option value="{{ $code }}" {{ old('passport_country', $dir_passport_country) === $code ? 'selected' : '' }}>{{ $name }}</option>
-                @endforeach
-            </select>
-        </div>
-        <div>
-            <label class="block text-xs font-medium text-gray-600 mb-1">ID number <span class="text-red-500">*</span></label>
-            <input type="text" name="id_number" value="{{ $dir_id }}" required
-                   class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-        </div>
-        <div>
-            <label class="block text-xs font-medium text-gray-600 mb-1">Nationality (3-letter) <span class="text-red-500">*</span></label>
-            <input type="text" name="nationality1" value="{{ $dir_nationality }}"
-                   required maxlength="3" placeholder="ARE / GBR / IND"
-                   class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase">
-        </div>
-        <div>
-            <label class="block text-xs font-medium text-gray-600 mb-1">Country of residence (3-letter) <span class="text-red-500">*</span></label>
-            <input type="text" name="residence" value="{{ $dir_residence }}"
-                   required maxlength="3" placeholder="ARE / GBR / IND"
-                   class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase">
-        </div>
-        <div>
-            <label class="block text-xs font-medium text-gray-600 mb-1">Director phone number <span class="text-red-500">*</span></label>
-            <input type="text" name="d_tph_number" value="{{ $dir_phone }}" required
-                   class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-        </div>
+@if(count($missing) > 0)
+<div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-5 flex items-start gap-3">
+    <svg class="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+    </svg>
+    <div>
+        <p class="text-sm font-semibold text-amber-800">{{ count($missing) }} field(s) missing from client record</p>
+        <p class="text-xs text-amber-700 mt-1">{{ implode(', ', $missing) }}</p>
+        <a href="{{ route('tenant.clients.edit', [$tenant->slug, $client->id]) }}"
+           class="text-xs text-amber-800 font-semibold underline mt-1 inline-block">Update client profile →</a>
     </div>
 </div>
+@else
+<div class="bg-green-50 border border-green-200 rounded-xl p-4 mb-5 flex items-center gap-3">
+    <svg class="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+    </svg>
+    <p class="text-sm text-green-700">All client and director data pre-filled from <strong>{{ $client->displayName() }}</strong></p>
+</div>
+@endif
+
+{{-- Hidden fields — entity / counterparty --}}
+<input type="hidden" name="name" value="{{ $name }}">
+<input type="hidden" name="commercial_name" value="{{ $commercial_name }}">
+<input type="hidden" name="incorporation_number" value="{{ $incorporation_number }}">
+<input type="hidden" name="incorporation_country_code" value="{{ $incorporation_country }}">
+<input type="hidden" name="e_tph_number" value="{{ $e_tph_number }}">
+
+{{-- Hidden fields — director --}}
+<input type="hidden" name="first_name" value="{{ $dir_first }}">
+<input type="hidden" name="last_name" value="{{ $dir_last }}">
+<input type="hidden" name="birthdate" value="{{ $dir_dob }}">
+<input type="hidden" name="passport_number" value="{{ $dir_passport }}">
+<input type="hidden" name="passport_country" value="{{ $dir_passport_country }}">
+<input type="hidden" name="id_number" value="{{ $dir_id }}">
+<input type="hidden" name="nationality1" value="{{ $dir_nationality }}">
+<input type="hidden" name="residence" value="{{ $dir_residence }}">
+<input type="hidden" name="d_tph_number" value="{{ $dir_phone }}">
 
 {{-- Transaction / goods details --}}
 <div class="bg-white rounded-xl border border-gray-200 p-5 mb-5">
