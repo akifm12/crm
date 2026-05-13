@@ -127,6 +127,19 @@ class ClientController extends Controller
             ->with('success', 'Client record created successfully.');
     }
 
+    // ── Soft delete (archive) client ──────────────────────────────────────
+    public function destroy(Request $request, string $slug, BullionClient $client)
+    {
+        $tenant = app('tenant');
+        abort_if($client->tenant_id !== $tenant->id, 404);
+
+        $client->delete(); // soft delete — sets deleted_at
+
+        return redirect()
+            ->route('tenant.clients.index', $tenant->slug)
+            ->with('success', $client->displayName() . ' has been archived and removed from your client list.');
+    }
+
     // ── Transactions ──────────────────────────────────────────────────────
 
     public function addTransaction(Request $request, string $slug, BullionClient $client)

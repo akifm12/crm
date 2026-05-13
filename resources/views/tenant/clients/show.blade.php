@@ -77,6 +77,15 @@ $countryName = fn($code) => $code ? (\App\Models\Country::find($code)?->country_
                 </svg>
                 Edit
             </a>
+            <form method="POST" action="{{ route('tenant.clients.destroy', [$tenant->slug, $client->id]) }}"
+                  onsubmit="return confirm('Archive {{ addslashes($client->displayName()) }}?\n\nThis will remove them from your client list. The record is retained for regulatory purposes.')">
+                @csrf @method('DELETE')
+                <button type="submit"
+                        class="flex items-center gap-1.5 px-4 py-1.5 text-sm font-medium text-red-500 border border-red-200 rounded-lg hover:bg-red-50 transition">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8l1 12a2 2 0 002 2h8a2 2 0 002-2l1-12"/></svg>
+                    Archive
+                </button>
+            </form>
             <a href="{{ route('tenant.goaml.create', $tenant->slug) }}?client={{ $client->id }}"
                class="ml-1 flex items-center gap-1.5 px-4 py-1.5 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -495,7 +504,24 @@ $countryName = fn($code) => $code ? (\App\Models\Country::find($code)?->country_
     {{-- ── DOCUMENTS ─────────────────────────────────────────────────────────── --}}
     <div x-show="tab==='documents'" x-cloak>
 
-        {{-- Bulk upload zone --}}
+        {{-- Missing mandatory docs alert --}}
+        @php
+            $docTypeKey     = $isCorporate ? 'corporate_doc_types' : 'individual_doc_types';
+            $mandatoryTypes = collect($sector[$docTypeKey] ?? [])->where('mandatory', true);
+            $uploadedTypes  = $documents->pluck('document_type')->unique();
+            $missingDocs    = $mandatoryTypes->filter(fn($d) => !$uploadedTypes->contains($d['type']));
+        @endphp
+        @if($missingDocs->count() > 0 && $client->status === 'active')
+        <div class="bg-amber-50 border border-amber-200 rounded-xl px-5 py-3 mb-4 flex items-start gap-3">
+            <svg class="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+            </svg>
+            <div>
+                <p class="text-xs font-semibold text-amber-700">{{ $missingDocs->count() }} mandatory document(s) missing</p>
+                <p class="text-xs text-amber-600 mt-0.5">{{ $missingDocs->pluck('label')->join(', ') }}</p>
+            </div>
+        </div>
+        @endif
         <div class="bg-white rounded-xl border border-blue-200 mb-4 overflow-hidden">
             <div class="px-5 py-4 border-b border-blue-100 bg-blue-50">
                 <h3 class="text-sm font-semibold text-blue-800">Bulk upload</h3>

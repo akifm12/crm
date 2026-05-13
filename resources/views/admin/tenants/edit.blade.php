@@ -88,6 +88,30 @@
     <div class="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{{ session('error') }}</div>
     @endif
 
+    {{-- Archived clients --}}
+    @php $archivedClients = \App\Models\BullionClient::withTrashed()->where('tenant_id', $tenant->id)->whereNotNull('deleted_at')->orderByDesc('deleted_at')->get(); @endphp
+    @if($archivedClients->count() > 0)
+    <div class="bg-white rounded-xl border border-gray-200 mb-4">
+        <div class="px-5 py-4 border-b border-gray-100">
+            <h3 class="text-sm font-semibold text-gray-700">Archived clients <span class="text-xs font-normal text-gray-400">({{ $archivedClients->count() }} — not visible to tenant)</span></h3>
+        </div>
+        <div class="divide-y divide-gray-100">
+            @foreach($archivedClients as $ac)
+            <div class="px-5 py-3 flex items-center justify-between gap-4">
+                <div>
+                    <p class="text-sm font-medium text-gray-800">{{ $ac->displayName() }}</p>
+                    <p class="text-xs text-gray-400">{{ ucfirst(str_replace('_',' ',$ac->client_type)) }} · Archived {{ $ac->deleted_at->format('d M Y') }}</p>
+                </div>
+                <form method="POST" action="{{ route('kyc.tenants.clients.restore', [$tenant->id, $ac->id]) }}">
+                    @csrf @method('PATCH')
+                    <button type="submit" class="text-xs text-blue-600 hover:underline">Restore</button>
+                </form>
+            </div>
+            @endforeach
+        </div>
+    </div>
+    @endif
+
     <div class="bg-white rounded-xl border border-gray-200">
         <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
             <h3 class="text-sm font-semibold text-gray-700">Portal users</h3>

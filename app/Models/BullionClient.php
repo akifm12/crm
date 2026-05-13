@@ -6,10 +6,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Carbon\Carbon;
 
 class BullionClient extends Model
 {
+    use SoftDeletes;
     protected $fillable = [
         'tenant_id', 'client_type', 'company_name', 'trade_license_no',
         'trade_license_issue', 'trade_license_expiry', 'trn_number', 'ejari_number', 'ejari_expiry',

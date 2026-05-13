@@ -116,7 +116,15 @@ class TenantController extends Controller
         return back()->with('success', "Password updated for {$user->email}.");
     }
 
-    public function deleteUser(Tenant $tenant, User $user)
+    public function restoreClient(Tenant $tenant, int $clientId)
+    {
+        \App\Models\BullionClient::withTrashed()
+            ->where('tenant_id', $tenant->id)
+            ->where('id', $clientId)
+            ->restore();
+
+        return back()->with('success', 'Client restored successfully.');
+    }
     {
         abort_if($user->tenant_id !== $tenant->id, 403);
 

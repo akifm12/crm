@@ -138,6 +138,7 @@ Route::middleware(['auth', \App\Http\Middleware\EnsureAdminUser::class])->group(
     Route::post('/kyc/tenants/{tenant}/users',                   [TenantController::class, 'addUser'])->name('kyc.tenants.users.add');
     Route::patch('/kyc/tenants/{tenant}/users/{user}/password',  [TenantController::class, 'updatePassword'])->name('kyc.tenants.users.password');
     Route::delete('/kyc/tenants/{tenant}/users/{user}',          [TenantController::class, 'deleteUser'])->name('kyc.tenants.users.delete');
+    Route::patch('/kyc/tenants/{tenant}/clients/{client}/restore', [TenantController::class, 'restoreClient'])->name('kyc.tenants.clients.restore');
     Route::patch('/kyc/submissions/{id}/approve', fn() => back())->name('kyc.approve');
     Route::patch('/kyc/submissions/{id}/reject',  fn() => back())->name('kyc.reject');
 
@@ -152,6 +153,7 @@ Route::prefix('{slug}')
         Route::get('/clients',      [ClientController::class, 'index'])->name('clients.index');
         Route::post('/clients/{client}/transactions',  [ClientController::class, 'addTransaction'])->name('clients.transactions.store');
         Route::delete('/clients/{client}/transactions/{transaction}', [ClientController::class, 'deleteTransaction'])->name('clients.transactions.delete');
+        Route::delete('/clients/{client}',           [ClientController::class, 'destroy'])->name('clients.destroy');
         Route::post('/clients/screen-preview',         [ClientController::class, 'screenPreview'])->name('clients.screen.preview');
         Route::get('/clients/new',                     [ClientController::class, 'create'])->name('clients.create');
         Route::post('/clients',                        [ClientController::class, 'store'])->name('clients.store');
@@ -183,11 +185,11 @@ Route::prefix('{slug}')
         // ── goAML ──────────────────────────────────────────────────────────────
         Route::get('/goaml',                   [GoamlController::class, 'index'])->name('goaml');
         Route::get('/goaml/create',            [GoamlController::class, 'create'])->name('goaml.create');
+        Route::get('/goaml/settings',          [GoamlController::class, 'settings'])->name('goaml.settings');
+        Route::post('/goaml/settings',         [GoamlController::class, 'saveSettings'])->name('goaml.settings.save');
         Route::post('/goaml',                  [GoamlController::class, 'store'])->name('goaml.store');
         Route::get('/goaml/{report}/download', [GoamlController::class, 'download'])->name('goaml.download');
         Route::delete('/goaml/{report}',       [GoamlController::class, 'destroy'])->name('goaml.destroy');
-        Route::get('/goaml/settings',          [GoamlController::class, 'settings'])->name('goaml.settings');
-        Route::post('/goaml/settings',         [GoamlController::class, 'saveSettings'])->name('goaml.settings.save');
         Route::get('/settings',                    [TenantSettingsController::class, 'index'])->name('settings');
         Route::get('/clients/{client}/screening-pdf',  [ReportController::class, 'screeningPdf'])->name('clients.screening.pdf');
         Route::get('/clients/{client}/declaration/{type}', [ReportController::class, 'declaration'])->name('clients.declaration');
