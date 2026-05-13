@@ -127,6 +127,7 @@ class TenantController extends Controller
     }
 
     public function deleteUser(Tenant $tenant, User $user)
+    {
         abort_if($user->tenant_id !== $tenant->id, 403);
 
         // Don't delete if it's the only user
