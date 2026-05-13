@@ -100,7 +100,7 @@ class BullionClient extends Model
     {
         if (!$this->trade_license_expiry) return false;
         return $this->trade_license_expiry->isFuture()
-            && $this->trade_license_expiry->diffInDays(now()) <= 90;
+            && now()->diffInDays($this->trade_license_expiry) <= 90;
     }
 
     public function isLicenseExpired(): bool
@@ -113,7 +113,7 @@ class BullionClient extends Model
     {
         if (!$this->ejari_expiry) return false;
         return $this->ejari_expiry->isFuture()
-            && $this->ejari_expiry->diffInDays(now()) <= 90;
+            && now()->diffInDays($this->ejari_expiry) <= 90;
     }
 
     public function isEjariExpired(): bool
@@ -126,7 +126,7 @@ class BullionClient extends Model
     {
         if (!$this->passport_expiry) return false;
         return $this->passport_expiry->isFuture()
-            && $this->passport_expiry->diffInDays(now()) <= 90;
+            && now()->diffInDays($this->passport_expiry) <= 90;
     }
 
     public function isPassportExpired(): bool
@@ -139,7 +139,7 @@ class BullionClient extends Model
     {
         if (!$this->next_review_date) return false;
         return $this->next_review_date->isPast()
-            || $this->next_review_date->diffInDays(now()) <= 90;
+            || now()->diffInDays($this->next_review_date) <= 90;
     }
 
     
