@@ -162,7 +162,7 @@ class ClientFillController extends Controller
             }
         }
 
-        // Save uploaded documents
+        // Save uploaded documents (single)
         foreach ($request->file('documents', []) as $docType => $file) {
             if ($file && $file->isValid()) {
                 $path = $file->store("tenants/{$tenant->id}/clients/{$client->id}", 'local');
@@ -175,6 +175,24 @@ class ClientFillController extends Controller
                     'file_name'         => $file->getClientOriginalName(),
                     'file_size'         => $file->getSize(),
                 ]);
+            }
+        }
+
+        // Save uploaded documents (multiple)
+        foreach ($request->file('documents_multi', []) as $docType => $files) {
+            foreach ($files as $idx => $file) {
+                if ($file && $file->isValid()) {
+                    $path = $file->store("tenants/{$tenant->id}/clients/{$client->id}", 'local');
+                    ClientDocument::create([
+                        'bullion_client_id' => $client->id,
+                        'tenant_id'         => $tenant->id,
+                        'document_type'     => $docType,
+                        'document_label'    => ucwords(str_replace('_', ' ', $docType)) . ' ' . ($idx + 1),
+                        'file_path'         => $path,
+                        'file_name'         => $file->getClientOriginalName(),
+                        'file_size'         => $file->getSize(),
+                    ]);
+                }
             }
         }
 

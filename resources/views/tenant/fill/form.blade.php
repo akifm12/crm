@@ -95,7 +95,8 @@
         </div>
         <div class="mt-4 flex justify-end">
             <button type="button" @click="clientType !== '' ? (clientType === 'individual' ? indStep = 1 : step = 1) : null"
-                    class="px-6 py-2.5 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition">
+                    :class="clientType !== '' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-300 cursor-not-allowed'"
+                    class="px-6 py-2.5 text-sm font-semibold text-white rounded-lg transition">
                 Start →
             </button>
         </div>
@@ -399,22 +400,25 @@
         <div class="p-5 space-y-3">
             <div x-show="clientType !== 'individual'">
                 @foreach([
-                    ['trade_license','Trade licence','true'],
-                    ['moa','Memorandum of Association (MoA)','true'],
-                    ['passport','Authorised signatory passport','true'],
-                    ['eid','Emirates ID (signatory)','false'],
-                    ['shareholder_passport','Shareholder passport(s)','false'],
-                    ['source_of_funds','Source of funds evidence','false'],
-                    ['other','Other document','false'],
-                ] as [$type,$label,$req])
+                    ['trade_license','Trade licence','true', false],
+                    ['moa','Memorandum of Association (MoA)','true', false],
+                    ['passport','Authorised signatory passport','true', false],
+                    ['eid','Emirates ID (signatory)','false', false],
+                    ['shareholder_passport','Shareholder passport(s)','false', true],
+                    ['source_of_funds','Source of funds evidence','false', false],
+                    ['other','Other document(s)','false', true],
+                ] as [$type,$label,$req,$multiple])
                 <div class="border border-gray-200 rounded-xl p-3">
-                    <div class="flex items-center justify-between">
+                    <div class="flex items-center justify-between flex-wrap gap-2">
                         <div>
                             <p class="text-sm font-medium text-gray-700">{{ $label }}
                                 @if($req === 'true')<span class="text-red-500 ml-1">*</span>@endif
+                                @if($multiple)<span class="text-xs text-gray-400 ml-1">(multiple allowed)</span>@endif
                             </p>
                         </div>
-                        <input type="file" name="documents[{{ $type }}]" accept=".pdf,.jpg,.jpeg,.png"
+                        <input type="file" name="{{ $multiple ? 'documents_multi['.$type.'][]' : 'documents['.$type.']' }}"
+                               {{ $multiple ? 'multiple' : '' }}
+                               accept=".pdf,.jpg,.jpeg,.png"
                                class="text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100">
                     </div>
                 </div>
@@ -422,20 +426,23 @@
             </div>
             <div x-show="clientType === 'individual'">
                 @foreach([
-                    ['passport','Passport','true'],
-                    ['eid','Emirates ID','false'],
-                    ['proof_of_address','Proof of address','false'],
-                    ['source_of_funds','Source of funds evidence','false'],
-                    ['other','Other document','false'],
-                ] as [$type,$label,$req])
+                    ['passport','Passport','true', false],
+                    ['eid','Emirates ID','false', false],
+                    ['proof_of_address','Proof of address','false', false],
+                    ['source_of_funds','Source of funds evidence','false', false],
+                    ['other','Other document(s)','false', true],
+                ] as [$type,$label,$req,$multiple])
                 <div class="border border-gray-200 rounded-xl p-3">
-                    <div class="flex items-center justify-between">
+                    <div class="flex items-center justify-between flex-wrap gap-2">
                         <div>
                             <p class="text-sm font-medium text-gray-700">{{ $label }}
                                 @if($req === 'true')<span class="text-red-500 ml-1">*</span>@endif
+                                @if($multiple)<span class="text-xs text-gray-400 ml-1">(multiple allowed)</span>@endif
                             </p>
                         </div>
-                        <input type="file" name="documents[{{ $type }}]" accept=".pdf,.jpg,.jpeg,.png"
+                        <input type="file" name="{{ $multiple ? 'documents_multi['.$type.'][]' : 'documents['.$type.']' }}"
+                               {{ $multiple ? 'multiple' : '' }}
+                               accept=".pdf,.jpg,.jpeg,.png"
                                class="text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100">
                     </div>
                 </div>
@@ -533,7 +540,7 @@
 <script>
 function fillForm() {
     return {
-        clientType: '{{ $fillToken->client_type }}',
+        clientType: '{{ $fillToken->client_type === "individual" ? "individual" : array_key_first(array_filter($sector["client_types"], fn($v) => true)) }}',
         step:    '{{ $fillToken->client_type }}' !== 'individual' ? 1 : 0,
         indStep: '{{ $fillToken->client_type }}' === 'individual' ? 1 : 0,
         signatories:  [{full_name:'',position:'',nationality:'',dob:'',passport_number:'',passport_expiry:'',eid_number:''}],
