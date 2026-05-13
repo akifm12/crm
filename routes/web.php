@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\TenantController;
 use App\Http\Controllers\Admin\DocumentController;
 use App\Http\Controllers\Tenant\DashboardController as TenantDashboard;
 use App\Http\Controllers\Tenant\ClientController;
+use App\Http\Controllers\Tenant\ClientFillController;
 use App\Http\Controllers\Tenant\ScreeningController as TenantScreeningController;
 use App\Http\Controllers\Tenant\RiskController;
 use App\Http\Controllers\Tenant\TenantDocumentController;
@@ -144,6 +145,12 @@ Route::middleware(['auth', \App\Http\Middleware\EnsureAdminUser::class])->group(
 
 }); // ← end auth middleware group
 
+// ── Public client self-fill routes (no auth) ───────────────────────────────
+Route::prefix('{slug}')->middleware(['resolve.tenant'])->name('tenant.')->group(function () {
+    Route::get('/fill/{token}',         [\App\Http\Controllers\Tenant\ClientFillController::class, 'show'])->name('fill.show');
+    Route::post('/fill/{token}/submit', [\App\Http\Controllers\Tenant\ClientFillController::class, 'submit'])->name('fill.submit');
+});
+
 // ── Tenant portal routes  /{slug}/... ──────────────────────────────────────
 Route::prefix('{slug}')
     ->middleware(['auth', 'resolve.tenant', \App\Http\Middleware\EnsureTenantUser::class])
@@ -154,6 +161,8 @@ Route::prefix('{slug}')
         Route::post('/clients/{client}/transactions',  [ClientController::class, 'addTransaction'])->name('clients.transactions.store');
         Route::delete('/clients/{client}/transactions/{transaction}', [ClientController::class, 'deleteTransaction'])->name('clients.transactions.delete');
         Route::delete('/clients/{client}',           [ClientController::class, 'destroy'])->name('clients.destroy');
+        Route::post('/fill/generate',              [ClientFillController::class, 'generate'])->name('fill.generate');
+        Route::get('/fill/pending',                [ClientFillController::class, 'pending'])->name('fill.pending');
         Route::post('/clients/screen-preview',         [ClientController::class, 'screenPreview'])->name('clients.screen.preview');
         Route::get('/clients/new',                     [ClientController::class, 'create'])->name('clients.create');
         Route::post('/clients',                        [ClientController::class, 'store'])->name('clients.store');
