@@ -97,51 +97,89 @@ class ClientFillController extends Controller
             return redirect("/{$slug}/fill/{$token}")->with('error', 'This link has expired or already been used.');
         }
 
-        $isIndividual = $fillToken->client_type === 'individual';
-
-        // Create client record as pending — for tenant to review
+        // Create client record as pending
         $client = BullionClient::create([
             'tenant_id'   => $tenant->id,
             'client_type' => $fillToken->client_type,
             'status'      => 'pending',
             'created_by'  => null,
-
-            // Corporate fields
-            'company_name'        => $request->company_name,
-            'trade_license_no'    => $request->trade_license_no,
-            'trade_license_expiry'=> $request->trade_license_expiry,
-            'legal_form'          => $request->legal_form,
+            'company_name'             => $request->company_name,
+            'trade_license_no'         => $request->trade_license_no,
+            'trade_license_expiry'     => $request->trade_license_expiry ?: null,
+            'trn_number'               => $request->trn_number,
+            'legal_form'               => $request->legal_form,
+            'ejari_number'             => $request->ejari_number,
             'country_of_incorporation' => $request->country_of_incorporation,
-            'business_activity'   => $request->business_activity,
-            'nature_of_business'  => $request->nature_of_business,
-            'registered_address'  => $request->registered_address,
-            'email'               => $request->email,
-            'phone'               => $request->phone,
-            'website'             => $request->website,
-
-            // Individual fields
-            'full_name'       => $request->full_name,
-            'nationality'     => $request->nationality,
-            'dob'             => $request->dob,
-            'passport_number' => $request->passport_number,
-            'passport_expiry' => $request->passport_expiry,
-            'eid_number'      => $request->eid_number,
-            'eid_expiry'      => $request->eid_expiry,
-            'occupation'      => $request->occupation,
-            'employer_name'   => $request->employer_name,
-
-            // AML
+            'business_activity'        => $request->business_activity,
+            'nature_of_business'       => $request->business_activity,
+            'registered_address'       => $request->registered_address,
+            'website'                  => $request->website,
+            'full_name'                => $request->full_name,
+            'nationality'              => $request->nationality,
+            'dob'                      => $request->dob ?: null,
+            'passport_number'          => $request->passport_number,
+            'passport_expiry'          => $request->passport_expiry ?: null,
+            'eid_number'               => $request->eid_number,
+            'eid_expiry'               => $request->eid_expiry ?: null,
+            'occupation'               => $request->occupation,
+            'employer_name'            => $request->employer_name,
+            'pep_status'               => $request->has('pep_status') ? 1 : 0,
+            'email'                    => $request->email,
+            'phone'                    => $request->phone,
             'source_of_funds'          => $request->source_of_funds ? json_encode($request->source_of_funds) : null,
+            'source_of_wealth'         => $request->source_of_wealth ? json_encode($request->source_of_wealth) : null,
             'purpose_of_relationship'  => $request->purpose_of_relationship,
             'risk_rating'              => 'low',
             'cdd_type'                 => 'standard',
+            'decl_pep'                 => $request->has('decl_pep') ? 1 : 0,
+            'decl_source_of_funds'     => $request->has('decl_source_of_funds') ? 1 : 0,
+            'decl_sanctions'           => $request->has('decl_sanctions') ? 1 : 0,
+            'decl_ubo'                 => $request->has('decl_ubo') ? 1 : 0,
+            'decl_supply_chain'        => $request->has('decl_supply_chain') ? 1 : 0,
+            'decl_cahra'               => $request->has('decl_cahra') ? 1 : 0,
+            'decl_property'            => $request->has('decl_property') ? 1 : 0,
         ]);
 
+        // Save signatories
+        foreach ($request->input('signatories', []) as $sig) {
+            if (!empty($sig['full_name'])) {
+                $client->signatories()->create($sig);
+            }
+        }
+
+        // Save shareholders
+        foreach ($request->input('shareholders', []) as $sh) {
+            if (!empty($sh['name'])) {
+                $client->shareholders()->create([
+                    'shareholder_type'     => 'individual',
+                    'name'                 => $sh['name'],
+                    'nationality'          => $sh['nationality'] ?? null,
+                    'ownership_percentage' => $sh['ownership_percentage'] ?? null,
+                    'passport_number'      => $sh['passport_number'] ?? null,
+                    'dob'                  => $sh['dob'] ?? null,
+                    'is_ubo'               => !empty($sh['is_ubo']),
+                ]);
+            }
+        }
+
+        // Save uploaded documents
+        foreach ($request->file('documents', []) as $docType => $file) {
+            if ($file && $file->isValid()) {
+                $path = $file->store("tenants/{$tenant->id}/clients/{$client->id}", 'local');
+                ClientDocument::create([
+                    'bullion_client_id' => $client->id,
+                    'tenant_id'         => $tenant->id,
+                    'document_type'     => $docType,
+                    'document_label'    => ucwords(str_replace('_', ' ', $docType)),
+                    'file_path'         => $path,
+                    'file_name'         => $file->getClientOriginalName(),
+                    'file_size'         => $file->getSize(),
+                ]);
+            }
+        }
+
         // Mark token as used
-        $fillToken->update([
-            'used_at'          => now(),
-            'bullion_client_id'=> $client->id,
-        ]);
+        $fillToken->update(['used_at' => now(), 'bullion_client_id' => $client->id]);
 
         return view('tenant.fill.thankyou', compact('tenant', 'client'));
     }
