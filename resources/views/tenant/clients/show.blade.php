@@ -371,11 +371,15 @@ $countryName = fn($code) => $code ? (\App\Models\Country::find($code)?->country_
             <div class="bg-white rounded-xl border border-gray-200">
                 <div class="px-5 py-4 border-b border-gray-100"><h3 class="text-sm font-semibold text-gray-700">AML / CDD details</h3></div>
                 <div class="p-5 grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                    @php
+                        $sof = is_array($client->source_of_funds) ? $client->source_of_funds : (json_decode($client->source_of_funds, true) ?? []);
+                        $sow = is_array($client->source_of_wealth) ? $client->source_of_wealth : (json_decode($client->source_of_wealth, true) ?? []);
+                    @endphp
                     <div><span class="text-xs text-gray-400 block">Source of funds</span>
-                        {{ $client->source_of_funds ? implode(', ', array_map(fn($s) => ucfirst(str_replace('_',' ',$s)), $client->source_of_funds)) : '—' }}
+                        {{ $sof ? implode(', ', array_map(fn($s) => ucfirst(str_replace('_',' ',$s)), $sof)) : '—' }}
                     </div>
                     <div><span class="text-xs text-gray-400 block">Source of wealth</span>
-                        {{ $client->source_of_wealth ? implode(', ', array_map(fn($s) => ucfirst(str_replace('_',' ',$s)), $client->source_of_wealth)) : '—' }}
+                        {{ $sow ? implode(', ', array_map(fn($s) => ucfirst(str_replace('_',' ',$s)), $sow)) : '—' }}
                     </div>
                     <div><span class="text-xs text-gray-400 block">Purpose of relationship</span>{{ $client->purpose_of_relationship ?? '—' }}</div>
                     <div><span class="text-xs text-gray-400 block">Expected monthly volume</span>{{ $client->expected_monthly_volume ? 'AED '.number_format($client->expected_monthly_volume) : '—' }}</div>
@@ -944,4 +948,3 @@ $countryName = fn($code) => $code ? (\App\Models\Country::find($code)?->country_
 </div>{{-- end tabs --}}
 
 @endsection
-
