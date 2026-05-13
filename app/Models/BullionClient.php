@@ -99,21 +99,8 @@ class BullionClient extends Model
     public function isLicenseExpiringSoon(): bool
     {
         if (!$this->trade_license_expiry) return false;
-        return $this->trade_license_expiry->diffInDays(now()) <= 30
-            && $this->trade_license_expiry->isFuture();
-    }
-
-    public function isEjariExpired(): bool
-    {
-        if (!$this->ejari_expiry) return false;
-        return $this->ejari_expiry->isPast();
-    }
-
-    public function isEjariExpiringSoon(): bool
-    {
-        if (!$this->ejari_expiry) return false;
-        return $this->ejari_expiry->isFuture()
-            && $this->ejari_expiry->diffInDays(now()) <= 30;
+        return $this->trade_license_expiry->isFuture()
+            && $this->trade_license_expiry->diffInDays(now()) <= 90;
     }
 
     public function isLicenseExpired(): bool
@@ -122,12 +109,40 @@ class BullionClient extends Model
         return $this->trade_license_expiry->isPast();
     }
 
+    public function isEjariExpiringSoon(): bool
+    {
+        if (!$this->ejari_expiry) return false;
+        return $this->ejari_expiry->isFuture()
+            && $this->ejari_expiry->diffInDays(now()) <= 90;
+    }
+
+    public function isEjariExpired(): bool
+    {
+        if (!$this->ejari_expiry) return false;
+        return $this->ejari_expiry->isPast();
+    }
+
+    public function isPassportExpiringSoon(): bool
+    {
+        if (!$this->passport_expiry) return false;
+        return $this->passport_expiry->isFuture()
+            && $this->passport_expiry->diffInDays(now()) <= 90;
+    }
+
+    public function isPassportExpired(): bool
+    {
+        if (!$this->passport_expiry) return false;
+        return $this->passport_expiry->isPast();
+    }
+
     public function isReviewDue(): bool
     {
         if (!$this->next_review_date) return false;
         return $this->next_review_date->isPast()
-            || $this->next_review_date->diffInDays(now()) <= 30;
+            || $this->next_review_date->diffInDays(now()) <= 90;
     }
+
+    
 
     public function allDeclarationsSigned(): bool
     {

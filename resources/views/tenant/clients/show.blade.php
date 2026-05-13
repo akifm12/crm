@@ -125,6 +125,19 @@ $countryName = fn($code) => $code ? (\App\Models\Country::find($code)?->country_
         KYC review {{ $client->next_review_date?->isPast() ? 'was due on' : 'due' }} {{ $client->next_review_date?->format('d M Y') ?? '—' }}.
     </div>
     @endif
+    @if($client->client_type === 'individual')
+        @if($client->isPassportExpired())
+        <div class="mt-2 flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+            Passport expired on {{ $client->passport_expiry?->format('d M Y') ?? '—' }}. Updated copy required.
+        </div>
+        @elseif($client->isPassportExpiringSoon())
+        <div class="mt-2 flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700">
+            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+            Passport expiring on {{ $client->passport_expiry?->format('d M Y') ?? '—' }}.
+        </div>
+        @endif
+    @endif
 </div>
 
 {{-- ── TABS ─────────────────────────────────────────────────────────────────── --}}
