@@ -35,8 +35,11 @@ class ClientFillController extends Controller
         $link = url("/{$tenant->slug}/fill/{$token->token}");
 
         // Send email if address provided
+        $emailSent = false;
         if ($request->client_email) {
             try {
+                // Set short timeout to prevent blocking
+                config(['mail.mailers.smtp.timeout' => 5]);
                 Mail::send('emails.client_fill', [
                     'tenantName' => $tenant->name,
                     'clientName' => $request->client_name ?? 'Valued Client',
@@ -48,6 +51,8 @@ class ClientFillController extends Controller
                 });
                 $emailSent = true;
             } catch (\Exception $e) {
+                // Email failed silently — link still generated
+                \Log::warning("Client fill email failed: " . $e->getMessage());
                 $emailSent = false;
             }
         }
@@ -75,7 +80,7 @@ class ClientFillController extends Controller
             return view('tenant.fill.used', compact('tenant'));
         }
 
-        $sector = SectorConfig::forTenant($tenant);
+        $sector = SectorConfig::get($tenant->business_type ?? 'gold');
 
         return view('tenant.fill.form', compact('tenant', 'fillToken', 'sector'));
     }
