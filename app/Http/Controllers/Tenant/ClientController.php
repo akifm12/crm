@@ -169,7 +169,7 @@ class ClientController extends Controller
             'created_by'        => auth()->id(),
         ]);
 
-        return back()->with('success', 'Transaction added.');
+        return redirect(route('tenant.clients.show', [$tenant->slug, $client->id]) . '?tab=transactions')->with('success', 'Transaction added.');
     }
 
     public function deleteTransaction(Request $request, string $slug, BullionClient $client, \App\Models\ClientTransaction $transaction)
@@ -178,7 +178,7 @@ class ClientController extends Controller
         abort_if($client->tenant_id !== $tenant->id, 404);
         abort_if($transaction->bullion_client_id !== $client->id, 404);
         $transaction->delete();
-        return back()->with('success', 'Transaction removed.');
+        return redirect(route('tenant.clients.show', [$tenant->slug, $client->id]) . '?tab=transactions')->with('success', 'Transaction removed.');
     }
 
     // ── Screen preview (during create wizard, before saving) ───────────────
@@ -433,7 +433,7 @@ class ClientController extends Controller
             $uploaded++;
         }
 
-        return back()->with('success', "{$uploaded} file(s) uploaded successfully.");
+        return redirect(route('tenant.clients.show', [$tenant->slug, $client->id]) . '?tab=documents')->with('success', "{$uploaded} file(s) uploaded successfully.");
     }
 
     public function uploadDocument(Request $request, string $slug, BullionClient $client)
@@ -455,7 +455,7 @@ class ClientController extends Controller
             'expiry_date'       => $request->expiry_date,
             'uploaded_by'       => auth()->id(),
         ]);
-        return back()->with('success', 'Document uploaded.');
+        return redirect(route('tenant.clients.show', [$tenant->slug, $client->id]) . '?tab=documents')->with('success', 'Document uploaded.');
     }
 
     public function downloadDocument(string $slug, ClientDocument $document)
@@ -471,7 +471,7 @@ class ClientController extends Controller
         abort_if($document->tenant_id !== $tenant->id, 404);
         Storage::disk('local')->delete($document->file_path);
         $document->delete();
-        return back()->with('success', 'Document deleted.');
+        return redirect(route('tenant.clients.show', [$tenant->slug, $client->id]) . '?tab=documents')->with('success', 'Document deleted.');
     }
 
     public function updateRisk(Request $request, string $slug, BullionClient $client)
@@ -480,7 +480,7 @@ class ClientController extends Controller
         abort_if($client->tenant_id !== $tenant->id, 404);
         $request->validate(['risk_rating' => 'required|in:low,medium,high', 'cdd_type' => 'required|in:standard,enhanced', 'next_review_date' => 'nullable|date', 'risk_notes' => 'nullable|string']);
         $client->update($request->only(['risk_rating', 'cdd_type', 'next_review_date', 'risk_notes']));
-        return back()->with('success', 'Risk rating updated.');
+        return redirect(route('tenant.clients.show', [$tenant->slug, $client->id]) . '?tab=risk')->with('success', 'Risk rating updated.');
     }
 
     public function updateStatus(Request $request, string $slug, BullionClient $client)
@@ -489,7 +489,7 @@ class ClientController extends Controller
         abort_if($client->tenant_id !== $tenant->id, 404);
         $request->validate(['status' => 'required|in:active,pending,inactive,suspended']);
         $client->update(['status' => $request->status]);
-        return back()->with('success', 'Status updated.');
+        return redirect(route('tenant.clients.show', [$tenant->slug, $client->id]) . '?tab=overview')->with('success', 'Status updated.');
     }
 
     public function updateDeclarations(Request $request, string $slug, BullionClient $client)
@@ -505,6 +505,6 @@ class ClientController extends Controller
             'decl_ubo'            => $request->boolean('decl_ubo'),
             'decl_master_signed'  => $request->boolean('decl_master_signed'),
         ]);
-        return back()->with('success', 'Declarations updated.');
+        return redirect(route('tenant.clients.show', [$tenant->slug, $client->id]) . '?tab=declarations')->with('success', 'Declarations updated.');
     }
 }

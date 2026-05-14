@@ -147,7 +147,7 @@ class ScreeningController extends Controller
             ],
         ]);
 
-        return response()->json(['success' => true, 'status' => $hasMatch ? 'match' : 'clear']);
+        return response()->json(['success' => true, 'status' => $hasMatch ? 'match' : 'clear', 'tab' => 'screening']);
     }
 
     public function screenClient(Request $request, string $slug, BullionClient $client)

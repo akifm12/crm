@@ -141,7 +141,7 @@ $countryName = fn($code) => $code ? (\App\Models\Country::find($code)?->country_
 </div>
 
 {{-- ── TABS ─────────────────────────────────────────────────────────────────── --}}
-<div x-data="{ tab: 'overview' }">
+<div x-data="{ tab: new URLSearchParams(window.location.search).get('tab') || 'overview' }">
 
     <div class="flex gap-1 bg-white rounded-xl border border-gray-200 p-1 mb-5 overflow-x-auto">
         @foreach([
@@ -1108,7 +1108,11 @@ function screeningProgress({ subjects, screenUrl, saveUrl, csrf }) {
             this.done = true;
 
             // Reload page after 2 seconds to show updated results
-            setTimeout(() => window.location.reload(), 2000);
+            setTimeout(() => {
+                const url = new URL(window.location.href);
+                url.searchParams.set('tab', 'screening');
+                window.location.href = url.toString();
+            }, 2000);
         },
 
         reset() {
