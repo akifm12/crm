@@ -87,12 +87,76 @@ class ScreeningController extends Controller
 
     // ── Screen a client directly from their profile ────────────────────────
 
+    // ── Screen a single subject (AJAX) ────────────────────────────────────
+    public function screenSubject(Request $request, string $slug, BullionClient $client)
+    {
+        $tenant = app('tenant');
+        abort_if($client->tenant_id !== $tenant->id, 404);
+
+        $type = $request->input('type', 'entity'); // entity | individual
+        $name = $request->input('name');
+
+        if ($type === 'entity') {
+            $result = $this->sentinel->screenEntity([
+                'query'            => (string) $client->company_name,
+                'country'          => (string) ($client->country_of_incorporation ?? 'UAE'),
+                'country_of_issue' => (string) ($client->country_of_incorporation ?? 'UAE'),
+                'license_number'   => (string) ($client->trade_license_no ?? ''),
+                'date_of_issue'    => $client->trade_license_issue?->format('Y-m-d') ?? '',
+            ]);
+        } else {
+            // Individual (shareholder) — find by name
+            $sh = $client->shareholders()->where('name', $name)->first();
+            $result = $this->sentinel->screenIndividual([
+                'query'       => (string) $name,
+                'country'     => (string) ($sh?->nationality ?? 'UAE'),
+                'nationality' => (string) ($sh?->nationality ?? ''),
+                'dob'         => $sh?->dob?->format('Y-m-d') ?? '',
+            ]);
+        }
+
+        if (!$result['success']) {
+            return response()->json(['success' => false, 'error' => $result['error'] ?? 'Screening failed']);
+        }
+
+        $summary = SentinelService::summarise($result['data']);
+        return response()->json(['success' => true, 'summary' => $summary, 'name' => $name ?? $client->company_name]);
+    }
+
+    // ── Save combined screening results (AJAX) ────────────────────────────
+    public function screenSave(Request $request, string $slug, BullionClient $client)
+    {
+        $tenant = app('tenant');
+        abort_if($client->tenant_id !== $tenant->id, 404);
+
+        $allResults = $request->input('all_results', []);
+        $hasMatch   = collect($allResults)->contains(fn($r) => ($r['summary']['status'] ?? '') === 'match');
+        $shareholders = array_values(array_filter($allResults, fn($r) => $r['role'] !== 'Company'));
+
+        $client->update([
+            'screening_status'    => $hasMatch ? 'match' : 'clear',
+            'screening_date'      => now(),
+            'screening_reference' => 'SCR-' . strtoupper(substr(md5($client->displayName() . now()), 0, 8)),
+            'screening_result'    => [
+                'status'          => $hasMatch ? 'match' : 'clear',
+                'total_hits'      => collect($allResults)->sum(fn($r) => $r['summary']['total_hits'] ?? 0),
+                'hits'            => $allResults[0]['summary']['hits'] ?? [],
+                'shareholders'    => $shareholders,
+                'all_results'     => $allResults,
+                'screened_count'  => count($allResults),
+            ],
+        ]);
+
+        return response()->json(['success' => true, 'status' => $hasMatch ? 'match' : 'clear']);
+    }
+
     public function screenClient(Request $request, string $slug, BullionClient $client)
     {
         $tenant = app('tenant');
         abort_if($client->tenant_id !== $tenant->id, 404);
 
-        $client->load(['shareholders']);
+        // Force fresh load to avoid cached empty relationship
+        $client = BullionClient::with('shareholders')->find($client->id);
         $isCorporate = $client->client_type !== 'individual';
         $allResults  = [];
 

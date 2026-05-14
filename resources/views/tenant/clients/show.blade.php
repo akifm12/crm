@@ -700,14 +700,81 @@ $countryName = fn($code) => $code ? (\App\Models\Country::find($code)?->country_
                 <div class="bg-white rounded-xl border border-gray-200 p-4">
                     <h3 class="text-sm font-semibold text-gray-700 mb-2">Screen this client</h3>
                     <p class="text-xs text-gray-400 mb-3">{{ $client->displayName() }}</p>
-                    <form method="POST" action="{{ route('tenant.clients.screen', [$tenant->slug, $client->id]) }}">
-                        @csrf
-                        <button type="submit"
+
+                    @php
+                        $shareholders = $client->shareholders ?? collect();
+                        $subjectList = [];
+                        if($isCorporate) {
+                            $subjectList[] = ['type'=>'entity','name'=>$client->company_name,'role'=>'Company'];
+                            foreach($shareholders as $sh) {
+                                $subjectList[] = ['type'=>'individual','name'=>$sh->name,'role'=>$sh->is_ubo ? 'Shareholder / UBO' : 'Shareholder'];
+                            }
+                        } else {
+                            $subjectList[] = ['type'=>'individual','name'=>$client->full_name,'role'=>'Individual'];
+                        }
+                    @endphp
+
+                    <div x-data="screeningProgress({
+                        subjects: {{ json_encode($subjectList) }},
+                        screenUrl: '{{ route('tenant.clients.screen.subject', [$tenant->slug, $client->id]) }}',
+                        saveUrl: '{{ route('tenant.clients.screen.save', [$tenant->slug, $client->id]) }}',
+                        csrf: '{{ csrf_token() }}'
+                    })">
+
+                        {{-- Start button --}}
+                        <button type="button" @click="start()"
+                                x-show="!running && !done"
                                 class="w-full flex items-center justify-center gap-2 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                            Screen now
+                            Screen now ({{ count($subjectList) }} subject{{ count($subjectList) > 1 ? 's' : '' }})
                         </button>
-                    </form>
+
+                        {{-- Progress --}}
+                        <div x-show="running || done" x-cloak class="space-y-2">
+                            <template x-for="(subject, i) in subjects" :key="i">
+                                <div class="flex items-center gap-3 p-2.5 rounded-lg border"
+                                     :class="results[i] ? (results[i].summary.status === 'match' ? 'border-red-200 bg-red-50' : 'border-green-200 bg-green-50') : (currentIndex === i ? 'border-blue-200 bg-blue-50' : 'border-gray-100 bg-gray-50')">
+                                    {{-- Status icon --}}
+                                    <div class="w-5 h-5 flex-shrink-0 flex items-center justify-center">
+                                        <template x-if="results[i] && results[i].summary.status === 'match'">
+                                            <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+                                        </template>
+                                        <template x-if="results[i] && results[i].summary.status !== 'match'">
+                                            <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                        </template>
+                                        <template x-if="!results[i] && currentIndex === i">
+                                            <svg class="w-4 h-4 text-blue-500 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                        </template>
+                                        <template x-if="!results[i] && currentIndex !== i">
+                                            <div class="w-3 h-3 rounded-full bg-gray-300"></div>
+                                        </template>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-xs font-semibold text-gray-800 truncate" x-text="subject.name"></p>
+                                        <p class="text-xs text-gray-400" x-text="subject.role"></p>
+                                    </div>
+                                    <div x-show="results[i]" class="text-xs font-semibold"
+                                         :class="results[i]?.summary?.status === 'match' ? 'text-red-600' : 'text-green-600'"
+                                         x-text="results[i]?.summary?.status === 'match' ? (results[i]?.summary?.total_hits + ' hit(s)') : 'Clear'"></div>
+                                </div>
+                            </template>
+
+                            {{-- Overall result --}}
+                            <div x-show="done" x-cloak class="mt-3 p-3 rounded-lg text-center"
+                                 :class="overallMatch ? 'bg-red-50 border border-red-200' : 'bg-green-50 border border-green-200'">
+                                <p class="text-sm font-semibold" :class="overallMatch ? 'text-red-700' : 'text-green-700'"
+                                   x-text="overallMatch ? '⚠ Match found — review required' : '✓ All clear'"></p>
+                            </div>
+
+                            {{-- Re-screen button --}}
+                            <button type="button" @click="reset()"
+                                    x-show="done" x-cloak
+                                    class="w-full mt-2 py-1.5 text-xs text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50">
+                                Re-screen
+                            </button>
+                        </div>
+                    </div>
+
                     <a href="{{ route('tenant.screening', $tenant->slug) }}?client={{ $client->id }}"
                        class="mt-2 w-full flex items-center justify-center gap-2 py-2 text-sm font-medium text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50 transition">
                         Advanced screening
@@ -982,6 +1049,79 @@ $countryName = fn($code) => $code ? (\App\Models\Country::find($code)?->country_
     </div>
 
 </div>{{-- end tabs --}}
+
+@push('scripts')
+<script>
+function screeningProgress({ subjects, screenUrl, saveUrl, csrf }) {
+    return {
+        subjects,
+        screenUrl,
+        saveUrl,
+        csrf,
+        running: false,
+        done: false,
+        currentIndex: -1,
+        results: [],
+        overallMatch: false,
+
+        async start() {
+            this.running = true;
+            this.done = false;
+            this.results = [];
+            this.overallMatch = false;
+
+            for (let i = 0; i < this.subjects.length; i++) {
+                this.currentIndex = i;
+                const subject = this.subjects[i];
+
+                // 1 second delay between subjects
+                if (i > 0) await new Promise(r => setTimeout(r, 1000));
+
+                try {
+                    const resp = await fetch(this.screenUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': this.csrf },
+                        body: JSON.stringify({ type: subject.type, name: subject.name }),
+                    });
+                    const data = await resp.json();
+                    if (data.success) {
+                        this.results[i] = { name: subject.name, role: subject.role, summary: data.summary };
+                        if (data.summary.status === 'match') this.overallMatch = true;
+                    } else {
+                        this.results[i] = { name: subject.name, role: subject.role, summary: { status: 'error', total_hits: 0, hits: [] } };
+                    }
+                } catch(e) {
+                    this.results[i] = { name: subject.name, role: subject.role, summary: { status: 'error', total_hits: 0, hits: [] } };
+                }
+                // Force Alpine reactivity
+                this.results = [...this.results];
+            }
+
+            // Save combined results
+            await fetch(this.saveUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': this.csrf },
+                body: JSON.stringify({ all_results: this.results }),
+            });
+
+            this.running = false;
+            this.done = true;
+
+            // Reload page after 2 seconds to show updated results
+            setTimeout(() => window.location.reload(), 2000);
+        },
+
+        reset() {
+            this.running = false;
+            this.done = false;
+            this.currentIndex = -1;
+            this.results = [];
+            this.overallMatch = false;
+        }
+    }
+}
+</script>
+@endpush
 
 @endsection
 
