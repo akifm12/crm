@@ -242,22 +242,18 @@ $countryRisk = in_array($clientCountry, $highRiskCountries) ? 3 : (in_array($cli
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-            <label class="block text-xs font-medium text-gray-600 mb-2">Final risk rating override</label>
-            <p class="text-xs text-gray-400 mb-2">System suggests: <span class="font-semibold" :class="scoreColor" x-text="suggestedRating.toUpperCase()"></span>. Select below to confirm or override.</p>
+            <label class="block text-xs font-medium text-gray-600 mb-2">Suggested risk rating</label>
+            <p class="text-xs text-gray-400 mb-2">System-calculated based on the selected risk factors above.</p>
             <div class="flex gap-3">
                 @foreach(['low'=>['Low risk','green'],'medium'=>['Medium risk','amber'],'high'=>['High risk','red']] as $v=>[$l,$c])
-                <label class="flex-1 rounded-xl p-3 cursor-pointer text-center transition border-2"
-                       :class="overrideRating === '{{ $v }}'
-                           ? 'border-{{ $c }}-400 bg-{{ $c }}-50 ring-2 ring-{{ $c }}-300'
-                           : 'border-gray-200 bg-gray-50 opacity-50'">
-                    <input type="radio" name="rating_override" value="{{ $v }}"
-                           {{ ($saved['final_rating'] ?? '') === $v ? 'checked' : '' }}
-                           class="sr-only" x-model="overrideRating">
+                <div class="flex-1 rounded-xl p-3 text-center border-2"
+                     :class="suggestedRating === '{{ $v }}'
+                         ? 'border-{{ $c }}-400 bg-{{ $c }}-50'
+                         : 'border-gray-200 bg-gray-50 opacity-50'">
                     <span class="text-sm font-semibold text-{{ $c }}-700">{{ $l }}</span>
-                </label>
+                </div>
                 @endforeach
             </div>
-            <p class="text-xs text-gray-400 mt-2">The selected rating will override the system suggestion when saved.</p>
         </div>
         <div>
             <label class="block text-xs font-medium text-gray-600 mb-1">Next KYC review date</label>
@@ -266,13 +262,6 @@ $countryRisk = in_array($clientCountry, $highRiskCountries) ? 3 : (in_array($cli
                    class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
             <p class="text-xs text-gray-400 mt-1">High risk: 1 year · Medium: 2 years · Low: 3 years</p>
         </div>
-    </div>
-
-    <div x-show="overrideRating && overrideRating !== suggestedRating" x-cloak>
-        <label class="block text-xs font-medium text-gray-600 mb-1">Override justification <span class="text-red-500">*</span></label>
-        <textarea name="override_reason" rows="2"
-                  class="w-full px-3 py-2 text-sm border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 resize-none bg-amber-50"
-                  placeholder="Document the reason for overriding the system-calculated rating…">{{ $saved['override_reason'] ?? '' }}</textarea>
     </div>
 
     <div>
@@ -303,8 +292,6 @@ $countryRisk = in_array($clientCountry, $highRiskCountries) ? 3 : (in_array($cli
 <script>
 function riskForm() {
     return {
-        overrideRating: '{{ $saved['final_rating'] ?? '' }}',
-
         weights: { customer:0.30, geographic:0.25, product:0.20, transaction:0.15, channel:0.05, supply_chain:0.05 },
 
         get catScores() {
@@ -317,10 +304,7 @@ function riskForm() {
             return cats;
         },
 
-        recalc() {
-            // trigger Alpine reactivity
-            this.overrideRating = this.overrideRating;
-        },
+        recalc() {},
 
         get score() {
             const cats = this.catScores;
