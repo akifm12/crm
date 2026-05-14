@@ -178,21 +178,3 @@ class ScreeningController extends Controller
         return back()->with($hasMatch ? 'error' : 'success', $msg);
     }
 }
-        }
-
-        $summary = SentinelService::summarise($result['data']);
-
-        $client->update([
-            'screening_status'    => $summary['status'],
-            'screening_date'      => now(),
-            'screening_reference' => 'SCR-' . strtoupper(substr(md5($client->displayName() . now()), 0, 8)),
-            'screening_result'    => $summary,
-        ]);
-
-        $msg = $summary['status'] === 'match'
-            ? "⚠️ Screening complete — {$summary['total_hits']} potential match(es) found. Review required."
-            : '✓ Screening complete — No matches found.';
-
-        return back()->with($summary['status'] === 'match' ? 'error' : 'success', $msg);
-    }
-}
