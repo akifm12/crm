@@ -339,14 +339,17 @@
                            class="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
                 <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-1">Passport number <span class="text-red-500">*</span></label>
-                    <input type="text" name="passport_number" required
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Passport number</label>
+                    <input type="text" name="passport_number"
                            class="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
                 <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-1">Passport expiry <span class="text-red-500">*</span></label>
-                    <input type="date" name="passport_expiry" required
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Passport expiry</label>
+                    <input type="date" name="passport_expiry"
                            class="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="col-span-2">
+                    <p class="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">⚠ At least one of Passport or Emirates ID is required.</p>
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-gray-600 mb-1">Emirates ID number</label>

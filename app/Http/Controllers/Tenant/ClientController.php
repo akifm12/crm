@@ -75,6 +75,15 @@ class ClientController extends Controller
     {
         $tenant = app('tenant');
 
+        // For individual clients — require at least passport OR Emirates ID
+        if ($request->input('client_type') === 'individual') {
+            if (empty($request->passport_number) && empty($request->eid_number)) {
+                return back()
+                    ->withInput()
+                    ->withErrors(['passport_number' => 'At least one of Passport number or Emirates ID is required.']);
+            }
+        }
+
         $data = $request->except(['signatories', 'shareholders', 'ubos', 'documents', 'doc_labels', 'doc_expiry', 'doc_required', '_token', 'extra_data']);
 
         // Collect extra_data fields from sector config

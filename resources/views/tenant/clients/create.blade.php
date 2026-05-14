@@ -391,7 +391,7 @@
     </div>
     <div class="p-6 space-y-5">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            @include('tenant.clients._field', ['name'=>'full_name','label'=>'Full name (as per passport)','required'=>true])
+            @include('tenant.clients._field', ['name'=>'full_name','label'=>'Full name (as per ID document)','required'=>true])
             @include('tenant.clients._field', ['name'=>'name_arabic','label'=>'Name in Arabic'])
         </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -400,9 +400,13 @@
             @include('tenant.clients._field', ['name'=>'email','label'=>'Email address','type'=>'email'])
         </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            @include('tenant.clients._field', ['name'=>'passport_number','label'=>'Passport number','required'=>true])
-            @include('tenant.clients._field', ['name'=>'passport_expiry','label'=>'Passport expiry','required'=>true,'type'=>'date'])
-            @include('tenant.clients._field', ['name'=>'phone','label'=>'Phone number'])
+            @include('tenant.clients._field', ['name'=>'passport_number','label'=>'Passport number'])
+            @include('tenant.clients._field', ['name'=>'passport_expiry','label'=>'Passport expiry','type'=>'date'])
+            <div class="md:col-span-3">
+                <p class="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">⚠ At least one of Passport or Emirates ID is required for identity verification.</p>
+            </div>
+            @include('tenant.clients._field', ['name'=>'eid_number','label'=>'Emirates ID number'])
+            @include('tenant.clients._field', ['name'=>'eid_expiry','label'=>'Emirates ID expiry','type'=>'date'])            @include('tenant.clients._field', ['name'=>'phone','label'=>'Phone number'])
         </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             @include('tenant.clients._field', ['name'=>'eid_number','label'=>'Emirates ID number'])
