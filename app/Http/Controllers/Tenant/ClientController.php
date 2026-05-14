@@ -8,6 +8,7 @@ use App\Models\BullionClient;
 use App\Models\ClientDocument;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 
 class ClientController extends Controller
 {
@@ -73,19 +74,31 @@ class ClientController extends Controller
 
     public function scanDocument(Request $request): \Illuminate\Http\JsonResponse
     {
-        $request->validate([
+        if (!config('services.anthropic.key')) {
+            return response()->json(['error' => 'ANTHROPIC_API_KEY is not configured. Add it to your .env file.'], 500);
+        }
+
+        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
             'document' => 'required|file|mimes:jpg,jpeg,png,pdf|max:10240',
         ]);
 
-        $file   = $request->file('document');
-        $mime   = $file->getMimeType();
-        $base64 = base64_encode(file_get_contents($file->getRealPath()));
+        if ($validator->fails()) {
+            return response()->json(['error' => $validator->errors()->first('document')], 422);
+        }
 
-        $contentBlock = $mime === 'application/pdf'
-            ? ['type' => 'document', 'source' => ['type' => 'base64', 'media_type' => 'application/pdf', 'data' => $base64]]
-            : ['type' => 'image',    'source' => ['type' => 'base64', 'media_type' => $mime, 'data' => $base64]];
+        try {
+            $file   = $request->file('document');
+            $mime   = $file->getMimeType();
+            $base64 = base64_encode(file_get_contents($file->getRealPath()));
 
-        $prompt = <<<'PROMPT'
+            // Normalise JPEG mime (some systems return image/jpg)
+            if ($mime === 'image/jpg') $mime = 'image/jpeg';
+
+            $contentBlock = $mime === 'application/pdf'
+                ? ['type' => 'document', 'source' => ['type' => 'base64', 'media_type' => 'application/pdf', 'data' => $base64]]
+                : ['type' => 'image',    'source' => ['type' => 'base64', 'media_type' => $mime, 'data' => $base64]];
+
+            $prompt = <<<'PROMPT'
 You are a compliance document scanner for a UAE-based financial services portal. Analyze this document and extract client information for KYC onboarding.
 
 Return ONLY a valid JSON object in this exact format (use null for any missing or unreadable fields):
@@ -116,36 +129,38 @@ Rules:
 - Return ONLY the JSON object, no markdown, no explanation
 PROMPT;
 
-        $response = \Illuminate\Support\Facades\Http::withHeaders([
-            'x-api-key'         => config('services.anthropic.key'),
-            'anthropic-version' => '2023-06-01',
-            'content-type'      => 'application/json',
-        ])->timeout(30)->post('https://api.anthropic.com/v1/messages', [
-            'model'      => 'claude-haiku-4-5-20251001',
-            'max_tokens' => 1024,
-            'messages'   => [[
-                'role'    => 'user',
-                'content' => [
-                    $contentBlock,
-                    ['type' => 'text', 'text' => $prompt],
-                ],
-            ]],
-        ]);
+            $response = \Illuminate\Support\Facades\Http::withHeaders([
+                'x-api-key'         => config('services.anthropic.key'),
+                'anthropic-version' => '2023-06-01',
+                'content-type'      => 'application/json',
+            ])->timeout(60)->post('https://api.anthropic.com/v1/messages', [
+                'model'      => 'claude-haiku-4-5-20251001',
+                'max_tokens' => 1024,
+                'messages'   => [[
+                    'role'    => 'user',
+                    'content' => [$contentBlock, ['type' => 'text', 'text' => $prompt]],
+                ]],
+            ]);
 
-        if (!$response->successful()) {
-            return response()->json(['error' => 'Document scan failed. Please fill the form manually.'], 422);
+            if (!$response->successful()) {
+                $apiError = $response->json('error.message') ?? 'Anthropic API error ('.$response->status().')';
+                return response()->json(['error' => $apiError], 422);
+            }
+
+            $text = trim($response->json('content.0.text', ''));
+            $text = preg_replace('/^```(?:json)?\s*/m', '', $text);
+            $text = preg_replace('/```\s*$/m', '', $text);
+            $data = json_decode(trim($text), true);
+
+            if (!$data) {
+                return response()->json(['error' => 'Could not read document fields. Please fill the form manually.'], 422);
+            }
+
+            return response()->json($data);
+
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Scan failed: '.$e->getMessage()], 500);
         }
-
-        $text = trim($response->json('content.0.text', ''));
-        $text = preg_replace('/^```(?:json)?\s*/m', '', $text);
-        $text = preg_replace('/```\s*$/m', '', $text);
-        $data = json_decode(trim($text), true);
-
-        if (!$data) {
-            return response()->json(['error' => 'Could not read document. Please fill the form manually.'], 422);
-        }
-
-        return response()->json($data);
     }
 
     public function store(Request $request)
