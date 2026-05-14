@@ -756,6 +756,41 @@ $countryName = fn($code) => $code ? (\App\Models\Country::find($code)?->country_
                     </div>
                     @endif
                 </div>
+
+                {{-- Shareholder results --}}
+                @if(!empty($client->screening_result['shareholders']))
+                @foreach($client->screening_result['shareholders'] as $shResult)
+                @php $shMatch = ($shResult['summary']['status'] ?? '') === 'match'; @endphp
+                <div class="bg-white rounded-xl border {{ $shMatch ? 'border-red-200' : 'border-gray-200' }} mt-4">
+                    <div class="px-5 py-3 border-b {{ $shMatch ? 'bg-red-50 border-red-100' : 'bg-gray-50 border-gray-100' }} rounded-t-xl flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-semibold {{ $shMatch ? 'text-red-700' : 'text-gray-700' }}">{{ $shResult['name'] }}</p>
+                            <p class="text-xs text-gray-400">{{ $shResult['role'] }}</p>
+                        </div>
+                        <span class="text-xs px-2 py-0.5 rounded-full {{ $shMatch ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700' }}">
+                            {{ $shMatch ? ($shResult['summary']['total_hits'] ?? 0).' hit(s)' : 'Clear' }}
+                        </span>
+                    </div>
+                    @if($shMatch && !empty($shResult['summary']['hits']))
+                    <div class="divide-y divide-gray-100">
+                        @foreach($shResult['summary']['hits'] as $hit)
+                        <div class="px-5 py-3">
+                            <p class="text-sm font-semibold text-gray-800">{{ $hit['name'] ?? 'Unknown' }}</p>
+                            <div class="flex flex-wrap gap-1.5 mt-1">
+                                @if(!empty($hit['type']))<span class="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">{{ $hit['type'] }}</span>@endif
+                                @if(!empty($hit['riskLevel']))<span class="text-xs px-2 py-0.5 rounded-full bg-orange-100 text-orange-700">{{ $hit['riskLevel'] }}</span>@endif
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                    @else
+                    <div class="px-5 py-4 text-center">
+                        <p class="text-sm text-green-600 font-medium">✓ No matches found</p>
+                    </div>
+                    @endif
+                </div>
+                @endforeach
+                @endif
                 @else
                 <div class="bg-white rounded-xl border border-dashed border-gray-300 p-12 text-center">
                     <svg class="w-10 h-10 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -949,3 +984,4 @@ $countryName = fn($code) => $code ? (\App\Models\Country::find($code)?->country_
 </div>{{-- end tabs --}}
 
 @endsection
+

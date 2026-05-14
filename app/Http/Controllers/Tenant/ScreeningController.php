@@ -92,8 +92,11 @@ class ScreeningController extends Controller
         $tenant = app('tenant');
         abort_if($client->tenant_id !== $tenant->id, 404);
 
+        $client->load(['shareholders']);
         $isCorporate = $client->client_type !== 'individual';
+        $allResults  = [];
 
+        // ── Screen main entity / individual ──────────────────────────────
         if ($isCorporate) {
             $result = $this->sentinel->screenEntity([
                 'query'            => (string) $client->company_name,
@@ -113,6 +116,68 @@ class ScreeningController extends Controller
 
         if (!$result['success']) {
             return back()->with('error', 'Screening failed: ' . ($result['error'] ?? 'Unknown error'));
+        }
+
+        $mainSummary = SentinelService::summarise($result['data']);
+        $allResults[] = [
+            'name'    => $isCorporate ? $client->company_name : $client->full_name,
+            'role'    => $isCorporate ? 'Company' : 'Individual',
+            'summary' => $mainSummary,
+        ];
+
+        // ── Screen shareholders ──────────────────────────────────────────
+        $shareholderResults = [];
+        if ($isCorporate && $client->shareholders->count()) {
+            foreach ($client->shareholders as $sh) {
+                if (empty($sh->name)) continue;
+
+                $shResult = $this->sentinel->screenIndividual([
+                    'query'       => (string) $sh->name,
+                    'country'     => (string) ($sh->nationality ?? 'UAE'),
+                    'nationality' => (string) ($sh->nationality ?? ''),
+                    'dob'         => $sh->dob?->format('Y-m-d') ?? '',
+                ]);
+
+                if ($shResult['success']) {
+                    $shSummary = SentinelService::summarise($shResult['data']);
+                    $shareholderResults[] = [
+                        'name'    => $sh->name,
+                        'role'    => $sh->is_ubo ? 'Shareholder / UBO' : 'Shareholder',
+                        'summary' => $shSummary,
+                    ];
+                    $allResults[] = [
+                        'name'    => $sh->name,
+                        'role'    => $sh->is_ubo ? 'Shareholder / UBO' : 'Shareholder',
+                        'summary' => $shSummary,
+                    ];
+                }
+            }
+        }
+
+        // ── Determine overall status ─────────────────────────────────────
+        $hasMatch  = collect($allResults)->contains(fn($r) => $r['summary']['status'] === 'match');
+        $overallStatus = $hasMatch ? 'match' : 'clear';
+        $totalHits = collect($allResults)->sum(fn($r) => $r['summary']['total_hits'] ?? 0);
+
+        // ── Save to client record ────────────────────────────────────────
+        $client->update([
+            'screening_status'    => $overallStatus,
+            'screening_date'      => now(),
+            'screening_reference' => 'SCR-' . strtoupper(substr(md5($client->displayName() . now()), 0, 8)),
+            'screening_result'    => array_merge($mainSummary, [
+                'shareholders' => $shareholderResults,
+                'all_results'  => $allResults,
+                'screened_count' => count($allResults),
+            ]),
+        ]);
+
+        $msg = $hasMatch
+            ? "⚠️ Screening complete — {$totalHits} potential match(es) found across " . count($allResults) . " subject(s). Review required."
+            : '✓ Screening complete — No matches found for company or shareholders.';
+
+        return back()->with($hasMatch ? 'error' : 'success', $msg);
+    }
+}
         }
 
         $summary = SentinelService::summarise($result['data']);

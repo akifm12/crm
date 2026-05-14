@@ -76,12 +76,20 @@ body { font-family: Arial, Helvetica, sans-serif; font-size: 11pt; color: #1a1a1
 
 @php
 $result      = $client->screening_result ?? [];
-$isMatch     = ($result['status'] ?? 'not_screened') === 'match';
-$hits        = $result['hits'] ?? [];
-$totalHits   = $result['total_hits'] ?? 0;
 $isCorporate = $client->client_type !== 'individual';
 $ref         = $client->screening_reference ?? 'SCR-' . strtoupper(substr(md5($client->id . now()), 0, 8));
 $screenedOn  = $client->screening_date ? $client->screening_date->format('d F Y, H:i') : now()->format('d F Y, H:i');
+
+// All results (new format) or fallback to main result only
+$allResults  = $allResults ?? [[
+    'name'    => $client->displayName(),
+    'role'    => $isCorporate ? 'Company' : 'Individual',
+    'summary' => $result,
+]];
+
+$overallMatch = collect($allResults)->contains(fn($r) => ($r['summary']['status'] ?? '') === 'match');
+$totalSubjects = count($allResults);
+$totalHits   = collect($allResults)->sum(fn($r) => $r['summary']['total_hits'] ?? 0);
 @endphp
 
 <div class="page">
@@ -112,21 +120,50 @@ $screenedOn  = $client->screening_date ? $client->screening_date->format('d F Y,
         <p>{{ $tenant->name }} — Compliance Portal</p>
     </div>
 
-    {{-- Result banner --}}
-    @if($isMatch)
+    {{-- Overall result banner --}}
+    @if($overallMatch)
     <div class="result-match">
         <h3>⚠ Potential Match Found</h3>
-        <p>{{ $totalHits }} potential match(es) identified for <strong>{{ $client->displayName() }}</strong>. Review and disposition required before proceeding.</p>
+        <p>{{ $totalHits }} potential match(es) identified across {{ $totalSubjects }} subject(s). Review and disposition required before proceeding.</p>
     </div>
     @elseif(!empty($result))
     <div class="result-clear">
         <h3>✓ Clear — No Matches Found</h3>
-        <p>No sanctions, PEP, or adverse media hits found for <strong>{{ $client->displayName() }}</strong>. Screening passed.</p>
+        <p>No sanctions, PEP, or adverse media hits found across all {{ $totalSubjects }} subject(s) screened.</p>
     </div>
     @else
     <div class="result-clear" style="background:#fff7ed;border-color:#f59e0b;">
         <h3 style="color:#b45309;">No Screening Result on Record</h3>
         <p>This client has not been screened or no result is saved. Please run a screening check.</p>
+    </div>
+    @endif
+
+    {{-- Subjects summary table --}}
+    @if($totalSubjects > 1)
+    <div class="section">
+        <div class="section-title">Screening summary — {{ $totalSubjects }} subject(s)</div>
+        <table class="hits-table">
+            <thead>
+                <tr><th>#</th><th>Subject</th><th>Role</th><th>Result</th><th>Hits</th></tr>
+            </thead>
+            <tbody>
+                @foreach($allResults as $i => $subject)
+                <tr>
+                    <td>{{ $i + 1 }}</td>
+                    <td><strong>{{ $subject['name'] }}</strong></td>
+                    <td>{{ $subject['role'] }}</td>
+                    <td>
+                        @if(($subject['summary']['status'] ?? '') === 'match')
+                        <span class="badge-critical">MATCH</span>
+                        @else
+                        <span style="color:#16a34a;font-weight:bold;">CLEAR</span>
+                        @endif
+                    </td>
+                    <td>{{ $subject['summary']['total_hits'] ?? 0 }}</td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
     </div>
     @endif
 
@@ -172,23 +209,23 @@ $screenedOn  = $client->screening_date ? $client->screening_date->format('d F Y,
         <p style="font-size:8.5pt;color:#666;margin-top:6px;">Screening performed via Blue Arrow Sentinel AML platform (aml.bluearrow.ae)</p>
     </div>
 
-    {{-- Hit details --}}
-    @if(!empty($hits))
+    {{-- Per-subject results --}}
+    @foreach($allResults as $subject)
+    @php $subHits = $subject['summary']['hits'] ?? []; $subMatch = ($subject['summary']['status'] ?? '') === 'match'; @endphp
     <div class="section">
-        <div class="section-title">Screening hits ({{ count($hits) }})</div>
+        <div class="section-title">
+            {{ $subject['role'] }}: {{ $subject['name'] }}
+            @if($subMatch) — <span style="color:#dc2626;">⚠ MATCH</span>
+            @else — <span style="color:#16a34a;">✓ CLEAR</span>
+            @endif
+        </div>
+        @if(!empty($subHits))
         <table class="hits-table">
             <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Name</th>
-                    <th>Type</th>
-                    <th>Risk level</th>
-                    <th>List</th>
-                    <th>Match score</th>
-                </tr>
+                <tr><th>#</th><th>Name</th><th>Type</th><th>Risk level</th><th>List</th><th>Match score</th></tr>
             </thead>
             <tbody>
-                @foreach($hits as $i => $hit)
+                @foreach($subHits as $i => $hit)
                 <tr>
                     <td>{{ $i + 1 }}</td>
                     <td><strong>{{ $hit['name'] ?? 'Unknown' }}</strong>
@@ -211,13 +248,11 @@ $screenedOn  = $client->screening_date ? $client->screening_date->format('d F Y,
                 @endforeach
             </tbody>
         </table>
-        @if($isMatch)
-        <p style="font-size:9pt;color:#dc2626;margin-top:8px;font-weight:bold;">
-            ⚠ Action required: Review each hit and document disposition decision before proceeding with this client.
-        </p>
+        @else
+        <p style="color:#16a34a;font-size:9.5pt;padding:8px 0;">✓ No matches found for this subject.</p>
         @endif
     </div>
-    @endif
+    @endforeach
 
     {{-- Compliance note --}}
     <div class="section">

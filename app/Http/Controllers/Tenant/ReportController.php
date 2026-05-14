@@ -17,9 +17,20 @@ class ReportController extends Controller
     {
         $tenant = app('tenant');
         abort_if($client->tenant_id !== $tenant->id, 404);
-        $client->load(['signatories']);
+        $client->load(['signatories', 'shareholders']);
 
-        return view('tenant.reports.screening_pdf', compact('tenant', 'client'));
+        $allResults = $client->screening_result['all_results'] ?? null;
+
+        // Fallback — if old format, wrap main result only
+        if (!$allResults && $client->screening_result) {
+            $allResults = [[
+                'name'    => $client->displayName(),
+                'role'    => $client->client_type !== 'individual' ? 'Company' : 'Individual',
+                'summary' => $client->screening_result,
+            ]];
+        }
+
+        return view('tenant.reports.screening_pdf', compact('tenant', 'client', 'allResults'));
     }
 
     // ── Combined declaration Word doc ──────────────────────────────────────
