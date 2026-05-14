@@ -242,18 +242,22 @@ $countryRisk = in_array($clientCountry, $highRiskCountries) ? 3 : (in_array($cli
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-            <label class="block text-xs font-medium text-gray-600 mb-2">Final risk rating</label>
-            <p class="text-xs text-gray-400 mb-2">System suggests: <span class="font-semibold" :class="scoreColor" x-text="suggestedRating.toUpperCase()"></span>. Override below if justified.</p>
+            <label class="block text-xs font-medium text-gray-600 mb-2">Final risk rating override</label>
+            <p class="text-xs text-gray-400 mb-2">System suggests: <span class="font-semibold" :class="scoreColor" x-text="suggestedRating.toUpperCase()"></span>. Select below to confirm or override.</p>
             <div class="flex gap-3">
-                @foreach(['low'=>['Low risk','border-green-200 bg-green-50','text-green-700'],'medium'=>['Medium risk','border-amber-200 bg-amber-50','text-amber-700'],'high'=>['High risk','border-red-200 bg-red-50','text-red-700']] as $v=>[$l,$border,$tc])
-                <label class="flex-1 border {{ $border }} rounded-xl p-3 cursor-pointer text-center hover:opacity-80 transition">
+                @foreach(['low'=>['Low risk','green'],'medium'=>['Medium risk','amber'],'high'=>['High risk','red']] as $v=>[$l,$c])
+                <label class="flex-1 rounded-xl p-3 cursor-pointer text-center transition border-2"
+                       :class="overrideRating === '{{ $v }}'
+                           ? 'border-{{ $c }}-400 bg-{{ $c }}-50 ring-2 ring-{{ $c }}-300'
+                           : 'border-gray-200 bg-gray-50 opacity-50'">
                     <input type="radio" name="rating_override" value="{{ $v }}"
                            {{ ($saved['final_rating'] ?? '') === $v ? 'checked' : '' }}
                            class="sr-only" x-model="overrideRating">
-                    <span class="text-sm font-semibold {{ $tc }}" x-bind:class="overrideRating === '{{ $v }}' ? 'ring-2 ring-offset-1 ring-current rounded' : ''">{{ $l }}</span>
+                    <span class="text-sm font-semibold text-{{ $c }}-700">{{ $l }}</span>
                 </label>
                 @endforeach
             </div>
+            <p class="text-xs text-gray-400 mt-2">The selected rating will override the system suggestion when saved.</p>
         </div>
         <div>
             <label class="block text-xs font-medium text-gray-600 mb-1">Next KYC review date</label>
