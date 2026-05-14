@@ -408,10 +408,6 @@
             @include('tenant.clients._field', ['name'=>'eid_number','label'=>'Emirates ID number'])
             @include('tenant.clients._field', ['name'=>'eid_expiry','label'=>'Emirates ID expiry','type'=>'date'])            @include('tenant.clients._field', ['name'=>'phone','label'=>'Phone number'])
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            @include('tenant.clients._field', ['name'=>'eid_number','label'=>'Emirates ID number'])
-            @include('tenant.clients._field', ['name'=>'eid_expiry','label'=>'Emirates ID expiry','type'=>'date'])
-        </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             @include('tenant.clients._field', ['name'=>'occupation','label'=>'Occupation / profession'])
             @include('tenant.clients._field', ['name'=>'employer_name','label'=>'Employer / business name'])
