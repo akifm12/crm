@@ -12,6 +12,68 @@
 @csrf
 <input type="hidden" name="client_type" :value="clientType">
 
+{{-- ── AI DOCUMENT SCAN ─────────────────────────────────────────────────────── --}}
+<div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-5 mb-5">
+    <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center flex-shrink-0">
+                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/>
+                </svg>
+            </div>
+            <div>
+                <p class="text-sm font-semibold text-blue-900">Auto-fill from document</p>
+                <p class="text-xs text-blue-600">Upload a passport, Emirates ID or trade licence — AI will pre-fill the form</p>
+            </div>
+        </div>
+        <button type="button" @click="scanOpen = !scanOpen"
+                class="text-blue-400 hover:text-blue-600 transition">
+            <svg class="w-5 h-5 transition-transform" :class="scanOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+        </button>
+    </div>
+
+    <div x-show="scanOpen" x-cloak class="mt-4">
+        <div class="flex flex-col sm:flex-row gap-3 items-start sm:items-end">
+            <div class="flex-1">
+                <label class="block text-xs font-medium text-blue-800 mb-1">Select document <span class="font-normal text-blue-500">(passport, Emirates ID, or trade licence)</span></label>
+                <input type="file" id="scan_file_input"
+                       @change="scanFileSelected($event)"
+                       accept="image/jpeg,image/jpg,image/png,application/pdf"
+                       class="block w-full text-sm text-blue-700 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer">
+                <p class="text-xs text-blue-400 mt-1">JPG, PNG or PDF · Max 10 MB</p>
+            </div>
+            <button type="button" @click="runDocumentScan()"
+                    :disabled="!scanFile || scanning"
+                    class="px-5 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2 flex-shrink-0 transition">
+                <svg x-show="!scanning" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                </svg>
+                <svg x-show="scanning" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+                </svg>
+                <span x-text="scanning ? 'Scanning...' : 'Scan & Fill'"></span>
+            </button>
+        </div>
+
+        <div x-show="scanFilled.length > 0" x-cloak class="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg flex items-start gap-2">
+            <svg class="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <div>
+                <p class="text-xs font-semibold text-green-800"><span x-text="scanFilled.length"></span> fields pre-filled — review and correct before saving</p>
+                <p class="text-xs text-green-700 mt-0.5" x-text="scanFilled.join(' · ')"></p>
+            </div>
+        </div>
+
+        <div x-show="scanError" x-cloak class="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p class="text-xs text-red-700" x-text="scanError"></p>
+        </div>
+    </div>
+</div>
+
 {{-- ── TYPE SELECTOR ────────────────────────────────────────────────────────── --}}
 <div class="bg-white rounded-xl border border-gray-200 p-5 mb-5">
     <p class="text-sm font-semibold text-gray-700 mb-3">Client type</p>
@@ -669,6 +731,86 @@ function clientForm() {
         indStep: 1,
         stepErrors:    {1:false,2:false,3:false,4:false,5:false,6:false,7:false,8:false},
         indStepErrors: {1:false,2:false,3:false,4:false,5:false,6:false},
+
+        // ── Document scan state ──
+        scanOpen:  true,
+        scanFile:  null,
+        scanning:  false,
+        scanFilled: [],
+        scanError: '',
+
+        scanFileSelected(e) {
+            this.scanFile  = e.target.files[0] || null;
+            this.scanFilled = [];
+            this.scanError  = '';
+        },
+
+        async runDocumentScan() {
+            if (!this.scanFile || this.scanning) return;
+            this.scanning   = true;
+            this.scanFilled = [];
+            this.scanError  = '';
+
+            const form = new FormData();
+            form.append('document', this.scanFile);
+            form.append('_token', document.querySelector('meta[name="csrf-token"]')?.content || '');
+
+            try {
+                const res  = await fetch('{{ route("tenant.clients.scan", $tenant->slug) }}', { method: 'POST', body: form });
+                const data = await res.json();
+                if (!res.ok) { this.scanError = data.error || 'Scan failed. Please fill the form manually.'; return; }
+                this.applyScanResult(data);
+            } catch(e) {
+                this.scanError = 'Network error. Please try again.';
+            } finally {
+                this.scanning = false;
+            }
+        },
+
+        applyScanResult(data) {
+            const fieldMap = {
+                full_name:            'Full name',
+                company_name:         'Company name',
+                nationality:          'Nationality',
+                dob:                  'Date of birth',
+                gender:               'Gender',
+                passport_number:      'Passport no.',
+                passport_expiry:      'Passport expiry',
+                eid_number:           'Emirates ID',
+                eid_expiry:           'EID expiry',
+                trade_license_no:     'Trade licence no.',
+                trade_license_expiry: 'Licence expiry',
+                legal_form:           'Legal form',
+                address:              'Address',
+                phone:                'Phone',
+                email:                'Email',
+            };
+
+            // Auto-set client type from document
+            if (data.document_type === 'passport' || data.document_type === 'emirates_id') {
+                this.setType('individual');
+            } else if (data.document_type === 'trade_licence') {
+                // Default to first corporate type
+                const corpType = Object.keys({{ json_encode($sector["client_types"]) }}).find(t => t !== 'individual');
+                if (corpType) this.setType(corpType);
+            }
+
+            const filled = [];
+            for (const [key, label] of Object.entries(fieldMap)) {
+                if (!data[key]) continue;
+                const input = document.querySelector(`[name="${key}"]`);
+                if (!input) continue;
+                input.value = data[key];
+                input.dispatchEvent(new Event('input',  { bubbles: true }));
+                input.dispatchEvent(new Event('change', { bubbles: true }));
+                input.classList.add('ring-2', 'ring-blue-300', 'bg-blue-50');
+                filled.push(label);
+            }
+
+            this.scanFilled = filled;
+            if (filled.length > 0) this.scanOpen = false;
+        },
+        // ── End document scan ──
         signatories:  [{ full_name:'', position:'', nationality:'', dob:'', passport_number:'', passport_expiry:'', eid_number:'' }],
         shareholders: [{ shareholder_type:'individual', name:'', nationality:'', dob:'', ownership_percentage:'', passport_number:'', is_ubo:false, is_resident:false, eid_number:'', eid_expiry:'' }],
         ubos:         [{ full_name:'', nationality:'', dob:'', passport_number:'', ownership_percentage:'', country_of_residence:'', pep_status:false }],

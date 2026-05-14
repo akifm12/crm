@@ -163,6 +163,7 @@ Route::prefix('{slug}')
         Route::delete('/clients/{client}',           [ClientController::class, 'destroy'])->name('clients.destroy');
         Route::post('/fill/generate',              [ClientFillController::class, 'generate'])->name('fill.generate');
         Route::get('/fill/pending',                [ClientFillController::class, 'pending'])->name('fill.pending');
+        Route::post('/clients/scan-document',          [ClientController::class, 'scanDocument'])->name('clients.scan');
         Route::post('/clients/screen-preview',         [ClientController::class, 'screenPreview'])->name('clients.screen.preview');
         Route::get('/clients/new',                     [ClientController::class, 'create'])->name('clients.create');
         Route::post('/clients',                        [ClientController::class, 'store'])->name('clients.store');

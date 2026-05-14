@@ -13,6 +13,10 @@ return [
     | a conventional file to locate the various service credentials.
     |
     */
+    'anthropic' => [
+        'key' => env('ANTHROPIC_API_KEY'),
+    ],
+
 	'accounting' => [
 		'secret' => env('ACCOUNTING_SECRET'),
 		'url'    => env('ACCOUNTING_URL', 'https://accounts.bluearrow.ae'),

@@ -71,6 +71,83 @@ class ClientController extends Controller
         return view('tenant.clients.create', compact('tenant', 'countries'));
     }
 
+    public function scanDocument(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $request->validate([
+            'document' => 'required|file|mimes:jpg,jpeg,png,pdf|max:10240',
+        ]);
+
+        $file   = $request->file('document');
+        $mime   = $file->getMimeType();
+        $base64 = base64_encode(file_get_contents($file->getRealPath()));
+
+        $contentBlock = $mime === 'application/pdf'
+            ? ['type' => 'document', 'source' => ['type' => 'base64', 'media_type' => 'application/pdf', 'data' => $base64]]
+            : ['type' => 'image',    'source' => ['type' => 'base64', 'media_type' => $mime, 'data' => $base64]];
+
+        $prompt = <<<'PROMPT'
+You are a compliance document scanner for a UAE-based financial services portal. Analyze this document and extract client information for KYC onboarding.
+
+Return ONLY a valid JSON object in this exact format (use null for any missing or unreadable fields):
+
+{
+  "document_type": "passport|emirates_id|trade_licence|other",
+  "full_name": null,
+  "company_name": null,
+  "nationality": null,
+  "dob": null,
+  "gender": null,
+  "passport_number": null,
+  "passport_expiry": null,
+  "eid_number": null,
+  "eid_expiry": null,
+  "trade_license_no": null,
+  "trade_license_expiry": null,
+  "legal_form": null,
+  "address": null,
+  "phone": null,
+  "email": null
+}
+
+Rules:
+- nationality must be ISO 3166-1 alpha-2 code (e.g. "AE", "IN", "GB", "US")
+- All dates must be in YYYY-MM-DD format
+- Emirates ID format: 784-XXXX-XXXXXXX-X
+- Return ONLY the JSON object, no markdown, no explanation
+PROMPT;
+
+        $response = \Illuminate\Support\Facades\Http::withHeaders([
+            'x-api-key'         => config('services.anthropic.key'),
+            'anthropic-version' => '2023-06-01',
+            'content-type'      => 'application/json',
+        ])->timeout(30)->post('https://api.anthropic.com/v1/messages', [
+            'model'      => 'claude-haiku-4-5-20251001',
+            'max_tokens' => 1024,
+            'messages'   => [[
+                'role'    => 'user',
+                'content' => [
+                    $contentBlock,
+                    ['type' => 'text', 'text' => $prompt],
+                ],
+            ]],
+        ]);
+
+        if (!$response->successful()) {
+            return response()->json(['error' => 'Document scan failed. Please fill the form manually.'], 422);
+        }
+
+        $text = trim($response->json('content.0.text', ''));
+        $text = preg_replace('/^```(?:json)?\s*/m', '', $text);
+        $text = preg_replace('/```\s*$/m', '', $text);
+        $data = json_decode(trim($text), true);
+
+        if (!$data) {
+            return response()->json(['error' => 'Could not read document. Please fill the form manually.'], 422);
+        }
+
+        return response()->json($data);
+    }
+
     public function store(Request $request)
     {
         $tenant = app('tenant');
