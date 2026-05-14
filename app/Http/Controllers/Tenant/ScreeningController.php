@@ -92,7 +92,7 @@ class ScreeningController extends Controller
         $tenant = app('tenant');
         abort_if($client->tenant_id !== $tenant->id, 404);
 
-        $client->load(['shareholders']);
+        $client = BullionClient::with('shareholders')->find($client->id);
         $isCorporate = $client->client_type !== 'individual';
         $allResults  = [];
 
@@ -138,7 +138,8 @@ class ScreeningController extends Controller
                     'dob'         => $sh->dob?->format('Y-m-d') ?? '',
                 ]);
 
-                if ($shResult['success']) {
+                \Log::info('SH screen result', ['name' => $sh->name, 'success' => $shResult['success'], 'error' => $shResult['error'] ?? null]);
+                  if ($shResult['success']) {
                     $shSummary = SentinelService::summarise($shResult['data']);
                     $shareholderResults[] = [
                         'name'    => $sh->name,
