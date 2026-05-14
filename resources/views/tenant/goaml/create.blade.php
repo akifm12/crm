@@ -90,6 +90,7 @@ $dir_phone                = old('d_tph_number', $client?->phone ?? '');
     </div>
 
 {{-- Missing data alert --}}
+@if($client)
 @php
 $missing = [];
 if (!$name)                   $missing[] = 'Company name';
@@ -121,6 +122,7 @@ if (!$dir_nationality)        $missing[] = 'Director nationality';
     </svg>
     <p class="text-sm text-green-700">All client and director data pre-filled from <strong>{{ $client->displayName() }}</strong></p>
 </div>
+@endif
 @endif
 
 {{-- Hidden fields — entity / counterparty --}}
