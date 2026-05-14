@@ -35,13 +35,14 @@
                     Select document <span class="font-normal text-blue-500">(passport, Emirates ID, or trade licence)</span>
                 </label>
                 <input type="file"
-                       @change="file = $event.target.files[0]; filled = []; error = ''"
+                       multiple
+                       @change="filesSelected($event)"
                        accept="image/jpeg,image/jpg,image/png,application/pdf"
                        class="block w-full text-sm text-blue-700 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer">
-                <p class="text-xs text-blue-400 mt-1">JPG, PNG or PDF · Max 10 MB</p>
+                <p class="text-xs text-blue-400 mt-1">JPG, PNG or PDF · Max 10 MB · Select multiple files at once</p>
             </div>
             <button type="button" @click="scan()"
-                    :disabled="!file || scanning"
+                    :disabled="!files.length || scanning"
                     class="px-5 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2 flex-shrink-0 transition">
                 <svg x-show="!scanning" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
@@ -52,6 +53,14 @@
                 </svg>
                 <span x-text="scanning ? 'Scanning...' : 'Scan & Fill'"></span>
             </button>
+        </div>
+
+        <div x-show="progress" class="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-2">
+            <svg class="w-4 h-4 text-blue-500 animate-spin flex-shrink-0" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+            </svg>
+            <p class="text-xs text-blue-700 font-medium" x-text="progress"></p>
         </div>
 
         <div x-show="filled.length > 0" class="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg flex items-start gap-2">
@@ -801,34 +810,61 @@ function clientForm() {
 function docScanner() {
     return {
         open:     true,
-        file:     null,
+        files:    [],
         scanning: false,
+        progress: '',
         filled:   [],
         error:    '',
 
+        filesSelected(e) {
+            this.files  = Array.from(e.target.files);
+            this.filled = [];
+            this.error  = '';
+            this.progress = '';
+        },
+
         async scan() {
-            if (!this.file || this.scanning) return;
+            if (!this.files.length || this.scanning) return;
             this.scanning = true;
             this.filled   = [];
             this.error    = '';
 
-            const fd = new FormData();
-            fd.append('document', this.file);
-            fd.append('_token', document.querySelector('meta[name="csrf-token"]')?.content || '');
+            const token = document.querySelector('meta[name="csrf-token"]')?.content || '';
+            const allFilled = new Set();
 
-            try {
-                const res  = await fetch(this.$el.dataset.url, { method: 'POST', body: fd });
-                const data = await res.json();
-                if (!res.ok) { this.error = data.error || 'Scan failed. Please fill the form manually.'; return; }
-                this.apply(data);
-            } catch (e) {
-                this.error = 'Network error. Please try again.';
-            } finally {
-                this.scanning = false;
+            for (let i = 0; i < this.files.length; i++) {
+                this.progress = this.files.length > 1
+                    ? `Scanning document ${i + 1} of ${this.files.length}…`
+                    : 'Scanning…';
+
+                const fd = new FormData();
+                fd.append('document', this.files[i]);
+                fd.append('_token', token);
+
+                try {
+                    const res  = await fetch(this.$el.dataset.url, { method: 'POST', body: fd });
+                    const text = await res.text();
+                    let data;
+                    try { data = JSON.parse(text); } catch { data = null; }
+
+                    if (!res.ok || !data) {
+                        this.error = data?.error || `Error scanning document ${i + 1}. Please check it and try again.`;
+                        continue;
+                    }
+
+                    this.applyFields(data, allFilled);
+                } catch (e) {
+                    this.error = `Could not reach the server for document ${i + 1}. Please try again.`;
+                }
             }
+
+            this.filled   = Array.from(allFilled);
+            this.progress = '';
+            this.scanning = false;
+            if (this.filled.length > 0) this.open = false;
         },
 
-        apply(data) {
+        applyFields(data, filled) {
             const map = {
                 full_name:            'Full name',
                 company_name:         'Company name',
@@ -851,7 +887,6 @@ function docScanner() {
                 window.dispatchEvent(new CustomEvent('set-client-type', { detail: 'individual' }));
             }
 
-            const filled = [];
             for (const [key, label] of Object.entries(map)) {
                 if (!data[key]) continue;
                 const input = document.querySelector(`[name="${key}"]`);
@@ -860,11 +895,8 @@ function docScanner() {
                 input.dispatchEvent(new Event('input',  { bubbles: true }));
                 input.dispatchEvent(new Event('change', { bubbles: true }));
                 input.classList.add('ring-2', 'ring-blue-300', 'bg-blue-50');
-                filled.push(label);
+                filled.add(label);
             }
-
-            this.filled = filled;
-            if (filled.length > 0) this.open = false;
         },
     }
 }
