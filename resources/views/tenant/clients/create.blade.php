@@ -844,11 +844,12 @@ function docScanner() {
                 try {
                     const res  = await fetch(this.$el.dataset.url, { method: 'POST', body: fd });
                     const text = await res.text();
+                    console.log('[Scan] status:', res.status, 'body:', text.substring(0, 500));
                     let data;
                     try { data = JSON.parse(text); } catch { data = null; }
 
                     if (!res.ok || !data) {
-                        this.error = data?.error || `Error scanning document ${i + 1}. Please check it and try again.`;
+                        this.error = `[${res.status}] ` + (data?.error || text.substring(0, 200));
                         continue;
                     }
 
