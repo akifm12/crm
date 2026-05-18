@@ -49,6 +49,7 @@ class ReportController extends Controller
             'sector'          => $tenant->business_type ?? 'gold',
             'trade_license'   => $client->trade_license_no ?? $client->passport_number ?? '',
             'country'         => $client->country_of_incorporation ?? $client->nationality ?? '',
+			'director_nationality' => $sig?->nationality ?? $client->nationality ?? '',
             'signatory_name'  => $sig?->full_name ?? $client->displayName(),
             'signatory_title' => $sig?->position ?? 'Authorised Signatory',
             'mlro_name'       => $tenant->mlro_name ?? '',

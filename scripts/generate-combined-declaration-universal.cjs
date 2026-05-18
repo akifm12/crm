@@ -304,7 +304,7 @@ if (d.single_section && d.type) {
 const clientInfo = isIndividual ? [
     ['Full name',              d.client_name],
     ['Passport / Emirates ID', d.trade_license || '—'],
-    ['Nationality',            d.country || '—'],
+    ['Nationality',            d.director_nationality || d.country || '—'],
     ['Declaration date',       d.date],
 ] : [
     ['Entity name',            d.client_name],
