@@ -174,6 +174,36 @@ PROMPT;
                     ->withInput()
                     ->withErrors(['passport_number' => 'At least one of Passport number or Emirates ID is required.']);
             }
+
+            // Duplicate check — passport number
+            if (!empty($request->passport_number)) {
+                $existing = BullionClient::where('tenant_id', $tenant->id)
+                    ->where('passport_number', $request->passport_number)
+                    ->first();
+                if ($existing) {
+                    return back()->withInput()->withErrors([
+                        'passport_number' => 'A client with this passport number already exists: '
+                            . $existing->displayName()
+                            . '. Please open their profile and add a transaction there instead.',
+                    ])->with('duplicate_client_id', $existing->id)
+                      ->with('duplicate_client_name', $existing->displayName());
+                }
+            }
+
+            // Duplicate check — Emirates ID
+            if (!empty($request->eid_number)) {
+                $existing = BullionClient::where('tenant_id', $tenant->id)
+                    ->where('eid_number', $request->eid_number)
+                    ->first();
+                if ($existing) {
+                    return back()->withInput()->withErrors([
+                        'eid_number' => 'A client with this Emirates ID already exists: '
+                            . $existing->displayName()
+                            . '. Please open their profile and add a transaction there instead.',
+                    ])->with('duplicate_client_id', $existing->id)
+                      ->with('duplicate_client_name', $existing->displayName());
+                }
+            }
         }
 
         $data = $request->except(['signatories', 'shareholders', 'ubos', 'documents', 'doc_labels', 'doc_expiry', 'doc_required', '_token', 'extra_data']);
