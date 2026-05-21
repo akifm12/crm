@@ -186,7 +186,50 @@
     </div>
     <div class="p-6 space-y-5">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            @include('tenant.clients._field', ['name'=>'company_name','label'=>'Company name','required'=>true])
+            {{-- Company name with live duplicate search --}}
+            <div x-data="clientSearch('{{ route('tenant.clients.search', $tenant->slug) }}', '{{ old('company_name') }}')" class="relative">
+                <label class="block text-xs font-medium text-gray-600 mb-1">Company name <span class="text-red-500">*</span></label>
+                <input type="text" name="company_name" required
+                       x-model="query"
+                       @input="onInput()"
+                       @keydown.escape="close()"
+                       @blur="delayClose()"
+                       autocomplete="off"
+                       class="w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white {{ $errors->has('company_name') ? 'border-red-400 bg-red-50' : 'border-gray-200' }}">
+                @error('company_name')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+                {{-- Dropdown --}}
+                <div x-show="suggestions.length > 0" x-cloak
+                     class="absolute z-50 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
+                    <template x-for="c in suggestions" :key="c.id">
+                        <button type="button" @mousedown.prevent="select(c)"
+                                class="w-full flex items-center gap-3 px-4 py-3 hover:bg-blue-50 text-left border-b border-gray-100 last:border-0">
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-semibold text-gray-800 truncate" x-text="c.name"></p>
+                                <p class="text-xs text-gray-400" x-text="c.identifier || c.type"></p>
+                            </div>
+                            <span class="text-xs px-2 py-0.5 rounded-full flex-shrink-0"
+                                  :class="c.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'"
+                                  x-text="c.status"></span>
+                        </button>
+                    </template>
+                </div>
+                {{-- Match card --}}
+                <div x-show="selected" x-cloak class="mt-2 p-3 bg-amber-50 border border-amber-300 rounded-xl">
+                    <p class="text-xs font-bold text-amber-800 mb-1">⚠ Existing client found</p>
+                    <p class="text-sm font-semibold text-gray-800" x-text="selected?.name"></p>
+                    <p class="text-xs text-gray-500 mt-0.5" x-text="(selected?.identifier || '') + (selected?.added ? ' · Added ' + selected.added : '')"></p>
+                    <div class="flex gap-2 mt-2">
+                        <a :href="'{{ url('/'.$tenant->slug.'/clients/') }}/' + selected?.id + '?tab=transactions'"
+                           class="flex-1 text-center py-1.5 text-xs font-semibold text-white bg-amber-600 rounded-lg hover:bg-amber-700 transition">
+                            Add transaction →
+                        </a>
+                        <button type="button" @click="dismiss()"
+                                class="flex-1 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition">
+                            Different company
+                        </button>
+                    </div>
+                </div>
+            </div>
             @include('tenant.clients._field', ['name'=>'trade_license_no','label'=>'Trade licence number','required'=>true])
         </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -490,7 +533,50 @@
     </div>
     <div class="p-6 space-y-5">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            @include('tenant.clients._field', ['name'=>'full_name','label'=>'Full name (as per ID document)','required'=>true])
+            {{-- Full name with live duplicate search --}}
+            <div x-data="clientSearch('{{ route('tenant.clients.search', $tenant->slug) }}', '{{ old('full_name') }}')" class="relative">
+                <label class="block text-xs font-medium text-gray-600 mb-1">Full name (as per ID document) <span class="text-red-500">*</span></label>
+                <input type="text" name="full_name" required
+                       x-model="query"
+                       @input="onInput()"
+                       @keydown.escape="close()"
+                       @blur="delayClose()"
+                       autocomplete="off"
+                       class="w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white {{ $errors->has('full_name') ? 'border-red-400 bg-red-50' : 'border-gray-200' }}">
+                @error('full_name')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+                {{-- Dropdown --}}
+                <div x-show="suggestions.length > 0" x-cloak
+                     class="absolute z-50 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
+                    <template x-for="c in suggestions" :key="c.id">
+                        <button type="button" @mousedown.prevent="select(c)"
+                                class="w-full flex items-center gap-3 px-4 py-3 hover:bg-blue-50 text-left border-b border-gray-100 last:border-0">
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-semibold text-gray-800 truncate" x-text="c.name"></p>
+                                <p class="text-xs text-gray-400" x-text="(c.identifier || '') + (c.dob ? ' · DOB ' + c.dob : '')"></p>
+                            </div>
+                            <span class="text-xs px-2 py-0.5 rounded-full flex-shrink-0"
+                                  :class="c.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'"
+                                  x-text="c.status"></span>
+                        </button>
+                    </template>
+                </div>
+                {{-- Match card --}}
+                <div x-show="selected" x-cloak class="mt-2 p-3 bg-amber-50 border border-amber-300 rounded-xl">
+                    <p class="text-xs font-bold text-amber-800 mb-1">⚠ Existing client found</p>
+                    <p class="text-sm font-semibold text-gray-800" x-text="selected?.name"></p>
+                    <p class="text-xs text-gray-500 mt-0.5" x-text="(selected?.identifier || '') + (selected?.dob ? ' · DOB ' + selected.dob : '') + (selected?.added ? ' · Added ' + selected.added : '')"></p>
+                    <div class="flex gap-2 mt-2">
+                        <a :href="'{{ url('/'.$tenant->slug.'/clients/') }}/' + selected?.id + '?tab=transactions'"
+                           class="flex-1 text-center py-1.5 text-xs font-semibold text-white bg-amber-600 rounded-lg hover:bg-amber-700 transition">
+                            Add transaction →
+                        </a>
+                        <button type="button" @click="dismiss()"
+                                class="flex-1 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition">
+                            Different person
+                        </button>
+                    </div>
+                </div>
+            </div>
             @include('tenant.clients._field', ['name'=>'name_arabic','label'=>'Name in Arabic'])
         </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -830,6 +916,50 @@ function clientForm() {
             document.querySelector('form[novalidate]').submit();
         },
     }
+}
+
+function clientSearch(searchUrl, initialValue) {
+    return {
+        searchUrl,
+        query:       initialValue || '',
+        suggestions: [],
+        selected:    null,
+        timer:       null,
+        closeTimer:  null,
+
+        onInput() {
+            this.selected = null;
+            clearTimeout(this.timer);
+            if (this.query.length < 2) { this.suggestions = []; return; }
+            this.timer = setTimeout(() => this.fetch(), 300);
+        },
+
+        async fetch() {
+            try {
+                const res = await fetch(this.searchUrl + '?q=' + encodeURIComponent(this.query));
+                this.suggestions = await res.json();
+            } catch(e) { this.suggestions = []; }
+        },
+
+        select(client) {
+            this.selected    = client;
+            this.suggestions = [];
+            // Also update the visible input to show the selected name
+            this.query = client.name;
+        },
+
+        dismiss() {
+            this.selected = null;
+        },
+
+        close() {
+            this.suggestions = [];
+        },
+
+        delayClose() {
+            this.closeTimer = setTimeout(() => this.close(), 150);
+        },
+    };
 }
 
 function docScanner() {

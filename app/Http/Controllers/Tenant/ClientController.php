@@ -72,6 +72,38 @@ class ClientController extends Controller
         return view('tenant.clients.create', compact('tenant', 'countries'));
     }
 
+    public function search(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $tenant = app('tenant');
+        $q = trim($request->input('q', ''));
+
+        if (strlen($q) < 2) return response()->json([]);
+
+        $clients = BullionClient::where('tenant_id', $tenant->id)
+            ->where(function ($query) use ($q) {
+                $query->where('full_name', 'like', "%{$q}%")
+                      ->orWhere('company_name', 'like', "%{$q}%");
+            })
+            ->select('id', 'client_type', 'full_name', 'company_name', 'passport_number', 'eid_number', 'trade_license_no', 'nationality', 'dob', 'status', 'screening_status', 'created_at')
+            ->limit(6)
+            ->get()
+            ->map(fn($c) => [
+                'id'               => $c->id,
+                'name'             => $c->displayName(),
+                'type'             => $c->client_type,
+                'identifier'       => $c->client_type === 'individual'
+                    ? ($c->passport_number ? 'PP: '.$c->passport_number : ($c->eid_number ? 'EID: '.$c->eid_number : ''))
+                    : ($c->trade_license_no ? 'TL: '.$c->trade_license_no : ''),
+                'nationality'      => $c->nationality,
+                'dob'              => $c->dob?->format('d M Y'),
+                'status'           => $c->status,
+                'screening_status' => $c->screening_status,
+                'added'            => $c->created_at?->format('d M Y'),
+            ]);
+
+        return response()->json($clients);
+    }
+
     public function scanDocument(Request $request): \Illuminate\Http\JsonResponse
     {
         if (!config('services.anthropic.key')) {
@@ -203,6 +235,21 @@ PROMPT;
                     ])->with('duplicate_client_id', $existing->id)
                       ->with('duplicate_client_name', $existing->displayName());
                 }
+            }
+        }
+
+        // Duplicate check for corporate clients — trade licence number
+        if ($request->input('client_type') !== 'individual' && !empty($request->trade_license_no)) {
+            $existing = BullionClient::where('tenant_id', $tenant->id)
+                ->where('trade_license_no', $request->trade_license_no)
+                ->first();
+            if ($existing) {
+                return back()->withInput()->withErrors([
+                    'trade_license_no' => 'A client with this trade licence number already exists: '
+                        . $existing->displayName()
+                        . '. Please open their profile and add a transaction there instead.',
+                ])->with('duplicate_client_id', $existing->id)
+                  ->with('duplicate_client_name', $existing->displayName());
             }
         }
 
