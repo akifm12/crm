@@ -191,6 +191,142 @@ class CrmController extends Controller
         return back()->with('success', 'Task marked complete.');
     }
 
+    // ── AI quick task capture — parse ──────────────────────────────────────
+    public function quickCapture(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $request->validate(['text' => 'required|string|min:3']);
+
+        $today = now()->format('Y-m-d');
+        $text  = $request->input('text');
+
+        if (!config('services.anthropic.key')) {
+            return response()->json(['error' => 'ANTHROPIC_API_KEY not configured.'], 500);
+        }
+
+        $prompt = <<<PROMPT
+Today's date is {$today}. Parse this task instruction into structured JSON.
+
+Input: "{$text}"
+
+Return ONLY valid JSON with these fields:
+{
+  "client_name": "extracted company or person name, or null if none mentioned",
+  "task": "the task to do — clear and concise",
+  "due_date": "YYYY-MM-DD format, or null if not mentioned",
+  "priority": "high | medium | low",
+  "notes": "any extra context, or null"
+}
+
+Rules:
+- due_date: "today" = {$today}, "tomorrow" = next day, "next week" = 7 days, day names = nearest upcoming
+- priority: urgent/asap/critical = high, normal = medium, whenever/low priority = low
+- task: start with a verb (Call, Send, Follow up, Review, Prepare)
+- Return ONLY the JSON object, no markdown, no explanation
+PROMPT;
+
+        try {
+            $response = \Illuminate\Support\Facades\Http::withHeaders([
+                'x-api-key'         => config('services.anthropic.key'),
+                'anthropic-version' => '2023-06-01',
+                'content-type'      => 'application/json',
+            ])->timeout(20)->post('https://api.anthropic.com/v1/messages', [
+                'model'      => 'claude-haiku-4-5-20251001',
+                'max_tokens' => 256,
+                'messages'   => [['role' => 'user', 'content' => $prompt]],
+            ]);
+
+            if (!$response->successful()) {
+                return response()->json(['error' => 'AI parsing failed.'], 422);
+            }
+
+            $raw    = trim($response->json('content.0.text', ''));
+            $raw    = preg_replace('/^```(?:json)?\s*/m', '', $raw);
+            $raw    = preg_replace('/```\s*$/m', '', $raw);
+            $parsed = json_decode(trim($raw), true);
+
+            if (!$parsed) {
+                return response()->json(['error' => 'Could not parse. Please try again.'], 422);
+            }
+
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'AI error: ' . $e->getMessage()], 500);
+        }
+
+        // Fuzzy-match client name
+        $matchedClient = null;
+        $suggestions   = [];
+
+        if (!empty($parsed['client_name'])) {
+            $name = $parsed['client_name'];
+            $matchedClient = CrmClient::where('company_name', 'like', "%{$name}%")
+                ->orWhere('contact_person', 'like', "%{$name}%")
+                ->select('id', 'company_name', 'contact_person', 'stage')
+                ->first();
+
+            if (!$matchedClient) {
+                $suggestions = CrmClient::where('company_name', 'like', "%{$name}%")
+                    ->orWhere('contact_person', 'like', "%{$name}%")
+                    ->select('id', 'company_name', 'contact_person')
+                    ->limit(5)
+                    ->get()
+                    ->map(fn($c) => ['id' => $c->id, 'display' => $c->company_name ?: $c->contact_person])
+                    ->values();
+            }
+        }
+
+        $parsed['matched_client']     = $matchedClient ? [
+            'id'      => $matchedClient->id,
+            'display' => $matchedClient->company_name ?: $matchedClient->contact_person,
+        ] : null;
+        $parsed['client_suggestions'] = $suggestions;
+
+        return response()->json($parsed);
+    }
+
+    // ── AI quick task capture — save ───────────────────────────────────────
+    public function quickCaptureSave(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $request->validate([
+            'crm_client_id'    => 'required|exists:crm_clients,id',
+            'task_description' => 'required|string',
+            'due_date'         => 'nullable|date',
+            'priority'         => 'nullable|in:low,medium,high',
+        ]);
+
+        \App\Models\CrmTask::create([
+            'crm_client_id'    => $request->crm_client_id,
+            'task_description' => $request->task_description,
+            'due_date'         => $request->due_date ?: null,
+            'priority'         => $request->priority ?? 'medium',
+            'status'           => 'pending',
+            'created_by'       => auth()->id(),
+        ]);
+
+        $client = CrmClient::find($request->crm_client_id);
+
+        return response()->json([
+            'success'     => true,
+            'client_name' => $client?->company_name ?: $client?->contact_person,
+            'profile_url' => route('crm.show', $request->crm_client_id),
+        ]);
+    }
+
+    // ── JSON client search for quick task modal ────────────────────────────
+    public function searchJson(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $q = trim($request->input('q', ''));
+        if (strlen($q) < 2) return response()->json([]);
+
+        $clients = CrmClient::where('company_name', 'like', "%{$q}%")
+            ->orWhere('contact_person', 'like', "%{$q}%")
+            ->select('id', 'company_name', 'contact_person')
+            ->limit(6)
+            ->get()
+            ->map(fn($c) => ['id' => $c->id, 'display' => $c->company_name ?: $c->contact_person]);
+
+        return response()->json($clients);
+    }
+
     // ── Upload document ────────────────────────────────────────────────────
     public function uploadDocument(Request $request, CrmClient $crm)
     {

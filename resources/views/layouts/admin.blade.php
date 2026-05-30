@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'BlueArrow Portal')</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
@@ -178,6 +179,296 @@
             @yield('content')
         </main>
     </div>
+
+{{-- ── AI QUICK TASK CAPTURE ─────────────────────────────────────────────── --}}
+<div x-data="quickTask()" x-cloak>
+
+    {{-- Floating button --}}
+    <button @click="open = true" title="Add task by voice or text"
+            class="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-xl flex items-center justify-center transition-all hover:scale-110">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/>
+        </svg>
+    </button>
+
+    {{-- Modal backdrop --}}
+    <div x-show="open" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/50"
+         @click.self="reset()">
+
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg" @click.stop>
+
+            {{-- Header --}}
+            <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
+                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-sm font-bold text-gray-800">Quick task</p>
+                        <p class="text-xs text-gray-400">Speak or type — AI will figure out the rest</p>
+                    </div>
+                </div>
+                <button @click="reset()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+
+            <div class="p-5 space-y-4">
+
+                {{-- Input + mic --}}
+                <div x-show="step === 'input'">
+                    <div class="flex gap-2">
+                        <input type="text" x-model="text" @keydown.enter="parse()"
+                               placeholder="e.g. Call Prince Jewellers about SLA renewal tomorrow"
+                               class="flex-1 px-4 py-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50"
+                               x-ref="textInput">
+
+                        {{-- Mic button --}}
+                        <button type="button" @click="toggleMic()"
+                                :class="listening ? 'bg-red-500 hover:bg-red-600 animate-pulse' : 'bg-gray-100 hover:bg-gray-200'"
+                                class="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 transition"
+                                :title="listening ? 'Listening… click to stop' : 'Click to speak'">
+                            <svg class="w-5 h-5" :class="listening ? 'text-white' : 'text-gray-600'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <p x-show="listening" class="text-xs text-red-500 mt-1 animate-pulse">● Listening… speak now</p>
+                    <p x-show="!listening && !text" class="text-xs text-gray-400 mt-1">Try: "Follow up with Ahmed Al Rashidi next Monday" or "Send quotation to Prince Jewellers urgent"</p>
+
+                    <button @click="parse()" :disabled="!text.trim() || parsing"
+                            class="mt-3 w-full py-2.5 text-sm font-semibold text-white bg-blue-600 rounded-xl hover:bg-blue-700 disabled:opacity-40 transition flex items-center justify-center gap-2">
+                        <svg x-show="parsing" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
+                        <span x-text="parsing ? 'Understanding…' : 'Parse task'"></span>
+                    </button>
+
+                    <p x-show="error" class="text-xs text-red-600 mt-2" x-text="error"></p>
+                </div>
+
+                {{-- Confirmation card --}}
+                <div x-show="step === 'confirm'" class="space-y-4">
+
+                    {{-- Client --}}
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 mb-1">CLIENT</label>
+                        <template x-if="parsed.matched_client">
+                            <div class="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-xl">
+                                <div class="flex items-center gap-2">
+                                    <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                    <span class="text-sm font-semibold text-gray-800" x-text="parsed.matched_client.display"></span>
+                                </div>
+                                <button @click="parsed.matched_client = null; parsed.client_suggestions = []" class="text-xs text-gray-400 hover:text-gray-600">Change</button>
+                            </div>
+                        </template>
+                        <template x-if="!parsed.matched_client">
+                            <div class="space-y-2">
+                                <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-700">
+                                    <span x-show="parsed.client_name">Couldn't find "<span x-text="parsed.client_name"></span>" — </span>pick from list or type below:
+                                </div>
+                                <template x-if="parsed.client_suggestions && parsed.client_suggestions.length">
+                                    <div class="space-y-1">
+                                        <template x-for="s in parsed.client_suggestions" :key="s.id">
+                                            <button @click="parsed.matched_client = s; selectedClientId = s.id"
+                                                    class="w-full text-left px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition"
+                                                    x-text="s.display"></button>
+                                        </template>
+                                    </div>
+                                </template>
+                                <input type="text" placeholder="Search client name…" @input.debounce.300ms="searchClients($event.target.value)"
+                                       class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <div x-show="clientResults.length" class="space-y-1">
+                                    <template x-for="c in clientResults" :key="c.id">
+                                        <button @click="parsed.matched_client = c; parsed.client_suggestions = []; clientResults = []"
+                                                class="w-full text-left px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg hover:bg-blue-50 transition"
+                                                x-text="c.display"></button>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+
+                    {{-- Task description --}}
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 mb-1">TASK</label>
+                        <input type="text" x-model="parsed.task"
+                               class="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+
+                    {{-- Due date + Priority --}}
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 mb-1">DUE DATE</label>
+                            <input type="date" x-model="parsed.due_date"
+                                   class="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 mb-1">PRIORITY</label>
+                            <select x-model="parsed.priority"
+                                    class="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                                <option value="low">Low</option>
+                                <option value="medium">Medium</option>
+                                <option value="high">High</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-2 pt-1">
+                        <button @click="save()" :disabled="!parsed.matched_client || !parsed.task || saving"
+                                class="flex-1 py-2.5 text-sm font-semibold text-white bg-blue-600 rounded-xl hover:bg-blue-700 disabled:opacity-40 transition flex items-center justify-center gap-2">
+                            <svg x-show="saving" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
+                            <span x-text="saving ? 'Saving…' : 'Add task'"></span>
+                        </button>
+                        <button @click="step = 'input'" class="px-4 py-2.5 text-sm text-gray-500 bg-gray-100 rounded-xl hover:bg-gray-200 transition">Back</button>
+                    </div>
+                </div>
+
+                {{-- Success state --}}
+                <div x-show="step === 'done'" class="text-center py-4">
+                    <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                    </div>
+                    <p class="text-sm font-bold text-gray-800">Task added!</p>
+                    <p class="text-xs text-gray-500 mt-1" x-text="'Added to ' + savedClient"></p>
+                    <div class="flex gap-2 mt-4">
+                        <a :href="savedUrl" class="flex-1 text-center py-2 text-sm font-medium text-blue-600 border border-blue-200 rounded-xl hover:bg-blue-50 transition">View client →</a>
+                        <button @click="resetForNew()" class="flex-1 py-2 text-sm font-medium text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition">Add another</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function quickTask() {
+    return {
+        open:          false,
+        step:          'input',   // input | confirm | done
+        text:          '',
+        listening:     false,
+        parsing:       false,
+        saving:        false,
+        error:         '',
+        parsed:        {},
+        clientResults: [],
+        savedClient:   '',
+        savedUrl:      '',
+        recognition:   null,
+
+        parseUrl:      '{{ route('tasks.quick-capture') }}',
+        saveUrl:       '{{ route('tasks.quick-capture.save') }}',
+        clientSearch:  '{{ route('crm.index') }}',
+        csrf:          document.querySelector('meta[name="csrf-token"]')?.content,
+
+        init() {
+            // Pre-focus text input when modal opens
+            this.$watch('open', v => { if (v) this.$nextTick(() => this.$refs.textInput?.focus()); });
+        },
+
+        toggleMic() {
+            const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SR) { alert('Voice input is not supported in this browser. Please use Chrome or Edge.'); return; }
+
+            if (this.listening) {
+                this.recognition?.stop();
+                return;
+            }
+
+            this.recognition = new SR();
+            this.recognition.lang = 'en-US';
+            this.recognition.continuous = false;
+            this.recognition.interimResults = false;
+
+            this.recognition.onstart  = () => { this.listening = true; };
+            this.recognition.onend    = () => { this.listening = false; };
+            this.recognition.onerror  = () => { this.listening = false; };
+            this.recognition.onresult = (e) => {
+                this.text = e.results[0][0].transcript;
+                this.listening = false;
+                // Auto-parse after voice input
+                this.$nextTick(() => this.parse());
+            };
+
+            this.recognition.start();
+        },
+
+        async parse() {
+            if (!this.text.trim()) return;
+            this.parsing = true;
+            this.error   = '';
+            try {
+                const res  = await fetch(this.parseUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': this.csrf },
+                    body: JSON.stringify({ text: this.text }),
+                });
+                const data = await res.json();
+                if (!res.ok) { this.error = data.error || 'Failed to parse.'; return; }
+                this.parsed = data;
+                this.step   = 'confirm';
+            } catch(e) {
+                this.error = 'Network error. Please try again.';
+            } finally {
+                this.parsing = false;
+            }
+        },
+
+        async searchClients(q) {
+            if (q.length < 2) { this.clientResults = []; return; }
+            try {
+                const res  = await fetch('{{ route('crm.search') }}?q=' + encodeURIComponent(q), {
+                    headers: { 'X-CSRF-TOKEN': this.csrf }
+                });
+                if (res.ok) this.clientResults = await res.json();
+            } catch(e) { this.clientResults = []; }
+        },
+
+        async save() {
+            if (!this.parsed.matched_client || !this.parsed.task) return;
+            this.saving = true;
+            try {
+                const res  = await fetch(this.saveUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': this.csrf },
+                    body: JSON.stringify({
+                        crm_client_id:    this.parsed.matched_client.id,
+                        task_description: this.parsed.task,
+                        due_date:         this.parsed.due_date || null,
+                        priority:         this.parsed.priority || 'medium',
+                    }),
+                });
+                const data = await res.json();
+                if (!res.ok || !data.success) { this.error = data.error || 'Failed to save.'; this.step = 'confirm'; return; }
+                this.savedClient = data.client_name;
+                this.savedUrl    = data.profile_url;
+                this.step        = 'done';
+            } catch(e) {
+                this.error = 'Network error.';
+            } finally {
+                this.saving = false;
+            }
+        },
+
+        reset() {
+            this.open = false;
+            setTimeout(() => {
+                this.step = 'input'; this.text = ''; this.error = '';
+                this.parsed = {}; this.clientResults = []; this.saving = false; this.parsing = false;
+            }, 300);
+        },
+
+        resetForNew() {
+            this.step = 'input'; this.text = ''; this.error = '';
+            this.parsed = {}; this.clientResults = [];
+            this.$nextTick(() => this.$refs.textInput?.focus());
+        },
+    };
+}
+</script>
 
 </body>
 </html>
