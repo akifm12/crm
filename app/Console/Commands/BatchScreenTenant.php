@@ -14,6 +14,7 @@ class BatchScreenTenant extends Command
                             {tenant : Tenant slug}
                             {--limit=50 : Number of clients to screen in this run}
                             {--offset=0 : Skip this many clients (for batching)}
+                            {--sleep=2 : Seconds to pause between each client (reduces API timeouts)}
                             {--all : Include already-screened clients (re-screen)}
                             {--dry-run : Show what would be screened without calling the API}';
 
@@ -63,9 +64,10 @@ class BatchScreenTenant extends Command
         }
         $this->newLine();
 
-        $pass = 0;
-        $fail = 0;
-        $bar  = $this->output->createProgressBar($clients->count());
+        $pass  = 0;
+        $fail  = 0;
+        $sleep = max(0, (int) $this->option('sleep'));
+        $bar   = $this->output->createProgressBar($clients->count());
         $bar->start();
 
         foreach ($clients as $client) {
@@ -103,6 +105,7 @@ class BatchScreenTenant extends Command
                 $this->newLine();
                 $this->warn("  FAILED: {$client->displayName()} — " . ($result['error'] ?? 'unknown error'));
                 $fail++;
+                if ($sleep > 0) sleep($sleep);
                 $bar->advance();
                 continue;
             }
@@ -176,6 +179,7 @@ class BatchScreenTenant extends Command
             ]);
 
             $pass++;
+            if ($sleep > 0) sleep($sleep);
             $bar->advance();
         }
 
