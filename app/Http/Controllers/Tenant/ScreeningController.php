@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Tenant;
 
 use App\Http\Controllers\Controller;
 use App\Models\BullionClient;
+use App\Models\ScreeningLog;
 use App\Services\SentinelService;
 use Illuminate\Http\Request;
 
@@ -18,14 +19,28 @@ class ScreeningController extends Controller
     {
         $tenant = app('tenant');
 
-        // Pre-load client if passed from profile page
         $client = null;
         if ($request->filled('client')) {
-            $client = BullionClient::where('tenant_id', $tenant->id)
-                ->find($request->client);
+            $client = BullionClient::where('tenant_id', $tenant->id)->find($request->client);
         }
 
-        return view('tenant.screening', compact('tenant', 'client'));
+        $logsQuery = ScreeningLog::where('tenant_id', $tenant->id)
+            ->with(['client', 'screener'])
+            ->latest();
+
+        if ($request->filled('search')) {
+            $logsQuery->where('query', 'like', '%' . $request->search . '%');
+        }
+        if ($request->filled('status')) {
+            $logsQuery->where('status', $request->status);
+        }
+        if ($request->filled('source')) {
+            $logsQuery->where('source', $request->source);
+        }
+
+        $logs = $logsQuery->paginate(20)->withQueryString();
+
+        return view('tenant.screening', compact('tenant', 'client', 'logs'));
     }
 
     // ── Run ad-hoc screening ───────────────────────────────────────────────
@@ -60,9 +75,10 @@ class ScreeningController extends Controller
             return back()->with('error', 'Screening failed: ' . $result['error'])->withInput();
         }
 
-        $summary = SentinelService::summarise($result['data']);
+        $summary   = SentinelService::summarise($result['data']);
+        $reference = 'SCR-' . strtoupper(substr(md5($query . now()), 0, 8));
 
-        // If linked to a client, save the result
+        // If linked to a client, save the result to their profile
         $client = null;
         if ($request->filled('client_id')) {
             $client = BullionClient::where('tenant_id', $tenant->id)->find($request->client_id);
@@ -70,11 +86,28 @@ class ScreeningController extends Controller
                 $client->update([
                     'screening_status'    => $summary['status'],
                     'screening_date'      => now(),
-                    'screening_reference' => 'SCR-' . strtoupper(substr(md5($query . now()), 0, 8)),
+                    'screening_reference' => $reference,
                     'screening_result'    => $summary,
                 ]);
             }
         }
+
+        // Always log to screening history
+        ScreeningLog::create([
+            'tenant_id'         => $tenant->id,
+            'bullion_client_id' => $client?->id,
+            'screened_by'       => auth()->id(),
+            'query'             => $query,
+            'entity_type'       => $type,
+            'status'            => $summary['status'],
+            'total_hits'        => $summary['total_hits'],
+            'source'            => 'adhoc',
+            'reference'         => $reference,
+            'result'            => $summary,
+        ]);
+
+        $logs = ScreeningLog::where('tenant_id', $tenant->id)
+            ->with(['client', 'screener'])->latest()->paginate(20);
 
         return view('tenant.screening', [
             'tenant'  => $tenant,
@@ -82,10 +115,9 @@ class ScreeningController extends Controller
             'result'  => $summary,
             'query'   => $query,
             'rawData' => $result['data'],
+            'logs'    => $logs,
         ]);
     }
-
-    // ── Screen a client directly from their profile ────────────────────────
 
     // ── Screen a single subject (AJAX) ────────────────────────────────────
     public function screenSubject(Request $request, string $slug, BullionClient $client)
@@ -105,7 +137,6 @@ class ScreeningController extends Controller
                 'date_of_issue'    => $client->trade_license_issue?->format('Y-m-d') ?? '',
             ]);
         } else {
-            // Individual (shareholder) — find by name
             $sh = $client->shareholders()->where('name', $name)->first();
             $result = $this->sentinel->screenIndividual([
                 'query'       => (string) $name,
@@ -129,22 +160,37 @@ class ScreeningController extends Controller
         $tenant = app('tenant');
         abort_if($client->tenant_id !== $tenant->id, 404);
 
-        $allResults = $request->input('all_results', []);
-        $hasMatch   = collect($allResults)->contains(fn($r) => ($r['summary']['status'] ?? '') === 'match');
+        $allResults   = $request->input('all_results', []);
+        $hasMatch     = collect($allResults)->contains(fn($r) => ($r['summary']['status'] ?? '') === 'match');
         $shareholders = array_values(array_filter($allResults, fn($r) => $r['role'] !== 'Company'));
+        $reference    = 'SCR-' . strtoupper(substr(md5($client->displayName() . now()), 0, 8));
+        $totalHits    = collect($allResults)->sum(fn($r) => $r['summary']['total_hits'] ?? 0);
 
         $client->update([
             'screening_status'    => $hasMatch ? 'match' : 'clear',
             'screening_date'      => now(),
-            'screening_reference' => 'SCR-' . strtoupper(substr(md5($client->displayName() . now()), 0, 8)),
+            'screening_reference' => $reference,
             'screening_result'    => [
-                'status'          => $hasMatch ? 'match' : 'clear',
-                'total_hits'      => collect($allResults)->sum(fn($r) => $r['summary']['total_hits'] ?? 0),
-                'hits'            => $allResults[0]['summary']['hits'] ?? [],
-                'shareholders'    => $shareholders,
-                'all_results'     => $allResults,
-                'screened_count'  => count($allResults),
+                'status'         => $hasMatch ? 'match' : 'clear',
+                'total_hits'     => $totalHits,
+                'hits'           => $allResults[0]['summary']['hits'] ?? [],
+                'shareholders'   => $shareholders,
+                'all_results'    => $allResults,
+                'screened_count' => count($allResults),
             ],
+        ]);
+
+        ScreeningLog::create([
+            'tenant_id'         => $tenant->id,
+            'bullion_client_id' => $client->id,
+            'screened_by'       => auth()->id(),
+            'query'             => $client->displayName(),
+            'entity_type'       => $client->client_type === 'individual' ? 'individual' : 'entity',
+            'status'            => $hasMatch ? 'match' : 'clear',
+            'total_hits'        => $totalHits,
+            'source'            => 'kyc',
+            'reference'         => $reference,
+            'result'            => ['all_results' => $allResults],
         ]);
 
         return response()->json(['success' => true, 'status' => $hasMatch ? 'match' : 'clear', 'tab' => 'screening']);
@@ -155,12 +201,10 @@ class ScreeningController extends Controller
         $tenant = app('tenant');
         abort_if($client->tenant_id !== $tenant->id, 404);
 
-        // Force fresh load to avoid cached empty relationship
-        $client = BullionClient::with('shareholders')->find($client->id);
+        $client      = BullionClient::with('shareholders')->find($client->id);
         $isCorporate = $client->client_type !== 'individual';
         $allResults  = [];
 
-        // ── Screen main entity / individual ──────────────────────────────
         if ($isCorporate) {
             $result = $this->sentinel->screenEntity([
                 'query'            => (string) $client->company_name,
@@ -189,7 +233,6 @@ class ScreeningController extends Controller
             'summary' => $mainSummary,
         ];
 
-        // ── Screen shareholders ──────────────────────────────────────────
         $shareholderResults = [];
         if ($isCorporate && $client->shareholders->count()) {
             foreach ($client->shareholders as $sh) {
@@ -218,21 +261,33 @@ class ScreeningController extends Controller
             }
         }
 
-        // ── Determine overall status ─────────────────────────────────────
-        $hasMatch  = collect($allResults)->contains(fn($r) => $r['summary']['status'] === 'match');
+        $hasMatch      = collect($allResults)->contains(fn($r) => $r['summary']['status'] === 'match');
         $overallStatus = $hasMatch ? 'match' : 'clear';
-        $totalHits = collect($allResults)->sum(fn($r) => $r['summary']['total_hits'] ?? 0);
+        $totalHits     = collect($allResults)->sum(fn($r) => $r['summary']['total_hits'] ?? 0);
+        $reference     = 'SCR-' . strtoupper(substr(md5($client->displayName() . now()), 0, 8));
 
-        // ── Save to client record ────────────────────────────────────────
         $client->update([
             'screening_status'    => $overallStatus,
             'screening_date'      => now(),
-            'screening_reference' => 'SCR-' . strtoupper(substr(md5($client->displayName() . now()), 0, 8)),
+            'screening_reference' => $reference,
             'screening_result'    => array_merge($mainSummary, [
-                'shareholders' => $shareholderResults,
-                'all_results'  => $allResults,
+                'shareholders'   => $shareholderResults,
+                'all_results'    => $allResults,
                 'screened_count' => count($allResults),
             ]),
+        ]);
+
+        ScreeningLog::create([
+            'tenant_id'         => $tenant->id,
+            'bullion_client_id' => $client->id,
+            'screened_by'       => auth()->id(),
+            'query'             => $client->displayName(),
+            'entity_type'       => $isCorporate ? 'entity' : 'individual',
+            'status'            => $overallStatus,
+            'total_hits'        => $totalHits,
+            'source'            => 'kyc',
+            'reference'         => $reference,
+            'result'            => ['all_results' => $allResults],
         ]);
 
         $msg = $hasMatch

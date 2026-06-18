@@ -228,4 +228,126 @@
     </div>
 </div>
 
+{{-- ── SCREENING HISTORY ─────────────────────────────────────────────── --}}
+<div class="mt-8">
+    <div class="bg-white rounded-xl border border-gray-200">
+
+        {{-- Header + filters --}}
+        <div class="px-5 py-4 border-b border-gray-100">
+            <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+                <div class="flex-1">
+                    <h2 class="text-sm font-semibold text-gray-700">Screening history</h2>
+                    <p class="text-xs text-gray-400 mt-0.5">All KYC and ad-hoc screenings in one place</p>
+                </div>
+                <form method="GET" action="{{ route('tenant.screening', $tenant->slug) }}"
+                      class="flex flex-wrap gap-2 items-center">
+                    <input type="text" name="search" value="{{ request('search') }}"
+                           placeholder="Search by name..."
+                           class="px-3 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-44">
+                    <select name="status"
+                            class="px-3 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">All statuses</option>
+                        <option value="clear"  {{ request('status') === 'clear'  ? 'selected' : '' }}>Clear</option>
+                        <option value="match"  {{ request('status') === 'match'  ? 'selected' : '' }}>Match</option>
+                    </select>
+                    <select name="source"
+                            class="px-3 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">All sources</option>
+                        <option value="adhoc" {{ request('source') === 'adhoc' ? 'selected' : '' }}>Ad-hoc</option>
+                        <option value="kyc"   {{ request('source') === 'kyc'   ? 'selected' : '' }}>KYC</option>
+                    </select>
+                    <button type="submit"
+                            class="px-3 py-1.5 text-xs font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                        Filter
+                    </button>
+                    @if(request('search') || request('status') || request('source'))
+                    <a href="{{ route('tenant.screening', $tenant->slug) }}"
+                       class="px-3 py-1.5 text-xs text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
+                        Clear
+                    </a>
+                    @endif
+                </form>
+            </div>
+        </div>
+
+        @if(isset($logs) && $logs->isEmpty())
+        <div class="px-5 py-12 text-center text-sm text-gray-400">
+            No screenings recorded yet. Run a screening above to start building history.
+        </div>
+        @elseif(isset($logs))
+
+        {{-- Log table --}}
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="text-left text-xs text-gray-500 bg-gray-50 border-b border-gray-100">
+                        <th class="px-5 py-3 font-medium">Date</th>
+                        <th class="px-4 py-3 font-medium">Name screened</th>
+                        <th class="px-4 py-3 font-medium">Client</th>
+                        <th class="px-4 py-3 font-medium">Type</th>
+                        <th class="px-4 py-3 font-medium">Source</th>
+                        <th class="px-4 py-3 font-medium">Status</th>
+                        <th class="px-4 py-3 font-medium">Hits</th>
+                        <th class="px-4 py-3 font-medium">Reference</th>
+                        <th class="px-4 py-3 font-medium">By</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    @foreach($logs as $log)
+                    <tr class="hover:bg-gray-50 transition">
+                        <td class="px-5 py-3 text-xs text-gray-500 whitespace-nowrap">
+                            {{ $log->created_at->format('d M Y') }}<br>
+                            <span class="text-gray-400">{{ $log->created_at->format('H:i') }}</span>
+                        </td>
+                        <td class="px-4 py-3 font-medium text-gray-800 max-w-[200px] truncate">
+                            {{ $log->query }}
+                        </td>
+                        <td class="px-4 py-3 text-xs text-gray-500">
+                            @if($log->client)
+                            <a href="{{ route('tenant.clients.show', [$tenant->slug, $log->client->id]) }}"
+                               class="text-blue-600 hover:underline">
+                                {{ $log->client->displayName() }}
+                            </a>
+                            @else
+                            <span class="text-gray-400">—</span>
+                            @endif
+                        </td>
+                        <td class="px-4 py-3 text-xs text-gray-500 capitalize">{{ $log->entity_type }}</td>
+                        <td class="px-4 py-3">
+                            <span class="text-xs px-2 py-0.5 rounded-full font-medium
+                                {{ $log->source === 'kyc' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700' }}">
+                                {{ $log->source === 'kyc' ? 'KYC' : 'Ad-hoc' }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3">
+                            <span class="text-xs px-2 py-0.5 rounded-full font-medium {{ $log->statusBadge() }}">
+                                {{ ucfirst($log->status) }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 text-xs text-gray-500">
+                            {{ $log->total_hits > 0 ? $log->total_hits : '—' }}
+                        </td>
+                        <td class="px-4 py-3 text-xs text-gray-400 font-mono">
+                            {{ $log->reference ?? '—' }}
+                        </td>
+                        <td class="px-4 py-3 text-xs text-gray-500">
+                            {{ $log->screener?->name ?? '—' }}
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+
+        {{-- Pagination --}}
+        @if($logs->hasPages())
+        <div class="px-5 py-3 border-t border-gray-100">
+            {{ $logs->links() }}
+        </div>
+        @endif
+
+        @endif
+    </div>
+</div>
+
 @endsection
