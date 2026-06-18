@@ -12,6 +12,8 @@ class BatchScreenTenant extends Command
 {
     protected $signature = 'screening:batch
                             {tenant : Tenant slug}
+                            {--limit=50 : Number of clients to screen in this run}
+                            {--offset=0 : Skip this many clients (for batching)}
                             {--all : Include already-screened clients (re-screen)}
                             {--dry-run : Show what would be screened without calling the API}';
 
@@ -32,14 +34,19 @@ class BatchScreenTenant extends Command
             return 1;
         }
 
+        $limit  = (int) $this->option('limit');
+        $offset = (int) $this->option('offset');
+
         $query = BullionClient::where('tenant_id', $tenant->id)
-            ->where('status', '!=', 'inactive');
+            ->where('status', '!=', 'inactive')
+            ->orderBy('id');
 
         if (!$this->option('all')) {
             $query->whereNull('screening_date');
         }
 
-        $clients = $query->with('shareholders')->get();
+        $total   = $query->count();
+        $clients = $query->with('shareholders')->skip($offset)->take($limit)->get();
 
         if ($clients->isEmpty()) {
             $this->info('No clients to screen' . ($this->option('all') ? '' : ' (all already screened — use --all to re-screen') . '.');
@@ -49,7 +56,11 @@ class BatchScreenTenant extends Command
         $dryRun = $this->option('dry-run');
 
         $this->info("Tenant: {$tenant->name}");
-        $this->info("Clients to screen: {$clients->count()}" . ($dryRun ? ' [dry-run]' : ''));
+        $this->info("Total unscreened: {$total} | This batch: {$clients->count()} (offset {$offset})" . ($dryRun ? ' [dry-run]' : ''));
+        $remaining = $total - $offset - $clients->count();
+        if ($remaining > 0) {
+            $this->info("Remaining after this batch: {$remaining} — next run: --offset=" . ($offset + $limit));
+        }
         $this->newLine();
 
         $pass = 0;
