@@ -180,18 +180,21 @@ class ScreeningController extends Controller
             ],
         ]);
 
-        ScreeningLog::create([
-            'tenant_id'         => $tenant->id,
-            'bullion_client_id' => $client->id,
-            'screened_by'       => auth()->id(),
-            'query'             => $client->displayName(),
-            'entity_type'       => $client->client_type === 'individual' ? 'individual' : 'entity',
-            'status'            => $hasMatch ? 'match' : 'clear',
-            'total_hits'        => $totalHits,
-            'source'            => 'kyc',
-            'reference'         => $reference,
-            'result'            => ['all_results' => $allResults],
-        ]);
+        // Log one row per subject screened
+        foreach ($allResults as $r) {
+            ScreeningLog::create([
+                'tenant_id'         => $tenant->id,
+                'bullion_client_id' => $client->id,
+                'screened_by'       => auth()->id(),
+                'query'             => $r['name'] ?? $client->displayName(),
+                'entity_type'       => ($r['role'] ?? '') === 'Company' ? 'entity' : 'individual',
+                'status'            => $r['summary']['status'] ?? 'clear',
+                'total_hits'        => $r['summary']['total_hits'] ?? 0,
+                'source'            => 'kyc',
+                'reference'         => $reference,
+                'result'            => $r['summary'] ?? [],
+            ]);
+        }
 
         return response()->json(['success' => true, 'status' => $hasMatch ? 'match' : 'clear', 'tab' => 'screening']);
     }
@@ -277,18 +280,21 @@ class ScreeningController extends Controller
             ]),
         ]);
 
-        ScreeningLog::create([
-            'tenant_id'         => $tenant->id,
-            'bullion_client_id' => $client->id,
-            'screened_by'       => auth()->id(),
-            'query'             => $client->displayName(),
-            'entity_type'       => $isCorporate ? 'entity' : 'individual',
-            'status'            => $overallStatus,
-            'total_hits'        => $totalHits,
-            'source'            => 'kyc',
-            'reference'         => $reference,
-            'result'            => ['all_results' => $allResults],
-        ]);
+        // Log one row per subject screened
+        foreach ($allResults as $r) {
+            ScreeningLog::create([
+                'tenant_id'         => $tenant->id,
+                'bullion_client_id' => $client->id,
+                'screened_by'       => auth()->id(),
+                'query'             => $r['name'] ?? $client->displayName(),
+                'entity_type'       => ($r['role'] ?? '') === 'Company' ? 'entity' : 'individual',
+                'status'            => $r['summary']['status'] ?? 'clear',
+                'total_hits'        => $r['summary']['total_hits'] ?? 0,
+                'source'            => 'kyc',
+                'reference'         => $reference,
+                'result'            => $r['summary'] ?? [],
+            ]);
+        }
 
         $msg = $hasMatch
             ? "⚠️ Screening complete — {$totalHits} potential match(es) found across " . count($allResults) . " subject(s). Review required."
