@@ -469,6 +469,7 @@ function waManager() {
             try {
                 const r = await fetch('/whatsapp/api/status');
                 this.status = await r.json();
+                console.log('[WA status]', JSON.stringify(this.status));
             } catch(e) { this.status = {error: e.message}; }
             this.statusLoading = false;
         },
