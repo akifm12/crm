@@ -98,10 +98,14 @@
                 </div>
             </div>
             <div class="mt-4 pt-4 border-t border-gray-100">
-                <p class="text-xs text-gray-400 leading-relaxed">
+                <p class="text-xs text-gray-400 leading-relaxed mb-2">
                     Do not open WhatsApp Web on the same number — it will break the session.
                     Use this dashboard to manage all messages and schedules.
                 </p>
+                <details class="mt-2">
+                    <summary class="text-xs text-gray-400 cursor-pointer hover:text-gray-600">Raw API response (debug)</summary>
+                    <pre class="mt-1 text-xs bg-gray-50 rounded p-2 overflow-auto max-h-48 text-gray-600" x-text="JSON.stringify(status, null, 2)"></pre>
+                </details>
             </div>
         </div>
     </div>
