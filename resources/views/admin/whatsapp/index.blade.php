@@ -169,41 +169,94 @@
         </div>
     </div>
 
+    {{-- ── CONTACTS TAB ─────────────────────────────────────────────────── --}}
+    <div x-show="tab === 'contacts'">
+        <div class="flex items-center justify-between mb-5">
+            <div class="flex items-center gap-3">
+                <input x-model="contactsFilter" type="text" placeholder="Search contacts…"
+                       class="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-56">
+                <span class="text-xs font-semibold bg-green-100 text-green-700 px-2 py-0.5 rounded-full"
+                      x-text="filteredContacts.length + ' contacts'"></span>
+            </div>
+            <button @click="fetchContacts()"
+                    class="px-3 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 flex items-center gap-2">
+                ↻ Refresh
+            </button>
+        </div>
+
+        <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div x-show="contactsLoading" class="text-center py-12 text-gray-400 text-sm">Loading contacts…</div>
+            <div x-show="!contactsLoading && filteredContacts.length === 0" class="text-center py-12 text-gray-400 text-sm">
+                No contacts synced yet. Contacts load automatically when WhatsApp connects.
+            </div>
+            <table x-show="!contactsLoading && filteredContacts.length > 0" class="w-full text-sm">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Name</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Phone</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    <template x-for="c in filteredContacts" :key="c.id">
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-3 font-medium text-gray-800" x-text="c.name"></td>
+                            <td class="px-4 py-3 text-gray-500 font-mono text-xs" x-text="'+' + c.phone"></td>
+                            <td class="px-4 py-3">
+                                <button @click="sendSelected = [c.id]; sendFilter = c.name; tab = 'send'"
+                                        class="text-xs text-blue-600 hover:underline">Message</button>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
     {{-- ── SEND TAB ─────────────────────────────────────────────────────── --}}
     <div x-show="tab === 'send'" class="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
-        {{-- Group picker --}}
+        {{-- Recipient picker (groups + contacts) --}}
         <div class="bg-white rounded-xl border border-gray-200 p-5">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-sm font-semibold text-gray-700">Select groups</h3>
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="text-sm font-semibold text-gray-700">Select recipients</h3>
                 <span x-show="sendSelected.length > 0"
                       class="text-xs font-semibold bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full"
                       x-text="sendSelected.length + ' selected'"></span>
             </div>
 
-            <div x-show="groups.length === 0" class="text-sm text-gray-400">
-                No groups loaded — go to Groups tab and refresh.
+            <input x-model="sendFilter" type="text" placeholder="Search groups or contacts…"
+                   class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-3">
+
+            <div x-show="allRecipients.length === 0" class="text-sm text-gray-400">
+                No groups or contacts — connect WhatsApp and refresh.
             </div>
 
             <div class="space-y-1.5 max-h-96 overflow-y-auto">
-                <template x-for="g in groups" :key="g.id">
+                <template x-for="r in filteredRecipients" :key="r.id">
                     <label class="flex items-center gap-3 p-2.5 rounded-lg cursor-pointer transition border"
-                           :class="sendSelected.includes(g.id) ? 'bg-green-50 border-green-200' : 'hover:bg-gray-50 border-transparent'">
-                        <input type="checkbox" :value="g.id"
-                               :checked="sendSelected.includes(g.id)"
-                               @change="toggleSendGroup(g.id)"
+                           :class="sendSelected.includes(r.id) ? 'bg-green-50 border-green-200' : 'hover:bg-gray-50 border-transparent'">
+                        <input type="checkbox" :checked="sendSelected.includes(r.id)"
+                               @change="toggleSendGroup(r.id)"
                                class="rounded border-gray-300 text-green-600">
                         <div class="flex-1 min-w-0">
-                            <p class="text-sm font-medium text-gray-800 truncate" x-text="g.name"></p>
-                            <p class="text-xs text-gray-400" x-text="g.members + ' members'"></p>
+                            <p class="text-sm font-medium text-gray-800 truncate" x-text="r.name"></p>
+                            <p class="text-xs text-gray-400"
+                               x-text="r._type === 'group' ? r.members + ' members' : '+' + r.phone"></p>
                         </div>
+                        <span class="text-xs px-1.5 py-0.5 rounded flex-shrink-0"
+                              :class="r._type === 'group' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'"
+                              x-text="r._type === 'group' ? 'Group' : 'Contact'"></span>
                     </label>
                 </template>
             </div>
 
             <div class="mt-3 pt-3 border-t border-gray-100 flex gap-2">
-                <button @click="sendSelected = groups.map(g => g.id)"
+                <button @click="sendSelected = allRecipients.map(r => r.id)"
                         class="text-xs text-blue-600 hover:underline">Select all</button>
+                <span class="text-gray-300">|</span>
+                <button @click="sendSelected = groups.map(g => g.id)"
+                        class="text-xs text-gray-500 hover:underline">Groups only</button>
                 <span class="text-gray-300">|</span>
                 <button @click="sendSelected = []"
                         class="text-xs text-gray-500 hover:underline">Clear</button>
@@ -417,6 +470,7 @@ function waManager() {
         tabs: [
             {id:'connection', label:'Connection'},
             {id:'groups',     label:'Groups'},
+            {id:'contacts',   label:'Contacts'},
             {id:'send',       label:'Send Message'},
             {id:'schedules',  label:'Schedules'},
             {id:'logs',       label:'Activity Log'},
@@ -433,8 +487,14 @@ function waManager() {
         groupsFilter: '',
         groupsRefreshing: false,
 
+        // Contacts
+        contacts: [],
+        contactsLoading: true,
+        contactsFilter: '',
+
         // Send
         sendSelected: [],
+        sendFilter: '',
         sendMessage: '',
         sending: false,
         sendResult: null,
@@ -459,8 +519,28 @@ function waManager() {
             return this.groups.filter(g => g.name?.toLowerCase().includes(q));
         },
 
+        get filteredContacts() {
+            if (!this.contactsFilter) return this.contacts;
+            const q = this.contactsFilter.toLowerCase();
+            return this.contacts.filter(c => c.name?.toLowerCase().includes(q) || c.phone?.includes(q));
+        },
+
+        // Combined recipients (groups + contacts) for Send tab
+        get allRecipients() {
+            return [
+                ...this.groups.map(g => ({...g, _type: 'group'})),
+                ...this.contacts.map(c => ({...c, _type: 'contact'})),
+            ];
+        },
+
+        get filteredRecipients() {
+            if (!this.sendFilter) return this.allRecipients;
+            const q = this.sendFilter.toLowerCase();
+            return this.allRecipients.filter(r => r.name?.toLowerCase().includes(q) || r.phone?.includes(q));
+        },
+
         async init() {
-            await Promise.all([this.fetchStatus(), this.fetchGroups(), this.fetchSchedules(), this.fetchLogs()]);
+            await Promise.all([this.fetchStatus(), this.fetchGroups(), this.fetchContacts(), this.fetchSchedules(), this.fetchLogs()]);
             setInterval(() => this.fetchStatus(), 5000);
             setInterval(() => this.fetchLogs(), 10000);
         },
@@ -481,6 +561,15 @@ function waManager() {
                 this.groups = Array.isArray(d) ? d : [];
             } catch {}
             this.groupsLoading = false;
+        },
+
+        async fetchContacts() {
+            try {
+                const r = await fetch('/whatsapp/api/contacts');
+                const d = await r.json();
+                this.contacts = Array.isArray(d) ? d : [];
+            } catch {}
+            this.contactsLoading = false;
         },
 
         async refreshGroups() {

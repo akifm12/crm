@@ -120,6 +120,7 @@ Route::middleware(['auth', \App\Http\Middleware\EnsureAdminUser::class])->group(
     Route::get('/whatsapp/api/status',               [WhatsAppController::class, 'status'])->name('wa.status');
     Route::get('/whatsapp/api/groups',               [WhatsAppController::class, 'groups'])->name('wa.groups');
     Route::post('/whatsapp/api/groups/refresh',      [WhatsAppController::class, 'refreshGroups'])->name('wa.groups.refresh');
+    Route::get('/whatsapp/api/contacts',             [WhatsAppController::class, 'contacts'])->name('wa.contacts');
     Route::get('/whatsapp/api/schedules',            [WhatsAppController::class, 'schedules'])->name('wa.schedules');
     Route::post('/whatsapp/api/schedules',           [WhatsAppController::class, 'addSchedule'])->name('wa.schedules.add');
     Route::put('/whatsapp/api/schedules/{id}',      [WhatsAppController::class, 'updateSchedule'])->name('wa.schedules.update');

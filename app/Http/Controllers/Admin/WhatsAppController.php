@@ -122,6 +122,13 @@ class WhatsAppController extends Controller
         );
     }
 
+    public function contacts()
+    {
+        return $this->retryWithFreshSession(fn($http) =>
+            $http->get("{$this->baseUrl}/api/contacts")
+        );
+    }
+
     public function refreshGroups()
     {
         return $this->retryWithFreshSession(fn($http) =>
