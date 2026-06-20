@@ -63,6 +63,25 @@
                 <p class="text-xs text-amber-600 mt-2">QR refreshes every 20 seconds</p>
             </div>
 
+            {{-- Waiting for QR after reconnect --}}
+            <div x-show="!status?.isReady && !status?.qrImage && waitingForQr" class="mb-4 text-center">
+                <div class="inline-flex flex-col items-center gap-3 p-6 bg-blue-50 border border-blue-200 rounded-xl">
+                    <svg class="animate-spin w-6 h-6 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                    </svg>
+                    <p class="text-sm text-blue-700 font-medium">Waiting for QR code…</p>
+                    <p class="text-xs text-blue-500">This can take 5–15 seconds</p>
+                </div>
+            </div>
+
+            {{-- Prompt to reconnect --}}
+            <div x-show="!status?.isReady && !status?.qrImage && !waitingForQr" class="mb-4">
+                <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-700">
+                    Not connected — click <strong>Reconnect</strong> below to generate a QR code.
+                </div>
+            </div>
+
             <div class="flex gap-2 flex-wrap">
                 <button @click="fetchStatus()" class="px-3 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50">
                     ↻ Refresh
@@ -406,6 +425,7 @@ function waManager() {
         // Connection
         status: null,
         statusLoading: true,
+        waitingForQr: false,
 
         // Groups
         groups: [],
@@ -493,7 +513,16 @@ function waManager() {
         async reconnect() {
             await fetch('/whatsapp/api/reconnect', {method:'POST'});
             this.toast('Reconnecting…', 'info');
-            setTimeout(() => this.fetchStatus(), 3000);
+            this.waitingForQr = true;
+            let polls = 0;
+            const fastPoll = setInterval(async () => {
+                await this.fetchStatus();
+                polls++;
+                if (polls >= 30 || this.status?.isReady || this.status?.qrImage) {
+                    clearInterval(fastPoll);
+                    this.waitingForQr = false;
+                }
+            }, 2000);
         },
 
         async disconnect() {
