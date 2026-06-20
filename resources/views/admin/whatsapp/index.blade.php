@@ -3,7 +3,6 @@
 @section('page-title', 'WhatsApp')
 
 @section('content')
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -47,7 +46,6 @@ function Badge({children, color='gray'}){
 function ConnectionTab({addToast}){
     const [status, setStatus]   = useState(null);
     const [loading, setLoading] = useState(true);
-    const qrRef = useRef(null);
     const pollRef = useRef(null);
 
     const fetchStatus = useCallback(async () => {
@@ -55,14 +53,6 @@ function ConnectionTab({addToast}){
             const r = await fetch(`${API}/status`);
             const d = await r.json();
             setStatus(d);
-
-            // Render QR code if available
-            if (d.qrData && qrRef.current) {
-                qrRef.current.innerHTML = '';
-                QRCode.toCanvas ? 
-                    QRCode.toCanvas(qrRef.current, d.qrData, {width:220,margin:2}) :
-                    new QRCode(qrRef.current, {text:d.qrData,width:220,height:220,colorDark:'#0f172a',colorLight:'#fff'});
-            }
         } catch(e) {
             setStatus({error: e.message});
         }
@@ -90,7 +80,7 @@ function ConnectionTab({addToast}){
     };
 
     const isConnected = status?.isReady;
-    const hasQr       = status?.qrData && !isConnected;
+    const hasQr       = status?.qrImage && !isConnected;
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
@@ -112,7 +102,7 @@ function ConnectionTab({addToast}){
                 {hasQr && <div className="mb-4 text-center">
                     <p className="text-xs text-gray-500 mb-3">Open WhatsApp on your phone → Linked Devices → Link a device → scan this code</p>
                     <div className="inline-block p-3 bg-white border-2 border-gray-200 rounded-xl">
-                        <canvas ref={qrRef} />
+                        <img src={status.qrImage} alt="QR code" width={220} height={220} />
                     </div>
                     <p className="text-xs text-amber-600 mt-2">QR code refreshes every 20 seconds</p>
                 </div>}
@@ -144,14 +134,9 @@ function ConnectionTab({addToast}){
                 </div>
                 <div className="mt-4 pt-4 border-t border-gray-100">
                     <p className="text-xs text-gray-400 leading-relaxed">
-                        Do not open WhatsApp Web on the same number linked here — it will break the session. Use this dashboard to manage scheduled messages instead.
+                        Do not open WhatsApp Web on the same number linked here — it will break the session. Use this dashboard to manage all messages and schedules.
                     </p>
                 </div>
-                <a href="https://wa.bluearrow.ae" target="_blank"
-                   className="mt-4 flex items-center justify-between text-sm text-blue-600 hover:underline">
-                    <span>Open standalone WA dashboard</span>
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
-                </a>
             </div>
         </div>
     );

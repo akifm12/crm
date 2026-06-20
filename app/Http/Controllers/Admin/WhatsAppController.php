@@ -168,8 +168,12 @@ class WhatsAppController extends Controller
 
     public function sendImmediate(Request $request)
     {
+        $groupIds = $request->input('groupIds', []);
         return $this->retryWithFreshSession(fn($http) =>
-            $http->post("{$this->baseUrl}/api/send/immediate", $request->all())
+            $http->asForm()->post("{$this->baseUrl}/api/send/immediate", [
+                'message'  => $request->input('message', ''),
+                'groupIds' => is_array($groupIds) ? json_encode($groupIds) : $groupIds,
+            ])
         );
     }
 
