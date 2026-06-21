@@ -13,15 +13,14 @@ use Illuminate\Support\Str;
 class ImportDriveDocs extends Command
 {
     protected $signature = 'drive:import
-                            {tenant    : Tenant slug}
-                            {folder_id : Google Drive folder ID for this tenant}
-                            {--dry-run : Preview matches without downloading anything}
-                            {--threshold=70 : Minimum fuzzy-match score (0-100) to accept a match}
-                            {--skip-existing : Skip clients that already have documents uploaded}';
+                            {tenant      : Tenant slug}
+                            {source_path : Absolute path to the tenant\'s folder on this server}
+                            {--folder=   : Only process this one subfolder name (for testing)}
+                            {--dry-run   : Preview without saving anything}
+                            {--overwrite : Replace files that already exist}
+                            {--threshold=70 : Fuzzy match minimum score (0-100)}';
 
-    protected $description = 'Import client documents from a Google Drive folder into the portal';
-
-    private \Google\Service\Drive $drive;
+    protected $description = 'Import client documents from a local folder into the portal';
 
     public function handle(): int
     {
@@ -32,199 +31,174 @@ class ImportDriveDocs extends Command
             return 1;
         }
 
-        $isDryRun   = $this->option('dry-run');
-        $threshold  = (int) $this->option('threshold');
-        $folderId   = $this->argument('folder_id');
-
-        $this->info($isDryRun ? '🔍 DRY RUN — nothing will be saved' : '🚀 LIVE RUN — files will be downloaded and saved');
-        $this->info("Tenant: {$tenant->name} ({$tenant->slug})");
-        $this->line('');
-
-        // ── Google Drive client ───────────────────────────────────────────
-        $credPath = storage_path('app/google-service-account.json');
-        if (!file_exists($credPath)) {
-            $this->error("Service account key not found at: {$credPath}");
+        $sourcePath = rtrim($this->argument('source_path'), '/\\');
+        if (!is_dir($sourcePath)) {
+            $this->error("Source path not found: {$sourcePath}");
             return 1;
         }
 
-        $client = new \Google\Client();
-        $client->setAuthConfig($credPath);
-        $client->addScope(\Google\Service\Drive::DRIVE_READONLY);
-        $this->drive = new \Google\Service\Drive($client);
+        $isDryRun  = $this->option('dry-run');
+        $overwrite = $this->option('overwrite');
+        $threshold = (int) $this->option('threshold');
+        $onlyFolder = $this->option('folder');
 
-        // ── Load all clients for this tenant ──────────────────────────────
-        $clients = BullionClient::where('tenant_id', $tenant->id)->get();
-        $this->line("Portal clients: {$clients->count()}");
-
-        // ── List numbered subfolders in the Drive folder ──────────────────
-        $subfolders = $this->listFolders($folderId);
-        $this->line("Drive subfolders found: " . count($subfolders));
+        $this->line('');
+        $this->info($isDryRun ? '🔍  DRY RUN — nothing will be saved' : '🚀  LIVE — files will be saved');
+        $this->info("Tenant  : {$tenant->name}");
+        $this->info("Source  : {$sourcePath}");
+        if ($onlyFolder) $this->info("Filter  : {$onlyFolder}");
         $this->line('');
 
-        $matched   = 0;
-        $unmatched = [];
-        $skipped   = 0;
-        $totalDocs = 0;
+        // ── Load clients ──────────────────────────────────────────────────
+        $clients = BullionClient::where('tenant_id', $tenant->id)->get();
 
-        $this->output->progressStart(count($subfolders));
+        // ── Scan subfolders ───────────────────────────────────────────────
+        $subfolders = $this->scanSubfolders($sourcePath, $onlyFolder);
 
-        foreach ($subfolders as $folder) {
-            $rawName    = $folder['name'];
-            $clientName = $this->stripLeadingNumber($rawName);
-
-            // Skip the tenant's own documents folder (folder 0)
-            if (trim($clientName) === '' || $this->isZeroFolder($rawName)) {
-                $this->output->progressAdvance();
-                continue;
-            }
-
-            // Find best matching portal client
-            $match = $this->findBestMatch($clientName, $clients, $threshold, $score);
-
-            if (!$match) {
-                $unmatched[] = ['drive' => $rawName, 'extracted' => $clientName];
-                $this->output->progressAdvance();
-                continue;
-            }
-
-            // Skip if already has documents and --skip-existing
-            if ($this->option('skip-existing')) {
-                $existing = ClientDocument::where('bullion_client_id', $match->id)->count();
-                if ($existing > 0) {
-                    $skipped++;
-                    $this->output->progressAdvance();
-                    continue;
-                }
-            }
-
-            $matched++;
-
-            // List files inside this client folder
-            $files = $this->listFiles($folder['id']);
-            $totalDocs += count($files);
-
-            if ($isDryRun) {
-                $this->output->progressAdvance();
-                $this->line("\n  <fg=green>✓ MATCH ({$score}%)</> \"{$rawName}\"");
-                $this->line("    → {$match->displayName()} (id: {$match->id})");
-                foreach ($files as $f) {
-                    $docType = $this->detectDocType($f['name']);
-                    $this->line("    📄 {$f['name']} → <fg=cyan>{$docType}</>");
-                }
-                continue;
-            }
-
-            // ── Download and store each file ──────────────────────────────
-            foreach ($files as $file) {
-                try {
-                    $docType  = $this->detectDocType($file['name']);
-                    $label    = $this->docTypeLabel($docType, $file['name']);
-                    $ext      = pathinfo($file['name'], PATHINFO_EXTENSION);
-                    $safeName = Str::slug(pathinfo($file['name'], PATHINFO_FILENAME)) . '.' . $ext;
-
-                    $storagePath = "tenants/{$tenant->slug}/clients/{$match->id}/{$safeName}";
-
-                    // Download from Drive
-                    $response = $this->drive->files->get($file['id'], ['alt' => 'media']);
-                    $content  = $response->getBody()->getContents();
-
-                    Storage::put($storagePath, $content);
-
-                    ClientDocument::firstOrCreate(
-                        ['bullion_client_id' => $match->id, 'file_name' => $safeName],
-                        [
-                            'tenant_id'      => $tenant->id,
-                            'document_type'  => $docType,
-                            'document_label' => $label,
-                            'file_path'      => $storagePath,
-                            'mime_type'      => $file['mimeType'] ?? 'application/octet-stream',
-                            'file_size'      => strlen($content),
-                            'uploaded_by'    => null,
-                        ]
-                    );
-                } catch (\Throwable $e) {
-                    $this->newLine();
-                    $this->warn("  ⚠ Failed to import {$file['name']}: {$e->getMessage()}");
-                }
-            }
-
-            $this->output->progressAdvance();
+        if (empty($subfolders)) {
+            $this->warn('No client subfolders found.');
+            return 0;
         }
 
-        $this->output->progressFinish();
-        $this->newLine();
+        $stats = ['matched' => 0, 'unmatched' => 0, 'new' => 0, 'skipped' => 0, 'overwritten' => 0, 'errors' => 0];
+        $unmatched = [];
+
+        foreach ($subfolders as $folderName) {
+            $folderPath = $sourcePath . DIRECTORY_SEPARATOR . $folderName;
+            $clientName = $this->stripLeadingNumber($folderName);
+
+            // Skip folder 0 (tenant's own documents)
+            if ($this->isZeroFolder($folderName)) {
+                $this->line("<fg=gray>  SKIP  0-folder: {$folderName}</>");
+                continue;
+            }
+
+            // Match to portal client
+            $client = $this->findBestMatch($clientName, $clients, $threshold, $score);
+
+            if (!$client) {
+                $stats['unmatched']++;
+                $unmatched[] = $folderName;
+                $this->line("<fg=yellow>  NO MATCH  {$folderName}</>");
+                continue;
+            }
+
+            $stats['matched']++;
+            $tradeLicense = trim($client->trade_license_no ?? '');
+            $storagePath  = $tradeLicense
+                ? "shared/entities/{$tradeLicense}"
+                : "tenants/{$tenant->slug}/clients/{$client->id}";
+
+            $this->line('');
+            $this->line("<fg=green>  ✓ MATCH ({$score}%)  {$folderName}</>");
+            $this->line("    → {$client->displayName()} | storage: {$storagePath}");
+
+            // List files in folder
+            $files = $this->scanFiles($folderPath);
+
+            if (empty($files)) {
+                $this->line("    <fg=gray>(no files)</>");
+                continue;
+            }
+
+            foreach ($files as $fileName) {
+                $filePath = $folderPath . DIRECTORY_SEPARATOR . $fileName;
+                $docType  = $this->detectDocType($fileName);
+                $ext      = pathinfo($fileName, PATHINFO_EXTENSION);
+                $safeName = Str::slug(pathinfo($fileName, PATHINFO_FILENAME)) . ($ext ? '.' . strtolower($ext) : '');
+                $destPath = $storagePath . '/' . $safeName;
+
+                // Check for existing record
+                $existing = ClientDocument::where('bullion_client_id', $client->id)
+                    ->where('tenant_id', $tenant->id)
+                    ->where('file_name', $safeName)
+                    ->first();
+
+                if ($existing && !$overwrite) {
+                    $stats['skipped']++;
+                    $this->line("    <fg=gray>  SKIP  {$fileName} (already exists)</>");
+                    continue;
+                }
+
+                $tag = $existing ? 'OVERWRITE' : 'NEW';
+                $this->line("    <fg=cyan>  {$tag}  {$fileName}  →  {$docType}</>");
+
+                if ($isDryRun) continue;
+
+                // ── Save file ─────────────────────────────────────────────
+                try {
+                    $content = file_get_contents($filePath);
+                    Storage::put($destPath, $content);
+
+                    $attrs = [
+                        'tenant_id'      => $tenant->id,
+                        'document_type'  => $docType,
+                        'document_label' => $this->docTypeLabel($docType, $fileName),
+                        'file_path'      => $destPath,
+                        'file_name'      => $safeName,
+                        'mime_type'      => mime_content_type($filePath) ?: 'application/octet-stream',
+                        'file_size'      => filesize($filePath),
+                        'uploaded_by'    => null,
+                    ];
+
+                    if ($existing) {
+                        $existing->update($attrs);
+                        $stats['overwritten']++;
+                    } else {
+                        ClientDocument::create(array_merge(['bullion_client_id' => $client->id], $attrs));
+                        $stats['new']++;
+                    }
+                } catch (\Throwable $e) {
+                    $stats['errors']++;
+                    $this->warn("    ⚠  Failed: {$e->getMessage()}");
+                }
+            }
+        }
 
         // ── Summary ───────────────────────────────────────────────────────
-        $this->info("── Results " . ($isDryRun ? '(dry run) ' : '') . "──────────────────");
-        $this->line("  Matched:       {$matched}");
-        $this->line("  Skipped:       {$skipped}");
-        $this->line("  Total docs:    {$totalDocs}");
+        $this->line('');
+        $this->info('── Summary ' . ($isDryRun ? '(dry run) ' : '') . str_repeat('─', 30));
+        $this->line("  Matched    : {$stats['matched']}");
+        $this->line("  New docs   : {$stats['new']}");
+        $this->line("  Skipped    : {$stats['skipped']}");
+        $this->line("  Overwritten: {$stats['overwritten']}");
+        $this->line("  Errors     : {$stats['errors']}");
 
         if ($unmatched) {
-            $this->newLine();
-            $this->warn("Unmatched Drive folders (" . count($unmatched) . ") — review and match manually:");
-            foreach ($unmatched as $u) {
-                $this->line("  • {$u['drive']}  →  extracted: \"{$u['extracted']}\"");
-            }
+            $this->line('');
+            $this->warn('Unmatched folders (' . count($unmatched) . '):');
+            foreach ($unmatched as $u) $this->line("  • {$u}");
         }
 
         return 0;
     }
 
-    // ── Google Drive helpers ──────────────────────────────────────────────────
+    // ── Filesystem helpers ────────────────────────────────────────────────────
 
-    private function listFolders(string $parentId): array
+    private function scanSubfolders(string $path, ?string $only): array
     {
-        $results = [];
-        $pageToken = null;
+        $entries = array_values(array_filter(
+            scandir($path),
+            fn($e) => $e !== '.' && $e !== '..' && is_dir($path . DIRECTORY_SEPARATOR . $e)
+        ));
 
-        do {
-            $params = [
-                'q'          => "'{$parentId}' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false",
-                'fields'     => 'nextPageToken, files(id, name)',
-                'orderBy'    => 'name',
-                'pageSize'   => 200,
-            ];
-            if ($pageToken) $params['pageToken'] = $pageToken;
+        if ($only) {
+            $entries = array_filter($entries, fn($e) => stripos($e, $only) !== false);
+        }
 
-            $response  = $this->drive->files->listFiles($params);
-            $results   = array_merge($results, $response->getFiles());
-            $pageToken = $response->getNextPageToken();
-        } while ($pageToken);
-
-        return array_map(fn($f) => ['id' => $f->getId(), 'name' => $f->getName()], $results);
+        return array_values($entries);
     }
 
-    private function listFiles(string $folderId): array
+    private function scanFiles(string $path): array
     {
-        $results   = [];
-        $pageToken = null;
-
-        do {
-            $params = [
-                'q'        => "'{$folderId}' in parents and mimeType != 'application/vnd.google-apps.folder' and trashed = false",
-                'fields'   => 'nextPageToken, files(id, name, mimeType)',
-                'pageSize' => 100,
-            ];
-            if ($pageToken) $params['pageToken'] = $pageToken;
-
-            $response  = $this->drive->files->listFiles($params);
-            $results   = array_merge($results, $response->getFiles());
-            $pageToken = $response->getNextPageToken();
-        } while ($pageToken);
-
-        return array_map(fn($f) => [
-            'id'       => $f->getId(),
-            'name'     => $f->getName(),
-            'mimeType' => $f->getMimeType(),
-        ], $results);
+        return array_values(array_filter(
+            scandir($path),
+            fn($e) => $e !== '.' && $e !== '..' && is_file($path . DIRECTORY_SEPARATOR . $e)
+        ));
     }
-
-    // ── Matching helpers ──────────────────────────────────────────────────────
 
     private function stripLeadingNumber(string $name): string
     {
-        // Remove leading "1. " or "1 - " or "1 " patterns
         return trim(preg_replace('/^\d+[\.\-\s]+/', '', $name));
     }
 
@@ -237,13 +211,13 @@ class ImportDriveDocs extends Command
     {
         $best      = null;
         $bestScore = 0;
-        $driveNorm = strtolower(trim($driveName));
+        $needle    = strtolower(trim($driveName));
 
         foreach ($clients as $client) {
-            $portalName = strtolower(trim($client->company_name ?? $client->full_name ?? ''));
-            if (!$portalName) continue;
+            $haystack = strtolower(trim($client->company_name ?? $client->full_name ?? ''));
+            if (!$haystack) continue;
 
-            similar_text($driveNorm, $portalName, $pct);
+            similar_text($needle, $haystack, $pct);
             $pct = (int) round($pct);
 
             if ($pct > $bestScore) {
@@ -261,40 +235,37 @@ class ImportDriveDocs extends Command
     {
         $l = strtolower($filename);
 
-        if (str_contains($l, 'trade licen') || str_contains($l, 'trade licen')) return 'trade_license';
-        if (str_contains($l, 'memorandum') || str_contains($l, ' moa'))                return 'moa';
-        if (str_contains($l, 'certificate of incorp') || str_contains($l, 'incorp'))   return 'certificate_incorp';
-        if (str_contains($l, 'source of fund'))                                         return 'source_of_funds';
-        if (str_contains($l, 'bank statement'))                                         return 'bank_statement';
-        if (str_contains($l, 'emirates id') || preg_match('/\beid\b/', $l))            return 'eid';
-        if (str_contains($l, 'signatory') && str_contains($l, 'passport'))             return 'signatory_passport';
-        if (str_contains($l, 'ubo') && str_contains($l, 'passport'))                   return 'ubo_passport';
-        if (str_contains($l, 'shareholder') && str_contains($l, 'passport'))           return 'shareholder_passport';
-        if (str_contains($l, 'passport'))                                               return 'passport';
-        if (str_contains($l, 'proof of address'))                                       return 'proof_of_address';
-        if (str_contains($l, 'visa'))                                                   return 'other';
+        if (str_contains($l, 'trade licen'))                                          return 'trade_license';
+        if (str_contains($l, 'memorandum') || preg_match('/\bmoa\b/', $l))           return 'moa';
+        if (str_contains($l, 'certificate of incorp') || str_contains($l, 'incorp')) return 'certificate_incorp';
+        if (str_contains($l, 'source of fund'))                                       return 'source_of_funds';
+        if (str_contains($l, 'bank statement'))                                       return 'bank_statement';
+        if (str_contains($l, 'emirates id') || preg_match('/\beid\b/', $l))          return 'eid';
+        if (str_contains($l, 'signatory') && str_contains($l, 'passport'))           return 'signatory_passport';
+        if (str_contains($l, 'ubo') && str_contains($l, 'passport'))                 return 'ubo_passport';
+        if (str_contains($l, 'shareholder') && str_contains($l, 'passport'))         return 'shareholder_passport';
+        if (str_contains($l, 'passport'))                                             return 'passport';
+        if (str_contains($l, 'proof of address'))                                     return 'proof_of_address';
 
         return 'other';
     }
 
     private function docTypeLabel(string $type, string $filename = ''): string
     {
-        $map = [
-            'trade_license'       => 'Trade licence',
-            'moa'                 => 'Memorandum of Association (MoA)',
-            'certificate_incorp'  => 'Certificate of incorporation',
-            'signatory_passport'  => 'Authorised signatory passport',
-            'signatory_eid'       => 'Authorised signatory Emirates ID',
-            'shareholder_passport'=> 'Shareholder passport(s)',
-            'ubo_passport'        => 'UBO passport(s)',
-            'source_of_funds'     => 'Source of funds evidence',
-            'bank_statement'      => 'Bank statement (3 months)',
-            'passport'            => 'Passport',
-            'eid'                 => 'Emirates ID',
-            'proof_of_address'    => 'Proof of address',
-            'other'               => 'Other document',
-        ];
-
-        return $map[$type] ?? pathinfo($filename, PATHINFO_FILENAME);
+        return [
+            'trade_license'        => 'Trade licence',
+            'moa'                  => 'Memorandum of Association (MoA)',
+            'certificate_incorp'   => 'Certificate of incorporation',
+            'signatory_passport'   => 'Authorised signatory passport',
+            'signatory_eid'        => 'Authorised signatory Emirates ID',
+            'shareholder_passport' => 'Shareholder passport(s)',
+            'ubo_passport'         => 'UBO passport(s)',
+            'source_of_funds'      => 'Source of funds evidence',
+            'bank_statement'       => 'Bank statement (3 months)',
+            'passport'             => 'Passport',
+            'eid'                  => 'Emirates ID',
+            'proof_of_address'     => 'Proof of address',
+            'other'                => 'Other document',
+        ][$type] ?? pathinfo($filename, PATHINFO_FILENAME);
     }
 }
