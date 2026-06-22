@@ -199,6 +199,7 @@ Route::prefix('{slug}')
         Route::get('/docs/clients',                         [TenantDocumentController::class, 'clientIndex'])->name('docs.clients');
         Route::get('/docs/clients/{document}/download',     [TenantDocumentController::class, 'clientDownload'])->name('docs.client.download');
         Route::delete('/docs/clients/{document}',           [TenantDocumentController::class, 'clientDelete'])->name('docs.client.delete');
+        Route::get('/expiry', [\App\Http\Controllers\Tenant\ExpiryController::class, 'index'])->name('expiry');
         // ── goAML ──────────────────────────────────────────────────────────────
         Route::get('/goaml',                   [GoamlController::class, 'index'])->name('goaml');
         Route::get('/goaml/create',            [GoamlController::class, 'create'])->name('goaml.create');

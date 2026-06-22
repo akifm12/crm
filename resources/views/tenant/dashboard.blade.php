@@ -158,8 +158,9 @@ $expiryBadge = function($date, bool $missingIsAlert = false) {
 
     {{-- Trade licences --}}
     <div class="bg-white rounded-xl border border-gray-200">
-        <div class="px-3 py-2 border-b border-gray-100">
+        <div class="px-3 py-2 border-b border-gray-100 flex items-center justify-between">
             <h2 class="text-xs font-semibold text-gray-600">Trade licences</h2>
+            <a href="{{ route('tenant.expiry', $tenant->slug) }}?tab=licence" class="text-xs text-blue-500 hover:underline">View all</a>
         </div>
         <div class="divide-y divide-gray-100">
             @forelse($expiry_alerts as $client)
@@ -179,8 +180,9 @@ $expiryBadge = function($date, bool $missingIsAlert = false) {
 
     {{-- Ejari --}}
     <div class="bg-white rounded-xl border border-gray-200">
-        <div class="px-3 py-2 border-b border-gray-100">
+        <div class="px-3 py-2 border-b border-gray-100 flex items-center justify-between">
             <h2 class="text-xs font-semibold text-gray-600">Ejari</h2>
+            <a href="{{ route('tenant.expiry', $tenant->slug) }}?tab=ejari" class="text-xs text-blue-500 hover:underline">View all</a>
         </div>
         <div class="divide-y divide-gray-100">
             @forelse($ejari_alerts as $client)
@@ -200,8 +202,9 @@ $expiryBadge = function($date, bool $missingIsAlert = false) {
 
     {{-- Shareholder EIDs --}}
     <div class="bg-white rounded-xl border border-gray-200">
-        <div class="px-3 py-2 border-b border-gray-100">
+        <div class="px-3 py-2 border-b border-gray-100 flex items-center justify-between">
             <h2 class="text-xs font-semibold text-gray-600">Shareholder EIDs</h2>
+            <a href="{{ route('tenant.expiry', $tenant->slug) }}?tab=eid" class="text-xs text-blue-500 hover:underline">View all</a>
         </div>
         <div class="divide-y divide-gray-100">
             @forelse($eid_alerts as $sh)
@@ -224,8 +227,9 @@ $expiryBadge = function($date, bool $missingIsAlert = false) {
 
     {{-- Shareholder passports --}}
     <div class="bg-white rounded-xl border border-gray-200">
-        <div class="px-3 py-2 border-b border-gray-100">
+        <div class="px-3 py-2 border-b border-gray-100 flex items-center justify-between">
             <h2 class="text-xs font-semibold text-gray-600">Shareholder passports</h2>
+            <a href="{{ route('tenant.expiry', $tenant->slug) }}?tab=passport" class="text-xs text-blue-500 hover:underline">View all</a>
         </div>
         <div class="divide-y divide-gray-100">
             @forelse($passport_alerts as $sh)
