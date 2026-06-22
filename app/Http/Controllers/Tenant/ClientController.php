@@ -686,11 +686,12 @@ PROMPT;
 
     public function deleteDocument(string $slug, ClientDocument $document)
     {
-        $tenant = app('tenant');
+        $tenant   = app('tenant');
+        $clientId = $document->bullion_client_id;
         abort_if($document->tenant_id !== $tenant->id, 404);
         Storage::disk('local')->delete($document->file_path);
         $document->delete();
-        return redirect(route('tenant.clients.show', [$tenant->slug, $client->id]) . '?tab=documents')->with('success', 'Document deleted.');
+        return redirect(route('tenant.clients.show', [$tenant->slug, $clientId]) . '?tab=documents')->with('success', 'Document deleted.');
     }
 
     public function revertScanLog(string $slug, DocumentScanLog $log)
