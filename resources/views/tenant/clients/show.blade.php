@@ -647,6 +647,99 @@ $countryName = fn($code) => $code ? (\App\Models\Country::find($code)?->country_
             @endif
         </div>
 
+        {{-- Scan history --}}
+        @if($scanLogs->isNotEmpty())
+        <div class="bg-white rounded-xl border border-gray-200 mb-5">
+            <div class="px-5 py-3.5 border-b border-gray-100">
+                <h3 class="text-sm font-semibold text-gray-700">Auto-scan history</h3>
+                <p class="text-xs text-gray-400 mt-0.5">Fields populated automatically from uploaded documents. Revert any entry to undo.</p>
+            </div>
+            <div class="divide-y divide-gray-100">
+            @foreach($scanLogs as $log)
+            @php
+                $statusColor = match($log->status) {
+                    'applied'    => 'bg-green-100 text-green-700',
+                    'reverted'   => 'bg-gray-100 text-gray-500',
+                    'no_changes' => 'bg-blue-100 text-blue-600',
+                    'failed'     => 'bg-red-100 text-red-600',
+                    default      => 'bg-gray-100 text-gray-500',
+                };
+                $statusLabel = match($log->status) {
+                    'applied'    => 'Applied',
+                    'reverted'   => 'Reverted',
+                    'no_changes' => 'No changes',
+                    'failed'     => 'Failed',
+                    default      => $log->status,
+                };
+                $fieldLabels = [
+                    'trade_license_no'      => 'Trade licence no.',
+                    'trade_license_expiry'  => 'Trade licence expiry',
+                    'ejari_number'          => 'Ejari number',
+                    'ejari_expiry'          => 'Ejari expiry',
+                    'company_name'          => 'Company name',
+                    'full_name'             => 'Full name',
+                    'name'                  => 'Shareholder name',
+                    'nationality'           => 'Nationality',
+                    'dob'                   => 'Date of birth',
+                    'passport_number'       => 'Passport no.',
+                    'passport_expiry'       => 'Passport expiry',
+                    'eid_number'            => 'EID number',
+                    'eid_expiry'            => 'EID expiry',
+                ];
+            @endphp
+            <div class="px-5 py-3.5">
+                <div class="flex items-start justify-between gap-4">
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="text-xs font-semibold px-2 py-0.5 rounded-full {{ $statusColor }}">{{ $statusLabel }}</span>
+                            @if($log->document_type_detected)
+                            <span class="text-xs text-gray-500 capitalize">{{ str_replace('_', ' ', $log->document_type_detected) }}</span>
+                            @endif
+                            @if($log->document)
+                            <span class="text-xs text-gray-400">from <em>{{ $log->document->file_name }}</em></span>
+                            @endif
+                            <span class="text-xs text-gray-400">{{ $log->created_at->diffForHumans() }}</span>
+                        </div>
+
+                        @if($log->status === 'failed')
+                        <p class="text-xs text-red-500 mt-1">{{ $log->failure_reason }}</p>
+                        @elseif(count($log->changes ?? []) > 0)
+                        <div class="mt-2 space-y-1">
+                            @foreach($log->changes as $change)
+                            <div class="text-xs text-gray-600 flex items-center gap-1.5">
+                                <span class="font-medium text-gray-700">{{ $fieldLabels[$change['field']] ?? $change['field'] }}</span>
+                                <span class="text-gray-300">→</span>
+                                <span class="font-mono text-gray-800">{{ $change['new_value'] ?? '—' }}</span>
+                                @if($change['old_value'])
+                                <span class="text-gray-300">(was: {{ $change['old_value'] }})</span>
+                                @endif
+                                @if($change['model'] === 'shareholder')
+                                <span class="text-purple-500 text-[10px] font-medium px-1 py-0.5 bg-purple-50 rounded">shareholder</span>
+                                @endif
+                            </div>
+                            @endforeach
+                        </div>
+                        @elseif($log->status === 'no_changes')
+                        <p class="text-xs text-gray-400 mt-1">All fields already populated — nothing to update.</p>
+                        @endif
+                    </div>
+
+                    @if($log->status === 'applied' && count($log->changes ?? []) > 0)
+                    <form method="POST" action="{{ route('tenant.scan.revert', [$tenant->slug, $log->id]) }}"
+                          onsubmit="return confirm('Revert all {{ count($log->changes) }} change(s) from this scan?')">
+                        @csrf
+                        <button type="submit" class="text-xs text-red-500 hover:text-red-700 font-medium whitespace-nowrap">
+                            Undo
+                        </button>
+                    </form>
+                    @endif
+                </div>
+            </div>
+            @endforeach
+            </div>
+        </div>
+        @endif
+
         {{-- Upload modal --}}
         <div id="upload-modal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50">
             <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md mx-4">

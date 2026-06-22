@@ -183,6 +183,7 @@ Route::prefix('{slug}')
         Route::post('/clients/{client}/documents',   [ClientController::class, 'uploadDocument'])->name('docs.upload');
         Route::get('/documents/{document}/download', [ClientController::class, 'downloadDocument'])->name('docs.download');
         Route::delete('/documents/{document}',       [ClientController::class, 'deleteDocument'])->name('docs.delete');
+        Route::post('/scan-logs/{log}/revert',       [ClientController::class, 'revertScanLog'])->name('scan.revert');
         Route::get('/screening',                          [TenantScreeningController::class, 'index'])->name('screening');
         Route::post('/screening/run',                      [TenantScreeningController::class, 'run'])->name('screening.run');
         Route::post('/clients/{client}/screen',              [TenantScreeningController::class, 'screenClient'])->name('clients.screen');

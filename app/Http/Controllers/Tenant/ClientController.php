@@ -4,8 +4,10 @@
 namespace App\Http\Controllers\Tenant;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\ScanUploadedDocument;
 use App\Models\BullionClient;
 use App\Models\ClientDocument;
+use App\Models\DocumentScanLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
@@ -454,7 +456,8 @@ PROMPT;
         abort_if($client->tenant_id !== $tenant->id, 404);
         $client->load(['signatories', 'shareholders', 'ubos', 'creator', 'transactions']);
         $documents = ClientDocument::where('bullion_client_id', $client->id)->orderBy('document_type')->get();
-        return view('tenant.clients.show', compact('tenant', 'client', 'documents'));
+        $scanLogs  = DocumentScanLog::where('bullion_client_id', $client->id)->with('document')->latest()->get();
+        return view('tenant.clients.show', compact('tenant', 'client', 'documents', 'scanLogs'));
     }
 
     public function edit(string $slug, BullionClient $client)
@@ -630,7 +633,7 @@ PROMPT;
 
             $path = $file->store("tenants/{$tenant->id}/clients/{$client->id}", 'local');
 
-            ClientDocument::create([
+            $doc = ClientDocument::create([
                 'bullion_client_id' => $client->id,
                 'tenant_id'         => $tenant->id,
                 'document_type'     => $docType,
@@ -642,6 +645,7 @@ PROMPT;
                 'uploaded_by'       => auth()->id(),
             ]);
 
+            (new ScanUploadedDocument($doc, auth()->id()))->handle();
             $uploaded++;
         }
 
@@ -655,7 +659,7 @@ PROMPT;
         $request->validate(['file' => 'required|file|max:10240', 'document_type' => 'required|string', 'document_label' => 'required|string', 'expiry_date' => 'nullable|date']);
         $file = $request->file('file');
         $path = $file->store("tenants/{$tenant->id}/clients/{$client->id}", 'local');
-        ClientDocument::create([
+        $doc = ClientDocument::create([
             'bullion_client_id' => $client->id,
             'tenant_id'         => $tenant->id,
             'document_type'     => $request->document_type,
@@ -667,7 +671,8 @@ PROMPT;
             'expiry_date'       => $request->expiry_date,
             'uploaded_by'       => auth()->id(),
         ]);
-        return redirect(route('tenant.clients.show', [$tenant->slug, $client->id]) . '?tab=documents')->with('success', 'Document uploaded.');
+        (new ScanUploadedDocument($doc, auth()->id()))->handle();
+        return redirect(route('tenant.clients.show', [$tenant->slug, $client->id]) . '?tab=documents')->with('success', 'Document uploaded and scanned.');
     }
 
     public function downloadDocument(string $slug, ClientDocument $document)
@@ -684,6 +689,18 @@ PROMPT;
         Storage::disk('local')->delete($document->file_path);
         $document->delete();
         return redirect(route('tenant.clients.show', [$tenant->slug, $client->id]) . '?tab=documents')->with('success', 'Document deleted.');
+    }
+
+    public function revertScanLog(string $slug, DocumentScanLog $log)
+    {
+        $tenant = app('tenant');
+        abort_if($log->tenant_id !== $tenant->id, 404);
+
+        if ($log->revert()) {
+            return back()->with('success', 'Scan changes reverted successfully.');
+        }
+
+        return back()->with('error', 'This scan log has already been reverted or has no changes to undo.');
     }
 
     public function updateRisk(Request $request, string $slug, BullionClient $client)
