@@ -147,8 +147,11 @@ PROMPT;
                     break;
             }
 
-            // Also update the ClientDocument expiry_date if we found one and it's empty
-            if (!$this->document->expiry_date) {
+            // Update ClientDocument expiry_date only for document types that actually expire
+            $expiryDocTypes = ['trade_licence', 'passport', 'shareholder_passport', 'signatory_passport',
+                               'ubo_passport', 'emirates_id', 'ejari', 'visa'];
+
+            if (!$this->document->expiry_date && in_array($this->document->document_type, $expiryDocTypes)) {
                 $docExpiry = match ($docType) {
                     'trade_licence' => $scanned['trade_license_expiry'] ?? null,
                     'ejari'         => $scanned['ejari_expiry'] ?? null,
