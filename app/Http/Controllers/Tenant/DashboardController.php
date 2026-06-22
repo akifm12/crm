@@ -54,6 +54,14 @@ class DashboardController extends Controller
             ->where('is_resident', true)->whereNotNull('eid_expiry')
             ->whereBetween('eid_expiry', [now(), now()->addDays(30)])->count();
 
+        // ── Shareholder passport alerts ────────────────────────────────────────
+        $passportExpired  = ClientShareholder::whereIn('bullion_client_id', $clientIds)
+            ->whereNotNull('passport_expiry')
+            ->where('passport_expiry', '<', now())->count();
+        $passportExpiring = ClientShareholder::whereIn('bullion_client_id', $clientIds)
+            ->whereNotNull('passport_expiry')
+            ->whereBetween('passport_expiry', [now(), now()->addDays(60)])->count();
+
         // ── goAML ─────────────────────────────────────────────────────────────
         $goamlTotal = GoamlReport::where('tenant_id', $tid)->count();
         $goamlMonth = GoamlReport::where('tenant_id', $tid)->where('created_at', '>=', now()->startOfMonth())->count();
@@ -71,6 +79,7 @@ class DashboardController extends Controller
             'licenceExpired', 'licenceExpiring',
             'ejariExpired', 'ejariExpiring',
             'eidExpired', 'eidExpiring',
+            'passportExpired', 'passportExpiring',
             'reviewOverdue', 'reviewDueSoon',
             'unscreened', 'screeningMatch', 'edd',
             'docsExpired', 'docsExpiring',
@@ -85,14 +94,20 @@ class DashboardController extends Controller
             ->orderBy('trade_license_expiry')->take(6)->get();
 
         $ejari_alerts = BullionClient::where('tenant_id', $tid)
+            ->whereIn('status', ['active', 'pending'])
             ->whereNotNull('ejari_expiry')
             ->where('ejari_expiry', '<=', now()->addDays(60))
-            ->orderBy('ejari_expiry')->take(6)->get();
+            ->orderBy('ejari_expiry')->take(8)->get();
 
         $eid_alerts = ClientShareholder::whereIn('bullion_client_id', $clientIds)
             ->where('is_resident', true)->whereNotNull('eid_expiry')
             ->where('eid_expiry', '<=', now()->addDays(60))
-            ->with('client')->orderBy('eid_expiry')->take(6)->get();
+            ->with('client')->orderBy('eid_expiry')->take(8)->get();
+
+        $passport_alerts = ClientShareholder::whereIn('bullion_client_id', $clientIds)
+            ->whereNotNull('passport_expiry')
+            ->where('passport_expiry', '<=', now()->addDays(60))
+            ->with('client')->orderBy('passport_expiry')->take(8)->get();
 
         $review_alerts = BullionClient::where('tenant_id', $tid)
             ->whereNotNull('next_review_date')
@@ -111,7 +126,7 @@ class DashboardController extends Controller
 
         return view('tenant.dashboard', compact(
             'tenant', 'stats',
-            'expiry_alerts', 'ejari_alerts', 'eid_alerts',
+            'expiry_alerts', 'ejari_alerts', 'eid_alerts', 'passport_alerts',
             'review_alerts', 'doc_alerts',
             'recent', 'recent_goaml'
         ));

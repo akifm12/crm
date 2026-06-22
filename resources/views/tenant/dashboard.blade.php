@@ -41,8 +41,8 @@ $expiryBadge = function($date) {
     </div>
 
     @php
-    $totalExpired  = $stats['licenceExpired'] + $stats['ejariExpired'] + $stats['eidExpired'] + $stats['docsExpired'];
-    $totalExpiring = $stats['licenceExpiring'] + $stats['ejariExpiring'] + $stats['eidExpiring'] + $stats['docsExpiring'];
+    $totalExpired  = $stats['licenceExpired'] + $stats['ejariExpired'] + $stats['eidExpired'] + $stats['passportExpired'] + $stats['docsExpired'];
+    $totalExpiring = $stats['licenceExpiring'] + $stats['ejariExpiring'] + $stats['eidExpiring'] + $stats['passportExpiring'] + $stats['docsExpiring'];
     @endphp
     <div class="bg-white rounded-xl border {{ $totalExpired > 0 ? 'border-red-200 bg-red-50' : ($totalExpiring > 0 ? 'border-amber-200 bg-amber-50' : 'border-gray-200') }} p-4">
         <p class="text-xs font-semibold {{ $totalExpired > 0 ? 'text-red-500' : 'text-gray-400' }} uppercase tracking-wide mb-1">Doc expiry</p>
@@ -51,6 +51,7 @@ $expiryBadge = function($date) {
             @if($stats['licenceExpired'])<span class="text-red-600 font-semibold">{{ $stats['licenceExpired'] }} licence</span>@endif
             @if($stats['ejariExpired'])<span class="text-red-600 font-semibold">{{ $stats['ejariExpired'] }} ejari</span>@endif
             @if($stats['eidExpired'])<span class="text-red-600 font-semibold">{{ $stats['eidExpired'] }} EID</span>@endif
+            @if($stats['passportExpired'])<span class="text-red-600 font-semibold">{{ $stats['passportExpired'] }} passport</span>@endif
             @if($stats['docsExpired'])<span class="text-red-600 font-semibold">{{ $stats['docsExpired'] }} docs</span>@endif
             @if($totalExpired === 0 && $totalExpiring > 0)<span class="text-amber-600">{{ $totalExpiring }} expiring soon</span>@endif
             @if($totalExpired === 0 && $totalExpiring === 0)<span class="text-green-600">All documents current</span>@endif
@@ -146,26 +147,25 @@ $expiryBadge = function($date) {
 </div>
 
 {{-- ── EXPIRY MONITORING ────────────────────────────────────────────────── --}}
-<h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Expiry monitoring</h3>
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-5">
+<h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Expiry monitoring <span class="normal-case font-normal">(next 60 days)</span></h3>
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
 
     {{-- Trade licences --}}
     <div class="bg-white rounded-xl border border-gray-200">
-        <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-            <h2 class="text-sm font-semibold text-gray-700">Trade licences</h2>
-            <span class="text-xs text-gray-400">Next 60 days</span>
+        <div class="px-3 py-2 border-b border-gray-100">
+            <h2 class="text-xs font-semibold text-gray-600">Trade licences</h2>
         </div>
         <div class="divide-y divide-gray-100">
             @forelse($expiry_alerts as $client)
             @php [$cls, $label] = $expiryBadge($client->trade_license_expiry); @endphp
             <a href="{{ route('tenant.clients.show', [$tenant->slug, $client->id]) }}"
-               class="flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition">
-                <p class="text-sm font-medium text-gray-800 truncate max-w-36">{{ $client->displayName() }}</p>
-                <span class="text-xs font-semibold px-2 py-0.5 rounded-full flex-shrink-0 {{ $cls }}">{{ $label }}</span>
+               class="flex items-center justify-between px-3 py-1.5 hover:bg-gray-50 transition">
+                <p class="text-xs font-medium text-gray-800 truncate mr-2">{{ $client->displayName() }}</p>
+                <span class="text-xs font-semibold px-1.5 py-0.5 rounded-full flex-shrink-0 {{ $cls }}">{{ $label }}</span>
             </a>
             @empty
-            <div class="px-4 py-6 text-center">
-                <span class="text-xs font-semibold bg-green-100 text-green-700 px-2 py-1 rounded-full">✓ All current</span>
+            <div class="px-3 py-4 text-center">
+                <span class="text-xs font-semibold bg-green-100 text-green-700 px-2 py-0.5 rounded-full">✓ All current</span>
             </div>
             @endforelse
         </div>
@@ -173,21 +173,20 @@ $expiryBadge = function($date) {
 
     {{-- Ejari --}}
     <div class="bg-white rounded-xl border border-gray-200">
-        <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-            <h2 class="text-sm font-semibold text-gray-700">Ejari</h2>
-            <span class="text-xs text-gray-400">Next 60 days</span>
+        <div class="px-3 py-2 border-b border-gray-100">
+            <h2 class="text-xs font-semibold text-gray-600">Ejari</h2>
         </div>
         <div class="divide-y divide-gray-100">
             @forelse($ejari_alerts as $client)
             @php [$cls, $label] = $expiryBadge($client->ejari_expiry); @endphp
             <a href="{{ route('tenant.clients.show', [$tenant->slug, $client->id]) }}"
-               class="flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition">
-                <p class="text-sm font-medium text-gray-800 truncate max-w-36">{{ $client->displayName() }}</p>
-                <span class="text-xs font-semibold px-2 py-0.5 rounded-full flex-shrink-0 {{ $cls }}">{{ $label }}</span>
+               class="flex items-center justify-between px-3 py-1.5 hover:bg-gray-50 transition">
+                <p class="text-xs font-medium text-gray-800 truncate mr-2">{{ $client->displayName() }}</p>
+                <span class="text-xs font-semibold px-1.5 py-0.5 rounded-full flex-shrink-0 {{ $cls }}">{{ $label }}</span>
             </a>
             @empty
-            <div class="px-4 py-6 text-center">
-                <span class="text-xs font-semibold bg-green-100 text-green-700 px-2 py-1 rounded-full">✓ All current</span>
+            <div class="px-3 py-4 text-center">
+                <span class="text-xs font-semibold bg-green-100 text-green-700 px-2 py-0.5 rounded-full">✓ All current</span>
             </div>
             @endforelse
         </div>
@@ -195,24 +194,47 @@ $expiryBadge = function($date) {
 
     {{-- Shareholder EIDs --}}
     <div class="bg-white rounded-xl border border-gray-200">
-        <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-            <h2 class="text-sm font-semibold text-gray-700">Shareholder EIDs</h2>
-            <span class="text-xs text-gray-400">Next 60 days</span>
+        <div class="px-3 py-2 border-b border-gray-100">
+            <h2 class="text-xs font-semibold text-gray-600">Shareholder EIDs</h2>
         </div>
         <div class="divide-y divide-gray-100">
             @forelse($eid_alerts as $sh)
             @php [$cls, $label] = $expiryBadge($sh->eid_expiry); @endphp
             <a href="{{ route('tenant.clients.show', [$tenant->slug, $sh->bullion_client_id]) }}"
-               class="flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition">
+               class="flex items-center justify-between px-3 py-1.5 hover:bg-gray-50 transition">
                 <div class="min-w-0 mr-2">
-                    <p class="text-sm font-medium text-gray-800 truncate">{{ $sh->name }}</p>
+                    <p class="text-xs font-medium text-gray-800 truncate">{{ $sh->name }}</p>
                     <p class="text-xs text-gray-400 truncate">{{ $sh->client?->displayName() }}</p>
                 </div>
-                <span class="text-xs font-semibold px-2 py-0.5 rounded-full flex-shrink-0 {{ $cls }}">{{ $label }}</span>
+                <span class="text-xs font-semibold px-1.5 py-0.5 rounded-full flex-shrink-0 {{ $cls }}">{{ $label }}</span>
             </a>
             @empty
-            <div class="px-4 py-6 text-center">
-                <span class="text-xs font-semibold bg-green-100 text-green-700 px-2 py-1 rounded-full">✓ All current</span>
+            <div class="px-3 py-4 text-center">
+                <span class="text-xs font-semibold bg-green-100 text-green-700 px-2 py-0.5 rounded-full">✓ All current</span>
+            </div>
+            @endforelse
+        </div>
+    </div>
+
+    {{-- Shareholder passports --}}
+    <div class="bg-white rounded-xl border border-gray-200">
+        <div class="px-3 py-2 border-b border-gray-100">
+            <h2 class="text-xs font-semibold text-gray-600">Shareholder passports</h2>
+        </div>
+        <div class="divide-y divide-gray-100">
+            @forelse($passport_alerts as $sh)
+            @php [$cls, $label] = $expiryBadge($sh->passport_expiry); @endphp
+            <a href="{{ route('tenant.clients.show', [$tenant->slug, $sh->bullion_client_id]) }}"
+               class="flex items-center justify-between px-3 py-1.5 hover:bg-gray-50 transition">
+                <div class="min-w-0 mr-2">
+                    <p class="text-xs font-medium text-gray-800 truncate">{{ $sh->name }}</p>
+                    <p class="text-xs text-gray-400 truncate">{{ $sh->client?->displayName() }}</p>
+                </div>
+                <span class="text-xs font-semibold px-1.5 py-0.5 rounded-full flex-shrink-0 {{ $cls }}">{{ $label }}</span>
+            </a>
+            @empty
+            <div class="px-3 py-4 text-center">
+                <span class="text-xs font-semibold bg-green-100 text-green-700 px-2 py-0.5 rounded-full">✓ All current</span>
             </div>
             @endforelse
         </div>
