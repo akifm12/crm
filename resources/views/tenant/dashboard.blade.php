@@ -9,8 +9,10 @@
 $total = $stats['total'];
 $riskPct = fn($n) => $total > 0 ? round($n / $total * 100) : 0;
 
-$expiryBadge = function($date) {
-    if (!$date) return ['bg-gray-100 text-gray-400', '—'];
+$expiryBadge = function($date, bool $missingIsAlert = false) {
+    if (!$date) return $missingIsAlert
+        ? ['bg-orange-100 text-orange-700', 'Missing']
+        : ['bg-gray-100 text-gray-400', '—'];
     $d = $date instanceof \Carbon\Carbon ? $date : \Carbon\Carbon::parse($date);
     if ($d->isPast())                return ['bg-red-100 text-red-700',    'Expired'];
     if ($d->diffInDays(now()) <= 30) return ['bg-amber-100 text-amber-700', $d->format('d M Y')];
@@ -41,20 +43,24 @@ $expiryBadge = function($date) {
     </div>
 
     @php
+    $totalMissing  = $stats['licenceMissing'] + $stats['ejariMissing'];
     $totalExpired  = $stats['licenceExpired'] + $stats['ejariExpired'] + $stats['eidExpired'] + $stats['passportExpired'] + $stats['docsExpired'];
     $totalExpiring = $stats['licenceExpiring'] + $stats['ejariExpiring'] + $stats['eidExpiring'] + $stats['passportExpiring'] + $stats['docsExpiring'];
+    $totalIssues   = $totalMissing + $totalExpired;
     @endphp
-    <div class="bg-white rounded-xl border {{ $totalExpired > 0 ? 'border-red-200 bg-red-50' : ($totalExpiring > 0 ? 'border-amber-200 bg-amber-50' : 'border-gray-200') }} p-4">
-        <p class="text-xs font-semibold {{ $totalExpired > 0 ? 'text-red-500' : 'text-gray-400' }} uppercase tracking-wide mb-1">Doc expiry</p>
-        <p class="text-3xl font-bold text-gray-900">{{ $totalExpired }}</p>
+    <div class="bg-white rounded-xl border {{ $totalIssues > 0 ? 'border-red-200 bg-red-50' : ($totalExpiring > 0 ? 'border-amber-200 bg-amber-50' : 'border-gray-200') }} p-4">
+        <p class="text-xs font-semibold {{ $totalIssues > 0 ? 'text-red-500' : 'text-gray-400' }} uppercase tracking-wide mb-1">Doc issues</p>
+        <p class="text-3xl font-bold text-gray-900">{{ $totalIssues }}</p>
         <p class="text-xs mt-1 space-x-1">
-            @if($stats['licenceExpired'])<span class="text-red-600 font-semibold">{{ $stats['licenceExpired'] }} licence</span>@endif
-            @if($stats['ejariExpired'])<span class="text-red-600 font-semibold">{{ $stats['ejariExpired'] }} ejari</span>@endif
-            @if($stats['eidExpired'])<span class="text-red-600 font-semibold">{{ $stats['eidExpired'] }} EID</span>@endif
-            @if($stats['passportExpired'])<span class="text-red-600 font-semibold">{{ $stats['passportExpired'] }} passport</span>@endif
-            @if($stats['docsExpired'])<span class="text-red-600 font-semibold">{{ $stats['docsExpired'] }} docs</span>@endif
-            @if($totalExpired === 0 && $totalExpiring > 0)<span class="text-amber-600">{{ $totalExpiring }} expiring soon</span>@endif
-            @if($totalExpired === 0 && $totalExpiring === 0)<span class="text-green-600">All documents current</span>@endif
+            @if($stats['licenceMissing'])<span class="text-orange-600 font-semibold">{{ $stats['licenceMissing'] }} licence missing</span>@endif
+            @if($stats['licenceExpired'])<span class="text-red-600 font-semibold">{{ $stats['licenceExpired'] }} licence expired</span>@endif
+            @if($stats['ejariMissing'])<span class="text-orange-600 font-semibold">{{ $stats['ejariMissing'] }} ejari missing</span>@endif
+            @if($stats['ejariExpired'])<span class="text-red-600 font-semibold">{{ $stats['ejariExpired'] }} ejari expired</span>@endif
+            @if($stats['eidExpired'])<span class="text-red-600 font-semibold">{{ $stats['eidExpired'] }} EID expired</span>@endif
+            @if($stats['passportExpired'])<span class="text-red-600 font-semibold">{{ $stats['passportExpired'] }} passport expired</span>@endif
+            @if($stats['docsExpired'])<span class="text-red-600 font-semibold">{{ $stats['docsExpired'] }} docs expired</span>@endif
+            @if($totalIssues === 0 && $totalExpiring > 0)<span class="text-amber-600">{{ $totalExpiring }} expiring soon</span>@endif
+            @if($totalIssues === 0 && $totalExpiring === 0)<span class="text-green-600">All documents current</span>@endif
         </p>
     </div>
 
@@ -157,7 +163,7 @@ $expiryBadge = function($date) {
         </div>
         <div class="divide-y divide-gray-100">
             @forelse($expiry_alerts as $client)
-            @php [$cls, $label] = $expiryBadge($client->trade_license_expiry); @endphp
+            @php [$cls, $label] = $expiryBadge($client->trade_license_expiry, true); @endphp
             <a href="{{ route('tenant.clients.show', [$tenant->slug, $client->id]) }}"
                class="flex items-center justify-between px-3 py-1.5 hover:bg-gray-50 transition">
                 <p class="text-xs font-medium text-gray-800 truncate mr-2">{{ $client->displayName() }}</p>
@@ -178,7 +184,7 @@ $expiryBadge = function($date) {
         </div>
         <div class="divide-y divide-gray-100">
             @forelse($ejari_alerts as $client)
-            @php [$cls, $label] = $expiryBadge($client->ejari_expiry); @endphp
+            @php [$cls, $label] = $expiryBadge($client->ejari_expiry, true); @endphp
             <a href="{{ route('tenant.clients.show', [$tenant->slug, $client->id]) }}"
                class="flex items-center justify-between px-3 py-1.5 hover:bg-gray-50 transition">
                 <p class="text-xs font-medium text-gray-800 truncate mr-2">{{ $client->displayName() }}</p>

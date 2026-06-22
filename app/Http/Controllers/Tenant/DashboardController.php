@@ -32,8 +32,10 @@ class DashboardController extends Controller
         $riskUnrated = (clone $base)->whereNull('risk_rating')->count();
 
         // ── Compliance alerts ─────────────────────────────────────────────────
+        $licenceMissing  = (clone $activeBase)->whereNull('trade_license_expiry')->count();
         $licenceExpired  = (clone $activeBase)->whereNotNull('trade_license_expiry')->where('trade_license_expiry', '<', now())->count();
         $licenceExpiring = (clone $activeBase)->whereNotNull('trade_license_expiry')->whereBetween('trade_license_expiry', [now(), now()->addDays(30)])->count();
+        $ejariMissing    = (clone $activeBase)->whereNull('ejari_expiry')->count();
         $ejariExpired    = (clone $activeBase)->whereNotNull('ejari_expiry')->where('ejari_expiry', '<', now())->count();
         $ejariExpiring   = (clone $activeBase)->whereNotNull('ejari_expiry')->whereBetween('ejari_expiry', [now(), now()->addDays(30)])->count();
         $reviewOverdue   = (clone $base)->whereNotNull('next_review_date')->where('next_review_date', '<', now())->count();
@@ -76,8 +78,8 @@ class DashboardController extends Controller
         $stats = compact(
             'total', 'active', 'pending',
             'riskHigh', 'riskMedium', 'riskLow', 'riskUnrated',
-            'licenceExpired', 'licenceExpiring',
-            'ejariExpired', 'ejariExpiring',
+            'licenceMissing', 'licenceExpired', 'licenceExpiring',
+            'ejariMissing', 'ejariExpired', 'ejariExpiring',
             'eidExpired', 'eidExpiring',
             'passportExpired', 'passportExpiring',
             'reviewOverdue', 'reviewDueSoon',
@@ -89,15 +91,19 @@ class DashboardController extends Controller
 
         // ── Alert lists ───────────────────────────────────────────────────────
         $expiry_alerts = BullionClient::where('tenant_id', $tid)->whereIn('status', ['active', 'pending'])
-            ->whereNotNull('trade_license_expiry')
-            ->where('trade_license_expiry', '<=', now()->addDays(60))
-            ->orderBy('trade_license_expiry')->take(6)->get();
+            ->where(fn($q) => $q->whereNull('trade_license_expiry')
+                ->orWhere('trade_license_expiry', '<=', now()->addDays(60)))
+            ->orderByRaw('CASE WHEN trade_license_expiry IS NULL THEN 1 WHEN trade_license_expiry < NOW() THEN 0 ELSE 2 END')
+            ->orderBy('trade_license_expiry')
+            ->take(10)->get();
 
         $ejari_alerts = BullionClient::where('tenant_id', $tid)
             ->whereIn('status', ['active', 'pending'])
-            ->whereNotNull('ejari_expiry')
-            ->where('ejari_expiry', '<=', now()->addDays(60))
-            ->orderBy('ejari_expiry')->take(8)->get();
+            ->where(fn($q) => $q->whereNull('ejari_expiry')
+                ->orWhere('ejari_expiry', '<=', now()->addDays(60)))
+            ->orderByRaw('CASE WHEN ejari_expiry IS NULL THEN 1 WHEN ejari_expiry < NOW() THEN 0 ELSE 2 END')
+            ->orderBy('ejari_expiry')
+            ->take(10)->get();
 
         $eid_alerts = ClientShareholder::whereIn('bullion_client_id', $clientIds)
             ->where('is_resident', true)->whereNotNull('eid_expiry')
