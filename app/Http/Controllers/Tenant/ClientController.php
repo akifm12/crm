@@ -41,6 +41,8 @@ class ClientController extends Controller
 
         $sort = $request->input('sort', 'newest');
 
+        $query->with(['documents:id,bullion_client_id,document_type']);
+
         $clients = match($sort) {
             'az'     => $query->orderBy('company_name')->orderBy('full_name')->paginate(50)->withQueryString(),
             'za'     => $query->orderByRaw('COALESCE(company_name, full_name) DESC')->paginate(50)->withQueryString(),

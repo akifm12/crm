@@ -59,6 +59,7 @@ class BullionClient extends Model
     public function signatories(): HasMany { return $this->hasMany(ClientSignatory::class); }
     public function shareholders(): HasMany{ return $this->hasMany(ClientShareholder::class); }
     public function ubos(): HasMany        { return $this->hasMany(ClientUbo::class); }
+    public function documents(): HasMany   { return $this->hasMany(ClientDocument::class); }
     public function creator(): BelongsTo   { return $this->belongsTo(User::class, 'created_by'); }
 
     // ── Display helpers ────────────────────────────────────────────────────

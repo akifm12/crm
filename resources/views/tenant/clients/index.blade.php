@@ -157,6 +157,7 @@ $currentType = request('type', '');
                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase hidden lg:table-cell">Risk</th>
                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase hidden lg:table-cell">Screening</th>
                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase hidden lg:table-cell">Added</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase hidden lg:table-cell">Docs</th>
                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Status</th>
                 <th class="px-4 py-3"></th>
             </tr>
@@ -209,6 +210,29 @@ $currentType = request('type', '');
                 <td class="px-4 py-3 hidden lg:table-cell text-xs text-gray-400">
                     {{ $client->created_at ? $client->created_at->format('d M Y') : '—' }}
                 </td>
+                <td class="px-4 py-3 hidden lg:table-cell">
+                    @php
+                        $uploaded = $client->documents->pluck('document_type')->unique();
+                        $hasPassport = $uploaded->intersect(['passport','shareholder_passport','signatory_passport','ubo_passport'])->isNotEmpty();
+                        $isIndividual = $client->client_type === 'individual';
+                        $missing = [];
+                        if (!$isIndividual) {
+                            if (!$uploaded->contains('trade_licence')) $missing[] = 'TL';
+                            if (!$uploaded->contains('moa'))           $missing[] = 'MoA';
+                        }
+                        if (!$hasPassport) $missing[] = 'PP';
+                        if ($isIndividual && !$uploaded->contains('emirates_id')) $missing[] = 'EID';
+                    @endphp
+                    @if(empty($missing))
+                        <span class="text-green-500 text-xs font-semibold">✓</span>
+                    @else
+                        <div class="flex flex-wrap gap-1">
+                            @foreach($missing as $m)
+                            <span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-red-50 text-red-500 border border-red-100">{{ $m }}</span>
+                            @endforeach
+                        </div>
+                    @endif
+                </td>
                 <td class="px-4 py-3">
                     <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold {{ $client->statusBadgeColor() }}">
                         {{ ucfirst($client->status) }}
@@ -221,7 +245,7 @@ $currentType = request('type', '');
             </tr>
             @empty
             <tr>
-                <td colspan="8" class="px-4 py-16 text-center">
+                <td colspan="9" class="px-4 py-16 text-center">
                     <p class="text-gray-400 text-sm mb-3">No clients found.</p>
                     <a href="{{ route('tenant.clients.create', $tenant->slug) }}"
                        class="text-sm text-blue-600 hover:underline">Add your first client</a>
