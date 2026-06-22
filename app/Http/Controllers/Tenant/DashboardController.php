@@ -35,9 +35,9 @@ class DashboardController extends Controller
         $licenceMissing  = (clone $activeBase)->whereNull('trade_license_expiry')->count();
         $licenceExpired  = (clone $activeBase)->whereNotNull('trade_license_expiry')->where('trade_license_expiry', '<', now())->count();
         $licenceExpiring = (clone $activeBase)->whereNotNull('trade_license_expiry')->whereBetween('trade_license_expiry', [now(), now()->addDays(30)])->count();
-        $ejariMissing    = (clone $activeBase)->whereNull('ejari_expiry')->count();
-        $ejariExpired    = (clone $activeBase)->whereNotNull('ejari_expiry')->where('ejari_expiry', '<', now())->count();
-        $ejariExpiring   = (clone $activeBase)->whereNotNull('ejari_expiry')->whereBetween('ejari_expiry', [now(), now()->addDays(30)])->count();
+        $ejariMissing    = (clone $activeBase)->where('client_type', '!=', 'individual')->whereNull('ejari_expiry')->count();
+        $ejariExpired    = (clone $activeBase)->where('client_type', '!=', 'individual')->whereNotNull('ejari_expiry')->where('ejari_expiry', '<', now())->count();
+        $ejariExpiring   = (clone $activeBase)->where('client_type', '!=', 'individual')->whereNotNull('ejari_expiry')->whereBetween('ejari_expiry', [now(), now()->addDays(30)])->count();
         $reviewOverdue   = (clone $base)->whereNotNull('next_review_date')->where('next_review_date', '<', now())->count();
         $reviewDueSoon   = (clone $activeBase)->whereNotNull('next_review_date')->whereBetween('next_review_date', [now(), now()->addDays(30)])->count();
         $unscreened      = (clone $activeBase)->where('screening_status', 'not_screened')->count();
@@ -99,6 +99,7 @@ class DashboardController extends Controller
 
         $ejari_alerts = BullionClient::where('tenant_id', $tid)
             ->whereIn('status', ['active', 'pending'])
+            ->where('client_type', '!=', 'individual')
             ->where(fn($q) => $q->whereNull('ejari_expiry')
                 ->orWhere('ejari_expiry', '<=', now()->addDays(60)))
             ->orderByRaw('CASE WHEN ejari_expiry IS NULL THEN 1 WHEN ejari_expiry < NOW() THEN 0 ELSE 2 END')
