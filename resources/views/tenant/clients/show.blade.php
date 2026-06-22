@@ -301,6 +301,19 @@ $countryName = fn($code) => $code ? (\App\Models\Country::find($code)?->country_
                         <div><span class="text-xs text-gray-400 block">Date of birth</span>
                             {{ $sh->dob ? $sh->dob->format('d M Y') : '—' }}
                         </div>
+                        <div><span class="text-xs text-gray-400 block">Passport no.</span>{{ $sh->passport_number ?? '—' }}</div>
+                        <div><span class="text-xs text-gray-400 block">Passport expiry</span>
+                            @if($sh->passport_expiry)
+                                @php $pExp = $sh->passport_expiry; @endphp
+                                <span class="@if($pExp->isPast()) text-red-600 font-semibold @elseif($pExp->diffInDays(now()) <= 90) text-amber-600 font-medium @endif">
+                                    {{ $pExp->format('d M Y') }}
+                                    @if($pExp->isPast()) <span class="text-xs">(Expired)</span>
+                                    @elseif($pExp->diffInDays(now()) <= 90) <span class="text-xs">({{ $pExp->diffInDays(now()) }}d)</span>
+                                    @endif
+                                </span>
+                            @else —
+                            @endif
+                        </div>
                         <div><span class="text-xs text-gray-400 block">Ownership</span>{{ $sh->ownership_percentage ? $sh->ownership_percentage.'%' : '—' }}</div>
                         <div><span class="text-xs text-gray-400 block">UBO</span>
                             @if($sh->is_ubo)<span class="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-medium">Yes</span>@else <span class="text-gray-400">No</span>@endif

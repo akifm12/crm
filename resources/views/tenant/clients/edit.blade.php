@@ -142,7 +142,7 @@ $typeLabels  = ['corporate_local'=>'Corporate — Local','corporate_import'=>'Co
     {{-- ── SHAREHOLDERS & UBOs ───────────────────────────────────────────── --}}
     <div x-show="tab==='shareholders'" x-cloak
          x-data="{
-            shareholders: {{ json_encode($client->shareholders->map(fn($s) => ['shareholder_type'=>$s->shareholder_type,'name'=>$s->name,'nationality'=>$s->nationality,'dob'=>$s->dob?->format('Y-m-d'),'ownership_percentage'=>$s->ownership_percentage,'passport_number'=>$s->passport_number,'is_ubo'=>(bool)$s->is_ubo,'is_resident'=>(bool)$s->is_resident,'eid_number'=>$s->eid_number,'eid_expiry'=>$s->eid_expiry?->format('Y-m-d')])->toArray()) }},
+            shareholders: {{ json_encode($client->shareholders->map(fn($s) => ['shareholder_type'=>$s->shareholder_type,'name'=>$s->name,'nationality'=>$s->nationality,'dob'=>$s->dob?->format('Y-m-d'),'ownership_percentage'=>$s->ownership_percentage,'passport_number'=>$s->passport_number,'passport_expiry'=>$s->passport_expiry?->format('Y-m-d'),'is_ubo'=>(bool)$s->is_ubo,'is_resident'=>(bool)$s->is_resident,'eid_number'=>$s->eid_number,'eid_expiry'=>$s->eid_expiry?->format('Y-m-d')])->toArray()) }},
             ubos: {{ json_encode($client->ubos->map(fn($u) => ['full_name'=>$u->full_name,'nationality'=>$u->nationality,'dob'=>$u->dob?->format('Y-m-d'),'passport_number'=>$u->passport_number,'ownership_percentage'=>$u->ownership_percentage,'country_of_residence'=>$u->country_of_residence,'pep_status'=>(bool)$u->pep_status])->toArray()) }}
          }">
         <div class="space-y-5">
@@ -150,7 +150,7 @@ $typeLabels  = ['corporate_local'=>'Corporate — Local','corporate_import'=>'Co
             <div class="bg-white rounded-xl border border-gray-200 p-5">
                 <div class="flex items-center justify-between mb-4 pb-2 border-b border-gray-100">
                     <h3 class="text-sm font-semibold text-gray-700">Shareholders</h3>
-                    <button type="button" @click="shareholders.push({shareholder_type:'individual',name:'',nationality:'',ownership_percentage:'',passport_number:'',is_ubo:false})"
+                    <button type="button" @click="shareholders.push({shareholder_type:'individual',name:'',nationality:'',dob:'',ownership_percentage:'',passport_number:'',passport_expiry:'',is_ubo:false,is_resident:false,eid_number:'',eid_expiry:''})"
                             class="px-3 py-1.5 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700">+ Add shareholder</button>
                 </div>
                 <template x-for="(sh, i) in shareholders" :key="i">
@@ -185,6 +185,9 @@ $typeLabels  = ['corporate_local'=>'Corporate — Local','corporate_import'=>'Co
                                        class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
                             <div><label class="block text-xs font-medium text-gray-600 mb-1">Passport number</label>
                                 <input type="text" :name="'shareholders['+i+'][passport_number]'" x-model="sh.passport_number"
+                                       class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
+                            <div><label class="block text-xs font-medium text-gray-600 mb-1">Passport expiry</label>
+                                <input type="date" :name="'shareholders['+i+'][passport_expiry]'" x-model="sh.passport_expiry"
                                        class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
                             <div class="flex items-center gap-2 mt-4">
                                 <input type="checkbox" :name="'shareholders['+i+'][is_ubo]'" value="1" x-model="sh.is_ubo"

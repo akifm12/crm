@@ -15,6 +15,7 @@ class ClientShareholder extends Model
         'dob',
         'ownership_percentage',
         'passport_number',
+        'passport_expiry',
         'is_ubo',
         'is_resident',
         'eid_number',
@@ -25,8 +26,9 @@ class ClientShareholder extends Model
         'is_ubo'               => 'boolean',
         'is_resident'          => 'boolean',
         'ownership_percentage' => 'decimal:2',
-        'dob'                  => 'date',
-        'eid_expiry'           => 'date',
+        'dob'              => 'date',
+        'passport_expiry'  => 'date',
+        'eid_expiry'       => 'date',
     ];
 
     public function client(): BelongsTo

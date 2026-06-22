@@ -338,6 +338,8 @@
                         <input type="number" step="0.01" :name="'shareholders['+i+'][ownership_percentage]'" x-model="sh.ownership_percentage" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
                     <div><label class="block text-xs font-medium text-gray-600 mb-1">Passport / Reg. no.</label>
                         <input type="text" :name="'shareholders['+i+'][passport_number]'" x-model="sh.passport_number" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
+                    <div><label class="block text-xs font-medium text-gray-600 mb-1">Passport expiry</label>
+                        <input type="date" :name="'shareholders['+i+'][passport_expiry]'" x-model="sh.passport_expiry" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
                     <div class="flex items-center gap-2 pt-4">
                         <input type="checkbox" :name="'shareholders['+i+'][is_ubo]'" value="1" x-model="sh.is_ubo" :id="'sh_ubo_'+i" class="rounded border-gray-300 text-blue-600">
                         <label :for="'sh_ubo_'+i" class="text-xs text-gray-600">Also a UBO (25%+)</label>
@@ -860,7 +862,7 @@ function clientForm() {
         },
 
         signatories:  [{ full_name:'', position:'', nationality:'', dob:'', passport_number:'', passport_expiry:'', eid_number:'' }],
-        shareholders: [{ shareholder_type:'individual', name:'', nationality:'', dob:'', ownership_percentage:'', passport_number:'', is_ubo:false, is_resident:false, eid_number:'', eid_expiry:'' }],
+        shareholders: [{ shareholder_type:'individual', name:'', nationality:'', dob:'', ownership_percentage:'', passport_number:'', passport_expiry:'', is_ubo:false, is_resident:false, eid_number:'', eid_expiry:'' }],
         ubos:         [{ full_name:'', nationality:'', dob:'', passport_number:'', ownership_percentage:'', country_of_residence:'', pep_status:false }],
         setType(t) {
             this.clientType=t; this.step=1; this.indStep=1;
@@ -880,7 +882,7 @@ function clientForm() {
         },
         addSig()    { this.signatories.push({full_name:'',position:'',nationality:'',dob:'',passport_number:'',passport_expiry:'',eid_number:''}); },
         removeSig(i){ this.signatories.splice(i,1); },
-        addSh()     { this.shareholders.push({shareholder_type:'individual',name:'',nationality:'',dob:'',ownership_percentage:'',passport_number:'',is_ubo:false,is_resident:false,eid_number:'',eid_expiry:''}); },
+        addSh()     { this.shareholders.push({shareholder_type:'individual',name:'',nationality:'',dob:'',ownership_percentage:'',passport_number:'',passport_expiry:'',is_ubo:false,is_resident:false,eid_number:'',eid_expiry:''}); },
         removeSh(i) { this.shareholders.splice(i,1); },
         addUbo()    { this.ubos.push({full_name:'',nationality:'',dob:'',passport_number:'',ownership_percentage:'',country_of_residence:'',pep_status:false}); },
         removeUbo(i){ this.ubos.splice(i,1); },
