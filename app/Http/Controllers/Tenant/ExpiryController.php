@@ -30,6 +30,7 @@ class ExpiryController extends Controller
 
             'licence' => BullionClient::where('tenant_id', $tid)
                 ->whereIn('status', ['active', 'pending'])
+                ->where('client_type', '!=', 'individual')
                 ->where(fn($q) => $q->whereNull('trade_license_expiry')
                     ->orWhere('trade_license_expiry', '<=', now()->addDays($window)))
                 ->orderByRaw('CASE WHEN trade_license_expiry IS NULL THEN 1 WHEN trade_license_expiry < NOW() THEN 0 ELSE 2 END')
@@ -75,7 +76,7 @@ class ExpiryController extends Controller
 
         // Tab counts for badges
         $counts = [
-            'licence'  => BullionClient::where('tenant_id', $tid)->whereIn('status', ['active','pending'])
+            'licence'  => BullionClient::where('tenant_id', $tid)->whereIn('status', ['active','pending'])->where('client_type','!=','individual')
                 ->where(fn($q) => $q->whereNull('trade_license_expiry')->orWhere('trade_license_expiry', '<=', now()->addDays($window)))->count(),
             'ejari'    => BullionClient::where('tenant_id', $tid)->whereIn('status', ['active','pending'])->where('client_type','!=','individual')
                 ->where(fn($q) => $q->whereNull('ejari_expiry')->orWhere('ejari_expiry', '<=', now()->addDays($window)))->count(),

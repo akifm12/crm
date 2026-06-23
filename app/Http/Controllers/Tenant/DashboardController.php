@@ -32,9 +32,9 @@ class DashboardController extends Controller
         $riskUnrated = (clone $base)->whereNull('risk_rating')->count();
 
         // ── Compliance alerts ─────────────────────────────────────────────────
-        $licenceMissing  = (clone $activeBase)->whereNull('trade_license_expiry')->count();
-        $licenceExpired  = (clone $activeBase)->whereNotNull('trade_license_expiry')->where('trade_license_expiry', '<', now())->count();
-        $licenceExpiring = (clone $activeBase)->whereNotNull('trade_license_expiry')->whereBetween('trade_license_expiry', [now(), now()->addDays(30)])->count();
+        $licenceMissing  = (clone $activeBase)->where('client_type', '!=', 'individual')->whereNull('trade_license_expiry')->count();
+        $licenceExpired  = (clone $activeBase)->where('client_type', '!=', 'individual')->whereNotNull('trade_license_expiry')->where('trade_license_expiry', '<', now())->count();
+        $licenceExpiring = (clone $activeBase)->where('client_type', '!=', 'individual')->whereNotNull('trade_license_expiry')->whereBetween('trade_license_expiry', [now(), now()->addDays(30)])->count();
         $ejariMissing    = (clone $activeBase)->where('client_type', '!=', 'individual')->whereNull('ejari_expiry')->count();
         $ejariExpired    = (clone $activeBase)->where('client_type', '!=', 'individual')->whereNotNull('ejari_expiry')->where('ejari_expiry', '<', now())->count();
         $ejariExpiring   = (clone $activeBase)->where('client_type', '!=', 'individual')->whereNotNull('ejari_expiry')->whereBetween('ejari_expiry', [now(), now()->addDays(30)])->count();
