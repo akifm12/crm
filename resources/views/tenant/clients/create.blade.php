@@ -28,18 +28,27 @@
     </div>
 
     <div x-show="open" x-cloak class="mt-4 border-t border-blue-100 pt-4">
-        <div class="flex flex-col sm:flex-row gap-3 items-start sm:items-end">
-            <div class="flex-1">
-                <label class="block text-xs font-medium text-blue-800 mb-1">
-                    Select document <span class="font-normal text-blue-500">(passport, Emirates ID, or trade licence)</span>
-                </label>
-                <input type="file"
-                       multiple
+        {{-- Drop zone --}}
+        <div class="relative"
+             @dragover.prevent="dragging = true"
+             @dragleave.prevent="dragging = false"
+             @drop.prevent="dropFiles($event)">
+            <div :class="dragging ? 'border-blue-500 bg-blue-100' : 'border-blue-200 bg-blue-50 hover:border-blue-400 hover:bg-blue-100'"
+                 class="border-2 border-dashed rounded-xl p-6 text-center transition cursor-pointer"
+                 @click="$refs.fileInput.click()">
+                <svg class="w-8 h-8 text-blue-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                </svg>
+                <p class="text-sm font-medium text-blue-800" x-text="files.length ? files.length + ' file(s) selected' : 'Drop files here or click to browse'"></p>
+                <p class="text-xs text-blue-400 mt-1">Passport, Emirates ID or trade licence · JPG, PNG or PDF · Max 10 MB</p>
+                <input x-ref="fileInput" type="file" multiple
                        @change="filesSelected($event)"
                        accept="image/jpeg,image/jpg,image/png,application/pdf"
-                       class="block w-full text-sm text-blue-700 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer">
-                <p class="text-xs text-blue-400 mt-1">JPG, PNG or PDF · Max 10 MB · Select multiple files at once</p>
+                       class="hidden">
             </div>
+        </div>
+
+        <div class="flex justify-end mt-3">
             <button type="button" @click="scan()"
                     :disabled="!files.length || scanning"
                     class="px-5 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2 flex-shrink-0 transition">
@@ -967,6 +976,7 @@ function docScanner(scanUrl) {
     return {
         scanUrl:  scanUrl,
         open:     true,
+        dragging: false,
         files:    [],
         scanning: false,
         progress: '',
@@ -974,9 +984,21 @@ function docScanner(scanUrl) {
         error:    '',
 
         filesSelected(e) {
-            this.files  = Array.from(e.target.files);
-            this.filled = [];
-            this.error  = '';
+            this.files    = Array.from(e.target.files);
+            this.filled   = [];
+            this.error    = '';
+            this.progress = '';
+        },
+
+        dropFiles(e) {
+            this.dragging = false;
+            const dropped = Array.from(e.dataTransfer.files).filter(f =>
+                ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'].includes(f.type)
+            );
+            if (!dropped.length) { this.error = 'Only JPG, PNG or PDF files are accepted.'; return; }
+            this.files    = dropped;
+            this.filled   = [];
+            this.error    = '';
             this.progress = '';
         },
 
