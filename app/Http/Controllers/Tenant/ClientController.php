@@ -192,7 +192,17 @@ PROMPT;
                 return response()->json(['error' => 'Could not read document fields. Please fill the form manually.'], 422);
             }
 
-            return response()->json($data);
+            // Save file to tenant tmp dir so store() can attach it to the new client
+            $tmpPath = "tenants/{$tenant->id}/tmp/scan_" . \Illuminate\Support\Str::uuid() . '.' . $file->getClientOriginalExtension();
+            \Illuminate\Support\Facades\Storage::disk('local')->put($tmpPath, file_get_contents($file->getRealPath()));
+
+            return response()->json(array_merge($data, [
+                '_temp_path'  => $tmpPath,
+                '_file_name'  => $file->getClientOriginalName(),
+                '_mime_type'  => $file->getMimeType(),
+                '_file_size'  => $file->getSize(),
+                '_doc_type'   => $data['document_type'] ?? 'other',
+            ]));
 
         } catch (\Exception $e) {
             return response()->json(['error' => 'Scan failed: '.$e->getMessage()], 500);
@@ -302,6 +312,45 @@ PROMPT;
                     'uploaded_by'       => auth()->id(),
                 ]);
             }
+        }
+
+        // Attach documents that were pre-scanned via the Scan & Fill panel
+        foreach ($request->input('scanned_docs', []) as $scannedDoc) {
+            $tmpPath = $scannedDoc['temp_path'] ?? null;
+            if (!$tmpPath) continue;
+
+            // Security: only allow paths within this tenant's tmp dir
+            if (!str_starts_with($tmpPath, "tenants/{$tenant->id}/tmp/")) continue;
+            if (!\Illuminate\Support\Facades\Storage::disk('local')->exists($tmpPath)) continue;
+
+            $docType  = $scannedDoc['doc_type']   ?? 'other';
+            $fileName = $scannedDoc['file_name']   ?? basename($tmpPath);
+            $mimeType = $scannedDoc['mime_type']   ?? 'application/octet-stream';
+            $fileSize = (int) ($scannedDoc['file_size'] ?? 0);
+
+            $labelMap = [
+                'passport'      => 'Passport',
+                'emirates_id'   => 'Emirates ID',
+                'trade_licence' => 'Trade Licence',
+                'other'         => 'Scanned Document',
+            ];
+
+            $newPath = "tenants/{$tenant->id}/clients/{$client->id}/" . basename($tmpPath);
+            \Illuminate\Support\Facades\Storage::disk('local')->move($tmpPath, $newPath);
+
+            $doc = ClientDocument::create([
+                'bullion_client_id' => $client->id,
+                'tenant_id'         => $tenant->id,
+                'document_type'     => $docType,
+                'document_label'    => $labelMap[$docType] ?? ucwords(str_replace(['_', '-'], ' ', $docType)),
+                'file_path'         => $newPath,
+                'file_name'         => $fileName,
+                'mime_type'         => $mimeType,
+                'file_size'         => $fileSize,
+                'uploaded_by'       => auth()->id(),
+            ]);
+
+            (new ScanUploadedDocument($doc, auth()->id()))->handle();
         }
 
         return redirect()

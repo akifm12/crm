@@ -84,6 +84,21 @@
         <div x-show="error" class="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
             <p class="text-xs text-red-700" x-text="error"></p>
         </div>
+
+        <div x-show="scannedDocs.length > 0" class="mt-3 p-3 bg-indigo-50 border border-indigo-200 rounded-lg">
+            <p class="text-xs font-semibold text-indigo-800 mb-1.5">
+                <svg class="w-3.5 h-3.5 inline mr-1 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
+                Will be saved to client's documents:
+            </p>
+            <template x-for="(doc, i) in scannedDocs" :key="i">
+                <div class="flex items-center gap-2 text-xs text-indigo-700 mt-1">
+                    <svg class="w-3.5 h-3.5 text-indigo-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    <span x-text="doc.file_name" class="font-medium truncate max-w-xs"></span>
+                    <span class="text-indigo-400">·</span>
+                    <span x-text="doc.doc_type.replace(/_/g,' ')" class="capitalize text-indigo-500"></span>
+                </div>
+            </template>
+        </div>
     </div>
 </div>
 
@@ -112,7 +127,8 @@
 </div>
 @endif
 
-<form method="POST" action="{{ route('tenant.clients.store', $tenant->slug) }}"
+<form id="client-create-form"
+      method="POST" action="{{ route('tenant.clients.store', $tenant->slug) }}"
       enctype="multipart/form-data"
       novalidate
       x-data="clientForm()">
@@ -974,14 +990,15 @@ function clientSearch(searchUrl, initialValue) {
 
 function docScanner(scanUrl) {
     return {
-        scanUrl:  scanUrl,
-        open:     true,
-        dragging: false,
-        files:    [],
-        scanning: false,
-        progress: '',
-        filled:   [],
-        error:    '',
+        scanUrl:     scanUrl,
+        open:        true,
+        dragging:    false,
+        files:       [],
+        scanning:    false,
+        progress:    '',
+        filled:      [],
+        error:       '',
+        scannedDocs: [],   // [{fileName, docType, tempPath, mimeType, fileSize}]
 
         filesSelected(e) {
             this.files    = Array.from(e.target.files);
@@ -1000,6 +1017,23 @@ function docScanner(scanUrl) {
             this.filled   = [];
             this.error    = '';
             this.progress = '';
+        },
+
+        injectHiddenInputs() {
+            const form = document.getElementById('client-create-form');
+            if (!form) return;
+            // Remove any previously injected inputs
+            form.querySelectorAll('.scanned-doc-input').forEach(el => el.remove());
+            this.scannedDocs.forEach((doc, i) => {
+                ['temp_path','file_name','mime_type','file_size','doc_type'].forEach(key => {
+                    const inp = document.createElement('input');
+                    inp.type  = 'hidden';
+                    inp.name  = `scanned_docs[${i}][${key}]`;
+                    inp.value = doc[key] ?? '';
+                    inp.className = 'scanned-doc-input';
+                    form.appendChild(inp);
+                });
+            });
         },
 
         async scan() {
@@ -1033,11 +1067,23 @@ function docScanner(scanUrl) {
                     }
 
                     this.applyFields(data, allFilled);
+
+                    // Track temp file for attachment on form submit
+                    if (data._temp_path) {
+                        this.scannedDocs.push({
+                            temp_path: data._temp_path,
+                            file_name: data._file_name,
+                            mime_type: data._mime_type,
+                            file_size: data._file_size,
+                            doc_type:  data._doc_type,
+                        });
+                    }
                 } catch (e) {
                     this.error = `Could not reach the server for document ${i + 1}. Please try again.`;
                 }
             }
 
+            this.injectHiddenInputs();
             this.filled   = Array.from(allFilled);
             this.progress = '';
             this.scanning = false;
