@@ -6,8 +6,7 @@
 @section('content')
 
 {{-- ── AI DOCUMENT SCAN (own Alpine scope, outside the form) ───────────────── --}}
-<div x-data="docScanner()"
-     data-url="{{ route('tenant.clients.scan', $tenant->slug) }}"
+<div x-data="docScanner('{{ route('tenant.clients.scan', $tenant->slug) }}')"
      class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-5 mb-5">
     <div class="flex items-center justify-between">
         <div class="flex items-center gap-3">
@@ -964,8 +963,9 @@ function clientSearch(searchUrl, initialValue) {
     };
 }
 
-function docScanner() {
+function docScanner(scanUrl) {
     return {
+        scanUrl:  scanUrl,
         open:     true,
         files:    [],
         scanning: false,
@@ -999,7 +999,7 @@ function docScanner() {
                 fd.append('_token', token);
 
                 try {
-                    const res  = await fetch(this.$el.dataset.url, { method: 'POST', body: fd });
+                    const res  = await fetch(this.scanUrl, { method: 'POST', body: fd });
                     const text = await res.text();
                     console.log('[Scan] status:', res.status, 'body:', text.substring(0, 500));
                     let data;
