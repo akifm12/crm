@@ -193,7 +193,8 @@ PROMPT;
             }
 
             // Save file to tenant tmp dir so store() can attach it to the new client
-            $tmpPath = "tenants/{$tenant->id}/tmp/scan_" . \Illuminate\Support\Str::uuid() . '.' . $file->getClientOriginalExtension();
+            $tenantId = app('tenant')->id;
+            $tmpPath  = "tenants/{$tenantId}/tmp/scan_" . \Illuminate\Support\Str::uuid() . '.' . $file->getClientOriginalExtension();
             \Illuminate\Support\Facades\Storage::disk('local')->put($tmpPath, file_get_contents($file->getRealPath()));
 
             return response()->json(array_merge($data, [
