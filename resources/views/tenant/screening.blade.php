@@ -202,13 +202,32 @@
         </div>
         @endif
 
-        {{-- Go back to client profile --}}
-        @if($client)
-        <a href="{{ route('tenant.clients.show', [$tenant->slug, $client->id]) }}"
-           class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50 transition">
-            ← Back to {{ $client->displayName() }}'s profile
-        </a>
-        @endif
+        {{-- Action buttons --}}
+        <div class="flex flex-wrap gap-3 mt-2">
+            @if($client)
+            <a href="{{ route('tenant.clients.screening.pdf', [$tenant->slug, $client->id]) }}"
+               target="_blank"
+               class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                Download screening report
+            </a>
+            <a href="{{ route('tenant.clients.show', [$tenant->slug, $client->id]) }}"
+               class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50 transition">
+                ← Back to {{ $client->displayName() }}'s profile
+            </a>
+            @elseif(isset($logId))
+            <a href="{{ route('tenant.screening.log.pdf', [$tenant->slug, $logId]) }}"
+               target="_blank"
+               class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                Download screening report
+            </a>
+            @endif
+        </div>
 
         @else
 

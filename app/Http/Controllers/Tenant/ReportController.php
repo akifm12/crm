@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Tenant;
 
 use App\Http\Controllers\Controller;
 use App\Models\BullionClient;
+use App\Models\ScreeningLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -31,6 +32,27 @@ class ReportController extends Controller
         }
 
         return view('tenant.reports.screening_pdf', compact('tenant', 'client', 'allResults'));
+    }
+
+    // ── Standalone screening log PDF (no client link) ─────────────────────
+
+    public function screeningLogPdf(string $slug, ScreeningLog $log)
+    {
+        $tenant = app('tenant');
+        abort_if($log->tenant_id !== $tenant->id, 404);
+
+        // If the log is tied to a client, use the richer client-based PDF
+        if ($log->bullion_client_id) {
+            return redirect()->route('tenant.clients.screening.pdf', [$slug, $log->bullion_client_id]);
+        }
+
+        $allResults = [[
+            'name'    => $log->query,
+            'role'    => $log->entity_type === 'entity' ? 'Company' : 'Individual',
+            'summary' => $log->result ?? [],
+        ]];
+
+        return view('tenant.reports.screening_log_pdf', compact('tenant', 'log', 'allResults'));
     }
 
     // ── Combined declaration Word doc ──────────────────────────────────────

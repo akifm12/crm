@@ -93,7 +93,7 @@ class ScreeningController extends Controller
         }
 
         // Always log to screening history
-        ScreeningLog::create([
+        $log = ScreeningLog::create([
             'tenant_id'         => $tenant->id,
             'bullion_client_id' => $client?->id,
             'screened_by'       => auth()->id(),
@@ -115,6 +115,7 @@ class ScreeningController extends Controller
             'result'  => $summary,
             'query'   => $query,
             'rawData' => $result['data'],
+            'logId'   => $log->id,
             'logs'    => $logs,
         ]);
     }
