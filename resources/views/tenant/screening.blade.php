@@ -309,6 +309,7 @@
                         <th class="px-4 py-3 font-medium">Hits</th>
                         <th class="px-4 py-3 font-medium">Reference</th>
                         <th class="px-4 py-3 font-medium">By</th>
+                        <th class="px-4 py-3"></th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
@@ -351,6 +352,15 @@
                         </td>
                         <td class="px-4 py-3 text-xs text-gray-500">
                             {{ $log->screener?->name ?? '—' }}
+                        </td>
+                        <td class="px-4 py-3 text-right">
+                            @if($log->bullion_client_id)
+                            <a href="{{ route('tenant.clients.screening.pdf', [$tenant->slug, $log->bullion_client_id]) }}"
+                               target="_blank" class="text-xs text-blue-600 hover:underline whitespace-nowrap">PDF ↗</a>
+                            @else
+                            <a href="{{ route('tenant.screening.log.pdf', [$tenant->slug, $log->id]) }}"
+                               target="_blank" class="text-xs text-blue-600 hover:underline whitespace-nowrap">PDF ↗</a>
+                            @endif
                         </td>
                     </tr>
                     @endforeach
