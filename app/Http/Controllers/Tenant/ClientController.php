@@ -605,7 +605,7 @@ PROMPT;
             'passport'    => ['passport', 'pp'],
             'emirates_id' => ['eid', 'emirates', 'emiratesid', 'national_id', 'nationalid'],
             'visa'        => ['visa', 'residency', 'residence'],
-            'trade_licence' => ['license', 'licence', 'trade', 'tradelic', 'tl'],
+            'trade_license' => ['license', 'licence', 'trade', 'tradelic', 'tl'],
             'moa'         => ['moa', 'memorandum', 'articles', 'incorporation'],
             'ejari'       => ['ejari', 'tenancy', 'lease'],
             'bank_statement' => ['bank', 'statement', 'bankstat'],

@@ -217,11 +217,12 @@ $currentType = request('type', '');
                         $isIndividual = $client->client_type === 'individual';
                         $missing = [];
                         if (!$isIndividual) {
-                            if (!$uploaded->contains('trade_licence')) $missing[] = 'TL';
-                            if (!$uploaded->contains('moa'))           $missing[] = 'MoA';
+                            // Accept both spellings — bulk upload stored 'trade_licence', modal stores 'trade_license'
+                            if (!$uploaded->intersect(['trade_license','trade_licence'])->isNotEmpty()) $missing[] = 'TL';
+                            if (!$uploaded->contains('moa')) $missing[] = 'MoA';
                         }
                         if (!$hasPassport) $missing[] = 'PP';
-                        if ($isIndividual && !$uploaded->contains('emirates_id')) $missing[] = 'EID';
+                        if ($isIndividual && !$uploaded->intersect(['eid','emirates_id'])->isNotEmpty()) $missing[] = 'EID';
                     @endphp
                     @if(empty($missing))
                         <span class="text-green-500 text-xs font-semibold">✓</span>
