@@ -69,7 +69,14 @@ class GoamlController extends Controller
 
         $countries = Country::orderBy('country_name')->pluck('country_name', 'country_code')->toArray();
 
-        return view('tenant.goaml.create', compact('tenant', 'config', 'client', 'clients', 'countries'));
+        $prefill = [
+            'invoice'  => $request->input('invoice'),
+            'amount'   => $request->input('amount'),
+            'date'     => $request->input('date'),
+            'type'     => $request->input('type'),
+        ];
+
+        return view('tenant.goaml.create', compact('tenant', 'config', 'client', 'clients', 'countries', 'prefill'));
     }
 
     // ── Generate XML + save record ─────────────────────────────────────────

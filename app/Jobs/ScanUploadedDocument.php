@@ -87,7 +87,7 @@ PROMPT;
                 'anthropic-beta'    => 'pdfs-2024-09-25',
                 'content-type'      => 'application/json',
             ])->timeout(60)->post('https://api.anthropic.com/v1/messages', [
-                'model'      => 'claude-haiku-4-5-20251001',
+                'model'      => 'claude-haiku-4-5',
                 'max_tokens' => 512,
                 'messages'   => [[
                     'role'    => 'user',
@@ -96,13 +96,18 @@ PROMPT;
             ]);
 
             if (!$response->successful()) {
+                $apiError = $response->json('error.message') ?? $response->body();
+                Log::error('ScanUploadedDocument: API error', [
+                    'status' => $response->status(),
+                    'body'   => $apiError,
+                ]);
                 DocumentScanLog::create([
                     'tenant_id'          => $this->document->tenant_id,
                     'bullion_client_id'  => $client->id,
                     'client_document_id' => $this->document->id,
                     'changes'            => [],
                     'status'             => 'failed',
-                    'failure_reason'     => 'API error: ' . $response->status(),
+                    'failure_reason'     => 'API error ' . $response->status() . ': ' . $apiError,
                     'created_by'         => $this->userId,
                 ]);
                 return;

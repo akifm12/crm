@@ -12,6 +12,8 @@ $sig         = $client?->signatories?->first();
 $sh          = $client?->shareholders?->first();
 $director    = $sig ?? $sh;
 
+$prefill ??= [];
+
 // Pre-fill values
 $name                     = old('name', $isCorporate ? $client?->company_name : $client?->full_name);
 $commercial_name          = old('commercial_name', $isCorporate ? $client?->company_name : $client?->full_name);
@@ -83,7 +85,7 @@ $dir_phone                = old('d_tph_number', $client?->phone ?? '');
         </div>
         <div>
             <label class="block text-xs font-medium text-gray-600 mb-1">Invoice / reference number <span class="text-red-500">*</span></label>
-            <input type="text" name="entity_reference" value="{{ old('entity_reference') }}" required
+            <input type="text" name="entity_reference" value="{{ old('entity_reference', $prefill['invoice'] ?? '') }}" required
                    placeholder="e.g. INV-2026-0042"
                    class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
         </div>
@@ -156,19 +158,19 @@ if (!$dir_nationality)        $missing[] = 'Director nationality';
         </div>
         <div>
             <label class="block text-xs font-medium text-gray-600 mb-1">Transaction date <span class="text-red-500">*</span></label>
-            <input type="date" name="registration_date" value="{{ old('registration_date', date('Y-m-d')) }}"
+            <input type="date" name="registration_date" value="{{ old('registration_date', $prefill['date'] ?? date('Y-m-d')) }}"
                    required max="{{ date('Y-m-d') }}"
                    class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
         </div>
         <div>
             <label class="block text-xs font-medium text-gray-600 mb-1">Total trade / estimated value <span class="text-red-500">*</span></label>
-            <input type="number" name="estimated_value" value="{{ old('estimated_value') }}" required min="0" step="0.01"
+            <input type="number" name="estimated_value" value="{{ old('estimated_value', $prefill['amount'] ?? '') }}" required min="0" step="0.01"
                    placeholder="Total value of the relationship / transaction series"
                    class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
         </div>
         <div>
             <label class="block text-xs font-medium text-gray-600 mb-1">Disposed / transaction value <span class="text-red-500">*</span></label>
-            <input type="number" name="disposed_value" value="{{ old('disposed_value') }}" required min="0" step="0.01"
+            <input type="number" name="disposed_value" value="{{ old('disposed_value', $prefill['amount'] ?? '') }}" required min="0" step="0.01"
                    placeholder="Value of this specific transaction"
                    class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
         </div>

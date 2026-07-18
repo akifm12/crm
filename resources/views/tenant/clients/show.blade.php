@@ -504,12 +504,20 @@ $countryName = fn($code) => $code ? (\App\Models\Country::find($code)?->country_
                             </td>
                             <td class="px-5 py-3 text-gray-500 text-xs">{{ $txn->notes ?? '' }}</td>
                             <td class="px-5 py-3 text-right">
-                                <form method="POST"
-                                      action="{{ route('tenant.clients.transactions.delete', [$tenant->slug, $client->id, $txn->id]) }}"
-                                      onsubmit="return confirm('Delete this transaction?')">
-                                    @csrf @method('DELETE')
-                                    <button type="submit" class="text-red-400 hover:text-red-600 text-xs">Delete</button>
-                                </form>
+                                <div class="flex items-center justify-end gap-3">
+                                    @if(($txn->invoice_amount ?? 0) >= 55000)
+                                    <a href="{{ route('tenant.goaml.create', $tenant->slug) }}?client={{ $client->id }}&invoice={{ urlencode($txn->invoice_number ?? '') }}&amount={{ $txn->invoice_amount }}&date={{ $txn->visit_date?->format('Y-m-d') }}&type={{ $txn->transaction_type }}"
+                                       class="text-xs px-2 py-1 rounded bg-green-600 text-white hover:bg-green-700 whitespace-nowrap">
+                                        File DPMSR
+                                    </a>
+                                    @endif
+                                    <form method="POST"
+                                          action="{{ route('tenant.clients.transactions.delete', [$tenant->slug, $client->id, $txn->id]) }}"
+                                          onsubmit="return confirm('Delete this transaction?')">
+                                        @csrf @method('DELETE')
+                                        <button type="submit" class="text-red-400 hover:text-red-600 text-xs">Delete</button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                         @endforeach
