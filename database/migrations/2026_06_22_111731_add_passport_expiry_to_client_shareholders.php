@@ -11,15 +11,22 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('client_shareholders', function (Blueprint $table) {
-            $table->date('passport_expiry')->nullable()->after('passport_number');
-        });
+        // The base table-creation migration was later edited to include this column
+        // directly, making this migration a no-op on any database created since —
+        // only add it here for older databases that predate that edit.
+        if (! Schema::hasColumn('client_shareholders', 'passport_expiry')) {
+            Schema::table('client_shareholders', function (Blueprint $table) {
+                $table->date('passport_expiry')->nullable()->after('passport_number');
+            });
+        }
     }
 
     public function down(): void
     {
-        Schema::table('client_shareholders', function (Blueprint $table) {
-            $table->dropColumn('passport_expiry');
-        });
+        if (Schema::hasColumn('client_shareholders', 'passport_expiry')) {
+            Schema::table('client_shareholders', function (Blueprint $table) {
+                $table->dropColumn('passport_expiry');
+            });
+        }
     }
 };
