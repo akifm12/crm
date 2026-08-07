@@ -56,11 +56,29 @@
                        class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
             </div>
         </div>
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">VAT TRN</label>
+                <input type="text" name="vat_trn" value="{{ old('vat_trn', $tenant->vat_trn) }}"
+                       class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <p class="text-xs text-gray-400 mt-1">Shown on invoice PDFs for this portal</p>
+            </div>
+        </div>
         <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
             <input type="checkbox" name="is_active" value="1" id="is_active" {{ $tenant->is_active ? 'checked' : '' }}
                    class="rounded border-gray-300 text-blue-600">
             <label for="is_active" class="text-sm text-gray-700">Portal active — tenants can log in</label>
         </div>
+    </div>
+</div>
+
+<div class="bg-white rounded-xl border border-gray-200 p-5">
+    <h3 class="text-sm font-semibold text-gray-700 mb-4 pb-2 border-b border-gray-100">Modules</h3>
+    <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+        <input type="checkbox" name="module_bullion_accounting" value="1" id="module_bullion_accounting"
+               {{ $tenant->hasModule('bullion_accounting') ? 'checked' : '' }}
+               class="rounded border-gray-300 text-blue-600">
+        <label for="module_bullion_accounting" class="text-sm text-gray-700">Enable Bullion Accounting module — invoicing, ledger, trial balance &amp; balance sheet</label>
     </div>
 </div>
 

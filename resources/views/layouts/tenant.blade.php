@@ -140,6 +140,17 @@
             goAML reports
         </a>
 
+        @if($tenant->hasModule('bullion_accounting'))
+        {{-- Bullion Accounting --}}
+        <a href="{{ route('tenant.accounting.dashboard', $slug) }}"
+           class="nav-link {{ request()->routeIs('tenant.accounting*') ? 'active' : '' }}">
+            <svg style="width:16px;height:16px;flex-shrink:0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 0v10m0-10L9 17M5 21h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+            </svg>
+            Accounting
+        </a>
+        @endif
+
         {{-- Settings --}}
         <a href="{{ route('tenant.settings', $slug) }}"
            class="nav-link {{ request()->routeIs('tenant.settings') ? 'active' : '' }}">

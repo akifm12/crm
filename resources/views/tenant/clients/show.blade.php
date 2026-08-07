@@ -424,9 +424,18 @@ $countryName = fn($code) => $code ? (\App\Models\Country::find($code)?->country_
                     </p>
                     @endif
                 </div>
+                @if($tenant->hasModule('bullion_accounting'))
+                <a href="{{ route('tenant.accounting.invoices.create', $tenant->slug) }}?client_id={{ $client->id }}"
+                   class="px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 whitespace-nowrap">
+                    + New invoice
+                </a>
+                @endif
             </div>
 
-            {{-- Add transaction form --}}
+            {{-- Add transaction form — only for tenants without the accounting module, where
+                 this is the only way to log a transaction for AML/goAML purposes. Tenants
+                 with accounting enabled get transactions automatically from real invoices. --}}
+            @unless($tenant->hasModule('bullion_accounting'))
             <div class="px-5 py-4 bg-gray-50 border-b border-gray-100">
                 <p class="text-xs font-semibold text-gray-500 mb-3">Add transaction</p>
                 <form method="POST" action="{{ route('tenant.clients.transactions.store', [$tenant->slug, $client->id]) }}"
@@ -470,6 +479,7 @@ $countryName = fn($code) => $code ? (\App\Models\Country::find($code)?->country_
                     </div>
                 </form>
             </div>
+            @endunless
 
             {{-- Transaction list --}}
             @if($client->transactions->count())
@@ -511,12 +521,18 @@ $countryName = fn($code) => $code ? (\App\Models\Country::find($code)?->country_
                                         File DPMSR
                                     </a>
                                     @endif
+                                    @if($invoiceId = ($invoiceIdByTransactionId[$txn->id] ?? null))
+                                    <a href="{{ route('tenant.accounting.invoices.show', [$tenant->slug, $invoiceId]) }}" class="text-xs text-blue-600 hover:underline whitespace-nowrap">
+                                        View invoice
+                                    </a>
+                                    @else
                                     <form method="POST"
                                           action="{{ route('tenant.clients.transactions.delete', [$tenant->slug, $client->id, $txn->id]) }}"
                                           onsubmit="return confirm('Delete this transaction?')">
                                         @csrf @method('DELETE')
                                         <button type="submit" class="text-red-400 hover:text-red-600 text-xs">Delete</button>
                                     </form>
+                                    @endif
                                 </div>
                             </td>
                         </tr>

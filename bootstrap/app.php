@@ -13,6 +13,7 @@ return Application::configure(basePath: dirname(__DIR__))
 	->withMiddleware(function (Middleware $middleware) {
 		$middleware->alias([
 			'resolve.tenant' => \App\Http\Middleware\ResolveTenant::class,
+			'module' => \App\Http\Middleware\EnsureModuleEnabled::class,
 		]);
 	})
     ->withExceptions(function (Exceptions $exceptions): void {

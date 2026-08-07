@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\Accounting\ChartOfAccountSeeder;
 use App\Support\SectorConfig;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -78,10 +79,19 @@ class TenantController extends Controller
             'contact_email' => 'required|email',
         ]);
 
+        $wasEnabled = $tenant->hasModule('bullion_accounting');
+
+        $settings = $tenant->settings ?? [];
+        $settings['enabled_modules']['bullion_accounting'] = $request->boolean('module_bullion_accounting');
+
         $tenant->update($request->only([
             'name', 'business_type', 'contact_email',
-            'phone', 'address', 'dnfbp_reg_no', 'is_active',
-        ]));
+            'phone', 'address', 'dnfbp_reg_no', 'vat_trn', 'is_active',
+        ]) + ['settings' => $settings]);
+
+        if (! $wasEnabled && $request->boolean('module_bullion_accounting')) {
+            app(ChartOfAccountSeeder::class)->seedForTenant($tenant->fresh());
+        }
 
         return back()->with('success', 'Tenant updated.');
     }

@@ -11,7 +11,7 @@ class Tenant extends Model
     protected $fillable = [
         'name', 'slug', 'business_type', 'logo_url', 'primary_color',
         'contact_email', 'phone', 'address',
-        'trade_license_no', 'dnfbp_reg_no',
+        'trade_license_no', 'dnfbp_reg_no', 'vat_trn',
         'mlro_name', 'mlro_email', 'mlro_phone',
         'is_active', 'settings',
     ];
@@ -24,6 +24,11 @@ class Tenant extends Model
     public function sectorLabel(): string
     {
         return \App\Support\SectorConfig::sectors()[$this->business_type ?? 'gold'] ?? 'DNFBP';
+    }
+
+    public function hasModule(string $key): bool
+    {
+        return (bool) ($this->settings['enabled_modules'][$key] ?? false);
     }
 
     protected $casts = [

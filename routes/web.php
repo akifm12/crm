@@ -218,4 +218,61 @@ Route::prefix('{slug}')
         Route::patch('/settings/mlro',             [TenantSettingsController::class, 'updateMlro'])->name('settings.mlro');
         Route::post('/settings/logo',              [TenantSettingsController::class, 'uploadLogo'])->name('settings.logo');
         Route::patch('/settings/password',         [TenantSettingsController::class, 'updatePassword'])->name('settings.password');
+
+        // ── Bullion Accounting module (gated) ────────────────────────────────
+        Route::prefix('accounting')
+            ->middleware('module:bullion_accounting')
+            ->name('accounting.')
+            ->group(function () {
+                Route::get('/', [\App\Http\Controllers\Tenant\Accounting\DashboardController::class, 'index'])->name('dashboard');
+
+                Route::get('/chart-of-accounts', [\App\Http\Controllers\Tenant\Accounting\ChartOfAccountController::class, 'index'])->name('coa.index');
+                Route::post('/chart-of-accounts', [\App\Http\Controllers\Tenant\Accounting\ChartOfAccountController::class, 'store'])->name('coa.store');
+                Route::delete('/chart-of-accounts/{account}', [\App\Http\Controllers\Tenant\Accounting\ChartOfAccountController::class, 'destroy'])->name('coa.destroy');
+
+                Route::get('/journal',              [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'journalIndex'])->name('journal.index');
+                Route::post('/journal',              [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'journalStore'])->name('journal.store');
+                Route::get('/journal/{entry}',       [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'journalShow'])->name('journal.show');
+                Route::delete('/journal/{entry}',    [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'journalVoid'])->name('journal.void');
+
+                Route::get('/reports/trial-balance',    [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'trialBalance'])->name('reports.trial-balance');
+                Route::get('/reports/trial-balance/pdf', [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'trialBalancePdf'])->name('reports.trial-balance.pdf');
+                Route::get('/reports/trial-balance/csv', [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'trialBalanceCsv'])->name('reports.trial-balance.csv');
+                Route::get('/reports/balance-sheet',    [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'balanceSheet'])->name('reports.balance-sheet');
+                Route::get('/reports/balance-sheet/pdf', [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'balanceSheetPdf'])->name('reports.balance-sheet.pdf');
+                Route::get('/reports/balance-sheet/csv', [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'balanceSheetCsv'])->name('reports.balance-sheet.csv');
+                Route::get('/reports/income-statement', [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'incomeStatement'])->name('reports.income-statement');
+                Route::get('/reports/income-statement/pdf', [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'incomeStatementPdf'])->name('reports.income-statement.pdf');
+                Route::get('/reports/income-statement/csv', [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'incomeStatementCsv'])->name('reports.income-statement.csv');
+                Route::get('/reports/vat-summary',      [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'vatSummary'])->name('reports.vat-summary');
+                Route::get('/reports/vat-summary/pdf',  [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'vatSummaryPdf'])->name('reports.vat-summary.pdf');
+                Route::get('/reports/vat-summary/csv',  [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'vatSummaryCsv'])->name('reports.vat-summary.csv');
+                Route::get('/reports/client-statement', [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'clientStatement'])->name('reports.client-statement');
+                Route::get('/reports/client-statement/pdf', [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'clientStatementPdf'])->name('reports.client-statement.pdf');
+                Route::get('/reports/client-statement/csv', [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'clientStatementCsv'])->name('reports.client-statement.csv');
+                Route::get('/reports/client-balances',  [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'clientBalances'])->name('reports.client-balances');
+                Route::get('/reports/client-balances/pdf', [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'clientBalancesPdf'])->name('reports.client-balances.pdf');
+                Route::get('/reports/client-balances/csv', [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'clientBalancesCsv'])->name('reports.client-balances.csv');
+
+                Route::post('/clients/{client}/payments',            [\App\Http\Controllers\Tenant\Accounting\ClientPaymentController::class, 'store'])->name('clients.payments.store');
+                Route::post('/deposits/{deposit}/apply',              [\App\Http\Controllers\Tenant\Accounting\ClientPaymentController::class, 'apply'])->name('deposits.apply');
+
+                Route::get('/inventory',                      [\App\Http\Controllers\Tenant\Accounting\InventoryController::class, 'index'])->name('inventory.index');
+                Route::get('/inventory/new',                  [\App\Http\Controllers\Tenant\Accounting\InventoryController::class, 'create'])->name('inventory.create');
+                Route::post('/inventory',                     [\App\Http\Controllers\Tenant\Accounting\InventoryController::class, 'store'])->name('inventory.store');
+                Route::get('/inventory/{item}',               [\App\Http\Controllers\Tenant\Accounting\InventoryController::class, 'show'])->name('inventory.show');
+                Route::post('/inventory/{item}/adjust',       [\App\Http\Controllers\Tenant\Accounting\InventoryController::class, 'adjust'])->name('inventory.adjust');
+
+                Route::get('/invoices',                          [\App\Http\Controllers\Tenant\Accounting\InvoiceController::class, 'index'])->name('invoices.index');
+                Route::get('/invoices/new',                      [\App\Http\Controllers\Tenant\Accounting\InvoiceController::class, 'create'])->name('invoices.create');
+                Route::post('/invoices',                         [\App\Http\Controllers\Tenant\Accounting\InvoiceController::class, 'store'])->name('invoices.store');
+                Route::get('/invoices/{invoice}',                [\App\Http\Controllers\Tenant\Accounting\InvoiceController::class, 'show'])->name('invoices.show');
+                Route::delete('/invoices/{invoice}',             [\App\Http\Controllers\Tenant\Accounting\InvoiceController::class, 'destroy'])->name('invoices.destroy');
+                Route::post('/invoices/{invoice}/post',          [\App\Http\Controllers\Tenant\Accounting\InvoiceController::class, 'post'])->name('invoices.post');
+                Route::get('/invoices/{invoice}/fix',            [\App\Http\Controllers\Tenant\Accounting\InvoiceController::class, 'fixPriceForm'])->name('invoices.fix.form');
+                Route::post('/invoices/{invoice}/fix',           [\App\Http\Controllers\Tenant\Accounting\InvoiceController::class, 'fixPrice'])->name('invoices.fix');
+                Route::post('/invoices/{invoice}/void',          [\App\Http\Controllers\Tenant\Accounting\InvoiceController::class, 'void'])->name('invoices.void');
+                Route::get('/invoices/{invoice}/pdf',            [\App\Http\Controllers\Tenant\Accounting\InvoiceController::class, 'pdf'])->name('invoices.pdf');
+                Route::post('/invoices/{invoice}/payments',      [\App\Http\Controllers\Tenant\Accounting\InvoiceController::class, 'storePayment'])->name('invoices.payments.store');
+            });
     });

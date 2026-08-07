@@ -510,7 +510,14 @@ PROMPT;
         $client->load(['signatories', 'shareholders', 'ubos', 'creator', 'transactions']);
         $documents = ClientDocument::where('bullion_client_id', $client->id)->orderBy('document_type')->get();
         $scanLogs  = DocumentScanLog::where('bullion_client_id', $client->id)->with('document')->latest()->get();
-        return view('tenant.clients.show', compact('tenant', 'client', 'documents', 'scanLogs'));
+
+        // Transactions auto-synced from a real accounting invoice shouldn't be deletable
+        // here — that would orphan the AML record without touching the actual invoice.
+        // Keyed by client_transaction_id => invoice id, so the view can link to it instead.
+        $invoiceIdByTransactionId = \App\Models\Invoice::whereIn('client_transaction_id', $client->transactions->pluck('id'))
+            ->pluck('id', 'client_transaction_id');
+
+        return view('tenant.clients.show', compact('tenant', 'client', 'documents', 'scanLogs', 'invoiceIdByTransactionId'));
     }
 
     public function edit(string $slug, BullionClient $client)
