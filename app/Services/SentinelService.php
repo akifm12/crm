@@ -10,8 +10,8 @@ use Illuminate\Support\Facades\Log;
 class SentinelService
 {
     private string $baseUrl;
-    private string $email;
-    private string $password;
+    private ?string $email;
+    private ?string $password;
     private string $cacheKey = 'sentinel_jwt_token';
 
     public function __construct()
