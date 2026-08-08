@@ -18,9 +18,47 @@ use App\Http\Controllers\Tenant\TenantDocumentController;
 use App\Http\Controllers\Tenant\GoamlController;
 use App\Http\Controllers\Tenant\SettingsController as TenantSettingsController;
 use App\Http\Controllers\Tenant\ReportController;
+use App\Http\Controllers\PagesController;
+use App\Http\Controllers\ComplianceCalendarController;
+use App\Http\Controllers\ResourceController;
+use App\Http\Controllers\NewsController;
+use App\Http\Controllers\NewsletterController;
+use App\Http\Controllers\PublicAccountController;
+use App\Http\Controllers\PublicDeadlineController;
 use App\Models\CrmQuotation;
 
 require __DIR__.'/auth.php';
+
+// ── Public marketing site (no auth) — literal static paths, must stay
+//    registered before the `{slug}` tenant catch-all groups below ─────────────
+Route::get('/',                              [PagesController::class, 'home'])->name('home');
+Route::get('/services',                      [PagesController::class, 'services'])->name('services');
+Route::get('/about',                         [PagesController::class, 'about'])->name('about');
+Route::get('/contact',                       [PagesController::class, 'contact'])->name('contact');
+Route::post('/contact',                      [PagesController::class, 'submitContact'])->name('contact.submit');
+Route::get('/compliance-calendar',           [ComplianceCalendarController::class, 'index'])->name('compliance-calendar');
+Route::get('/resources',                     [ResourceController::class, 'index'])->name('resources');
+Route::get('/resources/{resource}/download', [ResourceController::class, 'download'])->name('resources.download');
+Route::get('/news',                          [NewsController::class, 'index'])->name('news');
+Route::get('/news/{news}',                   [NewsController::class, 'show'])->name('news.show');
+Route::post('/newsletter/subscribe',         [NewsletterController::class, 'subscribe'])->name('newsletter.subscribe');
+Route::get('/technology',                    [PagesController::class, 'technology'])->name('technology');
+
+// ── Public free-account system (separate 'public' guard — see config/auth.php) ─
+Route::middleware('guest:public')->group(function () {
+    Route::get('/account/register',  [PublicAccountController::class, 'showRegister'])->name('account.register');
+    Route::post('/account/register', [PublicAccountController::class, 'register'])->name('account.register.store');
+    Route::get('/account/login',     [PublicAccountController::class, 'showLogin'])->name('account.login');
+    Route::post('/account/login',    [PublicAccountController::class, 'login'])->name('account.login.store');
+});
+
+Route::middleware('auth:public')->group(function () {
+    Route::post('/account/logout',              [PublicAccountController::class, 'logout'])->name('account.logout');
+    Route::get('/account',                       [PublicAccountController::class, 'dashboard'])->name('account.dashboard');
+    Route::post('/account/deadlines',            [PublicDeadlineController::class, 'store'])->name('account.deadlines.store');
+    Route::patch('/account/deadlines/{deadline}', [PublicDeadlineController::class, 'update'])->name('account.deadlines.update');
+    Route::delete('/account/deadlines/{deadline}',[PublicDeadlineController::class, 'destroy'])->name('account.deadlines.destroy');
+});
 
 // Role-based access middleware aliases
 // EnsureAdminUser  → admin portal only
@@ -30,7 +68,6 @@ require __DIR__.'/auth.php';
 Route::middleware(['auth', \App\Http\Middleware\EnsureAdminUser::class])->group(function () {
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    Route::get('/',          [DashboardController::class, 'index'])->name('admin.dashboard');
 
     // ── CRM ───────────────────────────────────────────────────────────────
     Route::get('/crm',          [CrmController::class, 'index'])->name('crm.index');
@@ -146,6 +183,21 @@ Route::middleware(['auth', \App\Http\Middleware\EnsureAdminUser::class])->group(
     Route::patch('/kyc/tenants/{tenant}/clients/{client}/restore', [TenantController::class, 'restoreClient'])->name('kyc.tenants.clients.restore');
     Route::patch('/kyc/submissions/{id}/approve', fn() => back())->name('kyc.approve');
     Route::patch('/kyc/submissions/{id}/reject',  fn() => back())->name('kyc.reject');
+
+    // ── Public site content manager ─────────────────────────────────────────
+    Route::get('/content/compliance-deadlines',        [\App\Http\Controllers\Admin\ComplianceDeadlineController::class, 'index'])->name('content.deadlines.index');
+    Route::post('/content/compliance-deadlines',        [\App\Http\Controllers\Admin\ComplianceDeadlineController::class, 'store'])->name('content.deadlines.store');
+    Route::patch('/content/compliance-deadlines/{deadline}', [\App\Http\Controllers\Admin\ComplianceDeadlineController::class, 'update'])->name('content.deadlines.update');
+    Route::delete('/content/compliance-deadlines/{deadline}', [\App\Http\Controllers\Admin\ComplianceDeadlineController::class, 'destroy'])->name('content.deadlines.destroy');
+
+    Route::get('/content/resources',                    [\App\Http\Controllers\Admin\ResourceDocumentController::class, 'index'])->name('content.resources.index');
+    Route::post('/content/resources',                    [\App\Http\Controllers\Admin\ResourceDocumentController::class, 'store'])->name('content.resources.store');
+    Route::patch('/content/resources/{resource}/toggle', [\App\Http\Controllers\Admin\ResourceDocumentController::class, 'togglePublish'])->name('content.resources.toggle');
+    Route::delete('/content/resources/{resource}',       [\App\Http\Controllers\Admin\ResourceDocumentController::class, 'destroy'])->name('content.resources.destroy');
+
+    Route::get('/content/news',                          [\App\Http\Controllers\Admin\NewsItemController::class, 'index'])->name('content.news.index');
+    Route::patch('/content/news/{item}/toggle',          [\App\Http\Controllers\Admin\NewsItemController::class, 'togglePublish'])->name('content.news.toggle');
+    Route::delete('/content/news/{item}',                [\App\Http\Controllers\Admin\NewsItemController::class, 'destroy'])->name('content.news.destroy');
 
 }); // ← end auth middleware group
 

@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use App\Models\PublicUser;
 
 return [
 
@@ -42,6 +43,11 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+
+        'public' => [
+            'driver' => 'session',
+            'provider' => 'public_users',
+        ],
     ],
 
     /*
@@ -65,6 +71,11 @@ return [
         'users' => [
             'driver' => 'eloquent',
             'model' => env('AUTH_MODEL', User::class),
+        ],
+
+        'public_users' => [
+            'driver' => 'eloquent',
+            'model' => PublicUser::class,
         ],
 
         // 'users' => [
