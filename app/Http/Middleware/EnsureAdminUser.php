@@ -29,6 +29,12 @@ class EnsureAdminUser
                 ->with('error', 'You do not have access to the admin portal.');
         }
 
+        if (! $user->isAdmin()) {
+            Auth::logout();
+            return redirect()->route('login')
+                ->with('error', 'You do not have access to the admin portal.');
+        }
+
         return $next($request);
     }
 }

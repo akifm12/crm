@@ -15,6 +15,14 @@ return Application::configure(basePath: dirname(__DIR__))
 			'resolve.tenant' => \App\Http\Middleware\ResolveTenant::class,
 			'module' => \App\Http\Middleware\EnsureModuleEnabled::class,
 		]);
+
+		$middleware->redirectGuestsTo(fn ($request) => $request->is('account*')
+			? route('account.login')
+			: route('login'));
+
+		$middleware->redirectUsersTo(fn ($request) => $request->is('account*')
+			? route('account.dashboard')
+			: route('dashboard'));
 	})
     ->withExceptions(function (Exceptions $exceptions): void {
         //
