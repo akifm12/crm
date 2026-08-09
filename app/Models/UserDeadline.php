@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class UserDeadline extends Model
 {
-    protected $fillable = ['public_user_id', 'type', 'label', 'due_date', 'notes'];
+    protected $fillable = ['public_user_id', 'compliance_deadline_id', 'type', 'label', 'due_date', 'notes'];
 
     protected $casts = [
         'due_date' => 'date',
@@ -33,8 +33,17 @@ class UserDeadline extends Model
         return $this->belongsTo(PublicUser::class);
     }
 
+    public function complianceDeadline(): BelongsTo
+    {
+        return $this->belongsTo(ComplianceDeadline::class);
+    }
+
     public function displayLabel(): string
     {
+        if ($this->complianceDeadline) {
+            return $this->complianceDeadline->title;
+        }
+
         return $this->label ?: (static::typeLabels()[$this->type] ?? ucfirst($this->type));
     }
 

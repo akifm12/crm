@@ -18,6 +18,18 @@ class ResourceDocument extends Model
         'is_published' => 'boolean',
     ];
 
+    public function scopePublished($query)
+    {
+        return $query->where('is_published', true);
+    }
+
+    public function scopeForSector($query, ?string $sector)
+    {
+        return $query->when($sector, fn ($q) => $q->where(function ($q) use ($sector) {
+            $q->where('sector', $sector)->orWhereNull('sector');
+        }));
+    }
+
     public function downloadUrl(): string
     {
         return Storage::disk('public')->url($this->file_path);

@@ -4,6 +4,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ComplianceDeadline extends Model
 {
@@ -18,6 +19,23 @@ class ComplianceDeadline extends Model
         'next_due_date' => 'date',
         'sort_order'    => 'integer',
     ];
+
+    public function scopeForSector($query, ?string $sector)
+    {
+        return $query->when($sector, fn ($q) => $q->where(function ($q) use ($sector) {
+            $q->where('sector', $sector)->orWhereNull('sector');
+        }));
+    }
+
+    public function scopeOrdered($query)
+    {
+        return $query->orderByRaw('next_due_date IS NULL, next_due_date asc')->orderBy('sort_order');
+    }
+
+    public function userDeadlines(): HasMany
+    {
+        return $this->hasMany(UserDeadline::class);
+    }
 
     public function categoryBadgeColor(): string
     {

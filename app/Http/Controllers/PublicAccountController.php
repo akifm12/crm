@@ -3,20 +3,20 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\ThrottlesPublicLogins;
 use App\Models\PublicUser;
 use App\Services\MailerSubscriberService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
-use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class PublicAccountController extends Controller
 {
+    use ThrottlesPublicLogins;
+
     public function showRegister(): View
     {
         return view('public.account.register');
@@ -61,25 +61,9 @@ class PublicAccountController extends Controller
             'password' => ['required', 'string'],
         ]);
 
-        $throttleKey = Str::transliterate(Str::lower($request->string('email')) . '|' . $request->ip());
+        $user = $this->attemptPublicLogin($request);
 
-        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
-            $seconds = RateLimiter::availableIn($throttleKey);
-
-            throw ValidationException::withMessages([
-                'email' => "Too many login attempts. Please try again in {$seconds} seconds.",
-            ]);
-        }
-
-        if (! Auth::guard('public')->attempt($request->only('email', 'password'), $request->boolean('remember'))) {
-            RateLimiter::hit($throttleKey);
-
-            throw ValidationException::withMessages([
-                'email' => 'These credentials do not match our records.',
-            ]);
-        }
-
-        RateLimiter::clear($throttleKey);
+        Auth::guard('public')->login($user, $request->boolean('remember'));
         $request->session()->regenerate();
 
         return redirect()->intended(route('account.dashboard'));

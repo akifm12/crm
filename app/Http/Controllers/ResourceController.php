@@ -17,10 +17,8 @@ class ResourceController extends Controller
         $sector = $request->query('sector');
 
         $resources = ResourceDocument::query()
-            ->where('is_published', true)
-            ->when($sector, fn ($q) => $q->where(function ($q) use ($sector) {
-                $q->where('sector', $sector)->orWhereNull('sector');
-            }))
+            ->published()
+            ->forSector($sector)
             ->latest()
             ->get();
 

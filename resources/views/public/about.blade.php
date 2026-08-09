@@ -69,10 +69,12 @@
         </p>
     </div>
 
-    <div class="mt-16 rounded-2xl bg-gray-50 border border-gray-100 p-8">
-        <h2 class="text-xl font-bold text-gray-900">Visit us</h2>
-        <p class="mt-3 text-gray-600 text-sm">SRTI Park, University Road, Sharjah, UAE</p>
-        <p class="mt-1 text-gray-600 text-sm"><a href="mailto:info@bluearrow.ae" class="text-brand-600 hover:text-brand-700">info@bluearrow.ae</a> &nbsp;·&nbsp; <a href="tel:+971526461499" class="text-brand-600 hover:text-brand-700">+971 52 6461499</a></p>
+    <div class="mt-16 rounded-2xl bg-gray-50 border border-gray-100 p-8 text-center">
+        <h2 class="text-xl font-bold text-gray-900">Want to get in touch?</h2>
+        <p class="mt-2 text-gray-600 text-sm">Find our office, email and phone details on the contact page.</p>
+        <a href="{{ route('contact') }}" class="mt-4 inline-flex items-center justify-center bg-brand-600 hover:bg-brand-700 text-white font-semibold px-6 py-3 rounded-xl transition">
+            Contact Us
+        </a>
     </div>
 </section>
 

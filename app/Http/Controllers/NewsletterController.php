@@ -3,18 +3,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\NewsletterSubscribeRequest;
 use App\Services\MailerSubscriberService;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 
 class NewsletterController extends Controller
 {
-    public function subscribe(Request $request, MailerSubscriberService $mailer): RedirectResponse
+    public function subscribe(NewsletterSubscribeRequest $request, MailerSubscriberService $mailer): RedirectResponse
     {
-        $validated = $request->validate([
-            'email' => ['required', 'email', 'max:150'],
-            'name'  => ['nullable', 'string', 'max:150'],
-        ]);
+        $validated = $request->validated();
 
         $mailer->subscribe($validated['email'], $validated['name'] ?? '');
 

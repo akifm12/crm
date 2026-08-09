@@ -17,11 +17,8 @@ class ComplianceCalendarController extends Controller
         $sector = $request->query('sector');
 
         $deadlines = ComplianceDeadline::query()
-            ->when($sector, fn ($q) => $q->where(function ($q) use ($sector) {
-                $q->where('sector', $sector)->orWhereNull('sector');
-            }))
-            ->orderByRaw('next_due_date IS NULL, next_due_date asc')
-            ->orderBy('sort_order')
+            ->forSector($sector)
+            ->ordered()
             ->get();
 
         $publicUser = Auth::guard('public')->user();
