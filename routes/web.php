@@ -199,6 +199,9 @@ Route::middleware(['auth', \App\Http\Middleware\EnsureAdminUser::class])->group(
     Route::patch('/content/news/{item}/toggle',          [\App\Http\Controllers\Admin\NewsItemController::class, 'togglePublish'])->name('content.news.toggle');
     Route::delete('/content/news/{item}',                [\App\Http\Controllers\Admin\NewsItemController::class, 'destroy'])->name('content.news.destroy');
 
+    Route::get('/content/public-users',                  [\App\Http\Controllers\Admin\PublicUserController::class, 'index'])->name('content.public-users.index');
+    Route::delete('/content/public-users/{user}',        [\App\Http\Controllers\Admin\PublicUserController::class, 'destroy'])->name('content.public-users.destroy');
+
 }); // ← end auth middleware group
 
 // ── Public client self-fill routes (no auth) ───────────────────────────────

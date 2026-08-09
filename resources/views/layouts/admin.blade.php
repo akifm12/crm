@@ -152,6 +152,15 @@
                     </svg>
                     News Feed
                 </a>
+
+                <a href="{{ route('content.public-users.index') }}"
+                   class="mt-1 flex items-center px-3 py-2 rounded-md text-sm font-medium
+                          {{ request()->routeIs('content.public-users.*') ? 'bg-blue-600 text-white' : 'text-blue-100 hover:bg-blue-600' }}">
+                    <svg class="mr-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-3.13a4 4 0 10-4-4 4 4 0 004 4zm6 4a4 4 0 10-4-4"/>
+                    </svg>
+                    Public Users
+                </a>
             </div>
 
             <!-- Bottom divider + Settings -->
