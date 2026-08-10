@@ -11,6 +11,7 @@ use App\Support\SectorConfig;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class TenantController extends Controller
 {
@@ -31,12 +32,14 @@ class TenantController extends Controller
     {
         $request->validate([
             'name'          => 'required|string|max:255',
-            'slug'          => 'required|string|max:50|unique:tenants,slug|alpha_dash',
+            'slug'          => ['required', 'string', 'max:50', 'unique:tenants,slug', 'alpha_dash', Rule::notIn(Tenant::reservedSlugs())],
             'business_type' => 'required|in:' . implode(',', array_keys(SectorConfig::sectors())),
             'contact_email' => 'required|email',
             'admin_name'    => 'required|string|max:255',
             'admin_email'   => 'required|email|unique:users,email',
             'admin_password'=> 'required|string|min:8',
+        ], [
+            'slug.not_in' => 'That acronym is reserved by the site (a page or system route already uses it) and can\'t be used as a tenant portal address.',
         ]);
 
         // Create tenant

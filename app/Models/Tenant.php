@@ -16,6 +16,30 @@ class Tenant extends Model
         'is_active', 'settings',
     ];
 
+    /**
+     * Top-level URL segments already claimed by literal routes (public
+     * marketing site, auth, admin) or by legacy static folders served
+     * directly by nginx — a tenant slug matching one of these would be
+     * permanently unreachable at bluearrow.ae/{slug}, since the literal
+     * route/folder always wins over the {slug} tenant catch-all.
+     */
+    public static function reservedSlugs(): array
+    {
+        return [
+            // public marketing site (routes/web.php)
+            'services', 'about', 'privacy', 'contact', 'compliance-calendar',
+            'resources', 'news', 'technology', 'account', 'newsletter',
+            // auth (routes/auth.php)
+            'login', 'logout', 'register', 'forgot-password', 'reset-password',
+            'confirm-password', 'verify-email', 'email', 'password',
+            // admin portal (routes/web.php)
+            'dashboard', 'crm', 'quotations', 'settings', 'marketing',
+            'screening', 'whatsapp', 'accounting', 'kyc',
+            // legacy static folders served directly by nginx, not Laravel
+            'motiwala', 'clients',
+        ];
+    }
+
     public function sectorConfig(): array
     {
         return \App\Support\SectorConfig::get($this->business_type ?? 'gold');
