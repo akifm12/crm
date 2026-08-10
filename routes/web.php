@@ -34,6 +34,7 @@ require __DIR__.'/auth.php';
 Route::get('/',                              [PagesController::class, 'home'])->name('home');
 Route::get('/services',                      [PagesController::class, 'services'])->name('services');
 Route::get('/about',                         [PagesController::class, 'about'])->name('about');
+Route::get('/privacy',                       [PagesController::class, 'privacy'])->name('privacy');
 Route::get('/contact',                       [PagesController::class, 'contact'])->name('contact');
 Route::post('/contact',                      [PagesController::class, 'submitContact'])->name('contact.submit');
 Route::get('/compliance-calendar',           [ComplianceCalendarController::class, 'index'])->name('compliance-calendar');
