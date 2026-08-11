@@ -30,6 +30,7 @@ class ReportController extends Controller
             'margin_right'  => 15,
             'margin_header' => 5,
             'margin_footer' => 5,
+            'tempDir'       => storage_path('app/mpdf-tmp'),
         ]);
 
         $html = view('tenant.reports.kyc_pdf', compact('tenant', 'client'))->render();
