@@ -86,14 +86,15 @@ body { font-family: dejavusans, sans-serif; font-size: 10pt; color: #000; backgr
 .lists-box td { font-size: 9pt; padding: 2px 6px; vertical-align: top; width: 50%; }
 
 /* ── Signature block ── */
-.sig-section { margin-top: 24px; }
+.sig-section { margin-top: 30px; }
 .sig-table { width: 100%; border-collapse: collapse; }
-.sig-table td { width: 33%; vertical-align: bottom; padding: 0 12px; text-align: center; }
-.sig-table td:first-child { padding-left: 0; text-align: left; }
-.sig-table td:last-child  { padding-right: 0; text-align: right; }
-.sig-line { border-top: 1px solid #000; padding-top: 6px; font-size: 9pt; color: #333; margin-top: 40px; }
-.sig-name { font-weight: bold; font-size: 9.5pt; color: #000; }
-.sig-title { font-size: 8.5pt; color: #444; }
+.sig-table td { width: 33%; vertical-align: top; padding: 0 10px; text-align: left; }
+.sig-table td:first-child { padding-left: 0; }
+.sig-table td:last-child  { padding-right: 0; }
+.sig-space    { height: 18mm; }
+.sig-line-bar { border-top: 1px solid #000; margin-bottom: 5px; }
+.sig-name  { font-weight: bold; font-size: 9.5pt; color: #000; }
+.sig-title { font-size: 8.5pt; color: #555; margin-top: 2px; }
 
 /* ── Utility ── */
 .text-muted { color: #777; font-style: italic; }
@@ -505,22 +506,22 @@ body { font-family: dejavusans, sans-serif; font-size: 10pt; color: #000; backgr
     <table class="sig-table">
         <tr>
             <td>
-                <div class="sig-line">
-                    <div class="sig-name">{{ $sig?->full_name ?? $client->displayName() }}</div>
-                    <div class="sig-title">{{ $sig?->position ?? 'Client / Authorised Signatory' }}</div>
-                </div>
+                <div class="sig-space"></div>
+                <div class="sig-line-bar"></div>
+                <div class="sig-name">{{ $sig?->full_name ?? $client->displayName() }}</div>
+                <div class="sig-title">{{ $sig?->position ?? 'Client / Authorised Signatory' }}</div>
             </td>
-            <td style="text-align:center;">
-                <div class="sig-line">
-                    <div class="sig-name">{{ $tenant->mlro_name ?? '___________________________' }}</div>
-                    <div class="sig-title">MLRO / Compliance Officer</div>
-                </div>
+            <td>
+                <div class="sig-space"></div>
+                <div class="sig-line-bar"></div>
+                <div class="sig-name">{{ $tenant->mlro_name ?? '' }}</div>
+                <div class="sig-title">MLRO / Compliance Officer</div>
             </td>
-            <td style="text-align:right;">
-                <div class="sig-line">
-                    <div class="sig-name">Date: ___________________</div>
-                    <div class="sig-title">Date of Approval</div>
-                </div>
+            <td>
+                <div class="sig-space"></div>
+                <div class="sig-line-bar"></div>
+                <div class="sig-name">Date:</div>
+                <div class="sig-title">Date of Approval</div>
             </td>
         </tr>
     </table>
