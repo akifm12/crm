@@ -77,9 +77,22 @@
     </div>
 
     <form method="POST" action="{{ url("/{$tenant->slug}/fill/{$fillToken->token}/submit") }}"
-          enctype="multipart/form-data" novalidate>
+          enctype="multipart/form-data" novalidate @submit="clearDraft()">
         @csrf
         <input type="hidden" name="client_type" :value="clientType">
+
+        {{-- Draft restored banner --}}
+        <div x-show="draftRestored" x-cloak
+             class="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4 flex items-center justify-between">
+            <div class="flex items-center gap-2 text-sm text-amber-800">
+                <svg class="w-4 h-4 text-amber-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                </svg>
+                Your previous progress has been restored.
+            </div>
+            <button type="button" @click="clearDraft(); draftRestored = false; location.reload()"
+                    class="text-xs text-amber-600 underline ml-3 whitespace-nowrap">Start fresh</button>
+        </div>
 
     {{-- ── TYPE SELECTOR ──────────────────────────────────────────────── --}}
     <div x-show="step === 0 && indStep === 0" class="bg-white rounded-xl border border-gray-200 p-5 mb-4">
@@ -542,12 +555,119 @@
 
 <script>
 function fillForm() {
+    const DRAFT_KEY = 'kyc_draft_{{ $fillToken->token }}';
+    let saveTimer = null;
+
     return {
         clientType: '{{ $fillToken->client_type === "individual" ? "individual" : array_key_first(array_filter($sector["client_types"], fn($v) => true)) }}',
-        step:    '{{ $fillToken->client_type }}' !== 'individual' ? 1 : 0,
-        indStep: '{{ $fillToken->client_type }}' === 'individual' ? 1 : 0,
+        step:         '{{ $fillToken->client_type }}' !== 'individual' ? 1 : 0,
+        indStep:      '{{ $fillToken->client_type }}' === 'individual' ? 1 : 0,
         signatories:  [{full_name:'',position:'',nationality:'',dob:'',passport_number:'',passport_expiry:'',eid_number:''}],
         shareholders: [{name:'',nationality:'',ownership_percentage:'',passport_number:'',dob:'',is_ubo:false}],
+        draftRestored: false,
+
+        init() {
+            this.restoreProgress();
+            const form = this.$el.querySelector('form');
+            if (form) {
+                form.addEventListener('input',  () => this.debouncedSave());
+                form.addEventListener('change', () => this.debouncedSave());
+            }
+            this.$watch('step',         () => this.debouncedSave());
+            this.$watch('indStep',      () => this.debouncedSave());
+            this.$watch('clientType',   () => this.debouncedSave());
+            this.$watch('signatories',  () => this.debouncedSave());
+            this.$watch('shareholders', () => this.debouncedSave());
+        },
+
+        debouncedSave() {
+            clearTimeout(saveTimer);
+            saveTimer = setTimeout(() => this.saveProgress(), 600);
+        },
+
+        saveProgress() {
+            const form = this.$el.querySelector('form');
+            if (!form) return;
+
+            const fields = {};
+            const seen   = {};
+
+            for (const el of form.elements) {
+                if (!el.name || el.disabled) continue;
+                if (['file','submit','button','reset','image'].includes(el.type)) continue;
+                if (['_token','_method','client_type'].includes(el.name)) continue;
+                // signatories/shareholders are captured via Alpine state
+                if (el.name.startsWith('signatories[') || el.name.startsWith('shareholders[')) continue;
+
+                if (el.type === 'checkbox') {
+                    if (!seen[el.name]) { fields[el.name] = []; seen[el.name] = true; }
+                    if (el.checked) fields[el.name].push(el.value);
+                } else if (el.type === 'radio') {
+                    if (el.checked) fields[el.name] = el.value;
+                } else {
+                    fields[el.name] = el.value;
+                }
+            }
+
+            try {
+                localStorage.setItem(DRAFT_KEY, JSON.stringify({
+                    fields,
+                    clientType:   this.clientType,
+                    step:         this.step,
+                    indStep:      this.indStep,
+                    signatories:  this.signatories,
+                    shareholders: this.shareholders,
+                }));
+            } catch(e) {}
+        },
+
+        restoreProgress() {
+            try {
+                const raw = localStorage.getItem(DRAFT_KEY);
+                if (!raw) return;
+                const state = JSON.parse(raw);
+                if (!state) return;
+
+                if (state.clientType) {
+                    this.clientType = state.clientType;
+                    this.step    = state.clientType !== 'individual' ? (state.step    ?? 1) : 0;
+                    this.indStep = state.clientType === 'individual' ? (state.indStep ?? 1) : 0;
+                }
+                if (Array.isArray(state.signatories)  && state.signatories.length)  this.signatories  = state.signatories;
+                if (Array.isArray(state.shareholders) && state.shareholders.length) this.shareholders = state.shareholders;
+
+                this.$nextTick(() => {
+                    this.applyFields(state.fields || {});
+                    this.draftRestored = true;
+                });
+            } catch(e) {}
+        },
+
+        applyFields(fields) {
+            const form = this.$el.querySelector('form');
+            if (!form) return;
+
+            for (const [name, value] of Object.entries(fields)) {
+                const els = [...form.elements].filter(el => el.name === name);
+                if (!els.length) continue;
+                const first = els[0];
+                if (first.type === 'file') continue;
+
+                if (first.type === 'checkbox') {
+                    const vals = Array.isArray(value) ? value : (value ? [value] : []);
+                    els.forEach(el => { el.checked = vals.includes(el.value); });
+                } else if (first.type === 'radio') {
+                    els.forEach(el => { el.checked = el.value === value; });
+                } else {
+                    first.value = value ?? '';
+                }
+            }
+        },
+
+        clearDraft() {
+            try { localStorage.removeItem(DRAFT_KEY); } catch(e) {}
+        },
+
         setType(t) {
             this.clientType = t;
             this.step    = t !== 'individual' ? 1 : 0;

@@ -100,7 +100,7 @@ class ClientFillController extends Controller
         // Create client record as pending
         $client = BullionClient::create([
             'tenant_id'   => $tenant->id,
-            'client_type' => $fillToken->client_type,
+            'client_type' => $request->client_type ?: $fillToken->client_type,
             'status'      => 'pending',
             'created_by'  => null,
             'company_name'             => $request->company_name,
