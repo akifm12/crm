@@ -77,14 +77,6 @@ $countryName = fn($code) => $code ? (\App\Models\Country::find($code)?->country_
                 </svg>
                 Edit
             </a>
-            <a href="{{ route('tenant.clients.kyc.pdf', [$tenant->slug, $client->id]) }}"
-               target="_blank"
-               class="flex items-center gap-1.5 px-4 py-1.5 text-sm font-medium text-indigo-700 border border-indigo-200 rounded-lg hover:bg-indigo-50 transition">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
-                </svg>
-                KYC PDF
-            </a>
             <form method="POST" action="{{ route('tenant.clients.destroy', [$tenant->slug, $client->id]) }}"
                   onsubmit="return confirm('Archive {{ addslashes($client->displayName()) }}?\n\nThis will remove them from your client list. The record is retained for regulatory purposes.')">
                 @csrf @method('DELETE')
@@ -94,13 +86,6 @@ $countryName = fn($code) => $code ? (\App\Models\Country::find($code)?->country_
                     Archive
                 </button>
             </form>
-            <a href="{{ route('tenant.goaml.create', $tenant->slug) }}?client={{ $client->id }}"
-               class="ml-1 flex items-center gap-1.5 px-4 py-1.5 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                </svg>
-                File DPMSR
-            </a>
         </div>
     </div>
 
@@ -151,7 +136,7 @@ $countryName = fn($code) => $code ? (\App\Models\Country::find($code)?->country_
 {{-- ── TABS ─────────────────────────────────────────────────────────────────── --}}
 <div x-data="{ tab: new URLSearchParams(window.location.search).get('tab') || 'overview' }">
 
-    <div class="flex gap-1 bg-white rounded-xl border border-gray-200 p-1 mb-5 overflow-x-auto">
+    <div class="flex items-center gap-1 bg-white rounded-xl border border-gray-200 p-1 mb-5 overflow-x-auto">
         @foreach([
             ['overview',     'Overview'],
             ['profile',      'Profile'],
@@ -167,6 +152,25 @@ $countryName = fn($code) => $code ? (\App\Models\Country::find($code)?->country_
             {{ $label }}
         </button>
         @endforeach
+
+        <div class="flex-1"></div>
+
+        {{-- Action links in tab bar --}}
+        <a href="{{ route('tenant.clients.kyc.pdf', [$tenant->slug, $client->id]) }}"
+           class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-indigo-700 border border-indigo-200 rounded-lg hover:bg-indigo-50 transition whitespace-nowrap flex-shrink-0">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+            KYC PDF
+        </a>
+        <a href="{{ route('tenant.clients.declaration.combined', [$tenant->slug, $client->id]) }}"
+           class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-50 transition whitespace-nowrap flex-shrink-0">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            Declaration
+        </a>
+        <a href="{{ route('tenant.goaml.create', $tenant->slug) }}?client={{ $client->id }}"
+           class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition whitespace-nowrap flex-shrink-0">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            File DPMSR
+        </a>
     </div>
 
     {{-- ── OVERVIEW ──────────────────────────────────────────────────────────── --}}
