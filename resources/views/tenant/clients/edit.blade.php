@@ -54,15 +54,11 @@ $typeLabels  = ['corporate_local'=>'Corporate — Local','corporate_import'=>'Co
                 @include('tenant.clients._select', ['name'=>'legal_form','label'=>'Legal form','value'=>$client->legal_form,'options'=>['LLC'=>'LLC','FZE'=>'FZE','FZCO'=>'FZCO','Sole Establishment'=>'Sole Establishment','Civil Company'=>'Civil Company','Branch'=>'Branch (Foreign)','Other'=>'Other']])
                 @include('tenant.clients._country', ['name'=>'country_of_incorporation','label'=>'Country of incorporation','required'=>true,'value'=>$client->country_of_incorporation])
                 @include('tenant.clients._field', ['name'=>'business_activity','label'=>'Business activity','required'=>true,'value'=>$client->business_activity])
-                @include('tenant.clients._field', ['name'=>'nature_of_business','label'=>'Nature of business','value'=>$client->nature_of_business])
                 @include('tenant.clients._field', ['name'=>'email','label'=>'Email','type'=>'email','value'=>$client->email])
                 @include('tenant.clients._field', ['name'=>'phone','label'=>'Phone','value'=>$client->phone])
                 @include('tenant.clients._field', ['name'=>'website','label'=>'Website','value'=>$client->website])
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                @include('tenant.clients._textarea', ['name'=>'registered_address','label'=>'Registered address','value'=>$client->registered_address])
-                @include('tenant.clients._textarea', ['name'=>'operating_address','label'=>'Operating address','value'=>$client->operating_address])
-            </div>
+            @include('tenant.clients._textarea', ['name'=>'registered_address','label'=>'Registered address','value'=>$client->registered_address])
             @else
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 @include('tenant.clients._field', ['name'=>'full_name','label'=>'Full name','required'=>true,'value'=>$client->full_name])

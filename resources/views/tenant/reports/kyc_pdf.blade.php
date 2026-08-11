@@ -220,11 +220,7 @@ body { font-family: dejavusans, sans-serif; font-size: 10pt; color: #000; backgr
         </tr>
         @endif
         <tr><td class="label">Business Activity</td><td class="value">{{ $client->business_activity ?? '—' }}</td></tr>
-        <tr><td class="label">Nature of Business</td><td class="value">{{ $client->nature_of_business ?? '—' }}</td></tr>
         <tr><td class="label">Registered Address</td><td class="value">{{ $client->registered_address ?? '—' }}</td></tr>
-        @if($client->operating_address)
-        <tr><td class="label">Operating Address</td><td class="value">{{ $client->operating_address }}</td></tr>
-        @endif
         <tr><td class="label">Email</td><td class="value">{{ $client->email ?? '—' }}</td></tr>
         <tr><td class="label">Phone</td><td class="value">{{ $client->phone ?? '—' }}</td></tr>
         @if($client->website)

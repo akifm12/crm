@@ -275,11 +275,7 @@
             @include('tenant.clients._field', ['name'=>'phone','label'=>'Phone'])
             @include('tenant.clients._field', ['name'=>'website','label'=>'Website'])
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            @include('tenant.clients._textarea', ['name'=>'registered_address','label'=>'Registered address'])
-            @include('tenant.clients._textarea', ['name'=>'operating_address','label'=>'Operating address (if different)'])
-        </div>
-        @include('tenant.clients._textarea', ['name'=>'nature_of_business','label'=>'Nature of business','required'=>true])
+        @include('tenant.clients._textarea', ['name'=>'registered_address','label'=>'Registered address'])
     </div>
 </div>
 
