@@ -179,10 +179,10 @@ $typeLabels  = ['corporate_local'=>'Corporate — Local','corporate_import'=>'Co
                             <div><label class="block text-xs font-medium text-gray-600 mb-1">Ownership %</label>
                                 <input type="number" step="0.01" :name="'shareholders['+i+'][ownership_percentage]'" x-model="sh.ownership_percentage"
                                        class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
-                            <div><label class="block text-xs font-medium text-gray-600 mb-1">Passport number</label>
+                            <div><label class="block text-xs font-medium text-gray-600 mb-1" x-text="sh.shareholder_type === 'corporate' ? 'Trade Licence No.' : 'Passport number'">Passport number</label>
                                 <input type="text" :name="'shareholders['+i+'][passport_number]'" x-model="sh.passport_number"
                                        class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
-                            <div><label class="block text-xs font-medium text-gray-600 mb-1">Passport expiry</label>
+                            <div><label class="block text-xs font-medium text-gray-600 mb-1" x-text="sh.shareholder_type === 'corporate' ? 'Trade Licence Expiry' : 'Passport expiry'">Passport expiry</label>
                                 <input type="date" :name="'shareholders['+i+'][passport_expiry]'" x-model="sh.passport_expiry"
                                        class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
                             <div class="flex items-center gap-2 mt-4">
@@ -205,6 +205,10 @@ $typeLabels  = ['corporate_local'=>'Corporate — Local','corporate_import'=>'Co
                                                class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
                                 </div>
                             </template>
+                        </div>
+                        <div x-show="sh.shareholder_type === 'corporate'" x-cloak class="mt-3 flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
+                            <svg class="w-4 h-4 mt-0.5 shrink-0 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            <span>This shareholder is a corporate entity. Please also add its individual shareholders and UBOs separately in this list to satisfy look-through requirements.</span>
                         </div>
                     </div>
                 </template>
