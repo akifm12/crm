@@ -12,7 +12,7 @@ class InvoiceLine extends Model
     public const VAT_TREATMENTS = ['standard', 'zero_rated', 'reverse_charge', 'exempt'];
 
     protected $fillable = [
-        'invoice_id', 'line_type', 'inventory_item_id', 'description', 'purity',
+        'invoice_id', 'line_type', 'inventory_item_id', 'metal_type', 'description', 'purity',
         'quantity_grams', 'gross_weight_grams', 'pcs', 'unit_price', 'line_subtotal',
         'metal_vat_treatment', 'metal_vat_rate', 'metal_vat_amount',
         'making_charge_rate', 'making_charge_amount',

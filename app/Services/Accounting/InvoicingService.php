@@ -7,6 +7,7 @@ namespace App\Services\Accounting;
 use App\Models\BullionClient;
 use App\Models\ChartOfAccount;
 use App\Models\InventoryStockMovement;
+use App\Models\InventoryItem;
 use App\Models\Invoice;
 use App\Models\InvoiceLine;
 use App\Models\InvoicePayment;
@@ -135,6 +136,7 @@ class InvoicingService
             return [
                 'line_type' => $line['line_type'],
                 'inventory_item_id' => $line['inventory_item_id'] ?? null,
+                'metal_type' => $line['metal_type'] ?? null,
                 'description' => $line['description'],
                 'purity' => $purity,
                 'quantity_grams' => $qty,
@@ -236,7 +238,11 @@ class InvoicingService
 
         foreach ($invoice->lines as $line) {
             if ($line->line_type === 'metal_in') {
-                abort_if(! $line->inventoryItem, 422, 'Metal-in lines must reference an inventory item.');
+                if (! $line->inventoryItem) {
+                    $metalType = $line->metal_type;
+                    abort_if(! $metalType, 422, 'Metal-in lines must either reference an inventory item or specify a metal type.');
+                    $line->setRelation('inventoryItem', $this->findOrCreateMiscItem($invoice->tenant, $metalType));
+                }
 
                 $movement = $this->inventory->receiveStock($line->inventoryItem, (float) $line->quantity_grams, (float) $line->unit_price, [
                     'movement_type' => 'purchase_in',
@@ -835,6 +841,23 @@ class InvoicingService
         abort_if(! $account, 500, "Chart of accounts is missing a required '{$subtype}' account for tenant {$tenant->slug}.");
 
         return $account;
+    }
+
+    private function findOrCreateMiscItem(Tenant $tenant, string $metalType): InventoryItem
+    {
+        $sku = 'MISC-' . strtoupper($metalType);
+
+        return InventoryItem::firstOrCreate(
+            ['tenant_id' => $tenant->id, 'sku' => $sku],
+            [
+                'name'                 => 'Misc ' . ucfirst($metalType) . ' Purchase',
+                'metal_type'           => $metalType,
+                'purity'               => null,
+                'nominal_weight_grams' => null,
+                'form'                 => 'misc',
+                'is_active'            => true,
+            ]
+        );
     }
 
     /**

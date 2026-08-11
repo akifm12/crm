@@ -68,6 +68,7 @@ class InvoiceController extends Controller
             'lines' => 'required|array|min:1',
             'lines.*.line_type' => ['required', Rule::in(InvoiceLine::LINE_TYPES)],
             'lines.*.inventory_item_id' => 'nullable|exists:inventory_items,id',
+            'lines.*.metal_type' => 'nullable|string|max:20',
             'lines.*.description' => 'required|string|max:255',
             'lines.*.purity' => 'nullable|numeric|min:0|max:999.999',
             'lines.*.quantity_grams' => 'nullable|numeric|min:0',
