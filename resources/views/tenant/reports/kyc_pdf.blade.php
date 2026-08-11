@@ -8,7 +8,7 @@
 body { font-family: Arial, Helvetica, sans-serif; font-size: 10pt; color: #000; background: #fff; }
 
 /* ── Layout — body padding reserves space for fixed header + footer ── */
-.page       { padding: 56mm 18mm 20mm 18mm; }
+.page       { padding: 30mm 18mm 20mm 18mm; }
 .page-break { page-break-before: always; }
 
 /* ── Fixed header — position: fixed repeats on every page in dompdf ── */
@@ -17,8 +17,8 @@ body { font-family: Arial, Helvetica, sans-serif; font-size: 10pt; color: #000; 
     top: 0;
     left: 0;
     right: 0;
-    height: 45mm;
-    padding: 8mm 18mm 0;
+    height: 20mm;
+    padding: 3mm 18mm 0;
     background: #fff;
 }
 .header-table { width: 100%; border-collapse: collapse; }
