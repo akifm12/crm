@@ -266,6 +266,7 @@ Route::prefix('{slug}')
         Route::get('/goaml/{report}/download', [GoamlController::class, 'download'])->name('goaml.download');
         Route::delete('/goaml/{report}',       [GoamlController::class, 'destroy'])->name('goaml.destroy');
         Route::get('/settings',                    [TenantSettingsController::class, 'index'])->name('settings');
+        Route::get('/clients/{client}/kyc-pdf',        [ReportController::class, 'kycPdf'])->name('clients.kyc.pdf');
         Route::get('/clients/{client}/screening-pdf',  [ReportController::class, 'screeningPdf'])->name('clients.screening.pdf');
         Route::get('/screening/log/{log}/pdf',         [ReportController::class, 'screeningLogPdf'])->name('screening.log.pdf');
         Route::get('/clients/{client}/declaration/{type}', [ReportController::class, 'declaration'])->name('clients.declaration');

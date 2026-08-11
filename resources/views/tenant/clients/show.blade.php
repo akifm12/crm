@@ -77,6 +77,14 @@ $countryName = fn($code) => $code ? (\App\Models\Country::find($code)?->country_
                 </svg>
                 Edit
             </a>
+            <a href="{{ route('tenant.clients.kyc.pdf', [$tenant->slug, $client->id]) }}"
+               target="_blank"
+               class="flex items-center gap-1.5 px-4 py-1.5 text-sm font-medium text-indigo-700 border border-indigo-200 rounded-lg hover:bg-indigo-50 transition">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                </svg>
+                KYC PDF
+            </a>
             <form method="POST" action="{{ route('tenant.clients.destroy', [$tenant->slug, $client->id]) }}"
                   onsubmit="return confirm('Archive {{ addslashes($client->displayName()) }}?\n\nThis will remove them from your client list. The record is retained for regulatory purposes.')">
                 @csrf @method('DELETE')

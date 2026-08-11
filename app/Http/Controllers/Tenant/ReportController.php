@@ -6,12 +6,35 @@ namespace App\Http\Controllers\Tenant;
 use App\Http\Controllers\Controller;
 use App\Models\BullionClient;
 use App\Models\ScreeningLog;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class ReportController extends Controller
 {
+    // ── Full KYC PDF ───────────────────────────────────────────────────────
+
+    public function kycPdf(string $slug, BullionClient $client)
+    {
+        $tenant = app('tenant');
+        abort_if($client->tenant_id !== $tenant->id, 404);
+        $client->load(['signatories', 'shareholders', 'ubos', 'documents', 'creator']);
+
+        $pdf = Pdf::loadView('tenant.reports.kyc_pdf', compact('tenant', 'client'))
+            ->setPaper('a4', 'portrait')
+            ->setOptions([
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled'      => false,
+                'defaultFont'          => 'Arial',
+                'dpi'                  => 150,
+            ]);
+
+        $filename = 'KYC-' . Str::upper(Str::slug($client->displayName())) . '-' . now()->format('Ymd') . '.pdf';
+
+        return $pdf->download($filename);
+    }
+
     // ── Screening PDF ──────────────────────────────────────────────────────
 
     public function screeningPdf(string $slug, BullionClient $client)
