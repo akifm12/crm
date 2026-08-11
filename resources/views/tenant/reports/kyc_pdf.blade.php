@@ -7,8 +7,9 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: Arial, Helvetica, sans-serif; font-size: 10pt; color: #000; background: #fff; }
 
-/* ── Layout — body padding reserves space for fixed header + footer ── */
-.page       { padding: 35mm 18mm 20mm 18mm; }
+/* ── @page margins push content below header on EVERY page ── */
+@page { margin: 28mm 15mm 16mm 15mm; }
+.page       { padding: 0; }
 .page-break { page-break-before: always; }
 
 /* ── Fixed header — position: fixed repeats on every page in dompdf ── */
@@ -17,8 +18,8 @@ body { font-family: Arial, Helvetica, sans-serif; font-size: 10pt; color: #000; 
     top: 0;
     left: 0;
     right: 0;
-    height: 20mm;
-    padding: 3mm 18mm 0;
+    height: 25mm;
+    padding: 3mm 15mm 0;
     background: #fff;
 }
 .header-table { width: 100%; border-collapse: collapse; }
@@ -41,7 +42,7 @@ body { font-family: Arial, Helvetica, sans-serif; font-size: 10pt; color: #000; 
     left: 0;
     right: 0;
     height: 14mm;
-    padding: 3mm 18mm 0;
+    padding: 3mm 15mm 0;
     background: #fff;
     border-top: 1px solid #aaa;
 }
@@ -170,7 +171,6 @@ $sn = fn(int $corpN, int $indN) => $isCorp ? $corpN : $indN;
             <td class="header-right">
                 <div class="ref-num">{{ $ref }}</div>
                 <div>Generated: {{ $generated }}</div>
-                <div style="margin-top:2px;">{{ $tenant->name }}</div>
                 @if($tenant->dnfbp_reg_no)<div>DNFBP: {{ $tenant->dnfbp_reg_no }}</div>@endif
             </td>
         </tr>
