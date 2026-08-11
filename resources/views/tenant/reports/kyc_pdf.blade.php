@@ -91,7 +91,7 @@ body { font-family: dejavusans, sans-serif; font-size: 10pt; color: #000; backgr
 .sig-table td { width: 33%; vertical-align: top; padding: 0 10px; text-align: left; }
 .sig-table td:first-child { padding-left: 0; }
 .sig-table td:last-child  { padding-right: 0; }
-.sig-space    { height: 18mm; }
+.sig-space    { height: 28mm; }
 .sig-line-bar { border-top: 1px solid #000; margin-bottom: 5px; }
 .sig-name  { font-weight: bold; font-size: 9.5pt; color: #000; }
 .sig-title { font-size: 8.5pt; color: #555; margin-top: 2px; }
