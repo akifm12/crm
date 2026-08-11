@@ -5,28 +5,54 @@
 <title>KYC File — {{ $client->displayName() }}</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
+
+@page {
+    margin-top: 46mm;
+    margin-bottom: 18mm;
+    margin-left: 18mm;
+    margin-right: 18mm;
+}
+
 body { font-family: Arial, Helvetica, sans-serif; font-size: 10pt; color: #000; background: #fff; }
 
 /* ── Layout ── */
-.page       { max-width: 210mm; margin: 0 auto; padding: 18mm 18mm 14mm; }
+.page       { padding: 0; }
 .page-break { page-break-before: always; }
 
-/* ── Header ── */
-.header-table { width: 100%; border-collapse: collapse; margin-bottom: 0; }
+/* ── Fixed header — repeats on every page ── */
+.fixed-header {
+    position: fixed;
+    top: -43mm;
+    left: 0;
+    right: 0;
+    background: #fff;
+}
+.header-table { width: 100%; border-collapse: collapse; }
 .header-table td { vertical-align: middle; padding: 0; }
 .header-logo  { width: 120px; }
-.header-logo img { max-width: 110px; max-height: 55px; }
+.header-logo img { max-width: 110px; max-height: 50px; }
 .header-center { text-align: center; }
-.header-center .doc-title { font-size: 17pt; font-weight: bold; color: #000; letter-spacing: 1px; text-transform: uppercase; }
-.header-center .doc-sub   { font-size: 9pt; color: #444; margin-top: 3px; letter-spacing: 0.5px; text-transform: uppercase; }
-.header-right { text-align: right; font-size: 8.5pt; color: #333; width: 130px; }
-.header-right .ref-num { font-size: 10pt; font-weight: bold; color: #000; }
+.header-center .doc-title { font-size: 15pt; font-weight: bold; color: #000; letter-spacing: 1px; text-transform: uppercase; }
+.header-center .doc-sub   { font-size: 8.5pt; color: #444; margin-top: 2px; letter-spacing: 0.5px; text-transform: uppercase; }
+.header-right { text-align: right; font-size: 8pt; color: #333; width: 120px; }
+.header-right .ref-num { font-size: 9.5pt; font-weight: bold; color: #000; }
+.header-rule     { border: none; border-top: 3px solid #000; margin: 6px 0 0; }
+.header-sub-rule { border: none; border-top: 1px solid #aaa; margin: 2px 0 4px; }
+.classification  { background: #000; color: #fff; text-align: center; padding: 4px 0; font-size: 7.5pt; letter-spacing: 2px; text-transform: uppercase; font-weight: bold; }
 
-.header-rule     { border: none; border-top: 3px solid #000; margin: 8px 0 0; }
-.header-sub-rule { border: none; border-top: 1px solid #aaa; margin: 3px 0 16px; }
-
-/* ── Classification banner ── */
-.classification { background: #000; color: #fff; text-align: center; padding: 5px 0; font-size: 8pt; letter-spacing: 2px; text-transform: uppercase; font-weight: bold; margin-bottom: 16px; }
+/* ── Fixed footer — repeats on every page ── */
+.fixed-footer {
+    position: fixed;
+    bottom: -15mm;
+    left: 0;
+    right: 0;
+    background: #fff;
+    border-top: 1px solid #aaa;
+    padding-top: 4px;
+}
+.fixed-footer table { width: 100%; border-collapse: collapse; }
+.fixed-footer td { font-size: 7.5pt; color: #555; vertical-align: top; }
+.fixed-footer td:last-child { text-align: right; }
 
 /* ── Client identity block ── */
 .client-identity { background: #f2f2f2; border: 1px solid #999; padding: 10px 14px; margin-bottom: 18px; }
@@ -81,12 +107,6 @@ body { font-family: Arial, Helvetica, sans-serif; font-size: 10pt; color: #000; 
 .sig-name  { font-weight: bold; font-size: 9.5pt; color: #000; }
 .sig-title { font-size: 8.5pt; color: #444; }
 
-/* ── Footer ── */
-.footer { margin-top: 20px; padding-top: 8px; border-top: 1px solid #aaa; }
-.footer table { width: 100%; border-collapse: collapse; }
-.footer td { font-size: 7.5pt; color: #555; vertical-align: top; }
-.footer td:last-child { text-align: right; }
-
 /* ── Utility ── */
 .text-muted { color: #777; font-style: italic; }
 .nowrap { white-space: nowrap; }
@@ -137,16 +157,15 @@ $sanctionsLists = [
 $sn = fn(int $corpN, int $indN) => $isCorp ? $corpN : $indN;
 @endphp
 
-<div class="page">
-
-    {{-- ════════════ HEADER ════════════ --}}
+{{-- ════════════ FIXED HEADER (repeats every page) ════════════ --}}
+<div class="fixed-header">
     <table class="header-table">
         <tr>
             <td class="header-logo">
                 @if($tenant->logo_url)
                     <img src="{{ public_path('storage/' . ltrim(str_replace(url('/storage'), '', $tenant->logo_url), '/')) }}" alt="{{ $tenant->name }}">
                 @else
-                    <span style="font-size:13pt; font-weight:bold;">{{ $tenant->name }}</span>
+                    <span style="font-size:12pt; font-weight:bold;">{{ $tenant->name }}</span>
                 @endif
             </td>
             <td class="header-center">
@@ -156,15 +175,31 @@ $sn = fn(int $corpN, int $indN) => $isCorp ? $corpN : $indN;
             <td class="header-right">
                 <div class="ref-num">{{ $ref }}</div>
                 <div>Generated: {{ $generated }}</div>
-                <div style="margin-top:3px; font-size:8pt;">{{ $tenant->name }}</div>
+                <div style="margin-top:2px;">{{ $tenant->name }}</div>
                 @if($tenant->dnfbp_reg_no)<div>DNFBP: {{ $tenant->dnfbp_reg_no }}</div>@endif
             </td>
         </tr>
     </table>
     <hr class="header-rule">
     <hr class="header-sub-rule">
-
     <div class="classification">Confidential — For Compliance Purposes Only</div>
+</div>
+
+{{-- ════════════ FIXED FOOTER (repeats every page) ════════════ --}}
+<div class="fixed-footer">
+    <table>
+        <tr>
+            <td>
+                {{ $tenant->name }}
+                @if($tenant->address) &nbsp;·&nbsp; {{ $tenant->address }} @endif
+                @if($tenant->contact_email) &nbsp;·&nbsp; {{ $tenant->contact_email }} @endif
+            </td>
+            <td>{{ $ref }} &nbsp;·&nbsp; {{ $generated }}</td>
+        </tr>
+    </table>
+</div>
+
+<div class="page">
 
     {{-- ════════════ CLIENT IDENTITY BLOCK ════════════ --}}
     <div class="client-identity">
@@ -536,21 +571,6 @@ $sn = fn(int $corpN, int $indN) => $isCorp ? $corpN : $indN;
         </table>
     </div>
 
-    {{-- ════════════ FOOTER ════════════ --}}
-    <div class="footer">
-        <table>
-            <tr>
-                <td>
-                    {{ $tenant->name }}
-                    @if($tenant->address) &nbsp;·&nbsp; {{ $tenant->address }} @endif
-                    @if($tenant->contact_email) &nbsp;·&nbsp; {{ $tenant->contact_email }} @endif
-                </td>
-                <td>
-                    {{ $ref }} &nbsp;·&nbsp; {{ $generated }}
-                </td>
-            </tr>
-        </table>
-    </div>
 
 </div><!-- /.page -->
 </body>
