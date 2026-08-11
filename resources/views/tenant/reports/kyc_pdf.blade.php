@@ -5,50 +5,45 @@
 <title>KYC File — {{ $client->displayName() }}</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-
-@page {
-    margin-top: 46mm;
-    margin-bottom: 18mm;
-    margin-left: 18mm;
-    margin-right: 18mm;
-}
-
 body { font-family: Arial, Helvetica, sans-serif; font-size: 10pt; color: #000; background: #fff; }
 
-/* ── Layout ── */
-.page       { padding: 0; }
+/* ── Layout — body padding reserves space for fixed header + footer ── */
+.page       { padding: 48mm 18mm 20mm 18mm; }
 .page-break { page-break-before: always; }
 
-/* ── Fixed header — repeats on every page ── */
+/* ── Fixed header — position: fixed repeats on every page in dompdf ── */
 .fixed-header {
     position: fixed;
-    top: -43mm;
+    top: 0;
     left: 0;
     right: 0;
+    height: 45mm;
+    padding: 8mm 18mm 0;
     background: #fff;
 }
 .header-table { width: 100%; border-collapse: collapse; }
 .header-table td { vertical-align: middle; padding: 0; }
 .header-logo  { width: 120px; }
-.header-logo img { max-width: 110px; max-height: 50px; }
+.header-logo img { max-width: 110px; max-height: 48px; }
 .header-center { text-align: center; }
 .header-center .doc-title { font-size: 15pt; font-weight: bold; color: #000; letter-spacing: 1px; text-transform: uppercase; }
 .header-center .doc-sub   { font-size: 8.5pt; color: #444; margin-top: 2px; letter-spacing: 0.5px; text-transform: uppercase; }
 .header-right { text-align: right; font-size: 8pt; color: #333; width: 120px; }
 .header-right .ref-num { font-size: 9.5pt; font-weight: bold; color: #000; }
 .header-rule     { border: none; border-top: 3px solid #000; margin: 6px 0 0; }
-.header-sub-rule { border: none; border-top: 1px solid #aaa; margin: 2px 0 4px; }
-.classification  { background: #000; color: #fff; text-align: center; padding: 4px 0; font-size: 7.5pt; letter-spacing: 2px; text-transform: uppercase; font-weight: bold; }
+.header-sub-rule { border: none; border-top: 1px solid #aaa; margin: 2px 0 3px; }
+.classification  { background: #000; color: #fff; text-align: center; padding: 3px 0; font-size: 7.5pt; letter-spacing: 2px; text-transform: uppercase; font-weight: bold; }
 
-/* ── Fixed footer — repeats on every page ── */
+/* ── Fixed footer — pinned to bottom of every page ── */
 .fixed-footer {
     position: fixed;
-    bottom: -15mm;
+    bottom: 0;
     left: 0;
     right: 0;
+    height: 14mm;
+    padding: 3mm 18mm 0;
     background: #fff;
     border-top: 1px solid #aaa;
-    padding-top: 4px;
 }
 .fixed-footer table { width: 100%; border-collapse: collapse; }
 .fixed-footer td { font-size: 7.5pt; color: #555; vertical-align: top; }
@@ -537,8 +532,8 @@ $sn = fn(int $corpN, int $indN) => $isCorp ? $corpN : $indN;
             <table>
                 @foreach(array_chunk($sanctionsLists, 2) as $row)
                 <tr>
-                    <td>&#10003;&nbsp; {{ $row[0] }}</td>
-                    @if(isset($row[1]))<td>&#10003;&nbsp; {{ $row[1] }}</td>@else<td></td>@endif
+                    <td>- {{ $row[0] }}</td>
+                    @if(isset($row[1]))<td>- {{ $row[1] }}</td>@else<td></td>@endif
                 </tr>
                 @endforeach
             </table>
