@@ -134,7 +134,7 @@ $sanctionsLists = [
 ];
 
 // Section numbering — shifts down for corporate (has signatories + shareholders sections)
-$s = fn(int $corpN, int $indN) => $isCorp ? $corpN : $indN;
+$sn = fn(int $corpN, int $indN) => $isCorp ? $corpN : $indN;
 @endphp
 
 <div class="page">
@@ -363,7 +363,7 @@ $s = fn(int $corpN, int $indN) => $isCorp ? $corpN : $indN;
 
     {{-- ════════════ SECTION 4/2 — AML RISK PROFILE ════════════ --}}
     <div class="section">
-        <div class="section-head">{{ $s(4,2) }}. AML Risk Profile &amp; Business Relationship</div>
+        <div class="section-head">{{ $sn(4,2) }}. AML Risk Profile &amp; Business Relationship</div>
         <table class="two-col">
             <tr>
                 <td>
@@ -428,7 +428,7 @@ $s = fn(int $corpN, int $indN) => $isCorp ? $corpN : $indN;
 
     {{-- ════════════ SECTION 5/3 — RISK ASSESSMENT ════════════ --}}
     <div class="section">
-        <div class="section-head">{{ $s(5,3) }}. Risk Assessment</div>
+        <div class="section-head">{{ $sn(5,3) }}. Risk Assessment</div>
         <div class="risk-box">
             <span class="risk-label">{{ strtoupper($client->risk_rating ?? 'Unrated') }} Risk</span>
             @if($client->risk_assessed_at)
@@ -466,7 +466,7 @@ $s = fn(int $corpN, int $indN) => $isCorp ? $corpN : $indN;
 
     {{-- ════════════ SECTION 6/4 — SANCTIONS & AML SCREENING ════════════ --}}
     <div class="section">
-        <div class="section-head">{{ $s(6,4) }}. Sanctions &amp; AML Screening</div>
+        <div class="section-head">{{ $sn(6,4) }}. Sanctions &amp; AML Screening</div>
         <table class="info-table">
             <tr>
                 <td class="label">Screening Status</td>
