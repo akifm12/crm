@@ -8,7 +8,7 @@
 body { font-family: Arial, Helvetica, sans-serif; font-size: 10pt; color: #000; background: #fff; }
 
 /* ── Layout — body padding reserves space for fixed header + footer ── */
-.page       { padding: 62mm 18mm 20mm 18mm; }
+.page       { padding: 56mm 18mm 20mm 18mm; }
 .page-break { page-break-before: always; }
 
 /* ── Fixed header — position: fixed repeats on every page in dompdf ── */
@@ -50,7 +50,7 @@ body { font-family: Arial, Helvetica, sans-serif; font-size: 10pt; color: #000; 
 .fixed-footer td:last-child { text-align: right; }
 
 /* ── Client identity block ── */
-.client-identity { background: #f2f2f2; border: 1px solid #999; padding: 10px 14px; margin-top: 8mm; margin-bottom: 18px; }
+.client-identity { background: #f2f2f2; border: 1px solid #999; padding: 10px 14px; margin-bottom: 18px; }
 .client-identity table { width: 100%; border-collapse: collapse; }
 .client-identity td { vertical-align: top; padding: 2px 0; }
 .client-name { font-size: 14pt; font-weight: bold; color: #000; }
