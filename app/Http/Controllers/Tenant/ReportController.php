@@ -6,7 +6,7 @@ namespace App\Http\Controllers\Tenant;
 use App\Http\Controllers\Controller;
 use App\Models\BullionClient;
 use App\Models\ScreeningLog;
-use Barryvdh\DomPDF\Facade\Pdf;
+use Mpdf\Mpdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -21,18 +21,26 @@ class ReportController extends Controller
         abort_if($client->tenant_id !== $tenant->id, 404);
         $client->load(['signatories', 'shareholders', 'ubos', 'documents', 'creator']);
 
-        $pdf = Pdf::loadView('tenant.reports.kyc_pdf', compact('tenant', 'client'))
-            ->setPaper('a4', 'portrait')
-            ->setOptions([
-                'isHtml5ParserEnabled' => true,
-                'isRemoteEnabled'      => false,
-                'defaultFont'          => 'Arial',
-                'dpi'                  => 150,
-            ]);
+        $mpdf = new Mpdf([
+            'mode'          => 'utf-8',
+            'format'        => 'A4',
+            'margin_top'    => 30,
+            'margin_bottom' => 20,
+            'margin_left'   => 15,
+            'margin_right'  => 15,
+            'margin_header' => 5,
+            'margin_footer' => 5,
+        ]);
+
+        $html = view('tenant.reports.kyc_pdf', compact('tenant', 'client'))->render();
+        $mpdf->WriteHTML($html);
 
         $filename = 'KYC-' . Str::upper(Str::slug($client->displayName())) . '-' . now()->format('Ymd') . '.pdf';
 
-        return $pdf->download($filename);
+        return response($mpdf->Output($filename, 'S'), 200, [
+            'Content-Type'        => 'application/pdf',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+        ]);
     }
 
     // ── Screening PDF ──────────────────────────────────────────────────────
