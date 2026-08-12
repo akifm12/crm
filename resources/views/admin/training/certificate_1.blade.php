@@ -250,11 +250,32 @@
         color: #888888;
     }
 
+    .qr-block {
+        position: absolute;
+        bottom: 10mm;
+        right: 8mm;
+        text-align: center;
+    }
+
+    .qr-block img {
+        width: 18mm;
+        height: 18mm;
+        display: block;
+    }
+
+    .qr-label {
+        font-family: Helvetica, Arial, sans-serif;
+        font-size: 4.5pt;
+        color: #aaaaaa;
+        margin-top: 1mm;
+        letter-spacing: 0.5px;
+    }
+
     .licence {
         position: absolute;
         bottom: 3mm;
         left: 10mm;
-        width: 261mm;
+        width: 240mm;
         text-align: center;
         font-family: Arial, Helvetica, sans-serif;
         font-size: 5.5pt;
@@ -484,6 +505,12 @@
 
         </div>
 
+
+        <!-- QR VERIFICATION -->
+        <div class="qr-block">
+            <img src="{{ $qrB64 }}" alt="Verify">
+            <div class="qr-label">SCAN TO VERIFY</div>
+        </div>
 
         <!-- LICENCE / AUTHORISATION -->
         <div class="licence">

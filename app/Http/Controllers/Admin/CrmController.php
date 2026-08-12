@@ -18,6 +18,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Spatie\Browsershot\Browsershot;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class CrmController extends Controller
 {
@@ -571,7 +572,11 @@ PROMPT;
             ? 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath))
             : null;
 
-        $html = view($template, compact('training', 'logoB64'))->render();
+        $verifyUrl = route('certificate.verify', $training->id);
+        $qrSvg     = QrCode::format('svg')->size(80)->errorCorrection('M')->generate($verifyUrl);
+        $qrB64     = 'data:image/svg+xml;base64,' . base64_encode($qrSvg);
+
+        $html = view($template, compact('training', 'logoB64', 'qrB64', 'verifyUrl'))->render();
 
         $filename = 'BA-CERT-' . $training->id . '-' . $training->training_date->format('Ymd') . '.pdf';
 
