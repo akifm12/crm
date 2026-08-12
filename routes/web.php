@@ -26,6 +26,7 @@ use App\Http\Controllers\NewsletterController;
 use App\Http\Controllers\PublicAccountController;
 use App\Http\Controllers\PublicDeadlineController;
 use App\Http\Controllers\CertificateVerifyController;
+use App\Http\Controllers\Admin\TrainingSessionController;
 use App\Models\CrmQuotation;
 
 require __DIR__.'/auth.php';
@@ -95,6 +96,12 @@ Route::middleware(['auth', \App\Http\Middleware\EnsureAdminUser::class])->group(
     Route::patch('/crm/slas/{sla}/status',         [CrmController::class, 'updateSlaStatus'])->name('crm.slas.status');
     Route::post('/crm/slas/{sla}/upload',          [CrmController::class, 'uploadSignedSla'])->name('crm.slas.upload');
     Route::post('/crm/{crm}/quotations',           [CrmController::class, 'createQuotation'])->name('crm.quotations.store');
+    Route::get('/training-sessions',                          [TrainingSessionController::class, 'index'])->name('training-sessions.index');
+    Route::get('/training-sessions/create',                   [TrainingSessionController::class, 'create'])->name('training-sessions.create');
+    Route::post('/training-sessions',                         [TrainingSessionController::class, 'store'])->name('training-sessions.store');
+    Route::get('/training-sessions/{date}/{type}',            [TrainingSessionController::class, 'show'])->name('training-sessions.show');
+    Route::post('/training-sessions/{date}/{type}/attendees', [TrainingSessionController::class, 'addAttendee'])->name('training-sessions.add-attendee');
+
     Route::post('/crm/{crm}/trainings',            [CrmController::class, 'storeTraining'])->name('crm.trainings.store');
     Route::delete('/crm/trainings/{training}',     [CrmController::class, 'deleteTraining'])->name('crm.trainings.delete');
     Route::get('/crm/trainings/{training}/certificate', [CrmController::class, 'downloadCertificate'])->name('crm.trainings.certificate');
