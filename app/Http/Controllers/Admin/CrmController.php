@@ -515,8 +515,11 @@ PROMPT;
             'trainer'        => 'nullable|string|max:200',
             'notes'          => 'nullable|string',
             'status'         => 'required|in:completed,pending,expired',
-            'certificate'    => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
-            'material'       => 'nullable|file|mimes:pdf,doc,docx,ppt,pptx,jpg,png|max:20480',
+            'certificate'          => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
+            'material'             => 'nullable|file|mimes:pdf,doc,docx,ppt,pptx,jpg,png|max:20480',
+            'certificate_template' => 'nullable|integer|min:1|max:3',
+            'signatory_name'       => 'nullable|string|max:200',
+            'signatory_title'      => 'nullable|string|max:200',
         ]);
 
         if ($request->hasFile('certificate')) {
@@ -555,6 +558,37 @@ PROMPT;
         return \Storage::disk('local')->download($training->material_path,
             'Material-' . \Str::slug($training->training_type) . '.' . pathinfo($training->material_path, PATHINFO_EXTENSION)
         );
+    }
+
+    public function generateCertificate(CrmEmployeeTraining $training)
+    {
+        $training->load('client');
+        $template = 'admin.training.certificate_' . max(1, min(3, (int) $training->certificate_template));
+
+        $mpdf = new Mpdf([
+            'mode'          => 'utf-8',
+            'format'        => [297, 210], // A4 landscape
+            'margin_top'    => 0,
+            'margin_bottom' => 0,
+            'margin_left'   => 0,
+            'margin_right'  => 0,
+            'tempDir'       => storage_path('app/mpdf-tmp'),
+        ]);
+
+        $logoPath = public_path('logo.png');
+        $logoB64  = file_exists($logoPath)
+            ? 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath))
+            : null;
+
+        $html = view($template, compact('training', 'logoB64'))->render();
+        $mpdf->WriteHTML($html);
+
+        $filename = 'Certificate-' . \Str::slug($training->employee_name) . '-' . \Str::slug($training->training_type) . '-' . $training->training_date->format('Ymd') . '.pdf';
+
+        return response($mpdf->Output($filename, 'S'), 200, [
+            'Content-Type'        => 'application/pdf',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+        ]);
     }
 
 }

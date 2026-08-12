@@ -97,6 +97,7 @@ Route::middleware(['auth', \App\Http\Middleware\EnsureAdminUser::class])->group(
     Route::delete('/crm/trainings/{training}',     [CrmController::class, 'deleteTraining'])->name('crm.trainings.delete');
     Route::get('/crm/trainings/{training}/certificate', [CrmController::class, 'downloadCertificate'])->name('crm.trainings.certificate');
     Route::get('/crm/trainings/{training}/material',    [CrmController::class, 'downloadMaterial'])->name('crm.trainings.material');
+    Route::get('/crm/trainings/{training}/generate',    [CrmController::class, 'generateCertificate'])->name('crm.trainings.generate');
 
     // ── Document generation ───────────────────────────────────────────────
     Route::get('/crm/slas/{sla}/download',             [DocumentController::class, 'generateSla'])->name('sla.download');

@@ -630,6 +630,24 @@
                         </select>
                     </div>
                     <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Certificate Template</label>
+                        <select name="certificate_template" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                            <option value="1">Classic — Gold &amp; Navy</option>
+                            <option value="2">Modern — Blue &amp; White</option>
+                            <option value="3">Prestige — Dark</option>
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Signatory Name</label>
+                            <input type="text" name="signatory_name" placeholder="e.g. Abid Zaheer" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Signatory Title</label>
+                            <input type="text" name="signatory_title" placeholder="e.g. Director" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+                    <div>
                         <label class="block text-xs font-medium text-gray-600 mb-1">Notes / Log</label>
                         <textarea name="notes" rows="3" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
                     </div>
@@ -687,11 +705,17 @@
                             @if($tr->notes)
                             <p class="mt-2 text-xs text-gray-500 leading-relaxed">{{ $tr->notes }}</p>
                             @endif
-                            <div class="mt-2 flex gap-3">
+                            <div class="mt-2 flex flex-wrap gap-3">
+                                <a href="{{ route('crm.trainings.generate', $tr->id) }}"
+                                   class="flex items-center gap-1 text-xs text-amber-700 bg-amber-50 border border-amber-200 hover:bg-amber-100 font-medium px-2 py-1 rounded-lg transition">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                                    Generate Certificate
+                                    <span class="text-amber-400">(T{{ $tr->certificate_template ?? 1 }})</span>
+                                </a>
                                 @if($tr->certificate_path)
                                 <a href="{{ route('crm.trainings.certificate', $tr->id) }}" class="flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 font-medium">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
-                                    Certificate
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                    Uploaded Cert
                                 </a>
                                 @endif
                                 @if($tr->material_path)
