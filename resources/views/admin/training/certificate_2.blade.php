@@ -2,142 +2,114 @@
 <head><meta charset="UTF-8">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body {
-    width: 297mm; height: 210mm;
-    font-family: Arial, Helvetica, sans-serif;
-    background: #fff;
-    color: #1e293b;
-}
-.left-panel {
-    position: absolute; top: 0; left: 0; bottom: 0; width: 72mm;
-    background: #1e3a5f;
-}
-.left-accent {
-    position: absolute; top: 0; left: 64mm; bottom: 0; width: 8mm;
-    background: linear-gradient(to bottom, #2563eb, #1e3a5f);
-    opacity: 0.4;
-}
-.left-content {
-    position: absolute; top: 0; left: 0; bottom: 0; width: 64mm;
-    padding: 18mm 10mm;
-    display: block;
-}
-.left-logo { margin-bottom: 6mm; }
-.left-logo img { max-width: 44mm; max-height: 18mm; }
-.left-issuer { color: #93c5fd; font-size: 7.5pt; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8mm; line-height: 1.6; }
-
-.left-badge {
-    background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(255,255,255,0.2);
-    border-radius: 6px;
-    padding: 6mm 5mm;
-    margin-bottom: 6mm;
-}
-.left-badge-label { color: #93c5fd; font-size: 6.5pt; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 2mm; }
-.left-badge-value { color: #fff; font-size: 9pt; font-weight: bold; line-height: 1.4; }
-
-.cert-no-left { position: absolute; bottom: 10mm; left: 10mm; color: rgba(255,255,255,0.3); font-size: 6.5pt; letter-spacing: 1px; }
-
-.right-panel {
-    position: absolute; top: 0; left: 80mm; right: 0; bottom: 0;
-    padding: 18mm 16mm 16mm;
-}
-.cert-label { font-size: 7.5pt; letter-spacing: 3px; text-transform: uppercase; color: #2563eb; font-weight: bold; margin-bottom: 3mm; }
-.cert-heading { font-size: 22pt; font-weight: 900; color: #1e293b; line-height: 1.1; margin-bottom: 6mm; }
-.cert-heading span { color: #2563eb; }
-
-.presented-to { font-size: 8pt; color: #94a3b8; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 2mm; }
-.employee-name { font-size: 26pt; font-weight: 800; color: #1e3a5f; margin-bottom: 1mm; line-height: 1.1; }
-.employee-role { font-size: 9pt; color: #64748b; margin-bottom: 6mm; }
-
-.desc { font-size: 9.5pt; color: #475569; line-height: 1.7; margin-bottom: 6mm; }
-.training-name { color: #1e3a5f; font-weight: bold; }
-
-.divider-line { height: 2px; background: linear-gradient(to right, #2563eb, #93c5fd, transparent); margin: 4mm 0; }
-
-.footer { position: absolute; bottom: 12mm; left: 96mm; right: 16mm; }
-.sig-table { width: 100%; border-collapse: collapse; }
-.sig-table td { width: 50%; vertical-align: top; padding-right: 8mm; }
-.sig-line-bar { border-top: 1.5px solid #cbd5e1; margin-bottom: 2mm; margin-top: 12mm; }
-.sig-name  { font-size: 9pt; font-weight: bold; color: #1e293b; }
-.sig-title { font-size: 7.5pt; color: #94a3b8; }
-
-.watermark {
-    position: absolute; bottom: 14mm; right: 18mm;
-    font-size: 48pt; font-weight: 900; color: rgba(37,99,235,0.04);
-    text-transform: uppercase; letter-spacing: -2px;
-    pointer-events: none;
-}
+body { width: 297mm; height: 210mm; font-family: Arial, Helvetica, sans-serif; background: #fff; color: #1e293b; }
 </style>
 </head>
 <body>
 
-<div class="left-panel"></div>
-<div class="left-accent"></div>
+<table style="width: 297mm; height: 210mm; border-collapse: collapse;">
+  <tr>
 
-<div class="left-content">
-    <div class="left-logo">
+    {{-- LEFT PANEL --}}
+    <td style="width: 75mm; background-color: #1e3a5f; vertical-align: top; padding: 16mm 9mm 0 10mm;">
+
+      <div style="margin-bottom: 5mm;">
         @if($logoB64)
-        <img src="{{ $logoB64 }}" alt="Blue Arrow">
+        <img src="{{ $logoB64 }}" style="max-width: 44mm; max-height: 16mm;" alt="Blue Arrow">
         @else
-        <div style="color:#fff; font-size:14pt; font-weight:900;">Blue Arrow</div>
+        <div style="color: #fff; font-size: 13pt; font-weight: 900;">Blue Arrow</div>
         @endif
-    </div>
-    <div class="left-issuer">Blue Arrow<br>Consultancy<br>Training Division</div>
+      </div>
 
-    <div class="left-badge">
-        <div class="left-badge-label">Organisation</div>
-        <div class="left-badge-value">{{ $training->client->company_name }}</div>
-    </div>
-    <div class="left-badge">
-        <div class="left-badge-label">Date Issued</div>
-        <div class="left-badge-value">{{ $training->training_date->format('d M Y') }}</div>
-    </div>
-    @if($training->expiry_date)
-    <div class="left-badge">
-        <div class="left-badge-label">Valid Until</div>
-        <div class="left-badge-value">{{ $training->expiry_date->format('d M Y') }}</div>
-    </div>
-    @endif
+      <div style="color: #93c5fd; font-size: 7pt; letter-spacing: 1.5px; text-transform: uppercase; line-height: 1.7; margin-bottom: 8mm;">Blue Arrow Management<br>Consultants<br>Training Division</div>
 
-    <div class="cert-no-left">BA-TRN-{{ str_pad($training->id, 5, '0', STR_PAD_LEFT) }}</div>
-</div>
+      <div style="background-color: #162d4a; border: 1px solid rgba(255,255,255,0.15); border-radius: 5px; padding: 5mm 4mm; margin-bottom: 4mm;">
+        <div style="color: #93c5fd; font-size: 6pt; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 1mm;">Organisation</div>
+        <div style="color: #fff; font-size: 9pt; font-weight: bold; line-height: 1.4;">{{ $training->client->company_name }}</div>
+      </div>
 
-<div class="watermark">&#10003;</div>
+      <div style="background-color: #162d4a; border: 1px solid rgba(255,255,255,0.15); border-radius: 5px; padding: 5mm 4mm; margin-bottom: 4mm;">
+        <div style="color: #93c5fd; font-size: 6pt; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 1mm;">Date Issued</div>
+        <div style="color: #fff; font-size: 9pt; font-weight: bold;">{{ $training->training_date->format('d M Y') }}</div>
+      </div>
 
-<div class="right-panel">
-    <div class="cert-label">Certificate of Completion</div>
-    <div class="cert-heading">Training<br><span>Achievement</span></div>
+      @if($training->expiry_date)
+      <div style="background-color: #162d4a; border: 1px solid rgba(255,255,255,0.15); border-radius: 5px; padding: 5mm 4mm; margin-bottom: 4mm;">
+        <div style="color: #93c5fd; font-size: 6pt; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 1mm;">Valid Until</div>
+        <div style="color: #fff; font-size: 9pt; font-weight: bold;">{{ $training->expiry_date->format('d M Y') }}</div>
+      </div>
+      @endif
 
-    <div class="presented-to">Awarded to</div>
-    <div class="employee-name">{{ $training->employee_name }}</div>
-    @if($training->employee_role)
-    <div class="employee-role">{{ $training->employee_role }}</div>
-    @endif
+      {{-- cert no at very bottom --}}
+      <div style="margin-top: 8mm; color: rgba(255,255,255,0.25); font-size: 6pt; letter-spacing: 1px;">BA-TRN-{{ str_pad($training->id, 5, '0', STR_PAD_LEFT) }}</div>
+    </td>
 
-    <div class="divider-line"></div>
+    {{-- RIGHT PANEL --}}
+    <td style="vertical-align: top; padding: 0;">
+      <table style="width: 100%; height: 210mm; border-collapse: collapse;">
 
-    <div class="desc">
-        This certificate is awarded in recognition of successfully completing the<br>
-        <span class="training-name">{{ $training->training_type }}</span> programme
-        @if($training->trainer), delivered by <strong>{{ $training->trainer }}</strong>@endif.
-    </div>
+        {{-- Top accent strip --}}
+        <tr>
+          <td style="height: 3mm; background: linear-gradient(to right, #2563eb, #93c5fd);"></td>
+        </tr>
 
-    <div class="footer">
-        <table class="sig-table"><tr>
-            <td>
-                <div class="sig-line-bar"></div>
-                <div class="sig-name">{{ $training->signatory_name ?: 'Authorised Signatory' }}</div>
-                <div class="sig-title">{{ $training->signatory_title ?: 'Blue Arrow Consultancy' }}</div>
-            </td>
-            <td>
-                <div class="sig-line-bar"></div>
-                <div class="sig-name">{{ $training->training_date->format('d F Y') }}</div>
-                <div class="sig-title">Date of Issue</div>
-            </td>
-        </tr></table>
-    </div>
-</div>
+        {{-- Header --}}
+        <tr>
+          <td style="height: 28mm; vertical-align: top; padding: 10mm 14mm 4mm;">
+            <div style="font-size: 7pt; letter-spacing: 3px; text-transform: uppercase; color: #2563eb; font-weight: bold; margin-bottom: 2mm;">Certificate of Completion</div>
+            <div style="font-size: 20pt; font-weight: 900; color: #1e293b; line-height: 1.1;">Training <span style="color: #2563eb;">Achievement</span></div>
+          </td>
+        </tr>
+
+        {{-- Main content --}}
+        <tr>
+          <td style="vertical-align: middle; padding: 0 14mm;">
+            <div style="font-size: 7pt; color: #94a3b8; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 2mm;">Awarded to</div>
+            <div style="font-size: 24pt; font-weight: 800; color: #1e3a5f; line-height: 1.1; margin-bottom: 1mm;">{{ $training->employee_name }}</div>
+            @if($training->employee_role)
+            <div style="font-size: 9pt; color: #64748b; margin-bottom: 5mm;">{{ $training->employee_role }}</div>
+            @else
+            <div style="margin-bottom: 5mm;"></div>
+            @endif
+            <div style="height: 2px; background: #2563eb; margin-bottom: 4mm; opacity: 0.3;"></div>
+            <div style="font-size: 9pt; color: #475569; line-height: 1.7;">
+              This certificate is awarded in recognition of successfully completing the<br>
+              <strong style="color: #1e3a5f;">{{ $training->training_type }}</strong> programme
+              @if($training->trainer), delivered by <strong>{{ $training->trainer }}</strong>@endif.
+            </div>
+          </td>
+        </tr>
+
+        {{-- Signatures --}}
+        <tr>
+          <td style="height: 36mm; vertical-align: bottom; padding: 0 14mm 5mm;">
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 4mm;">
+              <tr>
+                <td style="width: 45%; padding-right: 8mm;">
+                  <div style="border-top: 1.5px solid #cbd5e1; padding-top: 2mm; margin-top: 12mm;">
+                    <div style="font-size: 9pt; font-weight: bold; color: #1e293b;">{{ $training->signatory_name ?: 'Authorised Signatory' }}</div>
+                    <div style="font-size: 7pt; color: #94a3b8; margin-top: 1mm;">{{ $training->signatory_title ?: 'Blue Arrow Management Consultants' }}</div>
+                  </div>
+                </td>
+                <td style="width: 45%; padding-right: 0;">
+                  <div style="border-top: 1.5px solid #cbd5e1; padding-top: 2mm; margin-top: 12mm;">
+                    <div style="font-size: 9pt; font-weight: bold; color: #1e293b;">{{ $training->training_date->format('d F Y') }}</div>
+                    <div style="font-size: 7pt; color: #94a3b8; margin-top: 1mm;">Date of Issue</div>
+                  </div>
+                </td>
+              </tr>
+            </table>
+            <div style="font-size: 5.5pt; color: #cbd5e1; letter-spacing: 0.2px; border-top: 0.5px solid #f0f0f0; padding-top: 3mm;">
+              Blue Arrow Management Consultants is authorised to provide professional and management development training under Licence No. 3003-02 issued by the Sharjah Research Technology and Innovation Park (SRTIP).
+            </div>
+          </td>
+        </tr>
+
+      </table>
+    </td>
+
+  </tr>
+</table>
 
 </body>
 </html>
