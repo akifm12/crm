@@ -576,7 +576,7 @@ PROMPT;
         $filename = 'Certificate-' . \Str::slug($training->employee_name) . '-' . \Str::slug($training->training_type) . '-' . $training->training_date->format('Ymd') . '.pdf';
 
         $pdf = Browsershot::html($html)
-            ->setChromePath('/usr/bin/chromium-browser')
+            ->setChromePath('/usr/bin/google-chrome-stable')
             ->setNodeModulePath('/usr/lib/node_modules')
             ->addChromiumArguments(['disable-dev-shm-usage', 'disable-gpu'])
             ->format('A4')
