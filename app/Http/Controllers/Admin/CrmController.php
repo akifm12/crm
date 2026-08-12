@@ -576,6 +576,7 @@ PROMPT;
         $filename = 'Certificate-' . \Str::slug($training->employee_name) . '-' . \Str::slug($training->training_type) . '-' . $training->training_date->format('Ymd') . '.pdf';
 
         $pdf = Browsershot::html($html)
+            ->setChromePath('/usr/bin/chromium-browser')
             ->format('A4')
             ->landscape()
             ->noSandbox()
