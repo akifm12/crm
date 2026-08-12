@@ -11,7 +11,7 @@
     body {
         margin: 0;
         padding: 0;
-        font-family: dejavuserif;
+        font-family: Georgia, 'Times New Roman', serif;
         color: #1b2d4f;
         background: #ffffff;
     }
@@ -58,14 +58,14 @@
     }
 
     .brand-main {
-        font-family: dejavuserif;
+        font-family: Georgia, 'Times New Roman', serif;
         font-size: 15pt;
         font-weight: bold;
         color: #ffffff;
     }
 
     .brand-sub {
-        font-family: dejavusans;
+        font-family: Arial, Helvetica, sans-serif;
         font-size: 7pt;
         color: #d0d0d0;
         letter-spacing: 1px;
@@ -74,7 +74,7 @@
     .training-label {
         padding-right: 8mm;
         text-align: right;
-        font-family: dejavusans;
+        font-family: Arial, Helvetica, sans-serif;
         font-size: 7pt;
         font-weight: bold;
         color: #d0b66a;
@@ -97,7 +97,7 @@
 
     .certificate-subtitle {
         margin-top: 2mm;
-        font-family: dejavusans;
+        font-family: Arial, Helvetica, sans-serif;
         font-size: 8pt;
         font-weight: bold;
         color: #b8963e;
@@ -138,14 +138,14 @@
 
     .employment {
         margin-top: 5mm;
-        font-family: dejavusans;
+        font-family: Arial, Helvetica, sans-serif;
         font-size: 8.5pt;
         color: #777777;
     }
 
     .completion {
         margin-top: 3mm;
-        font-family: dejavusans;
+        font-family: Arial, Helvetica, sans-serif;
         font-size: 9pt;
         color: #666666;
     }
@@ -161,7 +161,7 @@
 
     .conducted {
         margin-top: 3mm;
-        font-family: dejavusans;
+        font-family: Arial, Helvetica, sans-serif;
         font-size: 8pt;
         color: #999999;
     }
@@ -191,7 +191,7 @@
     }
 
     .info-label {
-        font-family: dejavusans;
+        font-family: Arial, Helvetica, sans-serif;
         font-size: 6.5pt;
         font-weight: bold;
         color: #b8963e;
@@ -214,7 +214,7 @@
     }
 
     .evidence {
-        font-family: dejavusans;
+        font-family: Arial, Helvetica, sans-serif;
         font-size: 8pt;
         color: #777777;
     }
@@ -245,7 +245,7 @@
 
     .signature-title {
         margin-top: 1mm;
-        font-family: dejavusans;
+        font-family: Arial, Helvetica, sans-serif;
         font-size: 7.5pt;
         color: #888888;
     }
@@ -256,7 +256,7 @@
         left: 10mm;
         width: 261mm;
         text-align: center;
-        font-family: dejavusans;
+        font-family: Arial, Helvetica, sans-serif;
         font-size: 5.5pt;
         line-height: 1.3;
         color: #999999;

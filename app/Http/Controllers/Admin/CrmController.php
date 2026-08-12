@@ -17,7 +17,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Mpdf\Mpdf;
+use Spatie\Browsershot\Browsershot;
 
 class CrmController extends Controller
 {
@@ -566,27 +566,23 @@ PROMPT;
         $training->load('client');
         $template = 'admin.training.certificate_' . max(1, min(3, (int) $training->certificate_template));
 
-        $mpdf = new Mpdf([
-            'mode'          => 'utf-8',
-            'format'        => [297, 210], // A4 landscape
-            'margin_top'    => 0,
-            'margin_bottom' => 0,
-            'margin_left'   => 0,
-            'margin_right'  => 0,
-            'tempDir'       => storage_path('app/mpdf-tmp'),
-        ]);
-
         $logoPath = public_path('logo.png');
         $logoB64  = file_exists($logoPath)
             ? 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath))
             : null;
 
         $html = view($template, compact('training', 'logoB64'))->render();
-        $mpdf->WriteHTML($html);
 
         $filename = 'Certificate-' . \Str::slug($training->employee_name) . '-' . \Str::slug($training->training_type) . '-' . $training->training_date->format('Ymd') . '.pdf';
 
-        return response($mpdf->Output($filename, 'S'), 200, [
+        $pdf = Browsershot::html($html)
+            ->format('A4')
+            ->landscape()
+            ->noSandbox()
+            ->showBackground()
+            ->pdf();
+
+        return response($pdf, 200, [
             'Content-Type'        => 'application/pdf',
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
         ]);
