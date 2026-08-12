@@ -573,7 +573,7 @@ PROMPT;
 
         $html = view($template, compact('training', 'logoB64'))->render();
 
-        $filename = 'Certificate-' . \Str::slug($training->employee_name) . '-' . \Str::slug($training->training_type) . '-' . $training->training_date->format('Ymd') . '.pdf';
+        $filename = 'BA-CERT-' . $training->id . '-' . $training->training_date->format('Ymd') . '.pdf';
 
         putenv('HOME=/tmp');
 

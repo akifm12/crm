@@ -652,10 +652,6 @@
                         <textarea name="notes" rows="3" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-gray-600 mb-1">Certificate (PDF/image)</label>
-                        <input type="file" name="certificate" accept=".pdf,.jpg,.jpeg,.png" class="w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
-                    </div>
-                    <div>
                         <label class="block text-xs font-medium text-gray-600 mb-1">Training Material</label>
                         <input type="file" name="material" accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.png" class="w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100">
                     </div>

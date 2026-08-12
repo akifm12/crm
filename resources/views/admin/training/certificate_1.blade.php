@@ -11,7 +11,7 @@
     body {
         margin: 0;
         padding: 0;
-        font-family: Georgia, 'Times New Roman', serif;
+        font-family: Helvetica, Arial, sans-serif;
         color: #1b2d4f;
         background: #ffffff;
     }
@@ -58,7 +58,7 @@
     }
 
     .brand-main {
-        font-family: Georgia, 'Times New Roman', serif;
+        font-family: Helvetica, Arial, sans-serif;
         font-size: 15pt;
         font-weight: bold;
         color: #ffffff;
@@ -221,7 +221,7 @@
 
     .signature-table {
         width: 230mm;
-        margin: 10mm auto 0 auto;
+        margin: 18mm auto 0 auto;
         border-collapse: collapse;
     }
 
@@ -267,21 +267,20 @@
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%) rotate(-35deg);
-        font-family: Georgia, 'Times New Roman', serif;
-        font-size: 72pt;
-        font-weight: bold;
-        color: rgba(184, 150, 62, 0.07);
-        letter-spacing: 8mm;
-        white-space: nowrap;
+        opacity: 0.06;
         pointer-events: none;
         z-index: 0;
+    }
+
+    .watermark img {
+        width: 160mm;
     }
 </style>
 </head>
 
 <body>
 
-<div class="watermark">BLUE ARROW</div>
+@if($logoB64)<div class="watermark"><img src="{{ $logoB64 }}"></div>@endif
 
 <div class="certificate">
     <div class="inner">
