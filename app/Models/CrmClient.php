@@ -37,6 +37,7 @@ class CrmClient extends Model
     public function tasks(): HasMany          { return $this->hasMany(CrmTask::class); }
     public function slas(): HasMany           { return $this->hasMany(CrmSla::class); }
     public function quotations(): HasMany     { return $this->hasMany(CrmQuotation::class); }
+    public function trainings(): HasMany      { return $this->hasMany(CrmEmployeeTraining::class)->latest('training_date'); }
 
     // ── Helpers ────────────────────────────────────────────────────────────
 

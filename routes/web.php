@@ -93,6 +93,10 @@ Route::middleware(['auth', \App\Http\Middleware\EnsureAdminUser::class])->group(
     Route::patch('/crm/slas/{sla}/status',         [CrmController::class, 'updateSlaStatus'])->name('crm.slas.status');
     Route::post('/crm/slas/{sla}/upload',          [CrmController::class, 'uploadSignedSla'])->name('crm.slas.upload');
     Route::post('/crm/{crm}/quotations',           [CrmController::class, 'createQuotation'])->name('crm.quotations.store');
+    Route::post('/crm/{crm}/trainings',            [CrmController::class, 'storeTraining'])->name('crm.trainings.store');
+    Route::delete('/crm/trainings/{training}',     [CrmController::class, 'deleteTraining'])->name('crm.trainings.delete');
+    Route::get('/crm/trainings/{training}/certificate', [CrmController::class, 'downloadCertificate'])->name('crm.trainings.certificate');
+    Route::get('/crm/trainings/{training}/material',    [CrmController::class, 'downloadMaterial'])->name('crm.trainings.material');
 
     // ── Document generation ───────────────────────────────────────────────
     Route::get('/crm/slas/{sla}/download',             [DocumentController::class, 'generateSla'])->name('sla.download');

@@ -78,11 +78,12 @@
 
 {{-- Tabs --}}
 @php
-    $docCount   = ($crm->documents ?? collect())->count();
-    $noteCount  = ($crm->notes ?? collect())->count();
-    $taskOpen   = ($crm->tasks ?? collect())->whereIn('status', ['pending','in_progress'])->count();
-    $slaCount   = ($crm->slas ?? collect())->count();
-    $qtCount    = ($crm->quotations ?? collect())->count();
+    $docCount      = ($crm->documents ?? collect())->count();
+    $noteCount     = ($crm->notes ?? collect())->count();
+    $taskOpen      = ($crm->tasks ?? collect())->whereIn('status', ['pending','in_progress'])->count();
+    $slaCount      = ($crm->slas ?? collect())->count();
+    $qtCount       = ($crm->quotations ?? collect())->count();
+    $trainingCount = ($crm->trainings ?? collect())->count();
 @endphp
 
 <div x-data="{ tab: 'overview' }">
@@ -95,6 +96,7 @@
             ['tasks',      'Tasks ('.$taskOpen.' open)'],
             ['slas',       'SLAs ('.$slaCount.')'],
             ['quotations', 'Quotations ('.$qtCount.')'],
+            ['training',   'Training ('.$trainingCount.')'],
             ['portal',     'Portal'],
         ] as [$key,$label])
         <button @click="tab='{{ $key }}'"
@@ -572,6 +574,145 @@
                 @empty
                 <div class="bg-white rounded-xl border border-gray-200 p-12 text-center text-gray-400 text-sm">No quotations yet.</div>
                 @endforelse
+            </div>
+        </div>
+    </div>
+
+    {{-- ── TRAINING ─────────────────────────────────────────────────────── --}}
+    <div x-show="tab==='training'" x-cloak>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+
+            {{-- Add training form --}}
+            <div class="bg-white rounded-xl border border-gray-200 p-5">
+                <h3 class="text-sm font-semibold text-gray-700 mb-4">Add Training Record</h3>
+                <form method="POST" action="{{ route('crm.trainings.store', $crm->id) }}" enctype="multipart/form-data" class="space-y-3">
+                    @csrf
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Employee Name <span class="text-red-500">*</span></label>
+                        <input type="text" name="employee_name" required class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Role / Position</label>
+                        <input type="text" name="employee_role" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Training Type <span class="text-red-500">*</span></label>
+                        <input type="text" name="training_type" list="training-types" required placeholder="e.g. AML, CFT, DPMSR, Compliance" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <datalist id="training-types">
+                            <option value="AML Awareness">
+                            <option value="CFT Training">
+                            <option value="DPMSR Compliance">
+                            <option value="KYC Procedures">
+                            <option value="Sanctions Screening">
+                            <option value="Risk Assessment">
+                            <option value="CBUAE Regulations">
+                        </datalist>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Training Date <span class="text-red-500">*</span></label>
+                            <input type="date" name="training_date" required class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Expiry Date</label>
+                            <input type="date" name="expiry_date" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Trainer / Provider</label>
+                        <input type="text" name="trainer" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Status</label>
+                        <select name="status" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                            <option value="completed">Completed</option>
+                            <option value="pending">Pending</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Notes / Log</label>
+                        <textarea name="notes" rows="3" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Certificate (PDF/image)</label>
+                        <input type="file" name="certificate" accept=".pdf,.jpg,.jpeg,.png" class="w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Training Material</label>
+                        <input type="file" name="material" accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.png" class="w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100">
+                    </div>
+                    <button type="submit" class="w-full px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition">
+                        Add Record
+                    </button>
+                </form>
+            </div>
+
+            {{-- Training records list --}}
+            <div class="lg:col-span-2 space-y-3">
+                @if($crm->trainings->isEmpty())
+                <div class="bg-white rounded-xl border border-gray-200 p-10 text-center text-gray-400 text-sm">
+                    No training records yet. Add the first one on the left.
+                </div>
+                @else
+                @foreach($crm->trainings as $tr)
+                @php
+                    $expired      = $tr->isExpired();
+                    $expiringSoon = $tr->isExpiringSoon();
+                    $badgeClass   = $tr->status === 'pending' ? 'bg-amber-100 text-amber-700' : ($expired ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700');
+                    $badgeLabel   = $tr->status === 'pending' ? 'Pending' : ($expired ? 'Expired' : 'Completed');
+                @endphp
+                <div class="bg-white rounded-xl border border-gray-200 p-4">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <span class="font-semibold text-gray-900 text-sm">{{ $tr->employee_name }}</span>
+                                @if($tr->employee_role)
+                                <span class="text-xs text-gray-400">{{ $tr->employee_role }}</span>
+                                @endif
+                                <span class="px-2 py-0.5 rounded-full text-xs font-medium {{ $badgeClass }}">{{ $badgeLabel }}</span>
+                                @if($expiringSoon && !$expired)
+                                <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700">Expiring soon</span>
+                                @endif
+                            </div>
+                            <div class="mt-1 text-sm text-blue-700 font-medium">{{ $tr->training_type }}</div>
+                            <div class="mt-1 flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-gray-500">
+                                <span>Date: {{ $tr->training_date->format('d M Y') }}</span>
+                                @if($tr->expiry_date)
+                                <span class="{{ $expired ? 'text-red-600 font-medium' : '' }}">Expiry: {{ $tr->expiry_date->format('d M Y') }}</span>
+                                @endif
+                                @if($tr->trainer)
+                                <span>Trainer: {{ $tr->trainer }}</span>
+                                @endif
+                            </div>
+                            @if($tr->notes)
+                            <p class="mt-2 text-xs text-gray-500 leading-relaxed">{{ $tr->notes }}</p>
+                            @endif
+                            <div class="mt-2 flex gap-3">
+                                @if($tr->certificate_path)
+                                <a href="{{ route('crm.trainings.certificate', $tr->id) }}" class="flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 font-medium">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                                    Certificate
+                                </a>
+                                @endif
+                                @if($tr->material_path)
+                                <a href="{{ route('crm.trainings.material', $tr->id) }}" class="flex items-center gap-1 text-xs text-gray-600 hover:text-gray-800 font-medium">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                    Material
+                                </a>
+                                @endif
+                            </div>
+                        </div>
+                        <form method="POST" action="{{ route('crm.trainings.delete', $tr->id) }}"
+                              onsubmit="return confirm('Delete this training record?')">
+                            @csrf @method('DELETE')
+                            <button type="submit" class="text-gray-300 hover:text-red-500 transition">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                @endforeach
+                @endif
             </div>
         </div>
     </div>

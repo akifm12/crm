@@ -10,6 +10,7 @@ use App\Models\CrmTask;
 use App\Models\CrmDocument;
 use App\Models\CrmSla;
 use App\Models\CrmQuotation;
+use App\Models\CrmEmployeeTraining;
 use App\Models\SlaTemplate;
 use App\Models\QuotationTemplate;
 use App\Models\Tenant;
@@ -155,7 +156,7 @@ class CrmController extends Controller
     // ── Client profile ─────────────────────────────────────────────────────
     public function show(CrmClient $crm)
     {
-        $crm->load(['shareholders', 'contacts', 'documents', 'notes.author', 'tasks.assignee', 'slas', 'quotations', 'tenant', 'assignee']);
+        $crm->load(['shareholders', 'contacts', 'documents', 'notes.author', 'tasks.assignee', 'slas', 'quotations', 'tenant', 'assignee', 'trainings']);
         $staff        = User::orderBy('name')->get();
         $slaTemplates = SlaTemplate::where('is_active', true)->orderBy('name')->get();
         $qtTemplates  = QuotationTemplate::where('is_active', true)->orderBy('name')->get();
@@ -498,6 +499,61 @@ PROMPT;
 
         return back()->with('success',
             "Portal created: {$tenant->portalUrl()} — Login: {$request->admin_email} / {$request->admin_password}"
+        );
+    }
+
+    // ── Employee Training ──────────────────────────────────────────────────────
+
+    public function storeTraining(Request $request, CrmClient $crm)
+    {
+        $data = $request->validate([
+            'employee_name'  => 'required|string|max:200',
+            'employee_role'  => 'nullable|string|max:200',
+            'training_type'  => 'required|string|max:200',
+            'training_date'  => 'required|date',
+            'expiry_date'    => 'nullable|date|after:training_date',
+            'trainer'        => 'nullable|string|max:200',
+            'notes'          => 'nullable|string',
+            'status'         => 'required|in:completed,pending,expired',
+            'certificate'    => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
+            'material'       => 'nullable|file|mimes:pdf,doc,docx,ppt,pptx,jpg,png|max:20480',
+        ]);
+
+        if ($request->hasFile('certificate')) {
+            $data['certificate_path'] = $request->file('certificate')
+                ->store("crm/{$crm->id}/training/certificates", 'local');
+        }
+        if ($request->hasFile('material')) {
+            $data['material_path'] = $request->file('material')
+                ->store("crm/{$crm->id}/training/materials", 'local');
+        }
+
+        $crm->trainings()->create($data);
+
+        return back()->with('success', 'Training record added.')->withFragment('tab-training');
+    }
+
+    public function deleteTraining(CrmEmployeeTraining $training)
+    {
+        if ($training->certificate_path) \Storage::disk('local')->delete($training->certificate_path);
+        if ($training->material_path)    \Storage::disk('local')->delete($training->material_path);
+        $training->delete();
+        return back()->with('success', 'Training record deleted.');
+    }
+
+    public function downloadCertificate(CrmEmployeeTraining $training)
+    {
+        abort_unless($training->certificate_path && \Storage::disk('local')->exists($training->certificate_path), 404);
+        return \Storage::disk('local')->download($training->certificate_path,
+            'Certificate-' . \Str::slug($training->employee_name) . '-' . $training->training_date->format('Ymd') . '.' . pathinfo($training->certificate_path, PATHINFO_EXTENSION)
+        );
+    }
+
+    public function downloadMaterial(CrmEmployeeTraining $training)
+    {
+        abort_unless($training->material_path && \Storage::disk('local')->exists($training->material_path), 404);
+        return \Storage::disk('local')->download($training->material_path,
+            'Material-' . \Str::slug($training->training_type) . '.' . pathinfo($training->material_path, PATHINFO_EXTENSION)
         );
     }
 
