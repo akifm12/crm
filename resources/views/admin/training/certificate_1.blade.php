@@ -261,10 +261,27 @@
         line-height: 1.3;
         color: #999999;
     }
+
+    .watermark {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) rotate(-35deg);
+        font-family: Georgia, 'Times New Roman', serif;
+        font-size: 72pt;
+        font-weight: bold;
+        color: rgba(184, 150, 62, 0.07);
+        letter-spacing: 8mm;
+        white-space: nowrap;
+        pointer-events: none;
+        z-index: 0;
+    }
 </style>
 </head>
 
 <body>
+
+<div class="watermark">BLUE ARROW</div>
 
 <div class="certificate">
     <div class="inner">
@@ -453,12 +470,10 @@
 
                         <div class="signature-line">
 
-                            <div class="signature-name">
-                                {{ $training->training_date->format('d F Y') }}
-                            </div>
+                            <div class="signature-name">&nbsp;</div>
 
                             <div class="signature-title">
-                                Date of Issue
+                                Stamp
                             </div>
 
                         </div>
