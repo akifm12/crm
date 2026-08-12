@@ -288,13 +288,13 @@
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%) rotate(-35deg);
-        opacity: 0.06;
+        opacity: 0.09;
         pointer-events: none;
-        z-index: 0;
+        z-index: 1;
     }
 
     .watermark img {
-        width: 160mm;
+        width: 180mm;
     }
 </style>
 </head>
