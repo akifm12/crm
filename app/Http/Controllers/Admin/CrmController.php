@@ -567,7 +567,7 @@ PROMPT;
         $training->load('client');
         $template = 'admin.training.certificate_' . max(1, min(3, (int) $training->certificate_template));
 
-        $logoPath = public_path('logo.png');
+        $logoPath = public_path('images/logo.png');
         $logoB64  = file_exists($logoPath)
             ? 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath))
             : null;

@@ -11,7 +11,7 @@
 
         {{-- Header --}}
         <div class="text-center mb-6">
-            @php $logoPath = public_path('logo.png'); @endphp
+            @php $logoPath = public_path('images/logo.png'); @endphp
             @if(file_exists($logoPath))
                 <img src="data:image/png;base64,{{ base64_encode(file_get_contents($logoPath)) }}"
                      class="h-12 mx-auto mb-3" alt="Blue Arrow">
