@@ -19,7 +19,7 @@
     .certificate {
         position: absolute;
         top: 5mm;
-        left: 5mm;
+        left: 3mm;
         width: 287mm;
         height: 200mm;
         border: 1.5mm solid #b8963e;
