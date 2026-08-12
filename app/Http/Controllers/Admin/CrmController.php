@@ -577,6 +577,7 @@ PROMPT;
 
         $pdf = Browsershot::html($html)
             ->setChromePath('/usr/bin/chromium-browser')
+            ->setNodeModulePath('/usr/lib/node_modules')
             ->addChromiumArguments(['disable-dev-shm-usage', 'disable-gpu'])
             ->format('A4')
             ->landscape()
