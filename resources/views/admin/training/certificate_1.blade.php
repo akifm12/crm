@@ -241,7 +241,7 @@
 
     .signature-line .sig-img {
         position: absolute;
-        bottom: calc(100% + 1mm);
+        bottom: calc(100% - 8mm);
         left: 50%;
         mix-blend-mode: multiply;
         transform: translateX(-50%);
