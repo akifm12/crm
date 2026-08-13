@@ -243,6 +243,7 @@
         position: absolute;
         bottom: calc(100% + 1mm);
         left: 50%;
+        mix-blend-mode: multiply;
         transform: translateX(-50%);
         height: 24mm;
         object-fit: contain;
