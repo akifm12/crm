@@ -244,7 +244,7 @@
         bottom: calc(100% + 1mm);
         left: 50%;
         transform: translateX(-50%);
-        height: 12mm;
+        height: 24mm;
         object-fit: contain;
         pointer-events: none;
     }
