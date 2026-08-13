@@ -11,9 +11,10 @@
     {{-- Tab bar --}}
     <div class="flex gap-1 bg-white rounded-xl border border-gray-200 p-1 mb-5">
         @foreach([
-            ['sla',        'SLA Templates'],
-            ['quotations', 'Quotation Templates'],
-            ['staff',      'Staff Users'],
+            ['sla',         'SLA Templates'],
+            ['quotations',  'Quotation Templates'],
+            ['staff',       'Staff Users'],
+            ['certificate', 'Certificate'],
         ] as [$key, $label])
         <button @click="tab='{{ $key }}'"
                 :class="tab==='{{ $key }}' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'"
@@ -215,6 +216,73 @@
                     @endforeach
                 </div>
             </div>
+        </div>
+    </div>
+
+    {{-- ── CERTIFICATE SETTINGS ─────────────────────────────────────────── --}}
+    <div x-show="tab==='certificate'" x-cloak>
+        <div class="max-w-lg space-y-5">
+
+            @if(session('cert_success'))
+                <div class="px-4 py-3 bg-green-50 border border-green-200 text-green-700 text-sm rounded-lg">
+                    {{ session('cert_success') }}
+                </div>
+            @endif
+
+            {{-- Signature --}}
+            <div class="bg-white rounded-xl border border-gray-200 p-5">
+                <h2 class="text-sm font-semibold text-gray-700 mb-1">Authorised Signature</h2>
+                <p class="text-xs text-gray-400 mb-4">Uploaded PNG will appear on the signature line of all certificates. Use a transparent background for best results.</p>
+
+                @php $sigPath = storage_path('app/public/certificate/signature.png'); @endphp
+                @if(file_exists($sigPath))
+                    <div class="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200 flex items-center justify-between">
+                        <img src="{{ asset('storage/certificate/signature.png') }}?v={{ filemtime($sigPath) }}"
+                             class="h-12 object-contain" alt="Current signature">
+                        <span class="text-xs text-green-600 font-medium">Uploaded</span>
+                    </div>
+                @endif
+
+                <form method="POST" action="{{ route('settings.certificate.upload') }}" enctype="multipart/form-data">
+                    @csrf
+                    <input type="hidden" name="type" value="signature">
+                    <div class="flex items-center gap-3">
+                        <input type="file" name="image" accept="image/png,image/jpeg" required
+                               class="flex-1 text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                        <button type="submit" class="px-3 py-1.5 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition whitespace-nowrap">
+                            Upload
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            {{-- Stamp --}}
+            <div class="bg-white rounded-xl border border-gray-200 p-5">
+                <h2 class="text-sm font-semibold text-gray-700 mb-1">Company Stamp</h2>
+                <p class="text-xs text-gray-400 mb-4">Uploaded PNG will appear in the stamp field on all certificates. Use a transparent background.</p>
+
+                @php $stampPath = storage_path('app/public/certificate/stamp.png'); @endphp
+                @if(file_exists($stampPath))
+                    <div class="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200 flex items-center justify-between">
+                        <img src="{{ asset('storage/certificate/stamp.png') }}?v={{ filemtime($stampPath) }}"
+                             class="h-14 object-contain" alt="Current stamp">
+                        <span class="text-xs text-green-600 font-medium">Uploaded</span>
+                    </div>
+                @endif
+
+                <form method="POST" action="{{ route('settings.certificate.upload') }}" enctype="multipart/form-data">
+                    @csrf
+                    <input type="hidden" name="type" value="stamp">
+                    <div class="flex items-center gap-3">
+                        <input type="file" name="image" accept="image/png,image/jpeg" required
+                               class="flex-1 text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                        <button type="submit" class="px-3 py-1.5 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition whitespace-nowrap">
+                            Upload
+                        </button>
+                    </div>
+                </form>
+            </div>
+
         </div>
     </div>
 

@@ -572,11 +572,21 @@ PROMPT;
             ? 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath))
             : null;
 
+        $sigPath  = storage_path('app/public/certificate/signature.png');
+        $sigB64   = file_exists($sigPath)
+            ? 'data:image/png;base64,' . base64_encode(file_get_contents($sigPath))
+            : null;
+
+        $stampPath = storage_path('app/public/certificate/stamp.png');
+        $stampB64  = file_exists($stampPath)
+            ? 'data:image/png;base64,' . base64_encode(file_get_contents($stampPath))
+            : null;
+
         $verifyUrl = route('certificate.verify', $training->id);
         $qrSvg     = QrCode::format('svg')->size(80)->errorCorrection('M')->generate($verifyUrl);
         $qrB64     = 'data:image/svg+xml;base64,' . base64_encode($qrSvg);
 
-        $html = view($template, compact('training', 'logoB64', 'qrB64', 'verifyUrl'))->render();
+        $html = view($template, compact('training', 'logoB64', 'sigB64', 'stampB64', 'qrB64', 'verifyUrl'))->render();
 
         $filename = 'BA-CERT-' . $training->id . '-' . $training->training_date->format('Ymd') . '.pdf';
 

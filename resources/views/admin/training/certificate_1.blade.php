@@ -473,6 +473,10 @@
 
                         <div class="signature-line">
 
+                            @if($sigB64)
+                                <img src="{{ $sigB64 }}" style="height:10mm; margin-bottom:1mm; object-fit:contain;">
+                            @endif
+
                             <div class="signature-name">
                                 {{ $training->signatory_name ?: 'Authorised Signatory' }}
                             </div>
@@ -490,7 +494,11 @@
 
                         <div class="signature-line">
 
-                            <div class="signature-name">&nbsp;</div>
+                            @if($stampB64)
+                                <img src="{{ $stampB64 }}" style="height:14mm; margin-bottom:1mm; object-fit:contain;">
+                            @else
+                                <div style="height:14mm;"></div>
+                            @endif
 
                             <div class="signature-title">
                                 Stamp

@@ -9,6 +9,7 @@ use App\Models\QuotationTemplate;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 
 class SettingsController extends Controller
 {
@@ -137,5 +138,19 @@ class SettingsController extends Controller
         }
         $user->update(['role' => $user->role === 'staff' ? 'inactive' : 'staff']);
         return back()->with('success', 'User updated.');
+    }
+
+    public function uploadCertificateAsset(Request $request)
+    {
+        $request->validate([
+            'type'  => 'required|in:signature,stamp',
+            'image' => 'required|image|mimes:png,jpg,jpeg|max:2048',
+        ]);
+
+        $type = $request->input('type');
+        Storage::disk('public')->makeDirectory('certificate');
+        $request->file('image')->storeAs('certificate', $type . '.png', 'public');
+
+        return back()->with('cert_success', ucfirst($type) . ' uploaded successfully.')->with('tab', 'certificate');
     }
 }

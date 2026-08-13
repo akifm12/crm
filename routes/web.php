@@ -140,6 +140,7 @@ Route::middleware(['auth', \App\Http\Middleware\EnsureAdminUser::class])->group(
     Route::patch('/settings/qt/{template}/toggle',  [SettingsController::class, 'toggleQtTemplate'])->name('settings.qt.toggle');
     Route::post('/settings/staff',                  [SettingsController::class, 'storeStaff'])->name('settings.staff.store');
     Route::patch('/settings/staff/{user}/toggle',   [SettingsController::class, 'toggleStaff'])->name('settings.staff.toggle');
+    Route::post('/settings/certificate/upload',     [SettingsController::class, 'uploadCertificateAsset'])->name('settings.certificate.upload');
 
     // ── Other admin stubs ─────────────────────────────────────────────────
     Route::get('/marketing', fn() => view('admin.marketing.index'))->name('marketing.index');
