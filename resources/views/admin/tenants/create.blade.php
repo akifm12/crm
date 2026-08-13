@@ -11,8 +11,34 @@
       x-data="{
         clients: {{ $clients->keyBy('id')->map(fn($c) => ['name' => $c->company_name, 'email' => $c->email ?? '', 'phone' => $c->telephone ?? '', 'address' => $c->address ?? ''])->toJson() }},
         selected: '{{ old('crm_client_id') }}',
-        get client() { return this.clients[this.selected] ?? null; }
-      }">
+        slug: '{{ old('slug') }}',
+        slugStatus: null,
+        slugTimer: null,
+        get client() { return this.clients[this.selected] ?? null; },
+        suggestSlug(name) {
+            const stop = ['llc','ltd','limited','co','inc','fze','fzco','llp','pjsc','group','trading','services','est','establishment'];
+            const words = name.toLowerCase().replace(/[^a-z0-9\s]/g,'').split(/\s+/)
+                .filter(w => w && !stop.includes(w));
+            return words.slice(0, 2).join('-');
+        },
+        onClientChange() {
+            if (this.client && !this.slug) {
+                this.slug = this.suggestSlug(this.client.name);
+                this.checkSlug();
+            }
+        },
+        checkSlug() {
+            clearTimeout(this.slugTimer);
+            this.slugStatus = null;
+            if (!this.slug) return;
+            this.slugTimer = setTimeout(async () => {
+                const res = await fetch('{{ route('kyc.tenants.check-slug') }}?slug=' + encodeURIComponent(this.slug));
+                const data = await res.json();
+                this.slugStatus = data.available ? 'available' : 'taken';
+            }, 400);
+        }
+      }"
+      @change.capture="if ($event.target.name === 'crm_client_id') onClientChange()">
 @csrf
 
 @if($errors->any())
@@ -56,12 +82,19 @@
                 <label class="block text-xs font-medium text-gray-600 mb-1">Portal slug <span class="text-red-500">*</span></label>
                 <div class="flex items-center gap-1">
                     <span class="text-xs text-gray-400 flex-shrink-0">bluearrow.ae/</span>
-                    <input type="text" name="slug" value="{{ old('slug') }}" required
-                           placeholder="e.g. prince-jewellers"
-                           class="w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 {{ $errors->has('slug') ? 'border-red-400 bg-red-50' : 'border-gray-200' }}">
+                    <input type="text" name="slug" required
+                           x-model="slug"
+                           @input="checkSlug()"
+                           placeholder="e.g. pbj"
+                           :class="slugStatus === 'taken' ? 'border-red-400 bg-red-50' : slugStatus === 'available' ? 'border-green-400' : '{{ $errors->has('slug') ? 'border-red-400 bg-red-50' : 'border-gray-200' }}'"
+                           class="w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
-                @error('slug') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
-                <p class="text-xs text-gray-400 mt-1">Lowercase, letters, numbers and hyphens only</p>
+                <div class="mt-1 flex items-center gap-2">
+                    <p x-show="slugStatus === 'taken'" class="text-xs text-red-500" x-cloak>⚠ This slug is already in use — choose another</p>
+                    <p x-show="slugStatus === 'available'" class="text-xs text-green-600" x-cloak>✓ Available</p>
+                    @error('slug') <p class="text-xs text-red-500">{{ $message }}</p> @enderror
+                    <p x-show="!slugStatus" class="text-xs text-gray-400">Lowercase, letters, numbers and hyphens only</p>
+                </div>
             </div>
             <div>
                 <label class="block text-xs font-medium text-gray-600 mb-1">Business sector <span class="text-red-500">*</span></label>

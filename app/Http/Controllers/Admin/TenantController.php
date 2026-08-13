@@ -158,6 +158,13 @@ class TenantController extends Controller
         return back()->with('success', 'User removed.');
     }
 
+    public function checkSlug(Request $request)
+    {
+        $slug = $request->query('slug', '');
+        $taken = Tenant::where('slug', $slug)->exists();
+        return response()->json(['available' => !$taken]);
+    }
+
     public function toggle(Tenant $tenant)
     {
         $tenant->update(['is_active' => !$tenant->is_active]);

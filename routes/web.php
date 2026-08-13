@@ -195,6 +195,7 @@ Route::middleware(['auth', \App\Http\Middleware\EnsureAdminUser::class])->group(
     Route::get('/kyc/submissions/{id}',         fn() => view('admin.stub', ['module' => 'KYC Review']))->name('kyc.review');
     Route::get('/kyc/tenants',                   [TenantController::class, 'index'])->name('kyc.tenants');
     Route::get('/kyc/tenants/create',            [TenantController::class, 'create'])->name('kyc.tenants.create');
+    Route::get('/kyc/tenants/check-slug',        [TenantController::class, 'checkSlug'])->name('kyc.tenants.check-slug');
     Route::post('/kyc/tenants',                  [TenantController::class, 'store'])->name('kyc.tenants.store');
     Route::get('/kyc/tenants/{tenant}/edit',     [TenantController::class, 'edit'])->name('kyc.tenants.edit');
     Route::patch('/kyc/tenants/{tenant}',        [TenantController::class, 'update'])->name('kyc.tenants.update');
