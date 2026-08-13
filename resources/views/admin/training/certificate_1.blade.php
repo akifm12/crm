@@ -232,10 +232,21 @@
     }
 
     .signature-line {
+        position: relative;
         width: 75mm;
         margin: 0 auto;
         border-top: 0.4mm solid #1b2d4f;
         padding-top: 2.5mm;
+    }
+
+    .signature-line .sig-img {
+        position: absolute;
+        bottom: calc(100% + 1mm);
+        left: 50%;
+        transform: translateX(-50%);
+        height: 12mm;
+        object-fit: contain;
+        pointer-events: none;
     }
 
     .signature-name {
@@ -474,7 +485,7 @@
                         <div class="signature-line">
 
                             @if($sigB64)
-                                <img src="{{ $sigB64 }}" style="height:10mm; margin-bottom:1mm; object-fit:contain;">
+                                <img src="{{ $sigB64 }}" class="sig-img">
                             @endif
 
                             <div class="signature-name">
@@ -495,10 +506,10 @@
                         <div class="signature-line">
 
                             @if($stampB64)
-                                <img src="{{ $stampB64 }}" style="height:14mm; margin-bottom:1mm; object-fit:contain;">
-                            @else
-                                <div style="height:14mm;"></div>
+                                <img src="{{ $stampB64 }}" class="sig-img">
                             @endif
+
+                            <div class="signature-name">&nbsp;</div>
 
                             <div class="signature-title">
                                 Stamp
