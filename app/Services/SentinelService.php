@@ -94,7 +94,10 @@ class SentinelService
             'selectedLists' => [],
         ];
 
-        if (!empty($params['dob'])) $payload['dob'] = $params['dob'];
+        if (!empty($params['dob'])) {
+            $d = \DateTime::createFromFormat('Y-m-d', $params['dob']);
+            $payload['dob'] = $d ? $d->format('d/m/Y') : $params['dob'];
+        }
 
         return $this->doScreen($payload);
     }
