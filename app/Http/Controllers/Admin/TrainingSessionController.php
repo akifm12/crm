@@ -9,6 +9,8 @@ use App\Mail\CertificateLinksEmail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
+use Spatie\Browsershot\Browsershot;
 
 class TrainingSessionController extends Controller
 {
@@ -44,13 +46,14 @@ class TrainingSessionController extends Controller
     public function addAttendee(Request $request, string $date, string $type)
     {
         $validated = $request->validate([
-            'employee_name'      => 'required|string|max:255',
-            'employee_role'      => 'nullable|string|max:255',
-            'crm_client_id'      => 'required|exists:crm_clients,id',
-            'expiry_date'        => 'nullable|date',
-            'status'             => 'required|in:completed,pending',
-            'signatory_name'     => 'nullable|string|max:255',
-            'signatory_title'    => 'nullable|string|max:255',
+            'employee_name'        => 'required|string|max:255',
+            'employee_role'        => 'nullable|string|max:255',
+            'employee_id_number'   => 'nullable|string|max:100',
+            'crm_client_id'        => 'required|exists:crm_clients,id',
+            'expiry_date'          => 'nullable|date',
+            'status'               => 'required|in:completed,pending',
+            'signatory_name'       => 'nullable|string|max:255',
+            'signatory_title'      => 'nullable|string|max:255',
             'certificate_template' => 'nullable|integer|min:1|max:3',
         ]);
 
@@ -106,6 +109,40 @@ class TrainingSessionController extends Controller
         return back()->with('success', $message);
     }
 
+    public function exportLog(string $date, string $type)
+    {
+        $attendees = CrmEmployeeTraining::with('client')
+            ->where('training_type', $type)
+            ->whereDate('training_date', $date)
+            ->orderBy('employee_name')
+            ->get();
+
+        $letterheadPath = storage_path('app/public/certificate/letterhead.png');
+        $letterheadB64  = file_exists($letterheadPath)
+            ? 'data:image/png;base64,' . base64_encode(file_get_contents($letterheadPath))
+            : null;
+
+        $html = view('admin.training.log_pdf', compact('attendees', 'date', 'type', 'letterheadB64'))->render();
+
+        $filename = 'Training-Log-' . $date . '-' . Str::slug($type) . '.pdf';
+
+        putenv('HOME=/tmp');
+
+        $pdf = Browsershot::html($html)
+            ->setChromePath('/usr/bin/google-chrome-stable')
+            ->setNodeModulePath('/usr/lib/node_modules')
+            ->addChromiumArguments(['disable-dev-shm-usage', 'disable-gpu', 'no-zygote'])
+            ->format('A4')
+            ->noSandbox()
+            ->showBackground()
+            ->pdf();
+
+        return response($pdf, 200, [
+            'Content-Type'        => 'application/pdf',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+        ]);
+    }
+
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -116,9 +153,10 @@ class TrainingSessionController extends Controller
             'signatory_name'       => 'nullable|string|max:255',
             'signatory_title'      => 'nullable|string|max:255',
             'attendees'            => 'required|array|min:1',
-            'attendees.*.employee_name' => 'required|string|max:255',
-            'attendees.*.employee_role' => 'nullable|string|max:255',
-            'attendees.*.crm_client_id' => 'required|exists:crm_clients,id',
+            'attendees.*.employee_name'      => 'required|string|max:255',
+            'attendees.*.employee_role'      => 'nullable|string|max:255',
+            'attendees.*.employee_id_number' => 'nullable|string|max:100',
+            'attendees.*.crm_client_id'      => 'required|exists:crm_clients,id',
             'attendees.*.expiry_date'   => 'nullable|date',
             'attendees.*.status'        => 'required|in:completed,pending',
         ]);

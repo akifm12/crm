@@ -98,6 +98,12 @@
                                    class="w-full px-2.5 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                         </div>
                         <div class="col-span-2">
+                            <input type="text" :name="'attendees[' + index + '][employee_id_number]'"
+                                   placeholder="ID No."
+                                   x-model="row.id_number"
+                                   class="w-full px-2.5 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div class="col-span-1">
                             <input type="text" :name="'attendees[' + index + '][employee_role]'"
                                    placeholder="Role"
                                    x-model="row.role"
@@ -113,7 +119,7 @@
                                 @endforeach
                             </select>
                         </div>
-                        <div class="col-span-2">
+                        <div class="col-span-1">
                             <input type="date" :name="'attendees[' + index + '][expiry_date]'"
                                    x-model="row.expiry"
                                    class="w-full px-2.5 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -140,9 +146,10 @@
 
             <div class="mt-3 grid grid-cols-12 gap-2">
                 <div class="col-span-3 text-xs text-gray-400">Name</div>
-                <div class="col-span-2 text-xs text-gray-400">Role</div>
+                <div class="col-span-2 text-xs text-gray-400">ID Number</div>
+                <div class="col-span-1 text-xs text-gray-400">Role</div>
                 <div class="col-span-3 text-xs text-gray-400">Company</div>
-                <div class="col-span-2 text-xs text-gray-400">Expiry</div>
+                <div class="col-span-1 text-xs text-gray-400">Expiry</div>
                 <div class="col-span-1 text-xs text-gray-400">Status</div>
             </div>
         </div>
@@ -158,9 +165,9 @@
 <script>
 function sessionForm() {
     return {
-        rows: [{ name: '', role: '', client_id: '', expiry: '', status: 'completed' }],
+        rows: [{ name: '', id_number: '', role: '', client_id: '', expiry: '', status: 'completed' }],
         addRow() {
-            this.rows.push({ name: '', role: '', client_id: '', expiry: '', status: 'completed' });
+            this.rows.push({ name: '', id_number: '', role: '', client_id: '', expiry: '', status: 'completed' });
         },
         removeRow(index) {
             this.rows.splice(index, 1);

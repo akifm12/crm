@@ -9,7 +9,7 @@ use Illuminate\Support\Str;
 class CrmEmployeeTraining extends Model
 {
     protected $fillable = [
-        'crm_client_id', 'employee_name', 'employee_role', 'training_type',
+        'crm_client_id', 'employee_name', 'employee_role', 'employee_id_number', 'training_type',
         'training_date', 'expiry_date', 'trainer', 'notes',
         'certificate_path', 'material_path', 'status',
         'certificate_template', 'signatory_name', 'signatory_title', 'public_token',

@@ -14,6 +14,14 @@
         </div>
 
         <div class="flex items-center gap-2">
+            <a href="{{ route('training-sessions.log', ['date' => $date, 'type' => $type]) }}"
+               class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                Export Log
+            </a>
+
             <form method="POST" action="{{ route('training-sessions.email', ['date' => $date, 'type' => $type]) }}"
                   onsubmit="return confirm('Send certificate links to all client companies in this session?')">
                 @csrf
@@ -141,9 +149,15 @@
                 <input type="text" name="employee_name" required class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
             </div>
 
-            <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">Role / Position</label>
-                <input type="text" name="employee_role" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Role / Position</label>
+                    <input type="text" name="employee_role" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">ID Number</label>
+                    <input type="text" name="employee_id_number" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
             </div>
 
             <div>

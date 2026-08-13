@@ -143,8 +143,8 @@ class SettingsController extends Controller
     public function uploadCertificateAsset(Request $request)
     {
         $request->validate([
-            'type'  => 'required|in:signature,stamp',
-            'image' => 'required|image|mimes:png,jpg,jpeg|max:2048',
+            'type'  => 'required|in:signature,stamp,letterhead',
+            'image' => 'required|image|mimes:png,jpg,jpeg|max:4096',
         ]);
 
         $type = $request->input('type');

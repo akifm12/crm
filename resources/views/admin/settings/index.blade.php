@@ -256,6 +256,33 @@
                 </form>
             </div>
 
+            {{-- Letterhead --}}
+            <div class="bg-white rounded-xl border border-gray-200 p-5">
+                <h2 class="text-sm font-semibold text-gray-700 mb-1">Letterhead</h2>
+                <p class="text-xs text-gray-400 mb-4">Used as the header on exported training logs. Upload as PNG — recommended width 794px (A4), transparent or white background.</p>
+
+                @php $lhPath = storage_path('app/public/certificate/letterhead.png'); @endphp
+                @if(file_exists($lhPath))
+                    <div class="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200 flex items-center justify-between">
+                        <img src="{{ asset('storage/certificate/letterhead.png') }}?v={{ filemtime($lhPath) }}"
+                             class="h-16 object-contain w-full" alt="Current letterhead">
+                        <span class="text-xs text-green-600 font-medium ml-3 whitespace-nowrap">Uploaded</span>
+                    </div>
+                @endif
+
+                <form method="POST" action="{{ route('settings.certificate.upload') }}" enctype="multipart/form-data">
+                    @csrf
+                    <input type="hidden" name="type" value="letterhead">
+                    <div class="flex items-center gap-3">
+                        <input type="file" name="image" accept="image/png,image/jpeg" required
+                               class="flex-1 text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                        <button type="submit" class="px-3 py-1.5 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition whitespace-nowrap">
+                            Upload
+                        </button>
+                    </div>
+                </form>
+            </div>
+
             {{-- Stamp --}}
             <div class="bg-white rounded-xl border border-gray-200 p-5">
                 <h2 class="text-sm font-semibold text-gray-700 mb-1">Company Stamp</h2>
