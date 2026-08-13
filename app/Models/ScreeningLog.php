@@ -26,7 +26,18 @@ class ScreeningLog extends Model
         return match($this->status) {
             'match' => 'bg-red-100 text-red-700',
             'clear' => 'bg-green-100 text-green-700',
+            'error' => 'bg-orange-100 text-orange-700',
             default => 'bg-gray-100 text-gray-500',
+        };
+    }
+
+    public function statusLabel(): string
+    {
+        return match($this->status) {
+            'match' => 'Match',
+            'clear' => 'Clear',
+            'error' => 'Failed',
+            default => ucfirst($this->status),
         };
     }
 }

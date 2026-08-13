@@ -341,7 +341,7 @@
                         </td>
                         <td class="px-4 py-3">
                             <span class="text-xs px-2 py-0.5 rounded-full font-medium {{ $log->statusBadge() }}">
-                                {{ ucfirst($log->status) }}
+                                {{ $log->statusLabel() }}
                             </span>
                         </td>
                         <td class="px-4 py-3 text-xs text-gray-500">

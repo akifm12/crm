@@ -871,6 +871,12 @@ $countryName = fn($code) => $code ? (\App\Models\Country::find($code)?->country_
                             Screen now ({{ count($subjectList) }} subject{{ count($subjectList) > 1 ? 's' : '' }})
                         </button>
 
+                        {{-- Error state --}}
+                        <div x-show="screenError" x-cloak class="p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                            <p class="text-xs text-orange-700 font-medium" x-text="screenError"></p>
+                            <button type="button" @click="reset()" class="mt-2 text-xs text-orange-600 underline hover:no-underline">Try again</button>
+                        </div>
+
                         {{-- Progress --}}
                         <div x-show="running || done" x-cloak class="space-y-2">
                             <template x-for="(subject, i) in subjects" :key="i">
@@ -1205,12 +1211,14 @@ function screeningProgress({ subjects, screenUrl, saveUrl, csrf }) {
         currentIndex: -1,
         results: [],
         overallMatch: false,
+        screenError: null,
 
         async start() {
             this.running = true;
             this.done = false;
             this.results = [];
             this.overallMatch = false;
+            this.screenError = null;
 
             for (let i = 0; i < this.subjects.length; i++) {
                 this.currentIndex = i;
@@ -1230,21 +1238,31 @@ function screeningProgress({ subjects, screenUrl, saveUrl, csrf }) {
                         this.results[i] = { name: subject.name, role: subject.role, summary: data.summary };
                         if (data.summary.status === 'match') this.overallMatch = true;
                     } else {
-                        this.results[i] = { name: subject.name, role: subject.role, summary: { status: 'error', total_hits: 0, hits: [] } };
+                        this.running = false;
+                        this.screenError = 'Screening service unavailable for ' + subject.name + '. Please try again.';
+                        return;
                     }
                 } catch(e) {
-                    this.results[i] = { name: subject.name, role: subject.role, summary: { status: 'error', total_hits: 0, hits: [] } };
+                    this.running = false;
+                    this.screenError = 'Network error while screening ' + subject.name + '. Please try again.';
+                    return;
                 }
                 // Force Alpine reactivity
                 this.results = [...this.results];
             }
 
             // Save combined results
-            await fetch(this.saveUrl, {
+            const saveResp = await fetch(this.saveUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': this.csrf },
                 body: JSON.stringify({ all_results: this.results }),
             });
+            const saveData = await saveResp.json();
+            if (!saveData.success) {
+                this.running = false;
+                this.screenError = saveData.error || 'Failed to save screening results. Please try again.';
+                return;
+            }
 
             this.running = false;
             this.done = true;
@@ -1263,6 +1281,7 @@ function screeningProgress({ subjects, screenUrl, saveUrl, csrf }) {
             this.currentIndex = -1;
             this.results = [];
             this.overallMatch = false;
+            this.screenError = null;
         }
     }
 }

@@ -355,6 +355,15 @@ PROMPT;
             (new ScanUploadedDocument($doc, auth()->id()))->handle();
         }
 
+        // Link any Step 7 KYC wizard screening logs to this client
+        $previewLogIds = session()->pull('screening_preview_log_ids', []);
+        if (!empty($previewLogIds)) {
+            \App\Models\ScreeningLog::whereIn('id', $previewLogIds)
+                ->where('tenant_id', $tenant->id)
+                ->whereNull('bullion_client_id')
+                ->update(['bullion_client_id' => $client->id]);
+        }
+
         return redirect()
             ->route('tenant.clients.confirm', [$tenant->slug, $client->id])
             ->with('success', 'Client record created successfully.');
@@ -475,9 +484,11 @@ PROMPT;
             $results[] = ['name' => $ubo['full_name'], 'role' => 'UBO', 'result' => $summary];
         }
 
-        // Log each subject to screening history (client not created yet, so no bullion_client_id)
+        // Log each subject to screening history; save IDs in session to link once client is created
+        $logIds = [];
+        $reference = 'SCR-' . strtoupper(substr(md5(($companyName ?? $fullName ?? '') . now()), 0, 8));
         foreach ($results as $r) {
-            \App\Models\ScreeningLog::create([
+            $log = \App\Models\ScreeningLog::create([
                 'tenant_id'         => $tenant->id,
                 'bullion_client_id' => null,
                 'screened_by'       => auth()->id(),
@@ -486,10 +497,12 @@ PROMPT;
                 'status'            => $r['result']['status'] ?? 'clear',
                 'total_hits'        => $r['result']['total_hits'] ?? 0,
                 'source'            => 'kyc',
-                'reference'         => null,
+                'reference'         => $reference,
                 'result'            => $r['result'],
             ]);
+            $logIds[] = $log->id;
         }
+        session(['screening_preview_log_ids' => $logIds]);
 
         return response()->json(['results' => $results]);
     }

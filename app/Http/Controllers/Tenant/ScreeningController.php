@@ -161,7 +161,14 @@ class ScreeningController extends Controller
         $tenant = app('tenant');
         abort_if($client->tenant_id !== $tenant->id, 404);
 
-        $allResults   = $request->input('all_results', []);
+        $allResults = $request->input('all_results', []);
+
+        // Reject if any subject failed screening — client should retry
+        $hasError = collect($allResults)->contains(fn($r) => ($r['summary']['status'] ?? '') === 'error');
+        if ($hasError) {
+            return response()->json(['success' => false, 'error' => 'One or more subjects could not be screened. Please try again.'], 422);
+        }
+
         $hasMatch     = collect($allResults)->contains(fn($r) => ($r['summary']['status'] ?? '') === 'match');
         $shareholders = array_values(array_filter($allResults, fn($r) => $r['role'] !== 'Company'));
         $reference    = 'SCR-' . strtoupper(substr(md5($client->displayName() . now()), 0, 8));
