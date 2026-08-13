@@ -102,20 +102,20 @@ class TenantController extends Controller
     public function addUser(Request $request, Tenant $tenant)
     {
         $request->validate([
-            'name'     => 'required|string|max:255',
-            'email'    => 'required|email|unique:users,email',
-            'password' => 'required|string|min:6',
+            'user_name'     => 'required|string|max:255',
+            'user_email'    => 'required|email|unique:users,email',
+            'user_password' => 'required|string|min:6',
         ]);
 
         User::create([
-            'name'      => $request->name,
-            'email'     => $request->email,
-            'password'  => Hash::make($request->password),
+            'name'      => $request->user_name,
+            'email'     => $request->user_email,
+            'password'  => Hash::make($request->user_password),
             'role'      => 'admin',
             'tenant_id' => $tenant->id,
         ]);
 
-        return back()->with('success', "User {$request->email} added.");
+        return back()->with('success', "User {$request->user_email} added.");
     }
 
     public function updatePassword(Request $request, Tenant $tenant, User $user)

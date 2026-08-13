@@ -165,11 +165,11 @@
             <form method="POST" action="{{ route('kyc.tenants.users.add', $tenant->id) }}" class="space-y-3">
                 @csrf
                 <div class="grid grid-cols-3 gap-3">
-                    <input type="text" name="name" placeholder="Full name" required
+                    <input type="text" name="user_name" placeholder="Full name" required
                            class="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <input type="email" name="email" placeholder="Email" required
+                    <input type="email" name="user_email" placeholder="Email" required
                            class="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <input type="text" name="password" placeholder="Password" minlength="6" required
+                    <input type="text" name="user_password" placeholder="Password" minlength="6" required
                            class="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
                 <button type="submit"
