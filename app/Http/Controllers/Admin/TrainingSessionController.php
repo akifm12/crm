@@ -90,7 +90,7 @@ class TrainingSessionController extends Controller
                 continue;
             }
 
-            Mail::to($client->email)->send(new CertificateLinksEmail(
+            Mail::to($client->email)->cc('contact@bluearrow.ae')->send(new CertificateLinksEmail(
                 companyName:  $client->company_name,
                 sessionTitle: $type,
                 sessionDate:  $sessionDate,
