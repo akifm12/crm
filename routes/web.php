@@ -26,6 +26,7 @@ use App\Http\Controllers\NewsletterController;
 use App\Http\Controllers\PublicAccountController;
 use App\Http\Controllers\PublicDeadlineController;
 use App\Http\Controllers\CertificateVerifyController;
+use App\Http\Controllers\PublicCertificateController;
 use App\Http\Controllers\Admin\TrainingSessionController;
 use App\Models\CrmQuotation;
 
@@ -46,7 +47,9 @@ Route::get('/news',                          [NewsController::class, 'index'])->
 Route::get('/news/{news}',                   [NewsController::class, 'show'])->name('news.show');
 Route::post('/newsletter/subscribe',         [NewsletterController::class, 'subscribe'])->name('newsletter.subscribe');
 Route::get('/technology',                    [PagesController::class, 'technology'])->name('technology');
-Route::get('/verify/certificate/{training}', [CertificateVerifyController::class, 'show'])->name('certificate.verify');
+Route::get('/verify/certificate/{training}',  [CertificateVerifyController::class, 'show'])->name('certificate.verify');
+Route::get('/certificates/{token}',           [PublicCertificateController::class, 'show'])->name('certificate.public.show');
+Route::get('/certificates/{token}/download',  [PublicCertificateController::class, 'download'])->name('certificate.public.download');
 
 // ── Public free-account system (separate 'public' guard — see config/auth.php) ─
 Route::middleware('guest:public')->group(function () {

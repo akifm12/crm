@@ -720,6 +720,12 @@
                                     Material
                                 </a>
                                 @endif
+                                <button x-data
+                                        @click="navigator.clipboard.writeText('{{ route('certificate.public.show', $tr->public_token) }}'); $el.textContent = 'Copied!'; setTimeout(() => $el.textContent = 'Client Link', 2000)"
+                                        class="flex items-center gap-1 text-xs text-indigo-600 bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 font-medium px-2 py-1 rounded-lg transition">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+                                    Client Link
+                                </button>
                                 <form method="POST" action="{{ route('crm.trainings.delete', $tr->id) }}"
                                       onsubmit="return confirm('Delete this training record?')">
                                     @csrf @method('DELETE')

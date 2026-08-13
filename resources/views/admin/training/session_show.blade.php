@@ -40,6 +40,7 @@
                     <th class="px-5 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</th>
                     <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Expiry</th>
                     <th class="px-5 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wide">Certificate</th>
+                    <th class="px-5 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wide">Client Link</th>
                     <th class="px-5 py-3 w-8"></th>
                 </tr>
             </thead>
@@ -74,6 +75,13 @@
                             </svg>
                             Generate
                         </a>
+                    </td>
+                    <td class="px-5 py-3.5 text-center">
+                        <button x-data
+                                @click="navigator.clipboard.writeText('{{ route('certificate.public.show', $tr->public_token) }}'); $el.textContent = 'Copied!'; setTimeout(() => $el.textContent = 'Copy Link', 2000)"
+                                class="text-xs text-indigo-600 bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 font-medium px-2 py-1 rounded-lg transition">
+                            Copy Link
+                        </button>
                     </td>
                     <td class="px-5 py-3.5 text-right">
                         <form method="POST" action="{{ route('crm.trainings.delete', $tr->id) }}"
