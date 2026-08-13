@@ -84,9 +84,11 @@ class SentinelService
 
     public function screenIndividual(array $params): array
     {
+        $rawCountry = ($params['nationality'] ?: null) ?? ($params['country'] ?: null) ?? 'UAE';
+
         $payload = [
             'query'         => (string) trim($params['query']),
-            'country'       => ($params['nationality'] ?: null) ?? ($params['country'] ?: null) ?? 'UAE',
+            'country'       => $this->normaliseCountry((string) $rawCountry),
             'entityType'    => 'individual',
             'threshold'     => 65,
             'selectedLists' => [],
@@ -95,6 +97,42 @@ class SentinelService
         if (!empty($params['dob'])) $payload['dob'] = $params['dob'];
 
         return $this->doScreen($payload);
+    }
+
+    private function normaliseCountry(string $raw): string
+    {
+        $raw = trim($raw);
+        if (!$raw || strlen($raw) !== 2) return $raw ?: 'UAE';
+
+        static $map = [
+            'AE' => 'United Arab Emirates', 'SA' => 'Saudi Arabia',   'KW' => 'Kuwait',
+            'QA' => 'Qatar',                'BH' => 'Bahrain',         'OM' => 'Oman',
+            'IN' => 'India',                'PK' => 'Pakistan',        'EG' => 'Egypt',
+            'GB' => 'United Kingdom',       'US' => 'United States',   'CN' => 'China',
+            'RU' => 'Russia',               'DE' => 'Germany',         'FR' => 'France',
+            'JP' => 'Japan',                'AU' => 'Australia',       'CA' => 'Canada',
+            'IR' => 'Iran',                 'IQ' => 'Iraq',            'SY' => 'Syria',
+            'LB' => 'Lebanon',              'JO' => 'Jordan',          'TR' => 'Turkey',
+            'NG' => 'Nigeria',              'ZA' => 'South Africa',    'KE' => 'Kenya',
+            'PH' => 'Philippines',          'BD' => 'Bangladesh',      'LK' => 'Sri Lanka',
+            'NP' => 'Nepal',                'ID' => 'Indonesia',       'MY' => 'Malaysia',
+            'SG' => 'Singapore',            'TH' => 'Thailand',        'VN' => 'Vietnam',
+            'BR' => 'Brazil',               'MX' => 'Mexico',          'AR' => 'Argentina',
+            'CO' => 'Colombia',             'BS' => 'Bahamas',         'KY' => 'Cayman Islands',
+            'PA' => 'Panama',               'CH' => 'Switzerland',     'NL' => 'Netherlands',
+            'IT' => 'Italy',                'ES' => 'Spain',           'SE' => 'Sweden',
+            'NO' => 'Norway',               'PL' => 'Poland',          'UA' => 'Ukraine',
+            'KZ' => 'Kazakhstan',           'UZ' => 'Uzbekistan',      'AF' => 'Afghanistan',
+            'MM' => 'Myanmar',              'SO' => 'Somalia',         'SD' => 'Sudan',
+            'YE' => 'Yemen',                'LY' => 'Libya',           'ML' => 'Mali',
+            'NI' => 'Nicaragua',            'HT' => 'Haiti',           'KP' => 'North Korea',
+            'VE' => 'Venezuela',            'CU' => 'Cuba',            'GH' => 'Ghana',
+            'ET' => 'Ethiopia',             'BE' => 'Belgium',         'AT' => 'Austria',
+            'PT' => 'Portugal',             'DK' => 'Denmark',         'FI' => 'Finland',
+            'CZ' => 'Czech Republic',       'HU' => 'Hungary',         'RO' => 'Romania',
+        ];
+
+        return $map[strtoupper($raw)] ?? $raw;
     }
 
     public static function summarise(array $data): array
