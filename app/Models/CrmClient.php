@@ -28,6 +28,7 @@ class CrmClient extends Model
     // ── Relationships ──────────────────────────────────────────────────────
 
     public function tenant(): BelongsTo       { return $this->belongsTo(Tenant::class); }
+    public function tenantPortal(): \Illuminate\Database\Eloquent\Relations\HasOne { return $this->hasOne(Tenant::class, 'crm_client_id'); }
     public function creator(): BelongsTo      { return $this->belongsTo(User::class, 'created_by'); }
     public function assignee(): BelongsTo     { return $this->belongsTo(User::class, 'assigned_to'); }
     public function shareholders(): HasMany   { return $this->hasMany(CrmShareholder::class); }

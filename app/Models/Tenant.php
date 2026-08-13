@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Tenant extends Model
 {
     protected $fillable = [
-        'name', 'slug', 'business_type', 'logo_url', 'primary_color',
+        'crm_client_id', 'name', 'slug', 'business_type', 'logo_url', 'primary_color',
         'contact_email', 'phone', 'address',
         'trade_license_no', 'dnfbp_reg_no', 'vat_trn',
         'mlro_name', 'mlro_email', 'mlro_phone',

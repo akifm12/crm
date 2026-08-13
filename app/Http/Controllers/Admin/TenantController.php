@@ -4,6 +4,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\CrmClient;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Accounting\ChartOfAccountSeeder;
@@ -25,16 +26,18 @@ class TenantController extends Controller
     public function create()
     {
         $sectors = SectorConfig::sectors();
-        return view('admin.tenants.create', compact('sectors'));
+        $clients = CrmClient::whereDoesntHave('tenantPortal')
+            ->orderBy('company_name')
+            ->get(['id', 'company_name', 'email', 'telephone', 'address']);
+        return view('admin.tenants.create', compact('sectors', 'clients'));
     }
 
     public function store(Request $request)
     {
         $request->validate([
-            'name'          => 'required|string|max:255',
+            'crm_client_id' => 'required|exists:crm_clients,id',
             'slug'          => ['required', 'string', 'max:50', 'unique:tenants,slug', 'alpha_dash', Rule::notIn(Tenant::reservedSlugs())],
             'business_type' => 'required|in:' . implode(',', array_keys(SectorConfig::sectors())),
-            'contact_email' => 'required|email',
             'admin_name'    => 'required|string|max:255',
             'admin_email'   => 'required|email|unique:users,email',
             'admin_password'=> 'required|string|min:8',
@@ -42,14 +45,17 @@ class TenantController extends Controller
             'slug.not_in' => 'That acronym is reserved by the site (a page or system route already uses it) and can\'t be used as a tenant portal address.',
         ]);
 
+        $crmClient = CrmClient::findOrFail($request->crm_client_id);
+
         // Create tenant
         $tenant = Tenant::create([
-            'name'          => $request->name,
+            'crm_client_id' => $crmClient->id,
+            'name'          => $crmClient->company_name,
             'slug'          => $request->slug,
             'business_type' => $request->business_type,
-            'contact_email' => $request->contact_email,
-            'phone'         => $request->phone,
-            'address'       => $request->address,
+            'contact_email' => $crmClient->email ?? $request->admin_email,
+            'phone'         => $crmClient->telephone,
+            'address'       => $crmClient->address,
             'dnfbp_reg_no'  => $request->dnfbp_reg_no,
             'is_active'     => true,
         ]);
