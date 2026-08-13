@@ -538,6 +538,25 @@ PROMPT;
         return back()->with('success', 'Training record added.')->withFragment('tab-training');
     }
 
+    public function updateTraining(Request $request, CrmEmployeeTraining $training)
+    {
+        $validated = $request->validate([
+            'employee_name'        => 'required|string|max:255',
+            'employee_role'        => 'nullable|string|max:255',
+            'employee_id_number'   => 'nullable|string|max:100',
+            'crm_client_id'        => 'required|exists:crm_clients,id',
+            'status'               => 'required|in:completed,pending',
+            'expiry_date'          => 'nullable|date',
+            'signatory_name'       => 'nullable|string|max:255',
+            'signatory_title'      => 'nullable|string|max:255',
+            'certificate_template' => 'nullable|integer|min:1|max:3',
+        ]);
+
+        $training->update($validated);
+
+        return back()->with('success', 'Record updated.');
+    }
+
     public function deleteTraining(CrmEmployeeTraining $training)
     {
         if ($training->certificate_path) \Storage::disk('local')->delete($training->certificate_path);

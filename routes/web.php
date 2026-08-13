@@ -109,6 +109,7 @@ Route::middleware(['auth', \App\Http\Middleware\EnsureAdminUser::class])->group(
 
     Route::post('/crm/{crm}/trainings',            [CrmController::class, 'storeTraining'])->name('crm.trainings.store');
     Route::delete('/crm/trainings/{training}',     [CrmController::class, 'deleteTraining'])->name('crm.trainings.delete');
+    Route::patch('/crm/trainings/{training}',      [CrmController::class, 'updateTraining'])->name('crm.trainings.update');
     Route::get('/crm/trainings/{training}/certificate', [CrmController::class, 'downloadCertificate'])->name('crm.trainings.certificate');
     Route::get('/crm/trainings/{training}/material',    [CrmController::class, 'downloadMaterial'])->name('crm.trainings.material');
     Route::get('/crm/trainings/{training}/generate',    [CrmController::class, 'generateCertificate'])->name('crm.trainings.generate');
