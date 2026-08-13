@@ -31,12 +31,13 @@
     <div>
         <label class="block text-xs font-medium text-gray-600 mb-1">CRM Client <span class="text-red-500">*</span></label>
         <select name="crm_client_id" required x-model="selected"
-                class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                class="w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white {{ $errors->has('crm_client_id') ? 'border-red-400 bg-red-50' : 'border-gray-200' }}">
             <option value="">— Select a client —</option>
             @foreach($clients as $client)
             <option value="{{ $client->id }}">{{ $client->company_name }}</option>
             @endforeach
         </select>
+        @error('crm_client_id') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
         <p class="text-xs text-gray-400 mt-1">Only existing CRM clients can have a tenant portal. <a href="{{ route('crm.create') }}" class="text-blue-500 hover:underline">Add a new client first</a> if needed.</p>
     </div>
 
@@ -57,8 +58,9 @@
                     <span class="text-xs text-gray-400 flex-shrink-0">bluearrow.ae/</span>
                     <input type="text" name="slug" value="{{ old('slug') }}" required
                            placeholder="e.g. prince-jewellers"
-                           class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                           class="w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 {{ $errors->has('slug') ? 'border-red-400 bg-red-50' : 'border-gray-200' }}">
                 </div>
+                @error('slug') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
                 <p class="text-xs text-gray-400 mt-1">Lowercase, letters, numbers and hyphens only</p>
             </div>
             <div>
@@ -92,19 +94,22 @@
             <div>
                 <label class="block text-xs font-medium text-gray-600 mb-1">Name <span class="text-red-500">*</span></label>
                 <input type="text" name="admin_name" value="{{ old('admin_name') }}" required
-                       class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                       class="w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 {{ $errors->has('admin_name') ? 'border-red-400 bg-red-50' : 'border-gray-200' }}">
+                @error('admin_name') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
             </div>
             <div>
                 <label class="block text-xs font-medium text-gray-600 mb-1">Email <span class="text-red-500">*</span></label>
                 <input type="email" name="admin_email" value="{{ old('admin_email') }}" required
                        :placeholder="client?.email ?? ''"
-                       class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                       class="w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 {{ $errors->has('admin_email') ? 'border-red-400 bg-red-50' : 'border-gray-200' }}">
+                @error('admin_email') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
             </div>
         </div>
         <div>
             <label class="block text-xs font-medium text-gray-600 mb-1">Initial password <span class="text-red-500">*</span></label>
             <input type="text" name="admin_password" value="{{ old('admin_password') }}" required minlength="8"
-                   class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                   class="w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 {{ $errors->has('admin_password') ? 'border-red-400 bg-red-50' : 'border-gray-200' }}">
+            @error('admin_password') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
             <p class="text-xs text-gray-400 mt-1">The admin can change this after first login from Settings.</p>
         </div>
     </div>
