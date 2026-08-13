@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\CrmClient;
 use App\Models\CrmEmployeeTraining;
+use App\Mail\CertificateLinksEmail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 
 class TrainingSessionController extends Controller
 {
@@ -65,6 +67,43 @@ class TrainingSessionController extends Controller
     {
         $clients = CrmClient::orderBy('company_name')->get(['id', 'company_name']);
         return view('admin.training.session_create', compact('clients'));
+    }
+
+    public function emailClients(Request $request, string $date, string $type)
+    {
+        $attendees = CrmEmployeeTraining::with('client')
+            ->where('training_type', $type)
+            ->whereDate('training_date', $date)
+            ->whereNotNull('public_token')
+            ->get();
+
+        $byClient = $attendees->groupBy('crm_client_id');
+        $sent     = 0;
+        $skipped  = 0;
+        $sessionDate = \Carbon\Carbon::parse($date)->format('d F Y');
+
+        foreach ($byClient as $clientId => $records) {
+            $client = $records->first()->client;
+
+            if (empty($client->email)) {
+                $skipped++;
+                continue;
+            }
+
+            Mail::to($client->email)->send(new CertificateLinksEmail(
+                companyName:  $client->company_name,
+                sessionTitle: $type,
+                sessionDate:  $sessionDate,
+                attendees:    $records,
+            ));
+
+            $sent++;
+        }
+
+        $message = "Emails sent to {$sent} " . str_plural('company', $sent) . '.';
+        if ($skipped) $message .= " {$skipped} skipped (no email on file).";
+
+        return back()->with('success', $message);
     }
 
     public function store(Request $request)

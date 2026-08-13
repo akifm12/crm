@@ -104,6 +104,7 @@ Route::middleware(['auth', \App\Http\Middleware\EnsureAdminUser::class])->group(
     Route::post('/training-sessions',                         [TrainingSessionController::class, 'store'])->name('training-sessions.store');
     Route::get('/training-sessions/{date}/{type}',            [TrainingSessionController::class, 'show'])->name('training-sessions.show');
     Route::post('/training-sessions/{date}/{type}/attendees', [TrainingSessionController::class, 'addAttendee'])->name('training-sessions.add-attendee');
+    Route::post('/training-sessions/{date}/{type}/email',     [TrainingSessionController::class, 'emailClients'])->name('training-sessions.email');
 
     Route::post('/crm/{crm}/trainings',            [CrmController::class, 'storeTraining'])->name('crm.trainings.store');
     Route::delete('/crm/trainings/{training}',     [CrmController::class, 'deleteTraining'])->name('crm.trainings.delete');
