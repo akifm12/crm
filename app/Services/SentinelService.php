@@ -85,7 +85,7 @@ class SentinelService
     {
         $payload = [
             'query'         => (string) trim($params['query']),
-            'country'       => $params['nationality'] ?? $params['country'] ?? 'UAE',
+            'country'       => ($params['nationality'] ?: null) ?? ($params['country'] ?: null) ?? 'UAE',
             'entityType'    => 'individual',
             'threshold'     => 65,
             'selectedLists' => [],
