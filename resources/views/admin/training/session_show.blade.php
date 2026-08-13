@@ -77,11 +77,13 @@
                         </a>
                     </td>
                     <td class="px-5 py-3.5 text-center">
+                        @if($tr->public_token)
                         <button x-data
                                 @click="navigator.clipboard.writeText('{{ route('certificate.public.show', $tr->public_token) }}'); $el.textContent = 'Copied!'; setTimeout(() => $el.textContent = 'Copy Link', 2000)"
                                 class="text-xs text-indigo-600 bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 font-medium px-2 py-1 rounded-lg transition">
                             Copy Link
                         </button>
+                        @endif
                     </td>
                     <td class="px-5 py-3.5 text-right">
                         <form method="POST" action="{{ route('crm.trainings.delete', $tr->id) }}"
