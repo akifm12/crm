@@ -72,7 +72,9 @@ class ScreeningController extends Controller
         }
 
         if (!$result['success']) {
-            return back()->with('error', 'Screening failed: ' . $result['error'])->withInput();
+            return redirect()->route('tenant.screening', $tenant->slug)
+                ->with('error', 'Screening failed: ' . $result['error'])
+                ->withInput();
         }
 
         $summary   = SentinelService::summarise($result['data']);
