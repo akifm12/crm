@@ -47,7 +47,7 @@ class SentinelService
 			$response = $this->http()->post("{$this->baseUrl}/screen", $payload);
 
 			// Handle expired session — clear cache and retry
-			if ($response->status() === 401 || 
+			if ($response->status() === 401 ||
 				str_contains($response->body(), 'SESSION_EXPIRED')) {
 				Cache::forget($this->cacheKey);
 				$response = $this->http()->post("{$this->baseUrl}/screen", $payload);
@@ -57,10 +57,11 @@ class SentinelService
 				return ['success' => true, 'data' => $response->json()];
 			}
 
+			Log::error('Sentinel screen error', ['status' => $response->status(), 'body' => substr($response->body(), 0, 500), 'payload' => $payload]);
 			return ['success' => false, 'error' => 'API error ' . $response->status() . ': ' . $response->body()];
 
 		} catch (\Exception $e) {
-			Log::error('Sentinel screen failed', ['error' => $e->getMessage()]);
+			Log::error('Sentinel screen failed', ['error' => $e->getMessage(), 'payload' => $payload]);
 			return ['success' => false, 'error' => $e->getMessage()];
 		}
 	}
