@@ -100,7 +100,7 @@ class TrainingSessionController extends Controller
             $sent++;
         }
 
-        $message = "Emails sent to {$sent} " . str_plural('company', $sent) . '.';
+        $message = "Emails sent to {$sent} " . ($sent === 1 ? 'company' : 'companies') . '.';
         if ($skipped) $message .= " {$skipped} skipped (no email on file).";
 
         return back()->with('success', $message);
