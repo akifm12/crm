@@ -23,6 +23,7 @@ class BullionClient extends Model
         'purpose_of_relationship', 'expected_monthly_volume', 'expected_monthly_frequency',
         'countries_involved', 'cdd_type', 'risk_rating', 'next_review_date', 'risk_notes',
         'status', 'screening_status', 'screening_date', 'screening_reference', 'screening_result',
+        'monitoring_enabled', 'monitoring_frequency', 'monitoring_last_screened_at', 'monitoring_next_due_at',
         'extra_data',
         'decl_pep', 'decl_supply_chain', 'decl_cahra', 'decl_source_of_funds',
         'decl_sanctions', 'decl_ubo', 'decl_master_signed', 'master_declaration_path',
@@ -51,9 +52,39 @@ class BullionClient extends Model
         'decl_sanctions'        => 'boolean',
         'decl_ubo'              => 'boolean',
         'decl_master_signed'    => 'boolean',
-        'risk_assessment_data'  => 'array',
-        'risk_assessed_at'      => 'datetime',
+        'risk_assessment_data'       => 'array',
+        'risk_assessed_at'           => 'datetime',
+        'monitoring_enabled'         => 'boolean',
+        'monitoring_last_screened_at'=> 'datetime',
+        'monitoring_next_due_at'     => 'datetime',
     ];
+
+    public function monitoringNextDue(\Carbon\Carbon $from = null): \Carbon\Carbon
+    {
+        $from = $from ?? now();
+        return match($this->monitoring_frequency) {
+            'daily'       => $from->copy()->addDay(),
+            'weekly'      => $from->copy()->addWeek(),
+            'monthly'     => $from->copy()->addMonth(),
+            'quarterly'   => $from->copy()->addMonths(3),
+            'half_yearly' => $from->copy()->addMonths(6),
+            'annually'    => $from->copy()->addYear(),
+            default       => $from->copy()->addMonth(),
+        };
+    }
+
+    public function monitoringFrequencyLabel(): string
+    {
+        return match($this->monitoring_frequency) {
+            'daily'       => 'Daily',
+            'weekly'      => 'Weekly',
+            'monthly'     => 'Monthly',
+            'quarterly'   => 'Quarterly',
+            'half_yearly' => 'Every 6 months',
+            'annually'    => 'Annually',
+            default       => ucfirst($this->monitoring_frequency ?? ''),
+        };
+    }
 
     public function tenant(): BelongsTo    { return $this->belongsTo(Tenant::class); }
     public function signatories(): HasMany { return $this->hasMany(ClientSignatory::class); }

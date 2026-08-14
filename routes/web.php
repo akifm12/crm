@@ -267,6 +267,7 @@ Route::prefix('{slug}')
         Route::post('/clients/{client}/screen',              [TenantScreeningController::class, 'screenClient'])->name('clients.screen');
         Route::post('/clients/{client}/screen-subject',      [TenantScreeningController::class, 'screenSubject'])->name('clients.screen.subject');
         Route::post('/clients/{client}/screen-save',         [TenantScreeningController::class, 'screenSave'])->name('clients.screen.save');
+        Route::post('/clients/{client}/monitoring',          [ClientController::class, 'updateMonitoring'])->name('clients.monitoring.update');
         Route::get('/risk',                          [RiskController::class, 'index'])->name('risk');
         Route::get('/risk/{client}/assess',          [RiskController::class, 'assess'])->name('risk.assess');
         Route::post('/risk/{client}/assess',         [RiskController::class, 'saveAssessment'])->name('risk.save');

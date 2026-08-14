@@ -812,4 +812,33 @@ PROMPT;
         ]);
         return redirect(route('tenant.clients.show', [$tenant->slug, $client->id]) . '?tab=declarations')->with('success', 'Declarations updated.');
     }
+
+    public function updateMonitoring(Request $request, string $slug, BullionClient $client)
+    {
+        $tenant = app('tenant');
+        abort_if($client->tenant_id !== $tenant->id, 403);
+
+        $enabled = $request->boolean('monitoring_enabled');
+        $freq    = $request->input('monitoring_frequency');
+
+        $validFreqs = ['daily', 'weekly', 'monthly', 'quarterly', 'half_yearly', 'annually'];
+        if ($enabled && !in_array($freq, $validFreqs)) {
+            return back()->with('error', 'Please select a valid monitoring frequency.');
+        }
+
+        $client->update([
+            'monitoring_enabled'   => $enabled,
+            'monitoring_frequency' => $enabled ? $freq : null,
+            'monitoring_next_due_at' => $enabled
+                ? $client->fill(['monitoring_frequency' => $freq])->monitoringNextDue()
+                : null,
+        ]);
+
+        $msg = $enabled
+            ? "Ongoing monitoring enabled ({$client->monitoringFrequencyLabel()})."
+            : 'Ongoing monitoring disabled.';
+
+        return redirect(route('tenant.clients.show', [$tenant->slug, $client->id]) . '?tab=screening')
+            ->with('success', $msg);
+    }
 }

@@ -839,6 +839,55 @@ $countryName = fn($code) => $code ? (\App\Models\Country::find($code)?->country_
                     @endif
                 </div>
 
+                {{-- Ongoing monitoring panel --}}
+                <div class="bg-white rounded-xl border border-gray-200 p-4"
+                     x-data="{ enabled: {{ $client->monitoring_enabled ? 'true' : 'false' }}, freq: '{{ $client->monitoring_frequency ?? 'monthly' }}' }">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-sm font-semibold text-gray-700">Ongoing monitoring</h3>
+                        <button type="button" @click="enabled = !enabled"
+                                class="relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none"
+                                :class="enabled ? 'bg-blue-600' : 'bg-gray-200'">
+                            <span class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow transition duration-200"
+                                  :class="enabled ? 'translate-x-4' : 'translate-x-0'"></span>
+                        </button>
+                    </div>
+
+                    <div x-show="enabled" x-cloak class="space-y-3">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Re-screen frequency</label>
+                            <select x-model="freq"
+                                    class="w-full px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                                <option value="daily">Daily</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="monthly">Monthly</option>
+                                <option value="quarterly">Quarterly</option>
+                                <option value="half_yearly">Every 6 months</option>
+                                <option value="annually">Annually</option>
+                            </select>
+                        </div>
+                        @if($client->monitoring_last_screened_at)
+                        <p class="text-xs text-gray-400">Last run: {{ $client->monitoring_last_screened_at->format('d M Y') }}</p>
+                        @endif
+                        @if($client->monitoring_next_due_at)
+                        <p class="text-xs text-gray-400">Next due: <span class="{{ $client->monitoring_next_due_at->isPast() ? 'text-red-600 font-semibold' : '' }}">{{ $client->monitoring_next_due_at->format('d M Y') }}</span></p>
+                        @endif
+                    </div>
+
+                    <div x-show="!enabled" x-cloak>
+                        <p class="text-xs text-gray-400">Toggle on to schedule automatic re-screening.</p>
+                    </div>
+
+                    <form method="POST" action="{{ route('tenant.clients.monitoring.update', [$tenant->slug, $client->id]) }}" class="mt-3">
+                        @csrf
+                        <input type="hidden" name="monitoring_enabled" :value="enabled ? '1' : '0'">
+                        <input type="hidden" name="monitoring_frequency" :value="freq">
+                        <button type="submit"
+                                class="w-full py-1.5 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition">
+                            Save monitoring settings
+                        </button>
+                    </form>
+                </div>
+
                 <div class="bg-white rounded-xl border border-gray-200 p-4">
                     <h3 class="text-sm font-semibold text-gray-700 mb-2">Screen this client</h3>
                     <p class="text-xs text-gray-400 mb-3">{{ $client->displayName() }}</p>

@@ -43,6 +43,12 @@ class DashboardController extends Controller
         $unscreened      = (clone $activeBase)->where('screening_status', 'not_screened')->count();
         $screeningMatch  = (clone $activeBase)->where('screening_status', 'match')->count();
         $edd             = (clone $base)->where('cdd_type', 'enhanced')->count();
+        $monitoringActive = (clone $base)->where('monitoring_enabled', true)->count();
+        $monitoringAlerts = \App\Models\ScreeningLog::where('tenant_id', $tid)
+            ->where('source', 'monitoring')
+            ->where('status', 'match')
+            ->whereNull('reviewed_at')
+            ->count();
 
         // ── Document alerts ───────────────────────────────────────────────────
         $docsExpired  = ClientDocument::where('tenant_id', $tid)->where('expiry_date', '<', now())->count();
@@ -84,6 +90,7 @@ class DashboardController extends Controller
             'passportExpired', 'passportExpiring',
             'reviewOverdue', 'reviewDueSoon',
             'unscreened', 'screeningMatch', 'edd',
+            'monitoringActive', 'monitoringAlerts',
             'docsExpired', 'docsExpiring',
             'goamlTotal', 'goamlMonth',
             'typeBreakdown'

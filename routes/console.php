@@ -11,3 +11,6 @@ Artisan::command('inspire', function () {
 // ── Public site content engine ──────────────────────────────────────────────
 Schedule::command('content:fetch-rss')->hourly();
 Schedule::command('content:ai-digest')->dailyAt('07:00');
+
+// ── AML ongoing monitoring ───────────────────────────────────────────────────
+Schedule::command('monitoring:run')->dailyAt('02:00');
