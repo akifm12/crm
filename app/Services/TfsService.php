@@ -21,7 +21,7 @@ class TfsService
 
         $pdfFilename = 'tfs-' . uniqid() . '.pdf';
         $pdfFullPath = $snapshotDir . '/' . $pdfFilename;
-        $scriptPath  = base_path('scripts/tfs-submit.js');
+        $scriptPath  = base_path('scripts/tfs-submit.cjs');
 
         $cmd = sprintf(
             'HOME=/tmp NODE_PATH=/usr/lib/node_modules node %s %s %s %s 2>&1',
