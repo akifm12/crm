@@ -346,6 +346,9 @@
                         </td>
                         <td class="px-4 py-3 font-medium text-gray-800 max-w-[200px] truncate">
                             {{ $log->query }}
+                            @if($log->source === 'kyc' && !empty($log->result['subject_name']) && $log->result['subject_name'] !== $log->query)
+                            <br><span class="text-xs font-normal text-gray-400">{{ $log->result['subject_name'] }} ({{ $log->result['subject_role'] ?? '' }})</span>
+                            @endif
                         </td>
                         <td class="px-4 py-3 text-xs text-gray-500">
                             @if($log->client)

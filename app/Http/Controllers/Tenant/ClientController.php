@@ -417,23 +417,23 @@ PROMPT;
     // ── Screen preview (during create wizard, before saving) ───────────────
     public function screenPreview(Request $request, string $slug)
     {
-        $tenant  = app('tenant');
-        $service = app(\App\Services\SentinelService::class);
-        $results = [];
-
-        // Screen main entity or individual
+        $tenant      = app('tenant');
+        $service     = app(\App\Services\SentinelService::class);
+        $results     = [];
         $companyName = $request->input('company_name');
         $fullName    = $request->input('full_name');
+        $listingName = $companyName ?? $fullName ?? 'Unknown';
 
+        // Screen main entity or individual
         if ($companyName) {
             $res = $service->screenEntity([
-                'query'          => $companyName,
-                'country'        => $request->input('country_of_incorporation', 'UAE'),
+                'query'            => $companyName,
+                'country'          => $request->input('country_of_incorporation', 'UAE'),
                 'country_of_issue' => $request->input('country_of_incorporation', 'UAE'),
-                'license_number' => $request->input('trade_license_no', ''),
+                'license_number'   => $request->input('trade_license_no', ''),
             ]);
-            $summary   = \App\Services\SentinelService::summarise($res['data'] ?? []);
-            $results[] = ['name' => $companyName, 'role' => 'Company', 'result' => $summary];
+            $results[] = ['name' => $companyName, 'role' => 'Company',
+                          'result' => \App\Services\SentinelService::summarise($res['data'] ?? [])];
         } elseif ($fullName) {
             $res = $service->screenIndividual([
                 'query'       => $fullName,
@@ -441,64 +441,66 @@ PROMPT;
                 'nationality' => $request->input('nationality', ''),
                 'dob'         => $request->input('dob', ''),
             ]);
-            $summary   = \App\Services\SentinelService::summarise($res['data'] ?? []);
-            $results[] = ['name' => $fullName, 'role' => 'Individual', 'result' => $summary];
+            $results[] = ['name' => $fullName, 'role' => 'Individual',
+                          'result' => \App\Services\SentinelService::summarise($res['data'] ?? [])];
         }
 
-        // Screen signatories
-        foreach ($request->input('signatories', []) as $sig) {
-            if (empty($sig['full_name'])) continue;
+        // Build a deduplicated list of individuals across signatories / shareholders / UBOs.
+        // Key by lowercase name; merge roles when the same person appears in multiple lists.
+        $individuals = [];
+        $roleMap     = ['signatories' => ['name_key' => 'full_name', 'role' => 'Signatory'],
+                        'shareholders' => ['name_key' => 'name',     'role' => 'Shareholder'],
+                        'ubos'         => ['name_key' => 'full_name', 'role' => 'UBO']];
+
+        foreach ($roleMap as $inputKey => $meta) {
+            foreach ($request->input($inputKey, []) as $person) {
+                $raw = $person[$meta['name_key']] ?? '';
+                if (empty(trim($raw))) continue;
+                $key = strtolower(trim($raw));
+
+                if (isset($individuals[$key])) {
+                    // Merge role label if this person appears in another list
+                    if (!str_contains($individuals[$key]['role'], $meta['role'])) {
+                        $individuals[$key]['role'] .= ' / ' . $meta['role'];
+                    }
+                } else {
+                    $individuals[$key] = [
+                        'name'        => trim($raw),
+                        'role'        => $meta['role'],
+                        'nationality' => $person['nationality'] ?? 'UAE',
+                        'dob'         => $person['dob'] ?? '',
+                    ];
+                }
+            }
+        }
+
+        foreach ($individuals as $person) {
             $res = $service->screenIndividual([
-                'query'       => $sig['full_name'],
-                'country'     => $sig['nationality'] ?? 'UAE',
-                'nationality' => $sig['nationality'] ?? '',
-                'dob'         => $sig['dob'] ?? '',
+                'query'       => $person['name'],
+                'country'     => $person['nationality'],
+                'nationality' => $person['nationality'],
+                'dob'         => $person['dob'],
             ]);
-            $summary   = \App\Services\SentinelService::summarise($res['data'] ?? []);
-            $results[] = ['name' => $sig['full_name'], 'role' => 'Signatory', 'result' => $summary];
+            $results[] = ['name' => $person['name'], 'role' => $person['role'],
+                          'result' => \App\Services\SentinelService::summarise($res['data'] ?? [])];
         }
 
-        // Screen shareholders
-        foreach ($request->input('shareholders', []) as $sh) {
-            if (empty($sh['name'])) continue;
-            $res = $service->screenIndividual([
-                'query'       => $sh['name'],
-                'country'     => $sh['nationality'] ?? 'UAE',
-                'nationality' => $sh['nationality'] ?? '',
-                'dob'         => $sh['dob'] ?? '',
-            ]);
-            $summary   = \App\Services\SentinelService::summarise($res['data'] ?? []);
-            $results[] = ['name' => $sh['name'], 'role' => 'Shareholder', 'result' => $summary];
-        }
-
-        // Screen UBOs
-        foreach ($request->input('ubos', []) as $ubo) {
-            if (empty($ubo['full_name'])) continue;
-            $res = $service->screenIndividual([
-                'query'       => $ubo['full_name'],
-                'country'     => $ubo['nationality'] ?? 'UAE',
-                'nationality' => $ubo['nationality'] ?? '',
-                'dob'         => $ubo['dob'] ?? '',
-            ]);
-            $summary   = \App\Services\SentinelService::summarise($res['data'] ?? []);
-            $results[] = ['name' => $ubo['full_name'], 'role' => 'UBO', 'result' => $summary];
-        }
-
-        // Log each subject to screening history; save IDs in session to link once client is created
-        $logIds = [];
-        $reference = 'SCR-' . strtoupper(substr(md5(($companyName ?? $fullName ?? '') . now()), 0, 8));
+        // Log each subject; use company/individual name as the listing query so all
+        // entries appear under the company name in the screening history.
+        $logIds    = [];
+        $reference = 'SCR-' . strtoupper(substr(md5($listingName . now()), 0, 8));
         foreach ($results as $r) {
             $log = \App\Models\ScreeningLog::create([
                 'tenant_id'         => $tenant->id,
                 'bullion_client_id' => null,
                 'screened_by'       => auth()->id(),
-                'query'             => $r['name'],
+                'query'             => $listingName,
                 'entity_type'       => $r['role'] === 'Company' ? 'entity' : 'individual',
                 'status'            => $r['result']['status'] ?? 'clear',
                 'total_hits'        => $r['result']['total_hits'] ?? 0,
                 'source'            => 'kyc',
                 'reference'         => $reference,
-                'result'            => $r['result'],
+                'result'            => array_merge($r['result'], ['subject_name' => $r['name'], 'subject_role' => $r['role']]),
             ]);
             $logIds[] = $log->id;
         }
