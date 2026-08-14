@@ -93,17 +93,13 @@ class TfsController extends Controller
 
             $result = $this->tfs->submitTfsUrl($entry['url'], $responseKey);
 
-            $entry['status']       = $result['success'] ? 'submitted' : 'failed';
-            $entry['submitted_at'] = now()->toIso8601String();
-            $entry['message']      = $result['message'];
+            $entry['status']        = $result['success'] ? 'submitted' : 'failed';
+            $entry['submitted_at']  = now()->toIso8601String();
+            $entry['message']       = $result['message'];
+            $entry['snapshot_path'] = $result['snapshot_path'] ?? null;
 
             if ($result['success']) {
                 $anySuccess = true;
-                if (!empty($result['confirmation_html'])) {
-                    $filename           = 'tfs-' . $submission->id . '-' . uniqid() . '.pdf';
-                    $path               = $this->tfs->snapshotHtml($result['confirmation_html'], $filename);
-                    $entry['snapshot_path'] = $path;
-                }
             } else {
                 $anyFailed = true;
             }
