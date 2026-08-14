@@ -75,6 +75,19 @@ return [
 			'strict'    => false,
 		],
 
+        'sentinel' => [
+            'driver'   => 'pgsql',
+            'host'     => env('SENTINEL_DB_HOST', '127.0.0.1'),
+            'port'     => env('SENTINEL_DB_PORT', '5432'),
+            'database' => env('SENTINEL_DB_NAME', 'compliance_db'),
+            'username' => env('SENTINEL_DB_USER', 'akif'),
+            'password' => env('SENTINEL_DB_PASSWORD', ''),
+            'charset'  => 'utf8',
+            'prefix'   => '',
+            'schema'   => 'public',
+            'sslmode'  => 'prefer',
+        ],
+
     ],
 
     'migrations' => 'migrations',

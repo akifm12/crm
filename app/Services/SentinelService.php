@@ -1,147 +1,259 @@
 <?php
-// app/Services/SentinelService.php
 
 namespace App\Services;
 
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class SentinelService
 {
-    private string $baseUrl;
-    private ?string $email;
-    private ?string $password;
-    private string $cacheKey = 'sentinel_jwt_token';
+    private const LIST_META = [
+        'OFAC (USA)'                  => ['id' => 'OFAC_SDN',       'flag' => '🇺🇸', 'color' => '#1a56db'],
+        'UN (Global)'                 => ['id' => 'UN_CONSOLIDATED', 'flag' => '🇺🇳', 'color' => '#0e9f6e'],
+        'UK (FCDO)'                   => ['id' => 'UK_HMT',          'flag' => '🇬🇧', 'color' => '#9061f9'],
+        'EU (Europe)'                 => ['id' => 'EU_CONSOLIDATED', 'flag' => '🇪🇺', 'color' => '#e3a008'],
+        'UAE (Local Terror List)'     => ['id' => 'UAE_CBUAE',       'flag' => '🇦🇪', 'color' => '#e02424'],
+        'Switzerland (SECO)'          => ['id' => 'CH_SECO',         'flag' => '🇨🇭', 'color' => '#ff0000'],
+        'World Bank (Debarred)'       => ['id' => 'WORLD_BANK',      'flag' => '🌍',  'color' => '#ff5a1f'],
+        'Global PEPs (OpenSanctions)' => ['id' => 'GLOBAL_PEPS',     'flag' => '🌐',  'color' => '#6366f1'],
+        'Interpol (Red Notices)'      => ['id' => 'INTERPOL',        'flag' => '🔴',  'color' => '#cc0000'],
+    ];
 
-    public function __construct()
+    private function db()
     {
-        $this->baseUrl  = config('sentinel.base_url', 'http://127.0.0.1:8085/api');
-        $this->email    = config('sentinel.email');
-        $this->password = config('sentinel.password');
+        return DB::connection('sentinel');
     }
 
-    private function token(): ?string
+    private function getMeta(string $source): array
     {
-        return Cache::remember($this->cacheKey, now()->addMinutes(5), function () {
-            $response = Http::timeout(10)->post("{$this->baseUrl}/auth/login", [
-                'email'    => $this->email,
-                'password' => $this->password,
-            ]);
-            if ($response->successful() && isset($response->json()['token'])) {
-                return $response->json()['token'];
+        if (isset(self::LIST_META[$source])) return self::LIST_META[$source];
+        foreach (self::LIST_META as $key => $meta) {
+            if (stripos($source, explode(' ', $key)[0]) !== false) return $meta;
+        }
+        return ['id' => 'OTHER', 'flag' => '🌐', 'color' => '#64748b'];
+    }
+
+    private function deriveRisk(string $source): string
+    {
+        $s = strtoupper($source);
+        if (str_contains($s, 'UAE') || str_contains($s, 'UN ') || str_contains($s, 'INTERPOL')) return 'CRITICAL';
+        if (str_contains($s, 'OFAC') || str_contains($s, 'UK') || str_contains($s, 'EU')) return 'HIGH';
+        if (str_contains($s, 'PEP')) return 'HIGH';
+        return 'MEDIUM';
+    }
+
+    private function normalise(string $s): string
+    {
+        $s = mb_strtolower($s);
+        $s = str_replace(["\u{2019}", "\u{2018}", '`'], '', $s);
+        $s = str_replace(['-', '_', '.'], ' ', $s);
+        return trim((string) preg_replace('/\s+/', ' ', $s));
+    }
+
+    private function calcScore(string $query, string $name): int
+    {
+        $q = $this->normalise($query);
+        $n = $this->normalise($name);
+
+        if ($q === $n) return 100;
+        if (str_starts_with($n, $q) || str_starts_with($q, $n)) return 95;
+        if (str_contains($n, $q) || str_contains($q, $n)) return 88;
+
+        $qt = array_values(array_filter(explode(' ', $q)));
+        $nt = array_values(array_filter(explode(' ', $n)));
+
+        $exactHits = array_filter($qt, fn($t) => in_array($t, $nt, true));
+        $hitCount  = count($exactHits);
+
+        if ($hitCount === count($qt)) return 92;
+        if ($hitCount > 0) {
+            $score = (int) round($hitCount / max(count($qt), count($nt)) * 85);
+            if ($score >= 60) return $score;
+        }
+
+        $fuzzyHits = 0.0;
+        foreach ($qt as $qt_) {
+            if (strlen($qt_) < 3) continue;
+            $best = 0.0;
+            foreach ($nt as $nt_) {
+                if (strlen($nt_) < 3) continue;
+                $maxLen = max(strlen($qt_), strlen($nt_));
+                if ($maxLen === 0) continue;
+                $sim = 1 - levenshtein($qt_, $nt_) / $maxLen;
+                if ($sim > $best) $best = $sim;
             }
-            Log::error('Sentinel auth failed', ['status' => $response->status()]);
-            return null;
-        });
+            if ($best >= 0.65) $fuzzyHits += $best;
+        }
+        $relevant = count(array_filter($qt, fn($t) => strlen($t) >= 3));
+        if ($relevant > 0) {
+            $score = (int) round($fuzzyHits / $relevant * 82);
+            if ($score >= 40) return $score;
+        }
+
+        $maxLen = max(strlen($q), strlen($n));
+        if ($maxLen === 0) return 0;
+        $dist = levenshtein(substr($q, 0, 40), substr($n, 0, 40));
+        return (int) round((1 - $dist / max($maxLen, 1)) * 75);
     }
 
-    private function http()
+    private function applyContextBoost(int $score, object $row, array $ctx): int
     {
-        return Http::timeout(30)->withToken($this->token())->acceptJson();
+        $remarks = mb_strtolower($row->remarks ?? '');
+        $uid     = mb_strtolower($row->uid ?? '');
+
+        if (!empty($ctx['country'])) {
+            $c = mb_strtolower($ctx['country']);
+            if (str_contains($remarks, $c) || str_contains($uid, $c)) {
+                $score = min(100, $score + 8);
+            }
+        }
+        if (!empty($ctx['dob'])) {
+            $dobClean = str_replace('-', '', $ctx['dob']);
+            $dobSlash = str_replace('-', '/', $ctx['dob']);
+            if (str_contains($remarks, $ctx['dob']) || str_contains($remarks, $dobClean) || str_contains($remarks, $dobSlash)) {
+                $score = min(100, $score + 10);
+            }
+        }
+        return $score;
     }
 
-	private function doScreen(array $payload): array
-	{
-		try {
-			$response = $this->http()->post("{$this->baseUrl}/screen", $payload);
+    private function screen(string $query, string $entityType, array $ctx = [], int $threshold = 65): array
+    {
+        try {
+            $q = trim($query);
+            if (strlen($q) < 2) {
+                return ['success' => false, 'error' => 'Name must be at least 2 characters'];
+            }
 
-			// Handle expired session — clear cache and retry
-			if ($response->status() === 401 ||
-				str_contains($response->body(), 'SESSION_EXPIRED')) {
-				Cache::forget($this->cacheKey);
-				$response = $this->http()->post("{$this->baseUrl}/screen", $payload);
-			}
+            $longTokens = array_values(array_filter(
+                explode(' ', $q),
+                fn($t) => strlen($t) >= 4
+            ));
 
-			if ($response->successful()) {
-				return ['success' => true, 'data' => $response->json()];
-			}
+            // Build bindings: SELECT uses ?, ? then WHERE uses ?, ?, then lev tokens
+            $bindings   = [];
+            $bindings[] = $q;         // SIMILARITY(name, ?)
+            $bindings[] = $q;         // WORD_SIMILARITY(?, name) in SELECT
+            $bindings[] = "%{$q}%";   // name ILIKE ?
+            $bindings[] = $q;         // WORD_SIMILARITY(?, name) in WHERE
 
-			Log::error('Sentinel screen error', ['status' => $response->status(), 'body' => substr($response->body(), 0, 500), 'payload' => $payload]);
-			return ['success' => false, 'error' => 'API error ' . $response->status() . ': ' . $response->body()];
+            $levClauses = [];
+            foreach ($longTokens as $t) {
+                $maxDist      = strlen($t) <= 5 ? 1 : 2;
+                $levClauses[] = "OR EXISTS (
+                    SELECT 1 FROM regexp_split_to_table(lower(name), '\\s+') AS w
+                    WHERE levenshtein(w, lower(?)) <= {$maxDist} AND length(w) >= 3
+                )";
+                $bindings[] = $t;
+            }
 
-		} catch (\Exception $e) {
-			Log::error('Sentinel screen failed', ['error' => $e->getMessage(), 'payload' => $payload]);
-			return ['success' => false, 'error' => $e->getMessage()];
-		}
-	}
+            $typeFilter = match ($entityType) {
+                'individual' => "AND type ILIKE ANY(ARRAY['%individual%','%person%','%sanctioned%'])",
+                'entity'     => "AND type ILIKE ANY(ARRAY['%entity%','%company%','%legal%','%organisation%','%organization%','%position%','-0-','%unknown%'])",
+                default      => '',
+            };
+
+            $levSql = implode("\n", $levClauses);
+
+            $sql = "
+                SELECT DISTINCT id, source, uid, name, type, program, remarks,
+                       GREATEST(SIMILARITY(name, ?), WORD_SIMILARITY(?, name)) AS pg_sim
+                FROM sanctions
+                WHERE (
+                    name ILIKE ?
+                    OR WORD_SIMILARITY(?, name) > 0.25
+                    {$levSql}
+                )
+                {$typeFilter}
+                ORDER BY pg_sim DESC
+                LIMIT 300
+            ";
+
+            $rows = $this->db()->select($sql, $bindings);
+
+            $seen    = [];
+            $results = [];
+
+            foreach ($rows as $row) {
+                if (isset($seen[$row->id])) continue;
+                $seen[$row->id] = true;
+
+                $score = $this->calcScore($q, $row->name);
+                $score = $this->applyContextBoost($score, $row, $ctx);
+
+                if ($score < $threshold) continue;
+
+                $meta      = $this->getMeta($row->source ?? '');
+                $results[] = [
+                    'id'         => $row->id,
+                    'externalId' => $row->uid,
+                    'listId'     => $meta['id'],
+                    'name'       => $row->name,
+                    'type'       => $row->type ?? 'Entity',
+                    'programs'   => array_values(array_filter([$row->program])),
+                    'reason'     => $row->remarks,
+                    'riskLevel'  => $this->deriveRisk($row->source ?? ''),
+                    'matchScore' => $score,
+                    'matchType'  => $score >= 95 ? 'exact' : ($score >= 80 ? 'close' : 'fuzzy'),
+                    'list'       => [
+                        'id'        => $meta['id'],
+                        'name'      => $row->source,
+                        'authority' => $row->source,
+                        'color'     => $meta['color'],
+                        'flag'      => $meta['flag'],
+                    ],
+                ];
+            }
+
+            usort($results, fn($a, $b) => $b['matchScore'] <=> $a['matchScore']);
+
+            return ['success' => true, 'data' => [
+                'sessionId' => (string) Str::uuid(),
+                'query'     => $query,
+                'results'   => array_slice($results, 0, 50),
+                'total'     => count($results),
+            ]];
+
+        } catch (\Exception $e) {
+            Log::error('Sentinel screen failed', [
+                'error' => $e->getMessage(),
+                'query' => $query,
+                'type'  => $entityType,
+            ]);
+            return ['success' => false, 'error' => $e->getMessage()];
+        }
+    }
 
     public function screenEntity(array $params): array
     {
-        $payload = [
-            'query'         => (string) trim($params['query']),
-            'country'       => $params['country_of_issue'] ?? $params['country'] ?? 'UAE',
-            'entityType'    => 'entity',
-            'threshold'     => 65,
-            'selectedLists' => [],
-        ];
-
-        if (!empty($params['license_number'])) $payload['license_number'] = $params['license_number'];
-        if (!empty($params['date_of_issue']))  $payload['date_of_issue']  = $params['date_of_issue'];
-
-        return $this->doScreen($payload);
+        return $this->screen(
+            query:      (string) trim($params['query']),
+            entityType: 'entity',
+            ctx:        [
+                'country' => $params['country_of_issue'] ?? $params['country'] ?? '',
+                'dob'     => '',
+            ],
+        );
     }
 
     public function screenIndividual(array $params): array
     {
-        $rawCountry = ($params['nationality'] ?: null) ?? ($params['country'] ?: null) ?? 'UAE';
+        $country = ($params['nationality'] ?: null) ?? ($params['country'] ?: null) ?? '';
 
-        $payload = [
-            'query'         => (string) trim($params['query']),
-            'country'       => $this->normaliseCountry((string) $rawCountry),
-            'entityType'    => 'individual',
-            'threshold'     => 65,
-            'selectedLists' => [],
-        ];
-
-        if (!empty($params['dob'])) {
-            $d = \DateTime::createFromFormat('Y-m-d', $params['dob']);
-            $payload['dob'] = $d ? $d->format('d/m/Y') : $params['dob'];
-        }
-
-        return $this->doScreen($payload);
-    }
-
-    private function normaliseCountry(string $raw): string
-    {
-        $raw = trim($raw);
-        if (!$raw || strlen($raw) !== 2) return $raw ?: 'UAE';
-
-        static $map = [
-            'AE' => 'United Arab Emirates', 'SA' => 'Saudi Arabia',   'KW' => 'Kuwait',
-            'QA' => 'Qatar',                'BH' => 'Bahrain',         'OM' => 'Oman',
-            'IN' => 'India',                'PK' => 'Pakistan',        'EG' => 'Egypt',
-            'GB' => 'United Kingdom',       'US' => 'United States',   'CN' => 'China',
-            'RU' => 'Russia',               'DE' => 'Germany',         'FR' => 'France',
-            'JP' => 'Japan',                'AU' => 'Australia',       'CA' => 'Canada',
-            'IR' => 'Iran',                 'IQ' => 'Iraq',            'SY' => 'Syria',
-            'LB' => 'Lebanon',              'JO' => 'Jordan',          'TR' => 'Turkey',
-            'NG' => 'Nigeria',              'ZA' => 'South Africa',    'KE' => 'Kenya',
-            'PH' => 'Philippines',          'BD' => 'Bangladesh',      'LK' => 'Sri Lanka',
-            'NP' => 'Nepal',                'ID' => 'Indonesia',       'MY' => 'Malaysia',
-            'SG' => 'Singapore',            'TH' => 'Thailand',        'VN' => 'Vietnam',
-            'BR' => 'Brazil',               'MX' => 'Mexico',          'AR' => 'Argentina',
-            'CO' => 'Colombia',             'BS' => 'Bahamas',         'KY' => 'Cayman Islands',
-            'PA' => 'Panama',               'CH' => 'Switzerland',     'NL' => 'Netherlands',
-            'IT' => 'Italy',                'ES' => 'Spain',           'SE' => 'Sweden',
-            'NO' => 'Norway',               'PL' => 'Poland',          'UA' => 'Ukraine',
-            'KZ' => 'Kazakhstan',           'UZ' => 'Uzbekistan',      'AF' => 'Afghanistan',
-            'MM' => 'Myanmar',              'SO' => 'Somalia',         'SD' => 'Sudan',
-            'YE' => 'Yemen',                'LY' => 'Libya',           'ML' => 'Mali',
-            'NI' => 'Nicaragua',            'HT' => 'Haiti',           'KP' => 'North Korea',
-            'VE' => 'Venezuela',            'CU' => 'Cuba',            'GH' => 'Ghana',
-            'ET' => 'Ethiopia',             'BE' => 'Belgium',         'AT' => 'Austria',
-            'PT' => 'Portugal',             'DK' => 'Denmark',         'FI' => 'Finland',
-            'CZ' => 'Czech Republic',       'HU' => 'Hungary',         'RO' => 'Romania',
-        ];
-
-        return $map[strtoupper($raw)] ?? $raw;
+        return $this->screen(
+            query:      (string) trim($params['query']),
+            entityType: 'individual',
+            ctx:        [
+                'country' => $country,
+                'dob'     => $params['dob'] ?? '',
+            ],
+        );
     }
 
     public static function summarise(array $data): array
     {
-        // Sentinel returns 'results' key
-        $hits   = $data['results'] ?? $data['hits'] ?? $data['matches'] ?? [];
+        $hits   = $data['results'] ?? [];
         $total  = count($hits);
         $status = $total > 0 ? 'match' : 'clear';
 
