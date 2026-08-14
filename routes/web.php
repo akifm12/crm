@@ -28,6 +28,7 @@ use App\Http\Controllers\PublicDeadlineController;
 use App\Http\Controllers\CertificateVerifyController;
 use App\Http\Controllers\PublicCertificateController;
 use App\Http\Controllers\Admin\TrainingSessionController;
+use App\Http\Controllers\Tenant\TfsController;
 use App\Models\CrmQuotation;
 
 require __DIR__.'/auth.php';
@@ -300,6 +301,16 @@ Route::prefix('{slug}')
         Route::patch('/settings/mlro',             [TenantSettingsController::class, 'updateMlro'])->name('settings.mlro');
         Route::post('/settings/logo',              [TenantSettingsController::class, 'uploadLogo'])->name('settings.logo');
         Route::patch('/settings/password',         [TenantSettingsController::class, 'updatePassword'])->name('settings.password');
+
+        // ── TFS Submissions ───────────────────────────────────────────────────
+        Route::get('/tfs',                              [TfsController::class, 'index'])->name('tfs.index');
+        Route::get('/tfs/create',                       [TfsController::class, 'create'])->name('tfs.create');
+        Route::post('/tfs',                             [TfsController::class, 'store'])->name('tfs.store');
+        Route::get('/tfs/{tfs}',                        [TfsController::class, 'show'])->name('tfs.show');
+        Route::get('/tfs/{tfs}/screen',                 [TfsController::class, 'screen'])->name('tfs.screen');
+        Route::post('/tfs/{tfs}/submit',                [TfsController::class, 'submitAll'])->name('tfs.submit');
+        Route::post('/tfs/{tfs}/names',                 [TfsController::class, 'addNames'])->name('tfs.names');
+        Route::get('/tfs/{tfs}/snapshot/{index}',       [TfsController::class, 'snapshot'])->name('tfs.snapshot');
 
         // ── Bullion Accounting module (gated) ────────────────────────────────
         Route::prefix('accounting')

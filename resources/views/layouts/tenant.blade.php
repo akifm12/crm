@@ -140,6 +140,15 @@
             goAML reports
         </a>
 
+        {{-- TFS Submissions --}}
+        <a href="{{ route('tenant.tfs.index', $slug) }}"
+           class="nav-link {{ request()->routeIs('tenant.tfs*') ? 'active' : '' }}">
+            <svg style="width:16px;height:16px;flex-shrink:0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+            </svg>
+            TFS Submissions
+        </a>
+
         @if($tenant->hasModule('bullion_accounting'))
         {{-- Bullion Accounting --}}
         <a href="{{ route('tenant.accounting.dashboard', $slug) }}"
