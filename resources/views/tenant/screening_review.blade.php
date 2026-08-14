@@ -193,7 +193,21 @@
             </p>
         </div>
         <div x-show="reviewed >= total" x-cloak>
+            <div id="edd-outcome" class="mb-4 px-4 py-3 rounded-lg border text-sm font-medium" style="display:none;">
+                {{-- filled by JS after last save --}}
+            </div>
+            @php $eddNow = $log->eddStatus(); @endphp
+            @if($eddNow === 'edd_clear')
+            <div class="mb-3 px-4 py-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700 font-medium">
+                All hits determined to be false positives — outcome: <strong>Clear</strong>.
+            </div>
+            @elseif($eddNow === 'confirmed_match')
+            <div class="mb-3 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 font-medium">
+                True positive(s) confirmed — outcome: <strong>Confirmed Match</strong>. Escalation may be required.
+            </div>
+            @else
             <p class="text-sm text-green-700 font-medium mb-3">All hits reviewed. You can now generate the EDD report.</p>
+            @endif
             <a href="{{ $pdfUrl }}" target="_blank"
                class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

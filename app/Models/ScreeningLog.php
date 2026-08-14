@@ -43,6 +43,31 @@ class ScreeningLog extends Model
         };
     }
 
+    public function eddStatus(): string
+    {
+        if ($this->status !== 'match' || !$this->reviewed_at) return $this->status;
+        $tp = collect($this->reviews ?? [])->where('verdict', 'true_positive')->count();
+        return $tp > 0 ? 'confirmed_match' : 'edd_clear';
+    }
+
+    public function eddStatusBadge(): string
+    {
+        return match($this->eddStatus()) {
+            'edd_clear'       => 'bg-green-100 text-green-700',
+            'confirmed_match' => 'bg-red-100 text-red-800',
+            default           => $this->statusBadge(),
+        };
+    }
+
+    public function eddStatusLabel(): string
+    {
+        return match($this->eddStatus()) {
+            'edd_clear'       => 'Clear (EDD)',
+            'confirmed_match' => 'Confirmed Match',
+            default           => $this->statusLabel(),
+        };
+    }
+
     public function hitsNeedingReview(): array
     {
         return $this->result['hits'] ?? [];

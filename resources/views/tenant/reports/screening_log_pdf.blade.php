@@ -90,10 +90,33 @@ $reviewedOn   = $log->reviewed_at?->format('d F Y, H:i');
         <p>{{ $tenant->name }} — Compliance Portal</p>
     </div>
 
-    @if($isMatch)
+    @php
+        $eddStatus = $log->eddStatus();
+        $tpCount   = $hasReviews ? $reviews->where('verdict', 'true_positive')->count() : 0;
+        $fpCount   = $hasReviews ? $reviews->where('verdict', 'false_positive')->count() : 0;
+    @endphp
+
+    @if($eddStatus === 'edd_clear')
+    <div class="result-clear">
+        <h3>✓ Clear — False Positives Eliminated</h3>
+        <p>
+            {{ $totalHits }} potential match(es) were identified for "{{ $log->query }}" and subjected to Enhanced Due Diligence review.
+            All {{ $fpCount }} hit(s) were determined to be false positives. No confirmed sanctions, PEP, or adverse media matches remain.
+        </p>
+    </div>
+    @elseif($eddStatus === 'confirmed_match')
     <div class="result-match">
-        <h3>⚠ Potential Match Found</h3>
-        <p>{{ $totalHits }} potential match(es) identified for "{{ $log->query }}". Review and disposition required before proceeding.</p>
+        <h3>⚠ Confirmed Match — True Positive(s) Identified</h3>
+        <p>
+            {{ $totalHits }} potential match(es) were identified for "{{ $log->query }}" and subjected to Enhanced Due Diligence review.
+            {{ $tpCount }} True Positive(s) confirmed{{ $fpCount > 0 ? ', ' . $fpCount . ' False Positive(s) eliminated' : '' }}.
+            Escalation and SAR filing may be required.
+        </p>
+    </div>
+    @elseif($isMatch)
+    <div class="result-match">
+        <h3>⚠ Potential Match Found — Pending Review</h3>
+        <p>{{ $totalHits }} potential match(es) identified for "{{ $log->query }}". EDD review and disposition required before proceeding.</p>
     </div>
     @else
     <div class="result-clear">
