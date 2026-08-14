@@ -316,4 +316,58 @@ class ScreeningController extends Controller
 
         return back()->with($hasMatch ? 'error' : 'success', $msg);
     }
+
+    // ── Hit review page ───────────────────────────────────────────────────────
+
+    public function showReview(string $slug, ScreeningLog $log)
+    {
+        $tenant = app('tenant');
+        abort_if($log->tenant_id !== $tenant->id, 404);
+        abort_if($log->status !== 'match', 404);
+
+        return view('tenant.screening_review', compact('tenant', 'log'));
+    }
+
+    public function saveHitReview(Request $request, string $slug, ScreeningLog $log)
+    {
+        $tenant = app('tenant');
+        abort_if($log->tenant_id !== $tenant->id, 403);
+
+        $request->validate([
+            'hit_id'  => 'required',
+            'verdict' => 'required|in:false_positive,true_positive',
+            'notes'   => 'nullable|string|max:1000',
+        ]);
+
+        $reviews = collect($log->reviews ?? [])
+            ->reject(fn($r) => (string) $r['hit_id'] === (string) $request->hit_id)
+            ->values()
+            ->toArray();
+
+        $reviews[] = [
+            'hit_id'           => $request->hit_id,
+            'verdict'          => $request->verdict,
+            'notes'            => $request->input('notes', ''),
+            'reviewed_by'      => auth()->id(),
+            'reviewed_by_name' => auth()->user()->name,
+            'reviewed_at'      => now()->toIso8601String(),
+        ];
+
+        $allReviewed = $log->isFullyReviewed();
+        // Temporarily set reviews to check with new entry
+        $log->reviews = $reviews;
+        $fullyDone    = $log->isFullyReviewed();
+
+        $log->update([
+            'reviews'     => $reviews,
+            'reviewed_at' => $fullyDone ? now() : null,
+        ]);
+
+        return response()->json([
+            'success'      => true,
+            'fully_done'   => $fullyDone,
+            'reviewed'     => count($reviews),
+            'total'        => count($log->hitsNeedingReview()),
+        ]);
+    }
 }

@@ -291,6 +291,8 @@ Route::prefix('{slug}')
         Route::get('/clients/{client}/kyc-pdf',        [ReportController::class, 'kycPdf'])->name('clients.kyc.pdf');
         Route::get('/clients/{client}/screening-pdf',  [ReportController::class, 'screeningPdf'])->name('clients.screening.pdf');
         Route::get('/screening/log/{log}/pdf',         [ReportController::class, 'screeningLogPdf'])->name('screening.log.pdf');
+        Route::get('/screening/log/{log}/review',      [TenantScreeningController::class, 'showReview'])->name('screening.log.review');
+        Route::post('/screening/log/{log}/review/save', [TenantScreeningController::class, 'saveHitReview'])->name('screening.log.review.save');
         Route::get('/clients/{client}/declaration/{type}', [ReportController::class, 'declaration'])->name('clients.declaration');
         Route::get('/clients/{client}/combined-declaration',   [ReportController::class, 'combinedDeclaration'])->name('clients.declaration.combined');
         Route::patch('/settings/profile',          [TenantSettingsController::class, 'updateProfile'])->name('settings.profile');

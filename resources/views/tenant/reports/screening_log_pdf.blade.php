@@ -60,6 +60,9 @@ $totalHits    = $summary['total_hits'] ?? 0;
 $hits         = $summary['hits'] ?? [];
 $ref          = $log->reference ?? 'SCR-' . strtoupper(substr(md5($log->id), 0, 8));
 $screenedOn   = $log->created_at->format('d F Y, H:i');
+$reviews      = collect($log->reviews ?? []);
+$hasReviews   = $reviews->isNotEmpty();
+$reviewedOn   = $log->reviewed_at?->format('d F Y, H:i');
 @endphp
 
 <div class="page">
@@ -167,6 +170,54 @@ $screenedOn   = $log->created_at->format('d F Y, H:i');
         <p style="color:#16a34a;font-size:9.5pt;padding:8px 0;">✓ No matches found.</p>
         @endif
     </div>
+
+    @if($hasReviews)
+    <div class="section">
+        <div class="section-title">EDD — Hit Review Summary</div>
+        @php
+            $tpCount = $reviews->where('verdict', 'true_positive')->count();
+            $fpCount = $reviews->where('verdict', 'false_positive')->count();
+        @endphp
+        <p style="font-size:9.5pt;color:#334155;margin-bottom:10px;">
+            Reviewed by {{ $reviews->first()['reviewed_by_name'] ?? 'Compliance Officer' }}
+            @if($reviewedOn) on {{ $reviewedOn }} @endif.
+            {{ $tpCount }} True Positive(s) · {{ $fpCount }} False Positive(s).
+        </p>
+        <table class="hits-table">
+            <thead>
+                <tr>
+                    <th>Hit name</th>
+                    <th>List</th>
+                    <th>Score</th>
+                    <th>Disposition</th>
+                    <th>Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($hits as $hit)
+                @php $review = $reviews->firstWhere('hit_id', $hit['id']); @endphp
+                <tr>
+                    <td><strong>{{ $hit['name'] ?? '—' }}</strong></td>
+                    <td>{{ $hit['list']['name'] ?? '—' }}</td>
+                    <td>{{ isset($hit['matchScore']) ? $hit['matchScore'].'%' : '—' }}</td>
+                    <td>
+                        @if($review)
+                            @if($review['verdict'] === 'true_positive')
+                            <span style="color:#dc2626;font-weight:bold;">True Positive</span>
+                            @else
+                            <span style="color:#555;">False Positive</span>
+                            @endif
+                        @else
+                            <span style="color:#999;">Not reviewed</span>
+                        @endif
+                    </td>
+                    <td style="color:#555;">{{ $review['notes'] ?? '—' }}</td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+    @endif
 
     <div class="section">
         <div class="section-title">Compliance notes</div>

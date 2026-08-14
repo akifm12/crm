@@ -233,14 +233,24 @@
                 ← Back to {{ $client->displayName() }}'s profile
             </a>
             @elseif(isset($logId))
-            <a href="{{ route('tenant.screening.log.pdf', [$tenant->slug, $logId]) }}"
-               target="_blank"
-               class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                </svg>
-                Download screening report
-            </a>
+                @if($result['status'] === 'match')
+                <a href="{{ route('tenant.screening.log.review', [$tenant->slug, $logId]) }}"
+                   class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-amber-600 rounded-lg hover:bg-amber-700 transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                    </svg>
+                    Review {{ $result['total_hits'] }} Hit(s) — EDD Required
+                </a>
+                @else
+                <a href="{{ route('tenant.screening.log.pdf', [$tenant->slug, $logId]) }}"
+                   target="_blank"
+                   class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                    Download screening report
+                </a>
+                @endif
             @endif
         </div>
 
@@ -368,7 +378,11 @@
                         <td class="px-4 py-3 text-xs text-gray-500">
                             {{ $log->screener?->name ?? '—' }}
                         </td>
-                        <td class="px-4 py-3 text-right">
+                        <td class="px-4 py-3 text-right whitespace-nowrap">
+                            @if($log->status === 'match' && !$log->reviewed_at && !$log->bullion_client_id)
+                            <a href="{{ route('tenant.screening.log.review', [$tenant->slug, $log->id]) }}"
+                               class="text-xs text-amber-600 hover:underline font-medium mr-2">Review ↗</a>
+                            @endif
                             @if($log->bullion_client_id)
                             <a href="{{ route('tenant.clients.screening.pdf', [$tenant->slug, $log->bullion_client_id]) }}"
                                target="_blank" class="text-xs text-blue-600 hover:underline whitespace-nowrap">PDF ↗</a>

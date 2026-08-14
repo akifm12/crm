@@ -10,11 +10,13 @@ class ScreeningLog extends Model
     protected $fillable = [
         'tenant_id', 'bullion_client_id', 'screened_by',
         'query', 'entity_type', 'status', 'total_hits',
-        'source', 'reference', 'result',
+        'source', 'reference', 'result', 'reviews', 'reviewed_at',
     ];
 
     protected $casts = [
-        'result' => 'array',
+        'result'      => 'array',
+        'reviews'     => 'array',
+        'reviewed_at' => 'datetime',
     ];
 
     public function tenant(): BelongsTo  { return $this->belongsTo(Tenant::class); }
@@ -39,5 +41,27 @@ class ScreeningLog extends Model
             'error' => 'Failed',
             default => ucfirst($this->status),
         };
+    }
+
+    public function hitsNeedingReview(): array
+    {
+        return $this->result['hits'] ?? [];
+    }
+
+    public function isFullyReviewed(): bool
+    {
+        $hits = $this->hitsNeedingReview();
+        if (empty($hits)) return true;
+        $reviewed = collect($this->reviews ?? [])->pluck('hit_id')->all();
+        foreach ($hits as $hit) {
+            if (!in_array($hit['id'], $reviewed)) return false;
+        }
+        return true;
+    }
+
+    public function reviewFor(int|string $hitId): ?array
+    {
+        return collect($this->reviews ?? [])
+            ->firstWhere('hit_id', $hitId);
     }
 }
