@@ -306,11 +306,11 @@ Route::prefix('{slug}')
         Route::get('/tfs',                              [TfsController::class, 'index'])->name('tfs.index');
         Route::get('/tfs/create',                       [TfsController::class, 'create'])->name('tfs.create');
         Route::post('/tfs',                             [TfsController::class, 'store'])->name('tfs.store');
-        Route::get('/tfs/{tfs}',                        [TfsController::class, 'show'])->name('tfs.show');
-        Route::get('/tfs/{tfs}/screen',                 [TfsController::class, 'screen'])->name('tfs.screen');
-        Route::post('/tfs/{tfs}/submit',                [TfsController::class, 'submitAll'])->name('tfs.submit');
-        Route::post('/tfs/{tfs}/names',                 [TfsController::class, 'addNames'])->name('tfs.names');
-        Route::get('/tfs/{tfs}/snapshot/{index}',       [TfsController::class, 'snapshot'])->name('tfs.snapshot');
+        Route::get('/tfs/{submission}',                        [TfsController::class, 'show'])->name('tfs.show');
+        Route::get('/tfs/{submission}/screen',                 [TfsController::class, 'screen'])->name('tfs.screen');
+        Route::post('/tfs/{submission}/submit',                [TfsController::class, 'submitAll'])->name('tfs.submit');
+        Route::post('/tfs/{submission}/names',                 [TfsController::class, 'addNames'])->name('tfs.names');
+        Route::get('/tfs/{submission}/snapshot/{index}',       [TfsController::class, 'snapshot'])->name('tfs.snapshot');
 
         // ── Bullion Accounting module (gated) ────────────────────────────────
         Route::prefix('accounting')
