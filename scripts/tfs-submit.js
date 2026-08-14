@@ -14,9 +14,17 @@
 // Locate Puppeteer from the global node_modules set by Browsershot
 const NODE_PATH = process.env.NODE_PATH || '/usr/lib/node_modules';
 const puppeteer = (() => {
-    try { return require('puppeteer'); } catch (_) {}
-    try { return require(NODE_PATH + '/puppeteer'); } catch (_) {}
-    console.log(JSON.stringify({ success: false, message: 'puppeteer not found in ' + NODE_PATH }));
+    const paths = [
+        'puppeteer',
+        NODE_PATH + '/puppeteer',
+        '/usr/lib/node_modules/puppeteer',
+        '/usr/local/lib/node_modules/puppeteer',
+    ];
+    const errors = [];
+    for (const p of paths) {
+        try { return require(p); } catch (e) { errors.push(p + ': ' + e.message); }
+    }
+    console.log(JSON.stringify({ success: false, message: 'puppeteer load failed', errors }));
     process.exit(1);
 })();
 
