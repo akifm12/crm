@@ -146,8 +146,6 @@ async function waitForPageChange(page, nextSelector, timeout = 35000) {
         debug('page2', { title: await page.title(), url: page.url() });
 
         // ── Step 4: Click Submit and wait for confirmation ───────────────────
-        const afterSubmit = waitForPageChange(page, 'body');
-
         const submitClicked = await page.evaluate(() => {
             let btn = document.querySelector('[name="SubmitButton"][value="Submit"]');
             if (!btn) btn = Array.from(document.querySelectorAll('input[type=submit], button'))
@@ -171,13 +169,24 @@ async function waitForPageChange(page, nextSelector, timeout = 35000) {
             return;
         }
 
-        await afterSubmit;
+        // Wait for the Submit button to disappear — confirms the form processed
+        await page.waitForFunction(
+            () => !document.querySelector('[name="SubmitButton"][value="Submit"]'),
+            { timeout: 30000 }
+        ).catch(() => {}); // if it never disappears, continue anyway
+
+        // Give AJAX content a moment to render
+        await new Promise(r => setTimeout(r, 3000));
 
         // ── Step 5: Verify and capture PDF ───────────────────────────────────
         const finalText = await page.evaluate(() => document.body.innerText);
-        const success   = /thank|submitted|success|received/i.test(finalText);
+        const finalHtml = await page.evaluate(() => document.body.innerHTML);
 
-        debug('final page', { success, url: page.url(), excerpt: finalText.slice(0, 300) });
+        // Success: either thank-you text found, OR the Submit button is gone
+        const submitGone = !await page.$('[name="SubmitButton"][value="Submit"]');
+        const success    = submitGone || /thank|submitted|success|received/i.test(finalText);
+
+        debug('final page', { success, submitGone, url: page.url(), excerpt: finalText.slice(0, 300) });
 
         if (pdfPath) {
             await page.pdf({ path: pdfPath, format: 'A4', printBackground: true });
