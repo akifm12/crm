@@ -120,30 +120,20 @@ async function waitForPageChange(page, nextSelector, timeout = 35000) {
             return;
         }
 
-        // ── Step 3: Click Continue and wait for page 2 ───────────────────────
-        // Set up race BEFORE clicking so we don't miss a fast navigation
-        const afterContinue = waitForPageChange(page, '[name="SubmitButton"][value="Submit"]');
-
+        // ── Step 3: Click Continue if present, then Submit ───────────────────
+        // The form may show Continue (to review) then Submit, or Submit directly.
         const continueClicked = await page.evaluate(() => {
-            let btn = document.querySelector('[name="SubmitButton"][value="Continue"]');
-            if (!btn) btn = Array.from(document.querySelectorAll('input[type=submit], button'))
-                                 .find(b => /continue/i.test(b.value + ' ' + b.innerText));
+            const btn = document.querySelector('[name="SubmitButton"][value="Continue"]');
             if (!btn) return null;
             btn.click();
-            return btn.value || btn.innerText?.trim();
+            return btn.value;
         });
 
-        debug('continue clicked', continueClicked);
-
-        if (!continueClicked) {
-            await page.screenshot({ path: '/tmp/tfs-debug-nocontinue.png', fullPage: true });
-            await browser.close();
-            console.log(JSON.stringify({ success: false, message: 'Continue button not found — screenshot at /tmp/tfs-debug-nocontinue.png', debug: formState }));
-            return;
+        if (continueClicked) {
+            // Wait for the Submit button to be ready after Continue
+            await page.waitForSelector('[name="SubmitButton"][value="Submit"]', { timeout: 15000 }).catch(() => {});
+            debug('continue clicked, now on page 2', { title: await page.title() });
         }
-
-        await afterContinue;
-        debug('page2', { title: await page.title(), url: page.url() });
 
         // ── Step 4: Click Submit and wait for confirmation ───────────────────
         const submitClicked = await page.evaluate(() => {
@@ -189,7 +179,24 @@ async function waitForPageChange(page, nextSelector, timeout = 35000) {
         debug('final page', { success, submitGone, url: page.url(), excerpt: finalText.slice(0, 300) });
 
         if (pdfPath) {
-            await page.pdf({ path: pdfPath, format: 'A4', printBackground: true });
+            await page.pdf({
+                path: pdfPath,
+                format: 'A4',
+                printBackground: true,
+                displayHeaderFooter: true,
+                headerTemplate: `
+                    <div style="font-size:9px;padding:4px 20px;width:100%;box-sizing:border-box;
+                                border-bottom:1px solid #ccc;color:#333;font-family:Arial,sans-serif;">
+                        <strong>TFS Survey URL:</strong>
+                        <span style="color:#1a56db;word-break:break-all;">${url}</span>
+                    </div>`,
+                footerTemplate: `
+                    <div style="font-size:8px;padding:4px 20px;width:100%;box-sizing:border-box;
+                                color:#999;font-family:Arial,sans-serif;text-align:center;">
+                        Captured by Blue Arrow Portal &mdash; <span class="date"></span>
+                    </div>`,
+                margin: { top: '55px', bottom: '35px', left: '10px', right: '10px' },
+            });
         }
 
         await browser.close();
