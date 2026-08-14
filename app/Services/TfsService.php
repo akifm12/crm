@@ -8,172 +8,196 @@ use Illuminate\Support\Facades\Log;
 
 class TfsService
 {
-    // UAEIEC answer option values (static across all TFS surveys)
-    const ANSWER_NO_MATCH        = '691a6426-f0ee-4a0b-adfd-f7b05fcd1873';
-    const ANSWER_CONFIRMED_MATCH = '84fa24e7-cbe2-4434-9197-18293408123f';
-    const ANSWER_PARTIAL_MATCH   = 'f668ca85-ba48-4fe9-b946-a7d47a435573';
-
-    public function extractNamesFromAlertUrl(string $url): array
-    {
-        try {
-            $client   = new Client(['timeout' => 20, 'verify' => false]);
-            $response = $client->get($url, ['headers' => ['User-Agent' => 'Mozilla/5.0']]);
-            $html     = (string) $response->getBody();
-
-            // Strip tags and get text content
-            $text = html_entity_decode(strip_tags($html));
-            $text = preg_replace('/\s+/', ' ', $text);
-
-            return $this->extractNamesWithClaude($text, $url);
-        } catch (\Throwable $e) {
-            Log::error('TFS: failed to fetch alert URL', ['url' => $url, 'error' => $e->getMessage()]);
-            return [];
-        }
-    }
-
-    private function extractNamesWithClaude(string $pageText, string $sourceUrl): array
-    {
-        try {
-            $client = new \Anthropic\SDK\Anthropic(['apiKey' => env('ANTHROPIC_API_KEY')]);
-
-            $prompt = "The following is text from a UN Security Council press release about sanctions list amendments. "
-                . "Extract ALL individual person names and entity/organisation names that are being ADDED or AMENDED on the sanctions list. "
-                . "Return ONLY a JSON array of strings — each string is one name exactly as it appears. "
-                . "Include aliases (AKA names) as separate entries. Do not include explanatory text, only the JSON array.\n\n"
-                . substr($pageText, 0, 8000);
-
-            $message = $client->messages()->create([
-                'model'      => 'claude-haiku-4-5-20251001',
-                'max_tokens' => 1024,
-                'messages'   => [['role' => 'user', 'content' => $prompt]],
-            ]);
-
-            $raw = $message->content[0]->text ?? '[]';
-
-            // Extract JSON array from response
-            preg_match('/\[.*\]/s', $raw, $matches);
-            $names = json_decode($matches[0] ?? '[]', true);
-
-            return is_array($names) ? array_values(array_filter(array_unique($names))) : [];
-        } catch (\Throwable $e) {
-            Log::error('TFS: Claude name extraction failed', ['error' => $e->getMessage()]);
-            // Fallback: basic regex for capitalised names
-            return $this->extractNamesRegex($pageText);
-        }
-    }
-
-    private function extractNamesRegex(string $text): array
-    {
-        // Simple fallback: capture runs of Title-Cased words (2+ words, all caps or title case)
-        preg_match_all('/\b([A-Z][A-Z\s\-\'\.]{5,50})\b/', $text, $matches);
-        $names = array_unique(array_map('trim', $matches[1] ?? []));
-        return array_values(array_filter($names, fn($n) => str_word_count($n) >= 2));
-    }
-
     /**
      * Submit a single UAEIEC TFS URL.
      * Returns ['success' => bool, 'message' => string, 'confirmation_html' => string|null]
      */
     public function submitTfsUrl(string $tfsUrl, string $responseKey = 'no_match'): array
     {
-        $answerValue = match($responseKey) {
-            'confirmed_match' => self::ANSWER_CONFIRMED_MATCH,
-            'partial_match'   => self::ANSWER_PARTIAL_MATCH,
-            default           => self::ANSWER_NO_MATCH,
-        };
-
         try {
             $jar    = new CookieJar();
             $client = new Client([
                 'cookies'         => $jar,
                 'allow_redirects' => true,
+                'http_errors'     => false,   // handle status codes manually
                 'verify'          => false,
                 'timeout'         => 30,
                 'headers'         => [
-                    'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                    'Accept'     => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                    'User-Agent'      => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Accept'          => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                    'Accept-Language' => 'en-US,en;q=0.9',
                 ],
             ]);
 
-            // ── Step 1: GET the form page ────────────────────────────────────
-            $page1Response = $client->get($tfsUrl);
-            $page1Html     = (string) $page1Response->getBody();
+            // ── Step 1: GET the form ─────────────────────────────────────────
+            $r1   = $client->get($tfsUrl);
+            $html1 = (string) $r1->getBody();
 
-            if (stripos($page1Html, 'already submitted') !== false
-                || stripos($page1Html, 'already been submitted') !== false) {
+            Log::debug('TFS GET', ['status' => $r1->getStatusCode(), 'url' => $tfsUrl]);
+
+            if (stripos($html1, 'already submitted') !== false
+                || stripos($html1, 'already been submitted') !== false) {
                 return ['success' => false, 'message' => 'Already submitted', 'confirmation_html' => null];
             }
 
-            $fields1 = $this->parseFormFields($page1Html);
+            [$fields1, $action1, $selectName, $answerValue] = $this->parseForm($html1, $tfsUrl, $responseKey);
 
             if (!isset($fields1['__RequestVerificationToken'])) {
-                return ['success' => false, 'message' => 'Could not parse form (no CSRF token)', 'confirmation_html' => null];
+                Log::error('TFS: no CSRF token found', ['html_excerpt' => substr($html1, 0, 500)]);
+                return ['success' => false, 'message' => 'Could not parse form — no CSRF token found', 'confirmation_html' => null];
             }
 
-            $questionId = $fields1['QuestionId'] ?? null;
+            if (!$answerValue) {
+                Log::error('TFS: could not find answer option', ['responseKey' => $responseKey]);
+                return ['success' => false, 'message' => 'Could not find matching answer option in form', 'confirmation_html' => null];
+            }
 
-            // ── Step 2: POST page 1 with "Continue" ──────────────────────────
-            $postData1 = array_merge($fields1, [
-                $questionId => $answerValue,
-                'SubmitButton' => 'Continue',
-            ]);
-            unset($postData1['Back'], $postData1['Submit']); // remove other buttons if captured
+            // ── Step 2: POST "Continue" ──────────────────────────────────────
+            $post1 = $fields1;
+            if ($selectName) $post1[$selectName] = $answerValue;
+            $post1['SubmitButton'] = 'Continue';
 
-            $page2Response = $client->post($tfsUrl, ['form_params' => $postData1]);
-            $page2Html     = (string) $page2Response->getBody();
+            $r2    = $client->post($action1, ['form_params' => $post1]);
+            $html2 = (string) $r2->getBody();
 
-            // ── Step 3: POST page 2 with "Submit" ────────────────────────────
-            $fields2 = $this->parseFormFields($page2Html);
+            Log::debug('TFS Continue', ['status' => $r2->getStatusCode(), 'action' => $action1]);
 
-            $postData2 = array_merge($fields2, [
-                $questionId  => $answerValue, // carry answer to page 2
-                'SubmitButton' => 'Submit',
-            ]);
+            if ($r2->getStatusCode() >= 500) {
+                Log::error('TFS: 500 on Continue step', ['html' => substr($html2, 0, 800)]);
+                return ['success' => false, 'message' => 'Server error on Continue step (500) — see Laravel log', 'confirmation_html' => null];
+            }
 
-            $confirmResponse = $client->post($tfsUrl, ['form_params' => $postData2]);
-            $confirmHtml     = (string) $confirmResponse->getBody();
+            // ── Step 3: POST "Submit" ────────────────────────────────────────
+            [$fields2, $action2, $selectName2, ] = $this->parseForm($html2, $action1, $responseKey);
 
-            $success = stripos($confirmHtml, 'thank') !== false
-                || stripos($confirmHtml, 'submitted') !== false
-                || stripos($confirmHtml, 'success') !== false;
+            $post2 = $fields2;
+            // carry the answer through to the confirmation step
+            $sName = $selectName2 ?: $selectName;
+            if ($sName) $post2[$sName] = $answerValue;
+            $post2['SubmitButton'] = 'Submit';
+
+            $r3    = $client->post($action2, ['form_params' => $post2]);
+            $html3 = (string) $r3->getBody();
+
+            Log::debug('TFS Submit', ['status' => $r3->getStatusCode(), 'action' => $action2]);
+
+            if ($r3->getStatusCode() >= 500) {
+                Log::error('TFS: 500 on Submit step', ['html' => substr($html3, 0, 800)]);
+                return ['success' => false, 'message' => 'Server error on Submit step (500) — see Laravel log', 'confirmation_html' => null];
+            }
+
+            $success = stripos($html3, 'thank')     !== false
+                    || stripos($html3, 'submitted')  !== false
+                    || stripos($html3, 'success')    !== false
+                    || stripos($html3, 'received')   !== false;
 
             return [
                 'success'           => $success,
-                'message'           => $success ? 'Submitted successfully' : 'Submission may have failed — check snapshot',
-                'confirmation_html' => $confirmHtml,
+                'message'           => $success ? 'Submitted successfully' : 'Unexpected response — check snapshot',
+                'confirmation_html' => $html3,
             ];
+
         } catch (\Throwable $e) {
-            Log::error('TFS: submission failed', ['url' => $tfsUrl, 'error' => $e->getMessage()]);
-            return ['success' => false, 'message' => 'Error: ' . $e->getMessage(), 'confirmation_html' => null];
+            Log::error('TFS: submission exception', ['url' => $tfsUrl, 'error' => $e->getMessage()]);
+            return ['success' => false, 'message' => $e->getMessage(), 'confirmation_html' => null];
         }
     }
 
-    private function parseFormFields(string $html): array
+    /**
+     * Parse the form: hidden fields, action URL, select name, and the matching answer value.
+     * Answer value is resolved dynamically from option text so it works across survey cycles.
+     *
+     * Returns [$fields, $actionUrl, $selectName, $answerValue]
+     */
+    private function parseForm(string $html, string $fallbackUrl, string $responseKey): array
     {
-        $fields = [];
-        $dom    = new \DOMDocument();
+        $fields     = [];
+        $actionUrl  = $fallbackUrl;
+        $selectName = null;
+        $answerValue = null;
+
+        $dom = new \DOMDocument();
         @$dom->loadHTML($html);
-        $xpath  = new \DOMXPath($dom);
+        $xpath = new \DOMXPath($dom);
+
+        // Form action URL
+        $forms = $xpath->query('//form');
+        if ($forms->length > 0) {
+            $raw = trim($forms->item(0)->getAttribute('action'));
+            if ($raw) {
+                $actionUrl = str_starts_with($raw, 'http')
+                    ? $raw
+                    : $this->resolveUrl($fallbackUrl, $raw);
+            }
+        }
 
         // Hidden inputs
-        foreach ($xpath->query('//form//input[@type="hidden"]') as $input) {
-            $name  = $input->getAttribute('name');
-            $value = $input->getAttribute('value');
+        foreach ($xpath->query('//form//input[@type="hidden"]') as $node) {
+            $name  = $node->getAttribute('name');
+            $value = $node->getAttribute('value');
             if ($name) $fields[$name] = $value;
         }
 
-        // Page field (may not be hidden — ensure it's included)
-        $pageInputs = $xpath->query('//input[@name="page"]');
-        if ($pageInputs->length > 0) {
-            $fields['page'] = $pageInputs->item(0)->getAttribute('value');
+        // Non-hidden inputs that aren't submit buttons (e.g. page field as text/number)
+        foreach ($xpath->query('//form//input[not(@type="hidden") and not(@type="submit") and not(@type="button")]') as $node) {
+            $name  = $node->getAttribute('name');
+            $value = $node->getAttribute('value');
+            if ($name && !isset($fields[$name])) $fields[$name] = $value;
         }
 
-        return $fields;
+        // Select element — find name and matching option value from label text
+        $keywords = match($responseKey) {
+            'confirmed_match' => ['confirmed', 'match found', 'yes'],
+            'partial_match'   => ['partial'],
+            default           => ['no match', 'not found', 'no match identified', 'none'],
+        };
+
+        foreach ($xpath->query('//form//select') as $select) {
+            $selectName = $select->getAttribute('name');
+            foreach ($xpath->query('.//option', $select) as $option) {
+                $text  = strtolower(trim($option->textContent));
+                $value = $option->getAttribute('value');
+                if (!$value) continue;
+                foreach ($keywords as $kw) {
+                    if (str_contains($text, $kw)) {
+                        $answerValue = $value;
+                        break 2;
+                    }
+                }
+            }
+            // If no keyword matched, just pick the first non-empty option
+            if (!$answerValue) {
+                foreach ($xpath->query('.//option[@value!=""]', $select) as $option) {
+                    $answerValue = $option->getAttribute('value');
+                    break;
+                }
+            }
+        }
+
+        // Also check for QuestionId hidden field used as select name (UAEIEC pattern)
+        if (!$selectName && isset($fields['QuestionId'])) {
+            $selectName = $fields['QuestionId'];
+        }
+
+        Log::debug('TFS parseForm', [
+            'action'      => $actionUrl,
+            'selectName'  => $selectName,
+            'answerValue' => $answerValue,
+            'fields'      => array_keys($fields),
+        ]);
+
+        return [$fields, $actionUrl, $selectName, $answerValue];
+    }
+
+    private function resolveUrl(string $base, string $relative): string
+    {
+        $p = parse_url($base);
+        $origin = $p['scheme'] . '://' . $p['host'];
+        return $origin . '/' . ltrim($relative, '/');
     }
 
     /**
      * Capture a PDF snapshot of a HTML string using Browsershot.
-     * Returns the stored path or null.
      */
     public function snapshotHtml(string $html, string $filename): ?string
     {
