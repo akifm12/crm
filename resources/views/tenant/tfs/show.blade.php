@@ -45,37 +45,36 @@
         @if(!empty($submission->alerted_names))
         <div class="divide-y divide-gray-100">
             @foreach($submission->screening_results ?? [] as $result)
-            @php
-                $matched = $result['matched'] ?? false;
-                $indiv   = $result['indiv'] ?? [];
-                $entity  = $result['entity'] ?? [];
-            @endphp
+            @php $matched = $result['matched'] ?? false; @endphp
             <div class="px-5 py-4">
-                <div class="flex items-center justify-between">
+                <div class="flex items-center justify-between gap-3">
                     <div class="font-medium text-gray-900 text-sm">{{ $result['name'] }}</div>
                     @if($matched)
-                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-red-100 text-red-700">
-                        ⚠ Match found
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-red-100 text-red-700 flex-shrink-0">
+                        ⚠ Client match
                     </span>
                     @else
-                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-green-100 text-green-700">
-                        ✓ No match
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-green-100 text-green-700 flex-shrink-0">
+                        ✓ No client match
                     </span>
                     @endif
                 </div>
-                @if(!empty($indiv['hits']))
-                <p class="mt-1 text-xs text-red-600">Individual: {{ count($indiv['hits']) }} hit(s)</p>
-                @endif
-                @if(!empty($entity['hits']))
-                <p class="mt-1 text-xs text-red-600">Entity: {{ count($entity['hits']) }} hit(s)</p>
-                @endif
+                @foreach($result['matches'] ?? [] as $m)
+                <div class="mt-1.5 flex items-center gap-2 text-xs text-red-700 bg-red-50 rounded px-2 py-1">
+                    <span class="font-medium">{{ $m['matched_field'] }}:</span>
+                    <span>{{ $m['matched_value'] }}</span>
+                    <span class="text-red-400">·</span>
+                    <a href="{{ route('tenant.clients.show', [$tenant->slug, $m['client_id']]) }}"
+                       class="underline font-medium">{{ $m['client_name'] }} ↗</a>
+                </div>
+                @endforeach
             </div>
             @endforeach
         </div>
-        {{-- Allow re-screening with updated names --}}
+        {{-- Re-screen with updated names --}}
         <div class="px-5 py-4 border-t border-gray-100 bg-gray-50" x-data="{ open: false }">
             <button @click="open = !open" class="text-xs text-gray-500 hover:text-gray-700">
-                ↺ Re-screen with different names
+                ↺ Re-check with different names
             </button>
             <div x-show="open" x-cloak class="mt-3">
                 <form action="{{ route('tenant.tfs.names', [$tenant->slug, $submission->id]) }}" method="POST">
@@ -84,7 +83,7 @@
                               class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500">{{ implode("\n", $submission->alerted_names ?? []) }}</textarea>
                     <button type="submit"
                             class="mt-2 bg-blue-600 text-white text-xs font-medium px-4 py-1.5 rounded-lg hover:bg-blue-700 transition">
-                        Screen Names
+                        Re-check Names
                     </button>
                 </form>
             </div>
