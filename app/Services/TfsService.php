@@ -37,7 +37,10 @@ class TfsService
 
         Log::debug('TFS: script output', ['output' => $output]);
 
-        $result = json_decode(trim($output ?? ''), true);
+        // The script writes DEBUG lines to stderr (captured via 2>&1) followed by
+        // the JSON result on stdout as the final line. Extract that last line.
+        $lines  = array_values(array_filter(array_map('trim', explode("\n", $output ?? ''))));
+        $result = json_decode(end($lines) ?: '', true);
 
         if (!is_array($result)) {
             Log::error('TFS: script returned non-JSON', ['output' => $output]);
