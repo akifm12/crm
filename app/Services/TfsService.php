@@ -186,8 +186,12 @@ class TfsService
             }
 
             \Spatie\Browsershot\Browsershot::html($html)
-                ->setChromePath(env('CHROME_PATH', '/usr/bin/google-chrome'))
+                ->setChromePath('/usr/bin/google-chrome-stable')
+                ->setNodeModulePath('/usr/lib/node_modules')
+                ->addChromiumArguments(['disable-dev-shm-usage', 'disable-gpu', 'no-zygote'])
+                ->format('A4')
                 ->noSandbox()
+                ->showBackground()
                 ->pdf($full);
 
             return $path;
