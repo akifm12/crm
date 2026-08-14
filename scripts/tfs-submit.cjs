@@ -1,24 +1,14 @@
 #!/usr/bin/env node
 /**
  * tfs-submit.cjs  <url> <responseKey> <pdfOutputPath>
- *
  * responseKey: no_match | confirmed_match | partial_match
- *
- * Drives the UAEIEC TFS survey form through headless Chrome (Puppeteer),
- * bypassing the F5 bot-detection JS challenge that blocks plain HTTP clients.
- * Saves a PDF of the confirmation page and prints JSON result to stdout.
  */
 
 'use strict';
 
 const NODE_PATH = process.env.NODE_PATH || '/usr/lib/node_modules';
 const puppeteer = (() => {
-    const paths = [
-        'puppeteer',
-        NODE_PATH + '/puppeteer',
-        '/usr/lib/node_modules/puppeteer',
-        '/usr/local/lib/node_modules/puppeteer',
-    ];
+    const paths = ['puppeteer', NODE_PATH + '/puppeteer', '/usr/lib/node_modules/puppeteer', '/usr/local/lib/node_modules/puppeteer'];
     const errors = [];
     for (const p of paths) {
         try { return require(p); } catch (e) { errors.push(p + ': ' + e.message); }
@@ -40,15 +30,26 @@ const KEYWORDS = {
     partial_match:   ['partial match', 'partial'],
 };
 
-// Click via JS — avoids "not clickable" errors from off-screen or overlay-covered elements
+function debug(msg, data) {
+    process.stderr.write('DEBUG ' + msg + (data ? ': ' + JSON.stringify(data) : '') + '\n');
+}
+
+// Click an element via JS — bypasses Puppeteer's visibility/pointer checks
 async function jsClick(page, selector) {
-    const found = await page.evaluate((sel) => {
+    return page.evaluate((sel) => {
         const el = document.querySelector(sel);
-        if (!el) return false;
-        el.click();
-        return true;
+        if (el) { el.click(); return true; }
+        return false;
     }, selector);
-    return found;
+}
+
+// Wait for navigation OR for a selector to appear — whichever comes first
+// Handles both full-page navigation and AJAX/SPA page transitions
+async function waitForPageChange(page, nextSelector, timeout = 35000) {
+    return Promise.race([
+        page.waitForNavigation({ waitUntil: 'networkidle2', timeout }).catch(() => 'nav-timeout'),
+        page.waitForSelector(nextSelector, { timeout }).catch(() => 'selector-timeout'),
+    ]);
 }
 
 (async () => {
@@ -57,28 +58,17 @@ async function jsClick(page, selector) {
         browser = await puppeteer.launch({
             executablePath: '/usr/bin/google-chrome-stable',
             headless: true,
-            args: [
-                '--no-sandbox',
-                '--disable-dev-shm-usage',
-                '--disable-gpu',
-                '--no-zygote',
-            ],
+            args: ['--no-sandbox', '--disable-dev-shm-usage', '--disable-gpu', '--no-zygote'],
         });
 
         const page = await browser.newPage();
-        await page.setUserAgent(
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-        );
+        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
 
-        // ── Step 1: Load the form (Chrome handles the F5 JS challenge) ──────
+        // ── Step 1: Load the form ────────────────────────────────────────────
         await page.goto(url, { waitUntil: 'networkidle0', timeout: 45000 });
 
-        // Debug: log page title and URL after load
-        const pageTitle = await page.title();
-        const pageUrl   = page.url();
-        process.stderr.write('DEBUG page1: ' + JSON.stringify({ title: pageTitle, url: pageUrl }) + '\n');
+        debug('page1', { title: await page.title(), url: page.url() });
 
-        // Check if already submitted
         const bodyText1 = await page.evaluate(() => document.body.innerText);
         if (/already submitted/i.test(bodyText1)) {
             await browser.close();
@@ -89,13 +79,19 @@ async function jsClick(page, selector) {
         // ── Step 2: Select the answer ────────────────────────────────────────
         const keywords = KEYWORDS[responseKey] || KEYWORDS.no_match;
 
-        const selected = await page.evaluate((keywords) => {
-            const selects = document.querySelectorAll('form select');
-            const info = { selectCount: selects.length, selected: null };
-            for (const sel of selects) {
+        const formState = await page.evaluate((keywords) => {
+            const info = { selects: [], buttons: [] };
+            document.querySelectorAll('form select').forEach(sel => {
+                info.selects.push({ name: sel.name, options: Array.from(sel.options).map(o => ({ text: o.text, value: o.value })) });
+            });
+            document.querySelectorAll('input[type=submit], button[type=submit], button').forEach(b => {
+                info.buttons.push({ tag: b.tagName, name: b.name, value: b.value, text: b.innerText?.trim() });
+            });
+
+            // Select the matching option
+            for (const sel of document.querySelectorAll('form select')) {
                 for (const opt of sel.options) {
-                    const text = opt.text.toLowerCase().trim();
-                    if (keywords.some(kw => text.includes(kw))) {
+                    if (keywords.some(kw => opt.text.toLowerCase().includes(kw))) {
                         sel.value = opt.value;
                         sel.dispatchEvent(new Event('change', { bubbles: true }));
                         info.selected = { name: sel.name, text: opt.text, value: opt.value };
@@ -112,85 +108,76 @@ async function jsClick(page, selector) {
                     }
                 }
             }
-            // Debug: list all buttons/inputs so we can see what's on the page
-            const btns = Array.from(document.querySelectorAll('input[type=submit], button')).map(b => ({
-                tag: b.tagName, name: b.name, value: b.value, text: b.innerText
-            }));
-            info.buttons = btns;
             return info;
         }, keywords);
 
-        process.stderr.write('DEBUG page1 form: ' + JSON.stringify(selected) + '\n');
+        debug('form state', formState);
 
-        if (!selected || !selected.selected) {
-            // Save screenshot for inspection
-            await page.screenshot({ path: '/tmp/tfs-debug-page1.png', fullPage: true });
+        if (!formState.selected) {
+            await page.screenshot({ path: '/tmp/tfs-debug-noselect.png', fullPage: true });
             await browser.close();
-            console.log(JSON.stringify({
-                success: false,
-                message: 'No select element found — screenshot saved to /tmp/tfs-debug-page1.png',
-                debug: selected,
-            }));
+            console.log(JSON.stringify({ success: false, message: 'No select/answer found on page 1 — screenshot at /tmp/tfs-debug-noselect.png', debug: formState }));
             return;
         }
 
-        // ── Step 3: Click "Continue" via JS ──────────────────────────────────
+        // ── Step 3: Click Continue and wait for page 2 ───────────────────────
+        // Set up race BEFORE clicking so we don't miss a fast navigation
+        const afterContinue = waitForPageChange(page, '[name="SubmitButton"][value="Submit"]');
+
         const continueClicked = await page.evaluate(() => {
-            // Try value="Continue" first, then any submit/button with Continue text
             let btn = document.querySelector('[name="SubmitButton"][value="Continue"]');
             if (!btn) btn = Array.from(document.querySelectorAll('input[type=submit], button'))
-                .find(b => /continue/i.test(b.value || b.innerText));
+                                 .find(b => /continue/i.test(b.value + ' ' + b.innerText));
             if (!btn) return null;
             btn.click();
-            return btn.value || btn.innerText;
+            return btn.value || btn.innerText?.trim();
         });
 
-        process.stderr.write('DEBUG continue clicked: ' + JSON.stringify(continueClicked) + '\n');
+        debug('continue clicked', continueClicked);
 
         if (!continueClicked) {
             await page.screenshot({ path: '/tmp/tfs-debug-nocontinue.png', fullPage: true });
             await browser.close();
-            console.log(JSON.stringify({
-                success: false,
-                message: 'No Continue button found — screenshot saved to /tmp/tfs-debug-nocontinue.png',
-            }));
+            console.log(JSON.stringify({ success: false, message: 'Continue button not found — screenshot at /tmp/tfs-debug-nocontinue.png', debug: formState }));
             return;
         }
 
-        await page.waitForNavigation({ waitUntil: 'networkidle0', timeout: 30000 });
+        await afterContinue;
+        debug('page2', { title: await page.title(), url: page.url() });
 
-        const title2 = await page.title();
-        process.stderr.write('DEBUG page2 title: ' + title2 + '\n');
+        // ── Step 4: Click Submit and wait for confirmation ───────────────────
+        const afterSubmit = waitForPageChange(page, 'body');
 
-        // ── Step 4: Click "Submit" via JS ─────────────────────────────────────
         const submitClicked = await page.evaluate(() => {
             let btn = document.querySelector('[name="SubmitButton"][value="Submit"]');
             if (!btn) btn = Array.from(document.querySelectorAll('input[type=submit], button'))
-                .find(b => /submit/i.test(b.value || b.innerText));
+                                 .find(b => /^submit$/i.test(b.value + ' ' + b.innerText?.trim()));
             if (!btn) return null;
             btn.click();
-            return btn.value || btn.innerText;
+            return btn.value || btn.innerText?.trim();
         });
 
-        process.stderr.write('DEBUG submit clicked: ' + JSON.stringify(submitClicked) + '\n');
+        debug('submit clicked', submitClicked);
 
         if (!submitClicked) {
             await page.screenshot({ path: '/tmp/tfs-debug-nosubmit.png', fullPage: true });
+
+            // Log what IS on page 2 so we know what to look for
+            const page2html = await page.evaluate(() => document.body.innerHTML.slice(0, 2000));
+            debug('page2 html excerpt', { html: page2html });
+
             await browser.close();
-            console.log(JSON.stringify({
-                success: false,
-                message: 'No Submit button found on page 2 — screenshot saved to /tmp/tfs-debug-nosubmit.png',
-            }));
+            console.log(JSON.stringify({ success: false, message: 'Submit button not found on page 2 — screenshot at /tmp/tfs-debug-nosubmit.png' }));
             return;
         }
 
-        await page.waitForNavigation({ waitUntil: 'networkidle0', timeout: 30000 });
+        await afterSubmit;
 
         // ── Step 5: Verify and capture PDF ───────────────────────────────────
         const finalText = await page.evaluate(() => document.body.innerText);
         const success   = /thank|submitted|success|received/i.test(finalText);
 
-        process.stderr.write('DEBUG final page: ' + JSON.stringify({ success, excerpt: finalText.slice(0, 200) }) + '\n');
+        debug('final page', { success, url: page.url(), excerpt: finalText.slice(0, 300) });
 
         if (pdfPath) {
             await page.pdf({ path: pdfPath, format: 'A4', printBackground: true });
@@ -199,8 +186,8 @@ async function jsClick(page, selector) {
         await browser.close();
         console.log(JSON.stringify({
             success,
-            message:  success ? 'Submitted successfully' : 'Unexpected confirmation page — check snapshot',
-            selected: selected.selected,
+            message:  success ? 'Submitted successfully' : 'Unexpected response — check snapshot',
+            selected: formState.selected,
         }));
 
     } catch (err) {
