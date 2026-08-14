@@ -63,17 +63,21 @@ class TfsService
             Log::debug('TFS Continue', ['status' => $r2->getStatusCode(), 'action' => $action1]);
 
             if ($r2->getStatusCode() >= 500) {
-                Log::error('TFS: 500 on Continue step', ['html' => substr($html2, 0, 800)]);
+                Log::error('TFS: 500 on Continue step', ['html' => substr($html2, 0, 1500)]);
                 return ['success' => false, 'message' => 'Server error on Continue step (500) — see Laravel log', 'confirmation_html' => null];
             }
 
+            Log::debug('TFS page2 html excerpt', ['html' => substr($html2, 0, 2000)]);
+
             // ── Step 3: POST "Submit" ────────────────────────────────────────
-            [$fields2, $action2, $selectName2, ] = $this->parseForm($html2, $action1, $responseKey);
+            // Page 2 is a review/confirmation page. The answer is already
+            // encoded in its hidden fields — do NOT re-add the select field
+            // or we risk conflicting data causing a 500.
+            [$fields2, $action2, , ] = $this->parseForm($html2, $action1, $responseKey);
+
+            Log::debug('TFS page2 fields', ['fields' => $fields2, 'action' => $action2]);
 
             $post2 = $fields2;
-            // carry the answer through to the confirmation step
-            $sName = $selectName2 ?: $selectName;
-            if ($sName) $post2[$sName] = $answerValue;
             $post2['SubmitButton'] = 'Submit';
 
             $r3    = $client->post($action2, ['form_params' => $post2]);
