@@ -38,9 +38,10 @@ class ScreeningController extends Controller
             $logsQuery->where('source', $request->source);
         }
 
-        $logs = $logsQuery->paginate(20)->withQueryString();
+        $logs      = $logsQuery->paginate(20)->withQueryString();
+        $countries = \App\Models\Country::orderBy('country_name')->pluck('country_name', 'country_name')->toArray();
 
-        return view('tenant.screening', compact('tenant', 'client', 'logs'));
+        return view('tenant.screening', compact('tenant', 'client', 'logs', 'countries'));
     }
 
     // ── Run ad-hoc screening ───────────────────────────────────────────────
@@ -60,6 +61,7 @@ class ScreeningController extends Controller
                 'country'     => $country,
                 'dob'         => $request->input('dob'),
                 'nationality' => $request->input('nationality'),
+                'id_number'   => $request->input('id_number'),
             ]);
         } else {
             $result = $this->sentinel->screenEntity([
@@ -108,17 +110,19 @@ class ScreeningController extends Controller
             'result'            => $summary,
         ]);
 
-        $logs = ScreeningLog::where('tenant_id', $tenant->id)
+        $logs      = ScreeningLog::where('tenant_id', $tenant->id)
             ->with(['client', 'screener'])->latest()->paginate(20);
+        $countries = \App\Models\Country::orderBy('country_name')->pluck('country_name', 'country_name')->toArray();
 
         return view('tenant.screening', [
-            'tenant'  => $tenant,
-            'client'  => $client,
-            'result'  => $summary,
-            'query'   => $query,
-            'rawData' => $result['data'],
-            'logId'   => $log->id,
-            'logs'    => $logs,
+            'tenant'    => $tenant,
+            'client'    => $client,
+            'result'    => $summary,
+            'query'     => $query,
+            'rawData'   => $result['data'],
+            'logId'     => $log->id,
+            'logs'      => $logs,
+            'countries' => $countries,
         ]);
     }
 

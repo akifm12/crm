@@ -115,6 +115,12 @@ class SentinelService
                 $score = min(100, $score + 10);
             }
         }
+        if (!empty($ctx['id_number'])) {
+            $id = strtolower(preg_replace('/\s+/', '', $ctx['id_number']));
+            if (str_contains($uid, $id) || str_contains($remarks, $id)) {
+                $score = min(100, $score + 15);
+            }
+        }
         return $score;
     }
 
@@ -245,8 +251,9 @@ class SentinelService
             query:      (string) trim($params['query']),
             entityType: 'individual',
             ctx:        [
-                'country' => $country,
-                'dob'     => $params['dob'] ?? '',
+                'country'   => $country,
+                'dob'       => $params['dob'] ?? '',
+                'id_number' => $params['id_number'] ?? '',
             ],
         );
     }

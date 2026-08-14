@@ -67,10 +67,14 @@
                 {{-- Country --}}
                 <div>
                     <label class="block text-xs font-medium text-gray-600 mb-1">Country <span class="text-red-500">*</span></label>
-                    <input type="text" name="country"
-                           value="{{ old('country', $client ? ($client->country_of_incorporation ?? $client->nationality ?? 'UAE') : 'UAE') }}"
-                           required placeholder="e.g. UAE, UK, US"
-                           class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    @php $selectedCountry = old('country', $client ? ($client->country_of_incorporation ?? $client->nationality ?? 'United Arab Emirates') : 'United Arab Emirates'); @endphp
+                    <select name="country" required
+                            class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                        <option value="">Select country…</option>
+                        @foreach($countries as $name)
+                            <option value="{{ $name }}" {{ $selectedCountry === $name ? 'selected' : '' }}>{{ $name }}</option>
+                        @endforeach
+                    </select>
                 </div>
 
                 {{-- Entity fields --}}
@@ -99,9 +103,20 @@
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-1">Nationality</label>
-                        <input type="text" name="nationality"
-                               value="{{ old('nationality', $client?->nationality ?? '') }}"
-                               placeholder="e.g. UAE, British, Indian"
+                        @php $selectedNationality = old('nationality', $client?->nationality ?? ''); @endphp
+                        <select name="nationality"
+                                class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                            <option value="">Select nationality…</option>
+                            @foreach($countries as $name)
+                                <option value="{{ $name }}" {{ $selectedNationality === $name ? 'selected' : '' }}>{{ $name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Passport / ID number <span class="text-gray-400 font-normal">(optional)</span></label>
+                        <input type="text" name="id_number"
+                               value="{{ old('id_number') }}"
+                               placeholder="e.g. A1234567"
                                class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
                 </div>
