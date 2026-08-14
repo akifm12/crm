@@ -72,25 +72,46 @@
             </div>
             @endforeach
         </div>
-        @elseif($submission->alert_url)
-        <div class="px-5 py-8 text-center">
-            <p class="text-gray-400 text-sm">Names not yet extracted.</p>
-            <a href="{{ route('tenant.tfs.screen', [$tenant->slug, $submission->id]) }}"
-               class="mt-2 inline-block text-blue-600 text-sm hover:underline">Extract from UN press release</a>
+        {{-- Allow re-screening with updated names --}}
+        <div class="px-5 py-4 border-t border-gray-100 bg-gray-50" x-data="{ open: false }">
+            <button @click="open = !open" class="text-xs text-gray-500 hover:text-gray-700">
+                ↺ Re-screen with different names
+            </button>
+            <div x-show="open" x-cloak class="mt-3">
+                <form action="{{ route('tenant.tfs.names', [$tenant->slug, $submission->id]) }}" method="POST">
+                    @csrf
+                    <textarea name="names" rows="4" placeholder="One name per line"
+                              class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500">{{ implode("\n", $submission->alerted_names ?? []) }}</textarea>
+                    <button type="submit"
+                            class="mt-2 bg-blue-600 text-white text-xs font-medium px-4 py-1.5 rounded-lg hover:bg-blue-700 transition">
+                        Screen Names
+                    </button>
+                </form>
+            </div>
         </div>
         @else
-        {{-- Manual name entry --}}
-        <div class="px-5 py-5">
-            <p class="text-sm text-gray-500 mb-3">No UN alert URL was provided. Enter alerted names manually:</p>
-            <form action="{{ route('tenant.tfs.names', [$tenant->slug, $submission->id]) }}" method="POST">
-                @csrf
-                <textarea name="names" rows="4" placeholder="One name per line"
-                          class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
-                <button type="submit"
-                        class="mt-2 bg-blue-600 text-white text-xs font-medium px-4 py-1.5 rounded-lg hover:bg-blue-700 transition">
-                    Screen Names
-                </button>
-            </form>
+        {{-- No names yet — manual entry always available --}}
+        <div class="px-5 py-5 space-y-4">
+            @if($submission->alert_url)
+            <div class="flex items-center justify-between p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <p class="text-xs text-amber-800">Auto-extraction failed or not yet run.</p>
+                <a href="{{ route('tenant.tfs.screen', [$tenant->slug, $submission->id]) }}"
+                   class="text-xs text-blue-600 hover:underline font-medium">Try again</a>
+            </div>
+            @endif
+            <div>
+                <p class="text-sm font-medium text-gray-700 mb-2">Enter alerted names manually — one per line:</p>
+                <form action="{{ route('tenant.tfs.names', [$tenant->slug, $submission->id]) }}" method="POST">
+                    @csrf
+                    <textarea name="names" rows="6"
+                              placeholder="JOHN DOE&#10;ACME TRADING LLC&#10;JANE SMITH"
+                              class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                    <button type="submit"
+                            class="mt-2 bg-blue-600 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+                        Screen Names
+                    </button>
+                </form>
+            </div>
         </div>
         @endif
     </div>
