@@ -58,21 +58,31 @@ class SentinelService
 
         if ($q === $n) return 100;
         if (str_starts_with($n, $q) || str_starts_with($q, $n)) return 95;
-        if (str_contains($n, $q) || str_contains($q, $n)) return 88;
 
         $qt = array_values(array_filter(explode(' ', $q)));
         $nt = array_values(array_filter(explode(' ', $n)));
+
+        $multiTokenQuery = count($qt) >= 2;
+
+        // "contains" only scores high when the contained part has 2+ tokens,
+        // preventing single-word sanctions entries from matching a full name query
+        if (str_contains($n, $q)) return 88;
+        if (str_contains($q, $n) && (!$multiTokenQuery || count($nt) >= 2)) return 88;
 
         $exactHits = array_filter($qt, fn($t) => in_array($t, $nt, true));
         $hitCount  = count($exactHits);
 
         if ($hitCount === count($qt)) return 92;
-        if ($hitCount > 0) {
+
+        // For multi-token queries require at least 2 tokens to match
+        $minHits = $multiTokenQuery ? 2 : 1;
+        if ($hitCount >= $minHits) {
             $score = (int) round($hitCount / max(count($qt), count($nt)) * 85);
             if ($score >= 60) return $score;
         }
 
-        $fuzzyHits = 0.0;
+        $fuzzyHits  = 0.0;
+        $fuzzyCount = 0;
         foreach ($qt as $qt_) {
             if (strlen($qt_) < 3) continue;
             $best = 0.0;
@@ -83,13 +93,19 @@ class SentinelService
                 $sim = 1 - levenshtein($qt_, $nt_) / $maxLen;
                 if ($sim > $best) $best = $sim;
             }
-            if ($best >= 0.65) $fuzzyHits += $best;
+            if ($best >= 0.65) { $fuzzyHits += $best; $fuzzyCount++; }
         }
+
+        // For multi-token queries require at least 2 tokens to fuzzy-match
         $relevant = count(array_filter($qt, fn($t) => strlen($t) >= 3));
-        if ($relevant > 0) {
+        if ($relevant > 0 && $fuzzyCount >= $minHits) {
             $score = (int) round($fuzzyHits / $relevant * 82);
             if ($score >= 40) return $score;
         }
+
+        // Levenshtein fallback: skip if name has far fewer tokens than the query
+        // (prevents "Shahzad" from matching "Shahzad Abdul Razzaq" via edit distance)
+        if ($multiTokenQuery && count($nt) < 2) return 0;
 
         $maxLen = max(strlen($q), strlen($n));
         if ($maxLen === 0) return 0;
