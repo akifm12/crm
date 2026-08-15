@@ -6,7 +6,7 @@ const fs = require('fs');
 const {
     Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
     AlignmentType, BorderStyle, WidthType, ShadingType,
-    Header, Footer, PageNumber,
+    Header, Footer, PageNumber, PageBreak,
 } = require('docx');
 
 const dataFile = process.argv[2];
@@ -445,6 +445,7 @@ body.push(
 // SECTION 7 — COMPLIANCE QUESTIONNAIRE (corporate only)
 // ════════════════════════════════════════════════════════════════════════════════
 if (isCorp) {
+    body.push(new Paragraph({ children: [new PageBreak()], spacing: { after: 0 } }));
     body.push(...sectionHeading('Compliance Questionnaire'));
 
     // ── Part A: Entity Undertaking ────────────────────────────────────────────
@@ -531,6 +532,7 @@ if (isCorp) {
 // ════════════════════════════════════════════════════════════════════════════════
 // SECTION 8 or 9 — DECLARATIONS & UNDERTAKINGS
 // ════════════════════════════════════════════════════════════════════════════════
+body.push(new Paragraph({ children: [new PageBreak()], spacing: { after: 0 } }));
 body.push(...sectionHeading('Declarations & Undertakings'));
 
 body.push(
