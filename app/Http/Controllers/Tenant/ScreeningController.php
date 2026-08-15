@@ -295,8 +295,9 @@ class ScreeningController extends Controller
         ]);
 
         // Log one row per subject screened
+        $allLogs = [];
         foreach ($allResults as $r) {
-            ScreeningLog::create([
+            $allLogs[] = ScreeningLog::create([
                 'tenant_id'         => $tenant->id,
                 'bullion_client_id' => $client->id,
                 'screened_by'       => auth()->id(),
@@ -314,7 +315,12 @@ class ScreeningController extends Controller
             ? "⚠️ Screening complete — {$totalHits} potential match(es) found across " . count($allResults) . " subject(s). Review required."
             : '✓ Screening complete — No matches found for company or shareholders.';
 
-        return back()->with($hasMatch ? 'error' : 'success', $msg);
+        // Flash the first match log ID so the view can show a Review button
+        $matchLogId = collect($allLogs ?? [])->first(fn($l) => $l->status === 'match')?->id;
+
+        return back()
+            ->with($hasMatch ? 'error' : 'success', $msg)
+            ->with('screening_log_id', $matchLogId);
     }
 
     // ── Hit review page ───────────────────────────────────────────────────────
