@@ -29,7 +29,6 @@ $sanctionsLists = [
     'EU Consolidated Sanctions List',
     'FATF High-Risk & Monitored Jurisdictions',
     'Interpol Wanted Persons (Red Notices)',
-    'World-Check / Dow Jones Risk & Compliance',
     'UAE Central Bank — Designated Persons List',
     'Basel AML Index',
 ];
