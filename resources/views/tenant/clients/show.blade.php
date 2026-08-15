@@ -144,6 +144,7 @@ $countryName = fn($code) => $code ? (\App\Models\Country::find($code)?->country_
             ['documents',    'Documents ('.$documents->count().')'],
             ['screening',    'Screening'],
             ['risk',         'Risk & CDD'],
+            ['undertaking',  'Undertaking'],
             ['declarations', 'Declarations'],
         ] as [$key, $label])
         <button type="button" @click="tab='{{ $key }}'"
@@ -1171,6 +1172,218 @@ $countryName = fn($code) => $code ? (\App\Models\Country::find($code)?->country_
                 </form>
             </div>
         </div>
+    </div>
+
+    {{-- ── UNDERTAKING ───────────────────────────────────────────────────────── --}}
+    <div x-show="tab==='undertaking'" x-cloak>
+    @php
+        $q   = $client->questionnaire ?? [];
+        $qa  = fn($key, $default = null) => $q[$key] ?? $default;
+
+        // Helper: returns true/false or null if never answered
+        $ans = fn($key) => array_key_exists($key, $q) ? (bool)$q[$key] : null;
+
+        $isGoldSector = in_array($tenant->business_type ?? 'gold', ['gold','bullion','precious_metals']);
+
+        $euQuestions = [
+            ['eu_no_regulator_action',  'Our organization has not received communication from law enforcement or regulatory authorities concerning non-compliance with the laws and regulations of the UAE or any other international regulator.'],
+            ['eu_aml_compliant',        'Our organization has complied with all UAE Federal laws relating to AML/CFT and is not aware of any violations or possible violations that may have regulatory implications.'],
+            ['eu_no_pep_directors',     'Our organization\'s shareholders, directors, officers, or senior employees are not senior officials in government, political organizations, or government-owned organizations, nor relatives or close associates of such officials.'],
+            ['eu_no_litigation',        'Our organization is not currently a party to any litigation that is in progress or expected.'],
+            ['eu_no_disciplinary',      'Our organization has not been subject to any disciplinary action by a court, professional body, or regulatory agency within the past five years.'],
+            ['eu_anti_bribery',         'Our organization upholds anti-bribery and anti-corruption standards and has implemented policies to prevent unethical behavior.'],
+            ['eu_code_of_conduct',      'Our organization has an internal code of conduct to guide employees in ethical and lawful behavior.'],
+            ['eu_compliance_audits',    'Our organization conducts regular compliance audits to ensure adherence to relevant laws and regulations.'],
+            ['eu_transparency',         'Our organization maintains transparency in its operations and accurately reports information to stakeholders and regulatory authorities.'],
+            ['eu_human_rights',         'Our organization is committed to conducting its business in compliance with human rights, labor, and environmental standards.'],
+            ['eu_remediation_policy',   'Our organization has a policy of promptly addressing and correcting any instances of non-compliance identified within its operations.'],
+            ['eu_cooperates',           'Our organization actively cooperates with regulatory authorities and law enforcement agencies during investigations or inquiries.'],
+        ];
+
+        $ddQuestions = array_filter([
+            $isGoldSector ? ['dd_oecd',                 'Does your organization comply with the OECD Due Diligence Guidance for Responsible Supply Chains of Minerals from Conflict-Affected and High-Risk Areas?'] : null,
+            $isGoldSector ? ['dd_lbma_dmcc',            'Is your organization complying with LBMA, DMCC, or MOE industry initiatives regarding responsible sourcing of precious metals?'] : null,
+            ['dd_subject_to_aml',           'Is your organization subject to AML/CFT laws and regulations?'],
+            ['dd_aml_program',              'Has your organization established an AML/CFT conformity program with policies and procedures per applicable laws and international standards?'],
+            ['dd_anti_bribery_policy',      'Does your organization have an anti-bribery and anti-corruption policy in place?'],
+            ['dd_bribery_charges',          'Has your organization or its senior management ever been charged with violation of applicable anti-bribery laws or regulations?'],
+            ['dd_data_protection_policy',   'Does your organization have a Data Protection Policy?'],
+            ['dd_dpo',                      'Does your organization have a designated Data Protection Officer (DPO)?'],
+            ['dd_secure_data',              'Does your organization maintain a secure data storage or information management system?'],
+            ['dd_whistleblowing',           'Does your organization have a whistleblowing mechanism through which employees may raise concerns?'],
+            ['dd_compliance_officer',       'Does your organization have a designated Compliance Officer responsible for AML/CFT matters?'],
+            ['dd_tfs_program',              'Has your organization implemented a Targeted Financial Sanctions (TFS) Compliance Program?'],
+            ['dd_risk_assessments',         'Does your organization conduct regular risk assessments to identify potential compliance vulnerabilities?'],
+            ['dd_customer_risk',            'Does your organization classify customers by risk level (low, medium, or high)?'],
+            ['dd_background_checks',        'Does your organization have a policy for conducting background checks on employees and key personnel?'],
+            ['dd_policy_updates',           'Does your organization regularly review and update its compliance policies to reflect changes in legislation?'],
+            ['dd_training',                 'Does your organization provide ongoing AML/CFT compliance training to its employees?'],
+        ]);
+
+        $cpYnQuestions = array_filter([
+            ['cp_smelting',       'Does the company have any smelting or refining facilities?'],
+            ['cp_manufacturing',  'Does the company have its own manufacturing facilities?'],
+            $isGoldSector ? ['cp_jewelry', 'Does the company produce its own jewelry?'] : null,
+            $isGoldSector ? ['cp_mines',   'Does the company work directly with mines, refineries, or third-party suppliers?'] : null,
+            ['cp_overseas',       'Do you have offices or partnerships outside the UAE?'],
+            ['cp_export_docs',    'Do you verify and obtain complete export documentation from your suppliers, including source of origin?'],
+            ['cp_services',       'Does your company offer additional services such as storage, transportation, or product certification?'],
+            ['cp_high_value',     'Are your typical transactions high-value?'],
+            ['cp_outsourcing',    'Do you outsource any of your operations to third parties?'],
+        ]);
+
+        $answeredCount = count(array_filter($q, fn($v) => $v !== null));
+        $totalCount    = count($euQuestions) + count($ddQuestions) + count($cpYnQuestions) + 3; // +3 text fields
+    @endphp
+
+    <form method="POST" action="{{ route('tenant.clients.questionnaire', [$tenant->slug, $client->id]) }}">
+        @csrf @method('PATCH')
+
+        <div class="flex items-center justify-between mb-4">
+            <div>
+                <h3 class="text-sm font-semibold text-gray-700">Compliance Undertaking Questionnaire</h3>
+                @if($answeredCount > 0)
+                <p class="text-xs text-gray-400 mt-0.5">{{ $answeredCount }} of {{ $totalCount }} questions answered · Last saved automatically</p>
+                @else
+                <p class="text-xs text-gray-400 mt-0.5">No answers saved yet</p>
+                @endif
+            </div>
+            <button type="submit" class="px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition">
+                Save answers
+            </button>
+        </div>
+
+        @if(!$isCorporate)
+        <div class="bg-amber-50 border border-amber-200 rounded-xl px-5 py-4 text-sm text-amber-800">
+            This questionnaire applies to corporate clients only. It is not required for individual clients.
+        </div>
+        @else
+
+        {{-- ── PART A: ENTITY UNDERTAKING ─────────────────────────────────── --}}
+        <div class="bg-white rounded-xl border border-gray-200 mb-5">
+            <div class="px-5 py-3 border-b border-gray-100 bg-gray-50 rounded-t-xl">
+                <p class="text-xs font-bold text-gray-500 uppercase tracking-wide">A — Entity Undertaking</p>
+                <p class="text-xs text-gray-400 mt-0.5">Select Yes or No for each statement. These form part of the signed KYC pack.</p>
+            </div>
+            <div class="divide-y divide-gray-100">
+            @foreach($euQuestions as $i => [$key, $label])
+            @php $val = $ans($key); @endphp
+            <div class="flex items-start gap-4 px-5 py-3.5 {{ $i % 2 === 1 ? 'bg-gray-50/50' : '' }}">
+                <p class="flex-1 text-sm text-gray-700 leading-relaxed">{{ $label }}</p>
+                <div class="flex gap-1 shrink-0 mt-0.5">
+                    <label class="flex items-center gap-1.5 cursor-pointer">
+                        <input type="radio" name="{{ $key }}" value="yes" {{ $val === true ? 'checked' : '' }}
+                               class="accent-blue-600 w-3.5 h-3.5">
+                        <span class="text-xs font-medium {{ $val === true ? 'text-blue-700' : 'text-gray-500' }}">Yes</span>
+                    </label>
+                    <span class="text-gray-300 text-xs self-center px-1">/</span>
+                    <label class="flex items-center gap-1.5 cursor-pointer">
+                        <input type="radio" name="{{ $key }}" value="no" {{ $val === false ? 'checked' : '' }}
+                               class="accent-red-500 w-3.5 h-3.5">
+                        <span class="text-xs font-medium {{ $val === false ? 'text-red-600' : 'text-gray-500' }}">No</span>
+                    </label>
+                </div>
+            </div>
+            @endforeach
+            </div>
+        </div>
+
+        {{-- ── PART B: AML/CFT & COMPLIANCE PROGRAM ───────────────────────── --}}
+        <div class="bg-white rounded-xl border border-gray-200 mb-5">
+            <div class="px-5 py-3 border-b border-gray-100 bg-gray-50 rounded-t-xl">
+                <p class="text-xs font-bold text-gray-500 uppercase tracking-wide">B — AML/CFT &amp; Compliance Program</p>
+            </div>
+            <div class="divide-y divide-gray-100">
+            @foreach($ddQuestions as $i => [$key, $label])
+            @php $val = $ans($key); @endphp
+            <div class="flex items-start gap-4 px-5 py-3.5 {{ $i % 2 === 1 ? 'bg-gray-50/50' : '' }}">
+                <p class="flex-1 text-sm text-gray-700 leading-relaxed">{{ $label }}</p>
+                <div class="flex gap-1 shrink-0 mt-0.5">
+                    <label class="flex items-center gap-1.5 cursor-pointer">
+                        <input type="radio" name="{{ $key }}" value="yes" {{ $val === true ? 'checked' : '' }}
+                               class="accent-blue-600 w-3.5 h-3.5">
+                        <span class="text-xs font-medium {{ $val === true ? 'text-blue-700' : 'text-gray-500' }}">Yes</span>
+                    </label>
+                    <span class="text-gray-300 text-xs self-center px-1">/</span>
+                    <label class="flex items-center gap-1.5 cursor-pointer">
+                        <input type="radio" name="{{ $key }}" value="no" {{ $val === false ? 'checked' : '' }}
+                               class="accent-red-500 w-3.5 h-3.5">
+                        <span class="text-xs font-medium {{ $val === false ? 'text-red-600' : 'text-gray-500' }}">No</span>
+                    </label>
+                </div>
+            </div>
+            @endforeach
+            </div>
+        </div>
+
+        {{-- ── PART C: COUNTERPARTY & BUSINESS PROFILE ────────────────────── --}}
+        <div class="bg-white rounded-xl border border-gray-200 mb-5">
+            <div class="px-5 py-3 border-b border-gray-100 bg-gray-50 rounded-t-xl">
+                <p class="text-xs font-bold text-gray-500 uppercase tracking-wide">C — Counterparty &amp; Business Profile</p>
+            </div>
+            <div class="divide-y divide-gray-100">
+
+                {{-- Profile of counterparties --}}
+                <div class="flex items-start gap-4 px-5 py-3.5">
+                    <p class="flex-1 text-sm text-gray-700">What is the profile of your major counterparties?</p>
+                    <div class="flex gap-3 shrink-0">
+                        @foreach(['Entities','Individuals','Both'] as $opt)
+                        <label class="flex items-center gap-1.5 cursor-pointer">
+                            <input type="radio" name="cp_profile" value="{{ $opt }}"
+                                   {{ ($qa('cp_profile') === $opt) ? 'checked' : '' }}
+                                   class="accent-blue-600 w-3.5 h-3.5">
+                            <span class="text-xs font-medium text-gray-600">{{ $opt }}</span>
+                        </label>
+                        @endforeach
+                    </div>
+                </div>
+
+                {{-- Locations text --}}
+                <div class="flex items-start gap-4 px-5 py-3.5 bg-gray-50/50">
+                    <p class="flex-1 text-sm text-gray-700">What are the main locations of your major counterparties?</p>
+                    <input type="text" name="cp_locations"
+                           value="{{ $qa('cp_locations', $client->countries_involved ? implode(', ', $client->countries_involved) : '') }}"
+                           placeholder="e.g. UAE, Switzerland, India"
+                           class="w-48 text-sm border border-gray-200 rounded-lg px-2.5 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+
+                {{-- Yes/No questions --}}
+                @foreach($cpYnQuestions as $i => [$key, $label])
+                @php $val = $ans($key); $shade = ($i + 2) % 2 === 0; @endphp
+                <div class="flex items-start gap-4 px-5 py-3.5 {{ $shade ? 'bg-gray-50/50' : '' }}">
+                    <p class="flex-1 text-sm text-gray-700 leading-relaxed">{{ $label }}</p>
+                    <div class="flex gap-1 shrink-0 mt-0.5">
+                        <label class="flex items-center gap-1.5 cursor-pointer">
+                            <input type="radio" name="{{ $key }}" value="yes" {{ $val === true ? 'checked' : '' }}
+                                   class="accent-blue-600 w-3.5 h-3.5">
+                            <span class="text-xs font-medium {{ $val === true ? 'text-blue-700' : 'text-gray-500' }}">Yes</span>
+                        </label>
+                        <span class="text-gray-300 text-xs self-center px-1">/</span>
+                        <label class="flex items-center gap-1.5 cursor-pointer">
+                            <input type="radio" name="{{ $key }}" value="no" {{ $val === false ? 'checked' : '' }}
+                                   class="accent-red-500 w-3.5 h-3.5">
+                            <span class="text-xs font-medium {{ $val === false ? 'text-red-600' : 'text-gray-500' }}">No</span>
+                        </label>
+                    </div>
+                </div>
+                @endforeach
+
+                @if($isGoldSector)
+                {{-- Metals for refining text --}}
+                <div class="flex items-start gap-4 px-5 py-3.5">
+                    <p class="flex-1 text-sm text-gray-700">What metals does the company send for refining?</p>
+                    <input type="text" name="cp_metals"
+                           value="{{ $qa('cp_metals', 'Gold') }}"
+                           placeholder="e.g. Gold, Silver"
+                           class="w-48 text-sm border border-gray-200 rounded-lg px-2.5 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                @endif
+
+            </div>
+        </div>
+
+        @endif {{-- end isCorporate --}}
+    </form>
     </div>
 
     {{-- ── DECLARATIONS ──────────────────────────────────────────────────────── --}}
