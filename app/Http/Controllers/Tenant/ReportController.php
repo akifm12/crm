@@ -74,6 +74,7 @@ class ReportController extends Controller
         $data = [
             'ref'       => 'KYC-' . str_pad($client->id, 5, '0', STR_PAD_LEFT),
             'generated' => now()->format('d M Y, H:i'),
+            'sector'         => $tenant->business_type ?? 'gold',
             'tenant_name'    => $tenant->name,
             'tenant_address' => $tenant->address ?? '',
             'tenant_email'   => $tenant->contact_email ?? '',
@@ -148,8 +149,10 @@ class ReportController extends Controller
                 'dob'                  => $s->dob?->format('d M Y'),
             ])->toArray(),
             'signatory_name'  => $sig?->full_name ?? $client->displayName(),
-            'signatory_title' => $sig?->position ?? 'Client / Authorised Signatory',
+            'signatory_title' => $sig?->position ?? 'Client / Authorized Signatory',
             'mlro_name'       => $tenant->mlro_name ?? '',
+            // Questionnaire answers — stored on client when available, else script uses defaults
+            'questionnaire'   => $client->questionnaire ?? null,
         ];
 
         $tmpJson  = storage_path('app/tmp/kyc_' . uniqid() . '.json');
