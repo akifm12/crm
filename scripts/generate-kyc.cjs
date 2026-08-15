@@ -520,10 +520,7 @@ if (isCorp) {
         qRow('Do you outsource any of your operations to third parties?',                                              qa('cp_outsourcing',  null), false),
     ].filter(Boolean);
 
-    body.push(
-        qTable(cpQs),
-        gap(6),
-    );
+    body.push(qTable(cpQs));
 }
 
 // ════════════════════════════════════════════════════════════════════════════════
