@@ -648,7 +648,7 @@
             @if($isGoldCreate)
             <div class="flex items-start gap-4 px-4 py-3 bg-gray-50/50">
                 <p class="flex-1 text-sm text-gray-700">Metals sent for refining</p>
-                <input type="text" name="questionnaire[cp_metals]" placeholder="e.g. Gold" value="Gold"
+                <input type="text" name="questionnaire[cp_metals]" placeholder="e.g. Gold"
                        class="w-40 text-sm border border-gray-200 rounded-lg px-2.5 py-1 focus:ring-2 focus:ring-blue-500">
             </div>
             @endif

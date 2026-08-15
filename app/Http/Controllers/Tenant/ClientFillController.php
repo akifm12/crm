@@ -196,6 +196,38 @@ class ClientFillController extends Controller
             }
         }
 
+        // Save questionnaire (corporate only)
+        $questionnaireInput = $request->input('questionnaire', []);
+        if (!empty($questionnaireInput)) {
+            $boolKeys = [
+                'eu_no_regulator_action', 'eu_aml_compliant', 'eu_no_pep_directors',
+                'eu_no_litigation', 'eu_no_disciplinary', 'eu_anti_bribery',
+                'eu_code_of_conduct', 'eu_compliance_audits', 'eu_transparency',
+                'eu_human_rights', 'eu_remediation_policy', 'eu_cooperates',
+                'dd_oecd', 'dd_lbma_dmcc', 'dd_subject_to_aml', 'dd_aml_program',
+                'dd_anti_bribery_policy', 'dd_bribery_charges', 'dd_data_protection_policy',
+                'dd_dpo', 'dd_secure_data', 'dd_whistleblowing', 'dd_compliance_officer',
+                'dd_tfs_program', 'dd_risk_assessments', 'dd_customer_risk',
+                'dd_background_checks', 'dd_policy_updates', 'dd_training',
+                'cp_smelting', 'cp_manufacturing', 'cp_jewelry', 'cp_mines',
+                'cp_overseas', 'cp_export_docs', 'cp_services', 'cp_high_value', 'cp_outsourcing',
+            ];
+            $qData = [];
+            foreach ($boolKeys as $key) {
+                if (isset($questionnaireInput[$key])) {
+                    $qData[$key] = $questionnaireInput[$key] === 'yes';
+                }
+            }
+            foreach (['cp_profile', 'cp_locations', 'cp_metals'] as $key) {
+                if (!empty($questionnaireInput[$key])) {
+                    $qData[$key] = $questionnaireInput[$key];
+                }
+            }
+            if (!empty($qData)) {
+                $client->update(['questionnaire' => $qData]);
+            }
+        }
+
         // Mark token as used
         $fillToken->update(['used_at' => now(), 'bullion_client_id' => $client->id]);
 

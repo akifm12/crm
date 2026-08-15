@@ -30,7 +30,7 @@
     <div class="mb-5">
         <template x-if="clientType !== 'individual'">
             <div class="flex items-center">
-                @php $cs = [1=>'Profile',2=>'Signatories',3=>'Shareholders',4=>'AML/CDD',5=>'Documents',6=>'Declarations',7=>'Review']; @endphp
+                @php $cs = [1=>'Profile',2=>'Signatories',3=>'Shareholders',4=>'AML/CDD',5=>'Documents',6=>'Undertaking',7=>'Declarations',8=>'Review']; @endphp
                 @foreach($cs as $n => $label)
                 <div class="flex items-center {{ $n < count($cs) ? 'flex-1' : '' }}">
                     <div class="flex flex-col items-center">
@@ -467,8 +467,163 @@
         </div>
     </div>
 
-    {{-- ══ Declarations — Corp 6 / Ind 4 ═══════════════════════════════ --}}
-    <div x-show="(clientType !== 'individual' && step === 6) || (clientType === 'individual' && indStep === 4)" x-cloak class="bg-white rounded-xl border border-gray-200 overflow-hidden mb-4">
+    {{-- ══ Undertaking — Corp 6 only ═══════════════════════════════════ --}}
+    @php
+        $isGoldFill = in_array($tenant->business_type ?? 'gold', ['gold','bullion','precious_metals']);
+
+        $euQFill = [
+            ['questionnaire[eu_no_regulator_action]', 'We have not received communication from law enforcement or regulatory authorities concerning non-compliance with UAE or international regulations.'],
+            ['questionnaire[eu_aml_compliant]',       'We have complied with all UAE Federal laws relating to AML/CFT and are not aware of any violations.'],
+            ['questionnaire[eu_no_pep_directors]',    'Shareholders, directors, officers, or senior employees are not senior government officials, nor their relatives or close associates.'],
+            ['questionnaire[eu_no_litigation]',       'We are not currently a party to any litigation in progress or expected.'],
+            ['questionnaire[eu_no_disciplinary]',     'We have not been subject to any disciplinary action by a court, professional body, or regulatory agency within the past five years.'],
+            ['questionnaire[eu_anti_bribery]',        'We uphold anti-bribery and anti-corruption standards and have implemented policies to prevent unethical behavior.'],
+            ['questionnaire[eu_code_of_conduct]',     'We have an internal code of conduct to guide employees in ethical and lawful behavior.'],
+            ['questionnaire[eu_compliance_audits]',   'We conduct regular compliance audits to ensure adherence to relevant laws and regulations.'],
+            ['questionnaire[eu_transparency]',        'We maintain transparency in operations and accurately report information to regulatory authorities.'],
+            ['questionnaire[eu_human_rights]',        'We are committed to conducting business in compliance with human rights, labor, and environmental standards.'],
+            ['questionnaire[eu_remediation_policy]',  'We have a policy of promptly addressing and correcting instances of non-compliance.'],
+            ['questionnaire[eu_cooperates]',          'We actively cooperate with regulatory authorities and law enforcement during investigations or inquiries.'],
+        ];
+
+        $ddQFill = array_values(array_filter([
+            $isGoldFill ? ['questionnaire[dd_oecd]',      'Does your organization comply with the OECD Due Diligence Guidance for Responsible Supply Chains of Minerals from Conflict-Affected and High-Risk Areas?'] : null,
+            $isGoldFill ? ['questionnaire[dd_lbma_dmcc]', 'Is your organization complying with LBMA, DMCC, or MOE initiatives regarding responsible sourcing of precious metals?'] : null,
+            ['questionnaire[dd_subject_to_aml]',            'Is your organization subject to AML/CFT laws and regulations?'],
+            ['questionnaire[dd_aml_program]',               'Has your organization established an AML/CFT conformity program per applicable laws and international standards?'],
+            ['questionnaire[dd_anti_bribery_policy]',       'Does your organization have an anti-bribery and anti-corruption policy?'],
+            ['questionnaire[dd_bribery_charges]',           'Has your organization or senior management ever been charged with anti-bribery violations?'],
+            ['questionnaire[dd_data_protection_policy]',    'Does your organization have a Data Protection Policy?'],
+            ['questionnaire[dd_dpo]',                       'Does your organization have a designated Data Protection Officer (DPO)?'],
+            ['questionnaire[dd_secure_data]',               'Does your organization maintain a secure data storage or information management system?'],
+            ['questionnaire[dd_whistleblowing]',            'Does your organization have a whistleblowing mechanism for employees?'],
+            ['questionnaire[dd_compliance_officer]',        'Does your organization have a designated Compliance Officer for AML/CFT matters?'],
+            ['questionnaire[dd_tfs_program]',               'Has your organization implemented a Targeted Financial Sanctions (TFS) Compliance Program?'],
+            ['questionnaire[dd_risk_assessments]',          'Does your organization conduct regular risk assessments for compliance vulnerabilities?'],
+            ['questionnaire[dd_customer_risk]',             'Does your organization classify customers by risk level (low, medium, or high)?'],
+            ['questionnaire[dd_background_checks]',         'Does your organization have a policy for background checks on employees and key personnel?'],
+            ['questionnaire[dd_policy_updates]',            'Does your organization regularly review and update compliance policies per changes in legislation?'],
+            ['questionnaire[dd_training]',                  'Does your organization provide ongoing AML/CFT compliance training to employees?'],
+        ]));
+
+        $cpQFill = array_values(array_filter([
+            ['questionnaire[cp_smelting]',     'Does the company have any smelting or refining facilities?'],
+            ['questionnaire[cp_manufacturing]', 'Does the company have its own manufacturing facilities?'],
+            $isGoldFill ? ['questionnaire[cp_jewelry]', 'Does the company produce its own jewelry?'] : null,
+            $isGoldFill ? ['questionnaire[cp_mines]',   'Does the company work directly with mines, refineries, or third-party suppliers?'] : null,
+            ['questionnaire[cp_overseas]',     'Do you have offices or partnerships outside the UAE?'],
+            ['questionnaire[cp_export_docs]',  'Do you verify and obtain complete export documentation from your suppliers, including source of origin?'],
+            ['questionnaire[cp_services]',     'Does your company offer additional services such as storage, transportation, or product certification?'],
+            ['questionnaire[cp_high_value]',   'Are your typical transactions high-value?'],
+            ['questionnaire[cp_outsourcing]',  'Do you outsource any of your operations to third parties?'],
+        ]));
+    @endphp
+    <div x-show="clientType !== 'individual' && step === 6" x-cloak class="bg-white rounded-xl border border-gray-200 overflow-hidden mb-4">
+        <div class="px-5 py-4 border-b border-gray-100">
+            <h2 class="font-semibold text-gray-800">Compliance Undertaking</h2>
+            <p class="text-xs text-gray-400 mt-0.5">Please answer Yes or No for each statement. These form part of your signed KYC documentation.</p>
+        </div>
+        <div class="p-5 space-y-5">
+
+        {{-- Part A --}}
+        <div>
+            <p class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">A — Entity Undertaking</p>
+            <div class="divide-y divide-gray-100 border border-gray-200 rounded-xl overflow-hidden">
+            @foreach($euQFill as $i => [$fname, $label])
+            <div class="flex items-start gap-4 px-4 py-3 {{ $i % 2 === 1 ? 'bg-gray-50/50' : 'bg-white' }}">
+                <p class="flex-1 text-sm text-gray-700 leading-relaxed">{{ $label }}</p>
+                <div class="flex gap-3 shrink-0 mt-0.5">
+                    <label class="flex items-center gap-1.5 cursor-pointer">
+                        <input type="radio" name="{{ $fname }}" value="yes" class="accent-blue-600 w-3.5 h-3.5">
+                        <span class="text-xs text-gray-500">Yes</span>
+                    </label>
+                    <label class="flex items-center gap-1.5 cursor-pointer">
+                        <input type="radio" name="{{ $fname }}" value="no" class="accent-red-500 w-3.5 h-3.5">
+                        <span class="text-xs text-gray-500">No</span>
+                    </label>
+                </div>
+            </div>
+            @endforeach
+            </div>
+        </div>
+
+        {{-- Part B --}}
+        <div>
+            <p class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">B — AML/CFT &amp; Compliance Program</p>
+            <div class="divide-y divide-gray-100 border border-gray-200 rounded-xl overflow-hidden">
+            @foreach($ddQFill as $i => [$fname, $label])
+            <div class="flex items-start gap-4 px-4 py-3 {{ $i % 2 === 1 ? 'bg-gray-50/50' : 'bg-white' }}">
+                <p class="flex-1 text-sm text-gray-700 leading-relaxed">{{ $label }}</p>
+                <div class="flex gap-3 shrink-0 mt-0.5">
+                    <label class="flex items-center gap-1.5 cursor-pointer">
+                        <input type="radio" name="{{ $fname }}" value="yes" class="accent-blue-600 w-3.5 h-3.5">
+                        <span class="text-xs text-gray-500">Yes</span>
+                    </label>
+                    <label class="flex items-center gap-1.5 cursor-pointer">
+                        <input type="radio" name="{{ $fname }}" value="no" class="accent-red-500 w-3.5 h-3.5">
+                        <span class="text-xs text-gray-500">No</span>
+                    </label>
+                </div>
+            </div>
+            @endforeach
+            </div>
+        </div>
+
+        {{-- Part C --}}
+        <div>
+            <p class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">C — Counterparty &amp; Business Profile</p>
+            <div class="divide-y divide-gray-100 border border-gray-200 rounded-xl overflow-hidden">
+
+                <div class="flex items-start gap-4 px-4 py-3 bg-white">
+                    <p class="flex-1 text-sm text-gray-700">What is the profile of your major counterparties?</p>
+                    <div class="flex gap-3 shrink-0">
+                        @foreach(['Entities','Individuals','Both'] as $opt)
+                        <label class="flex items-center gap-1.5 cursor-pointer">
+                            <input type="radio" name="questionnaire[cp_profile]" value="{{ $opt }}" class="accent-blue-600 w-3.5 h-3.5">
+                            <span class="text-xs text-gray-500">{{ $opt }}</span>
+                        </label>
+                        @endforeach
+                    </div>
+                </div>
+
+                <div class="flex items-start gap-4 px-4 py-3 bg-gray-50/50">
+                    <p class="flex-1 text-sm text-gray-700">Main locations of your major counterparties</p>
+                    <input type="text" name="questionnaire[cp_locations]" placeholder="e.g. UAE, Switzerland"
+                           class="w-40 text-sm border border-gray-200 rounded-lg px-2.5 py-1 focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                @foreach($cpQFill as $i => [$cpName, $cpLabel])
+                <div class="flex items-start gap-4 px-4 py-3 {{ ($i + 2) % 2 === 0 ? 'bg-gray-50/50' : 'bg-white' }}">
+                    <p class="flex-1 text-sm text-gray-700 leading-relaxed">{{ $cpLabel }}</p>
+                    <div class="flex gap-3 shrink-0 mt-0.5">
+                        <label class="flex items-center gap-1.5 cursor-pointer">
+                            <input type="radio" name="{{ $cpName }}" value="yes" class="accent-blue-600 w-3.5 h-3.5">
+                            <span class="text-xs text-gray-500">Yes</span>
+                        </label>
+                        <label class="flex items-center gap-1.5 cursor-pointer">
+                            <input type="radio" name="{{ $cpName }}" value="no" class="accent-red-500 w-3.5 h-3.5">
+                            <span class="text-xs text-gray-500">No</span>
+                        </label>
+                    </div>
+                </div>
+                @endforeach
+
+                @if($isGoldFill)
+                <div class="flex items-start gap-4 px-4 py-3 bg-gray-50/50">
+                    <p class="flex-1 text-sm text-gray-700">What metals does your company send for refining?</p>
+                    <input type="text" name="questionnaire[cp_metals]" placeholder="e.g. Gold"
+                           class="w-40 text-sm border border-gray-200 rounded-lg px-2.5 py-1 focus:ring-2 focus:ring-blue-500">
+                </div>
+                @endif
+
+            </div>
+        </div>
+
+        </div>
+    </div>
+
+    {{-- ══ Declarations — Corp 7 / Ind 4 ═══════════════════════════════ --}}
+    <div x-show="(clientType !== 'individual' && step === 7) || (clientType === 'individual' && indStep === 4)" x-cloak class="bg-white rounded-xl border border-gray-200 overflow-hidden mb-4">
         <div class="px-5 py-4 border-b border-gray-100">
             <h2 class="font-semibold text-gray-800">Declarations</h2>
             <p class="text-xs text-gray-400 mt-0.5">Please read and confirm each declaration</p>
@@ -509,8 +664,8 @@
         </div>
     </div>
 
-    {{-- ══ Review — Corp 7 / Ind 5 ══════════════════════════════════════ --}}
-    <div x-show="(clientType !== 'individual' && step === 7) || (clientType === 'individual' && indStep === 5)" x-cloak class="space-y-4 mb-4">
+    {{-- ══ Review — Corp 8 / Ind 5 ══════════════════════════════════════ --}}
+    <div x-show="(clientType !== 'individual' && step === 8) || (clientType === 'individual' && indStep === 5)" x-cloak class="space-y-4 mb-4">
         <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
             <p class="text-sm font-semibold text-blue-800">Ready to submit</p>
             <p class="text-xs text-blue-700 mt-1">Please review your information and confirm the declaration below before submitting.</p>
@@ -539,9 +694,9 @@
 
         <div class="flex items-center gap-3">
             <span class="text-xs text-gray-400"
-                  x-text="clientType !== 'individual' ? 'Step ' + step + ' of 7' : 'Step ' + indStep + ' of 5'"></span>
+                  x-text="clientType !== 'individual' ? 'Step ' + step + ' of 8' : 'Step ' + indStep + ' of 5'"></span>
             <button type="button" @click="nextStep"
-                    x-show="(clientType !== 'individual' && step < 7) || (clientType === 'individual' && indStep < 5)"
+                    x-show="(clientType !== 'individual' && step < 8) || (clientType === 'individual' && indStep < 5)"
                     class="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition">
                 Next →
             </button>
@@ -674,7 +829,7 @@ function fillForm() {
             this.indStep = t === 'individual' ? 1 : 0;
         },
         nextStep() {
-            if (this.clientType !== 'individual' && this.step < 7) this.step++;
+            if (this.clientType !== 'individual' && this.step < 8) this.step++;
             else if (this.clientType === 'individual' && this.indStep < 5) this.indStep++;
             window.scrollTo(0, 0);
         },
