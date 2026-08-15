@@ -8,50 +8,16 @@ use App\Models\BullionClient;
 use App\Models\ScreeningLog;
 use Mpdf\Mpdf;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class ReportController extends Controller
 {
-    // ── Full KYC PDF ───────────────────────────────────────────────────────
+    // ── Build KYC data array (shared between Word and PDF) ────────────────────
 
-    public function kycPdf(string $slug, BullionClient $client)
+    private function buildKycData(BullionClient $client, $tenant): array
     {
-        $tenant = app('tenant');
-        abort_if($client->tenant_id !== $tenant->id, 404);
-        $client->load(['signatories', 'shareholders', 'ubos', 'documents', 'creator']);
-
-        $mpdf = new Mpdf([
-            'mode'          => 'utf-8',
-            'format'        => 'A4',
-            'margin_top'    => 30,
-            'margin_bottom' => 20,
-            'margin_left'   => 15,
-            'margin_right'  => 15,
-            'margin_header' => 5,
-            'margin_footer' => 5,
-            'tempDir'       => storage_path('app/mpdf-tmp'),
-        ]);
-
-        $html = view('tenant.reports.kyc_pdf', compact('tenant', 'client'))->render();
-        $mpdf->WriteHTML($html);
-
-        $filename = 'KYC-' . Str::upper(Str::slug($client->displayName())) . '-' . now()->format('Ymd') . '.pdf';
-
-        return response($mpdf->Output($filename, 'S'), 200, [
-            'Content-Type'        => 'application/pdf',
-            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
-        ]);
-    }
-
-    // ── KYC Word document ─────────────────────────────────────────────────────
-
-    public function kycDocx(string $slug, BullionClient $client)
-    {
-        $tenant = app('tenant');
-        abort_if($client->tenant_id !== $tenant->id, 404);
-        $client->load(['signatories', 'shareholders', 'ubos']);
-
         $isCorp = $client->client_type !== 'individual';
         $sig    = $client->signatories->first();
 
@@ -71,7 +37,7 @@ class ReportController extends Controller
             return implode(', ', array_map(fn($v) => $sofLabels[$v] ?? ucwords(str_replace('_', ' ', $v)), (array) $val));
         };
 
-        $data = [
+        return [
             'ref'       => 'KYC-' . str_pad($client->id, 5, '0', STR_PAD_LEFT),
             'generated' => now()->format('d M Y, H:i'),
             'sector'         => $tenant->business_type ?? 'gold',
@@ -90,7 +56,6 @@ class ReportController extends Controller
             'risk_assessed_at'  => $client->risk_assessed_at?->format('d M Y'),
             'risk_assessed_by'  => $client->risk_assessed_by ?? '',
             'risk_notes'        => $client->risk_notes ?? '',
-            // Corp fields
             'company_name'           => $client->company_name ?? '',
             'legal_form'             => $client->legal_form ?? '',
             'country_of_incorporation' => $client->country_of_incorporation ?? '',
@@ -102,7 +67,6 @@ class ReportController extends Controller
             'business_activity'      => $client->business_activity ?? '',
             'registered_address'     => $client->registered_address ?? '',
             'website'                => $client->website ?? '',
-            // Individual fields
             'full_name'      => $client->full_name ?? '',
             'name_arabic'    => $client->name_arabic ?? '',
             'nationality'    => $client->nationality ?? '',
@@ -114,21 +78,17 @@ class ReportController extends Controller
             'occupation'     => $client->occupation ?? '',
             'employer_name'  => $client->employer_name ?? '',
             'pep_status'     => (bool) $client->pep_status,
-            // Shared
             'email' => $client->email ?? '',
             'phone' => $client->phone ?? '',
-            // AML
             'source_of_funds_label'         => $sofStr($client->source_of_funds),
             'source_of_wealth_label'        => $sofStr($client->source_of_wealth),
             'purpose_of_relationship_label' => $purposeLabels[$client->purpose_of_relationship ?? ''] ?? ucwords(str_replace('_', ' ', $client->purpose_of_relationship ?? '')),
             'expected_monthly_volume'       => $client->expected_monthly_volume,
             'expected_monthly_frequency'    => $client->expected_monthly_frequency,
             'countries_involved'            => $client->countries_involved ? implode(', ', $client->countries_involved) : '',
-            // Screening
             'screening_status'    => $client->screening_status ?? '',
             'screening_date'      => $client->screening_date?->format('d M Y, H:i'),
             'screening_reference' => $client->screening_reference ?? '',
-            // Relations
             'signatories'  => $client->signatories->map(fn($s) => [
                 'full_name'       => $s->full_name ?? '',
                 'position'        => $s->position ?? '',
@@ -151,13 +111,16 @@ class ReportController extends Controller
             'signatory_name'  => $sig?->full_name ?? $client->displayName(),
             'signatory_title' => $sig?->position ?? 'Client / Authorized Signatory',
             'mlro_name'       => $tenant->mlro_name ?? '',
-            // Questionnaire answers — stored on client when available, else script uses defaults
             'questionnaire'   => $client->questionnaire ?? null,
         ];
+    }
 
-        $tmpJson  = storage_path('app/tmp/kyc_' . uniqid() . '.json');
-        $filename = 'KYC-' . Str::upper(Str::slug($client->displayName())) . '-' . now()->format('Ymd') . '.docx';
-        $outPath  = storage_path('app/tmp/' . $filename);
+    // ── Generate the .docx file and return its path ───────────────────────────
+
+    private function generateKycDocx(array $data, string $baseName): string
+    {
+        $tmpJson = storage_path('app/tmp/kyc_' . uniqid() . '.json');
+        $outPath = storage_path('app/tmp/' . $baseName . '.docx');
 
         if (!file_exists(dirname($tmpJson))) mkdir(dirname($tmpJson), 0755, true);
 
@@ -165,12 +128,68 @@ class ReportController extends Controller
 
         $cmd    = 'node ' . escapeshellarg(base_path('scripts/generate-kyc.cjs')) . ' ' . escapeshellarg($tmpJson) . ' ' . escapeshellarg($outPath) . ' 2>&1';
         $output = shell_exec($cmd);
-
         @unlink($tmpJson);
 
         if (!file_exists($outPath)) {
-            Log::error('KYC docx failed', ['output' => $output]);
-            return back()->with('error', 'Failed to generate Word document. ' . $output);
+            throw new \RuntimeException('KYC docx generation failed: ' . $output);
+        }
+
+        return $outPath;
+    }
+
+    // ── KYC PDF (converted from Word via LibreOffice) ─────────────────────────
+
+    public function kycPdf(string $slug, BullionClient $client)
+    {
+        $tenant = app('tenant');
+        abort_if($client->tenant_id !== $tenant->id, 404);
+        $client->load(['signatories', 'shareholders', 'ubos']);
+
+        $baseName = 'KYC-' . Str::upper(Str::slug($client->displayName())) . '-' . now()->format('Ymd') . '-' . uniqid();
+        $filename = 'KYC-' . Str::upper(Str::slug($client->displayName())) . '-' . now()->format('Ymd') . '.pdf';
+
+        try {
+            $docxPath = $this->generateKycDocx($this->buildKycData($client, $tenant), $baseName);
+        } catch (\RuntimeException $e) {
+            Log::error('KYC PDF: docx step failed', ['error' => $e->getMessage()]);
+            return back()->with('error', 'Failed to generate KYC document. ' . $e->getMessage());
+        }
+
+        $tmpDir   = storage_path('app/tmp');
+        $soffice  = env('SOFFICE_PATH', 'soffice');
+        $cmd      = 'HOME=/tmp ' . escapeshellarg($soffice) . ' --headless --convert-to pdf --outdir ' . escapeshellarg($tmpDir) . ' ' . escapeshellarg($docxPath) . ' 2>&1';
+        $output   = shell_exec($cmd);
+        @unlink($docxPath);
+
+        // soffice names the output after the input file with .pdf extension
+        $pdfPath = $tmpDir . '/' . pathinfo($docxPath, PATHINFO_FILENAME) . '.pdf';
+
+        if (!file_exists($pdfPath)) {
+            Log::error('KYC PDF: soffice conversion failed', ['output' => $output]);
+            return back()->with('error', 'PDF conversion failed. Ensure LibreOffice is installed on the server.');
+        }
+
+        return response()->download($pdfPath, $filename, [
+            'Content-Type' => 'application/pdf',
+        ])->deleteFileAfterSend(true);
+    }
+
+    // ── KYC Word document ─────────────────────────────────────────────────────
+
+    public function kycDocx(string $slug, BullionClient $client)
+    {
+        $tenant = app('tenant');
+        abort_if($client->tenant_id !== $tenant->id, 404);
+        $client->load(['signatories', 'shareholders', 'ubos']);
+
+        $baseName = 'KYC-' . Str::upper(Str::slug($client->displayName())) . '-' . now()->format('Ymd') . '-' . uniqid();
+        $filename = 'KYC-' . Str::upper(Str::slug($client->displayName())) . '-' . now()->format('Ymd') . '.docx';
+
+        try {
+            $outPath = $this->generateKycDocx($this->buildKycData($client, $tenant), $baseName);
+        } catch (\RuntimeException $e) {
+            Log::error('KYC docx failed', ['error' => $e->getMessage()]);
+            return back()->with('error', 'Failed to generate Word document. ' . $e->getMessage());
         }
 
         return response()->download($outPath, $filename)->deleteFileAfterSend(true);
