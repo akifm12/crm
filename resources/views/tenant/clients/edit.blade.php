@@ -42,6 +42,18 @@ $typeLabels  = ['corporate_local'=>'Corporate — Local','corporate_import'=>'Co
                 {{ $isCorporate ? 'Company profile' : 'Personal profile' }}
             </h3>
 
+            {{-- Client type (editable) --}}
+            <div class="pb-3 border-b border-gray-100">
+                <label class="block text-xs font-medium text-gray-500 mb-1">Client type</label>
+                <select name="client_type"
+                        class="w-full md:w-64 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    @foreach($typeLabels as $typeKey => $typeLabel)
+                    <option value="{{ $typeKey }}" {{ $client->client_type === $typeKey ? 'selected' : '' }}>{{ $typeLabel }}</option>
+                    @endforeach
+                </select>
+                <p class="text-xs text-gray-400 mt-1">Changing type will not affect existing signatories or shareholders.</p>
+            </div>
+
             @if($isCorporate)
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 @include('tenant.clients._field', ['name'=>'company_name','label'=>'Company name','required'=>true,'value'=>$client->company_name])
