@@ -269,20 +269,51 @@ PROMPT;
             }
         }
 
-        $data = $request->except(['signatories', 'shareholders', 'ubos', 'documents', 'doc_labels', 'doc_expiry', 'doc_required', '_token', 'extra_data']);
+        $data = $request->except(['signatories', 'shareholders', 'ubos', 'documents', 'doc_labels', 'doc_expiry', 'doc_required', '_token', 'extra_data', 'questionnaire']);
 
         // Collect extra_data fields from sector config
         $extraData = $request->input('extra_data', []);
 
+        // Build questionnaire from submitted yes/no radios
+        $questionnaireKeys = [
+            'eu_no_regulator_action', 'eu_aml_compliant', 'eu_no_pep_directors',
+            'eu_no_litigation', 'eu_no_disciplinary', 'eu_anti_bribery',
+            'eu_code_of_conduct', 'eu_compliance_audits', 'eu_transparency',
+            'eu_human_rights', 'eu_remediation_policy', 'eu_cooperates',
+            'dd_oecd', 'dd_lbma_dmcc', 'dd_subject_to_aml', 'dd_aml_program',
+            'dd_anti_bribery_policy', 'dd_bribery_charges', 'dd_data_protection_policy',
+            'dd_dpo', 'dd_secure_data', 'dd_whistleblowing', 'dd_compliance_officer',
+            'dd_tfs_program', 'dd_risk_assessments', 'dd_customer_risk',
+            'dd_background_checks', 'dd_policy_updates', 'dd_training',
+            'cp_smelting', 'cp_manufacturing', 'cp_jewelry', 'cp_mines',
+            'cp_overseas', 'cp_export_docs', 'cp_services', 'cp_high_value', 'cp_outsourcing',
+        ];
+        $questionnaireInput = $request->input('questionnaire', []);
+        $questionnaire = null;
+        if (!empty($questionnaireInput)) {
+            $questionnaire = [];
+            foreach ($questionnaireKeys as $key) {
+                if (isset($questionnaireInput[$key])) {
+                    $questionnaire[$key] = $questionnaireInput[$key] === 'yes';
+                }
+            }
+            foreach (['cp_profile', 'cp_locations', 'cp_metals'] as $key) {
+                if (!empty($questionnaireInput[$key])) {
+                    $questionnaire[$key] = $questionnaireInput[$key];
+                }
+            }
+        }
+
         $client = BullionClient::create(array_merge(
             $data,
             [
-                'tenant_id'   => $tenant->id,
-                'created_by'  => auth()->id(),
-                'cdd_type'    => $request->input('cdd_type') ?: 'standard',
-                'risk_rating' => $request->input('risk_rating') ?: 'low',
-                'status'      => $request->input('status') ?: 'pending',
-                'extra_data'  => !empty($extraData) ? $extraData : null,
+                'tenant_id'     => $tenant->id,
+                'created_by'    => auth()->id(),
+                'cdd_type'      => $request->input('cdd_type') ?: 'standard',
+                'risk_rating'   => $request->input('risk_rating') ?: 'low',
+                'status'        => $request->input('status') ?: 'pending',
+                'extra_data'    => !empty($extraData) ? $extraData : null,
+                'questionnaire' => $questionnaire,
             ]
         ));
 

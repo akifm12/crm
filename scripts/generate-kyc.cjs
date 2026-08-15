@@ -165,9 +165,15 @@ const qRow = (question, answer, shade) => {
         ];
     } else if (typeof answer === 'string' && answer) {
         responseRuns = [run(answer, { size: hp(10) })];
+    } else if (answer === null || answer === undefined) {
+        // unanswered — show both boxes unchecked
+        responseRuns = [
+            run(BOX + ' Yes', { size: hp(10) }),
+            run('     ', { size: hp(10) }),
+            run(BOX + ' No',  { size: hp(10) }),
+        ];
     } else {
-        // blank line for hand-writing
-        responseRuns = [run('_______________________', { size: hp(10), color: 'C0C0C0' })];
+        responseRuns = [run('', { size: hp(10) })];
     }
 
     return new TableRow({ children: [
@@ -445,18 +451,18 @@ if (isCorp) {
     body.push(...subHeading('A. Entity Undertaking'));
 
     const euQs = [
-        ['eu_no_regulator_action',   'We confirm that our organization has not received communication from law enforcement or regulatory authorities concerning non-compliance with the laws and regulations of the UAE or any other international regulator.',         true],
-        ['eu_aml_compliant',         'We confirm that our organization has complied with all UAE Federal laws or regulations relating to AML/CFT and are not aware of any violations or possible violations of these laws and regulations.',                       true],
-        ['eu_no_pep_directors',      'We confirm that our organization\'s shareholders, directors, officers, or senior employees are not senior officials in government, political organizations, or government-owned organizations, nor relatives or close associates of such officials.', true],
-        ['eu_no_litigation',         'We confirm that our organization is not currently a party to any litigation that is in progress or expected.',                                                                                                                true],
-        ['eu_no_disciplinary',       'We confirm that our organization has not been subject to any disciplinary action by a court, professional body, or regulatory agency within the past five years.',                                                           true],
-        ['eu_anti_bribery',          'We confirm that our organization upholds anti-bribery and anti-corruption standards and has implemented policies to prevent unethical behavior.',                                                                            true],
-        ['eu_code_of_conduct',       'We confirm that our organization has an internal code of conduct to guide employees in ethical and lawful behavior.',                                                                                                        true],
-        ['eu_compliance_audits',     'We confirm that our organization conducts regular compliance audits to ensure adherence to relevant laws and regulations.',                                                                                                   true],
-        ['eu_transparency',          'We confirm that our organization maintains transparency in its operations and accurately reports information to stakeholders and regulatory authorities.',                                                                     true],
-        ['eu_human_rights',          'We confirm that our organization is committed to conducting its business in compliance with human rights, labor, and environmental standards.',                                                                               true],
-        ['eu_remediation_policy',    'We confirm that our organization has a policy of promptly addressing and correcting any instances of non-compliance identified within its operations.',                                                                       true],
-        ['eu_cooperates',            'We confirm that our organization actively cooperates with regulatory authorities and law enforcement agencies during investigations or inquiries.',                                                                            true],
+        ['eu_no_regulator_action',   'We confirm that our organization has not received communication from law enforcement or regulatory authorities concerning non-compliance with the laws and regulations of the UAE or any other international regulator.',         null],
+        ['eu_aml_compliant',         'We confirm that our organization has complied with all UAE Federal laws or regulations relating to AML/CFT and are not aware of any violations or possible violations of these laws and regulations.',                       null],
+        ['eu_no_pep_directors',      'We confirm that our organization\'s shareholders, directors, officers, or senior employees are not senior officials in government, political organizations, or government-owned organizations, nor relatives or close associates of such officials.', null],
+        ['eu_no_litigation',         'We confirm that our organization is not currently a party to any litigation that is in progress or expected.',                                                                                                                null],
+        ['eu_no_disciplinary',       'We confirm that our organization has not been subject to any disciplinary action by a court, professional body, or regulatory agency within the past five years.',                                                           null],
+        ['eu_anti_bribery',          'We confirm that our organization upholds anti-bribery and anti-corruption standards and has implemented policies to prevent unethical behavior.',                                                                            null],
+        ['eu_code_of_conduct',       'We confirm that our organization has an internal code of conduct to guide employees in ethical and lawful behavior.',                                                                                                        null],
+        ['eu_compliance_audits',     'We confirm that our organization conducts regular compliance audits to ensure adherence to relevant laws and regulations.',                                                                                                   null],
+        ['eu_transparency',          'We confirm that our organization maintains transparency in its operations and accurately reports information to stakeholders and regulatory authorities.',                                                                     null],
+        ['eu_human_rights',          'We confirm that our organization is committed to conducting its business in compliance with human rights, labor, and environmental standards.',                                                                               null],
+        ['eu_remediation_policy',    'We confirm that our organization has a policy of promptly addressing and correcting any instances of non-compliance identified within its operations.',                                                                       null],
+        ['eu_cooperates',            'We confirm that our organization actively cooperates with regulatory authorities and law enforcement agencies during investigations or inquiries.',                                                                            null],
     ];
 
     body.push(
@@ -468,23 +474,23 @@ if (isCorp) {
     body.push(...subHeading('B. AML/CFT & Compliance Program'));
 
     const ddQs = [
-        isGold ? ['dd_oecd',            'Does your organization comply with the OECD Due Diligence Guidance for Responsible Supply Chains of Minerals from Conflict-Affected and High-Risk Areas?', true]  : null,
-        isGold ? ['dd_lbma_dmcc',       'Is your organization complying with LBMA, DMCC, or MOE industry initiatives regarding responsible sourcing of precious metals?',                            true]  : null,
-        ['dd_subject_to_aml',           'Is your organization subject to Anti-Money Laundering / Combating the Financing of Terrorism (AML/CFT) laws and regulations?',                             true],
-        ['dd_aml_program',              'Has your organization established an AML/CFT conformity program containing policies and procedures in accordance with applicable laws and international standards?', true],
-        ['dd_anti_bribery_policy',      'Does your organization have an anti-bribery and anti-corruption policy in place?',                                                                          true],
-        ['dd_bribery_charges',          'Has your organization or its senior management ever been charged with violation of applicable anti-bribery laws or regulations?',                           false],
-        ['dd_data_protection_policy',   'Does your organization have a Data Protection Policy?',                                                                                                     true],
-        ['dd_dpo',                      'Does your organization have a designated Data Protection Officer (DPO)?',                                                                                   true],
-        ['dd_secure_data',              'Does your organization maintain a secure data storage system or information management system?',                                                             true],
-        ['dd_whistleblowing',           'Does your organization have a whistleblowing mechanism through which employees may raise concerns about unethical or illegal activity?',                    true],
-        ['dd_compliance_officer',       'Does your organization have a designated Compliance Officer responsible for AML/CFT matters?',                                                              true],
-        ['dd_tfs_program',              'Has your organization implemented a Targeted Financial Sanctions (TFS) Compliance Program to identify sanctioned individuals and entities?',                true],
-        ['dd_risk_assessments',         'Does your organization conduct regular risk assessments to identify potential compliance vulnerabilities?',                                                  true],
-        ['dd_customer_risk',            'Does your organization classify customers by risk level (low, medium, or high)?',                                                                           true],
-        ['dd_background_checks',        'Does your organization have a policy for conducting background checks on employees and key personnel?',                                                     true],
-        ['dd_policy_updates',           'Does your organization regularly review and update its compliance policies and procedures to reflect changes in legislation?',                               true],
-        ['dd_training',                 'Does your organization provide ongoing AML/CFT compliance training to its employees?',                                                                      true],
+        isGold ? ['dd_oecd',            'Does your organization comply with the OECD Due Diligence Guidance for Responsible Supply Chains of Minerals from Conflict-Affected and High-Risk Areas?', null]  : null,
+        isGold ? ['dd_lbma_dmcc',       'Is your organization complying with LBMA, DMCC, or MOE industry initiatives regarding responsible sourcing of precious metals?',                            null]  : null,
+        ['dd_subject_to_aml',           'Is your organization subject to Anti-Money Laundering / Combating the Financing of Terrorism (AML/CFT) laws and regulations?',                             null],
+        ['dd_aml_program',              'Has your organization established an AML/CFT conformity program containing policies and procedures in accordance with applicable laws and international standards?', null],
+        ['dd_anti_bribery_policy',      'Does your organization have an anti-bribery and anti-corruption policy in place?',                                                                          null],
+        ['dd_bribery_charges',          'Has your organization or its senior management ever been charged with violation of applicable anti-bribery laws or regulations?',                           null],
+        ['dd_data_protection_policy',   'Does your organization have a Data Protection Policy?',                                                                                                     null],
+        ['dd_dpo',                      'Does your organization have a designated Data Protection Officer (DPO)?',                                                                                   null],
+        ['dd_secure_data',              'Does your organization maintain a secure data storage system or information management system?',                                                             null],
+        ['dd_whistleblowing',           'Does your organization have a whistleblowing mechanism through which employees may raise concerns about unethical or illegal activity?',                    null],
+        ['dd_compliance_officer',       'Does your organization have a designated Compliance Officer responsible for AML/CFT matters?',                                                              null],
+        ['dd_tfs_program',              'Has your organization implemented a Targeted Financial Sanctions (TFS) Compliance Program to identify sanctioned individuals and entities?',                null],
+        ['dd_risk_assessments',         'Does your organization conduct regular risk assessments to identify potential compliance vulnerabilities?',                                                  null],
+        ['dd_customer_risk',            'Does your organization classify customers by risk level (low, medium, or high)?',                                                                           null],
+        ['dd_background_checks',        'Does your organization have a policy for conducting background checks on employees and key personnel?',                                                     null],
+        ['dd_policy_updates',           'Does your organization regularly review and update its compliance policies and procedures to reflect changes in legislation?',                               null],
+        ['dd_training',                 'Does your organization provide ongoing AML/CFT compliance training to its employees?',                                                                      null],
     ].filter(Boolean);
 
     body.push(
@@ -504,16 +510,16 @@ if (isCorp) {
     const cpQs = [
         qChoiceRow('What is the profile of your major counterparties?', ['Entities', 'Individuals', 'Both'], cpProfile, false),
         qRow('What are the main locations of your major counterparties?',  cpLocations, true),
-        qRow('Does the company have any smelting or refining facilities?', qa('cp_smelting',        false), false),
-        qRow('Does the company have its own manufacturing facilities?',    qa('cp_manufacturing',   false), true),
-        isGold ? qRow('Does the company produce its own jewelry?',         qa('cp_jewelry',         false), false) : null,
-        isGold ? qRow('What metals does the company send for refining?',   cpMetals,                        true)  : null,
-        isGold ? qRow('Does the company work directly with mines, refineries, or other third-party suppliers?', qa('cp_mines', false), false) : null,
-        qRow('Do you have offices or partnerships outside the UAE?',       qa('cp_overseas',        false), isGold ? true : false),
-        qRow('Do you verify and obtain complete export documentation from your suppliers, including source of origin?', qa('cp_export_docs', true), !isGold),
-        qRow('Does your company offer additional services such as storage, transportation, or product certification?', qa('cp_services', false), isGold),
-        qRow('Are your typical transactions high-value?',                  qa('cp_high_value',      true),  !isGold),
-        qRow('Do you outsource any of your operations to third parties?',  qa('cp_outsourcing',     false), isGold),
+        qRow('Does the company have any smelting or refining facilities?', qa('cp_smelting',        null), false),
+        qRow('Does the company have its own manufacturing facilities?',    qa('cp_manufacturing',   null), true),
+        isGold ? qRow('Does the company produce its own jewelry?',         qa('cp_jewelry',         null), false) : null,
+        isGold ? qRow('What metals does the company send for refining?',   cpMetals,                       true)  : null,
+        isGold ? qRow('Does the company work directly with mines, refineries, or other third-party suppliers?', qa('cp_mines', null), false) : null,
+        qRow('Do you have offices or partnerships outside the UAE?',       qa('cp_overseas',        null), isGold ? true : false),
+        qRow('Do you verify and obtain complete export documentation from your suppliers, including source of origin?', qa('cp_export_docs', null), !isGold),
+        qRow('Does your company offer additional services such as storage, transportation, or product certification?', qa('cp_services', null), isGold),
+        qRow('Are your typical transactions high-value?',                  qa('cp_high_value',      null), !isGold),
+        qRow('Do you outsource any of your operations to third parties?',  qa('cp_outsourcing',     null), isGold),
     ].filter(Boolean);
 
     body.push(
