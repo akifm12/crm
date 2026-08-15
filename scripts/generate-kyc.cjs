@@ -159,18 +159,18 @@ const qRow = (question, answer, shade) => {
     if (answer === true || answer === false) {
         const y = answer === true;
         responseRuns = [
-            run((y ? CHECK : BOX) + ' Yes', { size: hp(10), bold: y }),
+            run((y ? CHECK : BOX) + '  Yes', { size: hp(10), bold: y }),
             run('     ', { size: hp(10) }),
-            run((!y ? CHECK : BOX) + ' No',  { size: hp(10), bold: !y }),
+            run((!y ? CHECK : BOX) + '  No',  { size: hp(10), bold: !y }),
         ];
     } else if (typeof answer === 'string' && answer) {
         responseRuns = [run(answer, { size: hp(10) })];
     } else if (answer === null || answer === undefined) {
         // unanswered — show both boxes unchecked
         responseRuns = [
-            run(BOX + ' Yes', { size: hp(10) }),
+            run(BOX + '  Yes', { size: hp(10) }),
             run('     ', { size: hp(10) }),
-            run(BOX + ' No',  { size: hp(10) }),
+            run(BOX + '  No',  { size: hp(10) }),
         ];
     } else {
         responseRuns = [run('', { size: hp(10) })];
