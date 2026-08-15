@@ -109,21 +109,20 @@ body { font-family: dejavusans, sans-serif; font-size: 10pt; color: #000; backgr
 <htmlpageheader name="kyc-header">
 <table style="width:100%; border-collapse:collapse;">
     <tr>
-        <td style="width:110px; vertical-align:middle;">
+        <td style="width:100px; vertical-align:middle;">
             @if($tenant->logo_url)
                 <img src="{{ public_path('storage/' . ltrim(str_replace(url('/storage'), '', $tenant->logo_url), '/')) }}"
-                     style="max-width:100px; max-height:40px;" alt="{{ $tenant->name }}">
-            @else
-                <span style="font-size:12pt; font-weight:bold;">{{ $tenant->name }}</span>
+                     style="max-width:90px; max-height:40px;" alt="{{ $tenant->name }}">
             @endif
         </td>
-        <td style="text-align:center; vertical-align:middle;">
-            <div style="font-size:14pt; font-weight:bold; text-transform:uppercase; letter-spacing:1px;">Know Your Customer</div>
-            <div style="font-size:8pt; color:#444; text-transform:uppercase; letter-spacing:0.5px; margin-top:2px;">Client Due Diligence File</div>
+        <td style="text-align:center; vertical-align:middle; padding:0 8px;">
+            <div style="font-size:8pt; color:#555; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:2px;">{{ $tenant->name }}</div>
+            <div style="font-size:13pt; font-weight:bold; text-transform:uppercase; letter-spacing:1px;">Know Your Customer</div>
+            <div style="font-size:7.5pt; color:#444; text-transform:uppercase; letter-spacing:0.5px; margin-top:2px;">Client Due Diligence File</div>
         </td>
-        <td style="text-align:right; vertical-align:middle; width:110px; font-size:8pt; color:#333;">
+        <td style="text-align:right; vertical-align:middle; width:100px; font-size:8pt; color:#333; white-space:nowrap;">
             <strong style="font-size:9pt;">{{ $ref }}</strong><br>
-            Generated: {{ $generated }}
+            {{ $generated }}
             @if($tenant->dnfbp_reg_no)<br>DNFBP: {{ $tenant->dnfbp_reg_no }}@endif
         </td>
     </tr>
