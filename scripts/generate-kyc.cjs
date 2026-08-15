@@ -201,15 +201,14 @@ const qTable = (rows) => new Table({
     rows: [qTableHeader(), ...rows.filter(Boolean)],
 });
 
-// ── Choice row (multi-option response like Entities / Individuals / Both) ─────
+// ── Choice row (multi-option response — each option on its own line) ──────────
 const qChoiceRow = (question, options, selected, shade) => {
-    const responseRuns = [];
-    options.forEach((opt, i) => {
-        const checked = Array.isArray(selected)
-            ? selected.includes(opt)
-            : selected === opt;
-        responseRuns.push(run((checked ? CHECK : BOX) + ' ' + opt, { size: hp(10), bold: checked }));
-        if (i < options.length - 1) responseRuns.push(run('   ', { size: hp(10) }));
+    const optionParas = options.map((opt, i) => {
+        const checked = Array.isArray(selected) ? selected.includes(opt) : selected === opt;
+        return para(
+            run((checked ? CHECK : BOX) + '  ' + opt, { size: hp(10), bold: checked }),
+            { spacing: { after: i < options.length - 1 ? pt(2) : 0 } }
+        );
     });
     return new TableRow({ children: [
         new TableCell({
@@ -224,7 +223,7 @@ const qChoiceRow = (question, options, selected, shade) => {
             shading: { fill: shade ? 'F2F4F8' : 'FFFFFF', type: ShadingType.CLEAR },
             borders: { top: LIGHT, bottom: LIGHT, left: NONE, right: NONE },
             margins: { top: pt(3), bottom: pt(3), left: pt(7), right: pt(7) },
-            children: [para(responseRuns, { spacing: { after: 0 } })],
+            children: optionParas,
         }),
     ]});
 };
@@ -504,23 +503,21 @@ if (isCorp) {
     // ════════════════════════════════════════════════════════════════════════════
     body.push(...sectionHeading('Counterparty & Business Profile'));
 
-    const cpProfile   = qa('cp_profile',   null);   // 'Entities' | 'Individuals' | 'Both'
-    const cpLocations = qa('cp_locations', d.countries_involved || null);
-    const cpMetals    = qa('cp_metals',    isGold ? 'Gold' : null);
+    const cpProfile = qa('cp_profile', null);   // 'Entities' | 'Individuals' | 'Both'
+    const cpMetals  = qa('cp_metals',  isGold ? 'Gold' : null);
 
     const cpQs = [
         qChoiceRow('What is the profile of your major counterparties?', ['Entities', 'Individuals', 'Both'], cpProfile, false),
-        qRow('What are the main locations of your major counterparties?',  cpLocations, true),
-        qRow('Does the company have any smelting or refining facilities?', qa('cp_smelting',        null), false),
-        qRow('Does the company have its own manufacturing facilities?',    qa('cp_manufacturing',   null), true),
-        isGold ? qRow('Does the company produce its own jewelry?',         qa('cp_jewelry',         null), false) : null,
-        isGold ? qRow('What metals does the company send for refining?',   cpMetals,                       true)  : null,
-        isGold ? qRow('Does the company work directly with mines, refineries, or other third-party suppliers?', qa('cp_mines', null), false) : null,
-        qRow('Do you have offices or partnerships outside the UAE?',       qa('cp_overseas',        null), isGold ? true : false),
-        qRow('Do you verify and obtain complete export documentation from your suppliers, including source of origin?', qa('cp_export_docs', null), !isGold),
-        qRow('Does your company offer additional services such as storage, transportation, or product certification?', qa('cp_services', null), isGold),
-        qRow('Are your typical transactions high-value?',                  qa('cp_high_value',      null), !isGold),
-        qRow('Do you outsource any of your operations to third parties?',  qa('cp_outsourcing',     null), isGold),
+        qRow('Does the company have any smelting or refining facilities?',                                             qa('cp_smelting',     null), true),
+        qRow('Does the company have its own manufacturing facilities?',                                                qa('cp_manufacturing',null), false),
+        isGold ? qRow('Does the company produce its own jewelry?',                                                     qa('cp_jewelry',      null), true)  : null,
+        isGold ? qRow('What metals does the company send for refining?',                                               cpMetals,                   false) : null,
+        isGold ? qRow('Does the company work directly with mines, refineries, or other third-party suppliers?',        qa('cp_mines',        null), true)  : null,
+        qRow('Do you have offices or partnerships outside the UAE?',                                                   qa('cp_overseas',     null), false),
+        qRow('Do you verify and obtain complete export documentation from your suppliers, including source of origin?', qa('cp_export_docs',  null), true),
+        qRow('Does your company offer additional services such as storage, transportation, or product certification?',  qa('cp_services',     null), false),
+        qRow('Are your typical transactions high-value?',                                                              qa('cp_high_value',   null), true),
+        qRow('Do you outsource any of your operations to third parties?',                                              qa('cp_outsourcing',  null), false),
     ].filter(Boolean);
 
     body.push(
