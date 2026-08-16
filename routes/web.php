@@ -90,6 +90,7 @@ Route::middleware(['auth', \App\Http\Middleware\EnsureAdminUser::class])->group(
     Route::post('/crm/{crm}/notes',                [CrmController::class, 'addNote'])->name('crm.notes.store');
     Route::post('/crm/{crm}/tasks',                [CrmController::class, 'addTask'])->name('crm.tasks.store');
     Route::patch('/crm/tasks/{task}/complete',     [CrmController::class, 'completeTask'])->name('crm.tasks.complete');
+    Route::get('/tasks',                           [CrmController::class, 'tasksIndex'])->name('tasks.index');
     Route::post('/tasks/quick-capture',            [CrmController::class, 'quickCapture'])->name('tasks.quick-capture');
     Route::post('/tasks/quick-capture/save',       [CrmController::class, 'quickCaptureSave'])->name('tasks.quick-capture.save');
     Route::get('/crm/search',                      [CrmController::class, 'searchJson'])->name('crm.search');

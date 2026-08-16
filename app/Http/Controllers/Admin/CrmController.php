@@ -165,6 +165,21 @@ class CrmController extends Controller
         return view('admin.crm.show', compact('crm', 'staff', 'slaTemplates', 'qtTemplates'));
     }
 
+    // ── Tasks index ────────────────────────────────────────────────────────
+    public function tasksIndex()
+    {
+        $clients = CrmClient::with(['tasks' => function ($q) {
+                $q->whereIn('status', ['pending', 'in_progress'])
+                  ->with('assignee')
+                  ->orderBy('due_date');
+            }])
+            ->whereHas('tasks', fn($q) => $q->whereIn('status', ['pending', 'in_progress']))
+            ->orderBy('company_name')
+            ->get();
+
+        return view('admin.crm.tasks', compact('clients'));
+    }
+
     // ── Add note ───────────────────────────────────────────────────────────
     public function addNote(Request $request, CrmClient $crm)
     {
