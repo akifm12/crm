@@ -11,10 +11,11 @@
     {{-- Tab bar --}}
     <div class="flex gap-1 bg-white rounded-xl border border-gray-200 p-1 mb-5">
         @foreach([
-            ['sla',         'SLA Templates'],
-            ['quotations',  'Quotation Templates'],
-            ['staff',       'Staff Users'],
-            ['certificate', 'Certificate'],
+            ['sla',          'SLA Templates'],
+            ['quotations',   'Quotation Templates'],
+            ['superadmins',  'Super Admins'],
+            ['staff',        'Staff Users'],
+            ['certificate',  'Certificate'],
         ] as [$key, $label])
         <button @click="tab='{{ $key }}'"
                 :class="tab==='{{ $key }}' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'"
@@ -142,6 +143,123 @@
         </div>
     </div>
 
+    {{-- ── SUPER ADMINS ──────────────────────────────────────────────────── --}}
+    <div x-show="tab==='superadmins'" x-cloak>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+
+            {{-- Add super admin form --}}
+            <div class="bg-white rounded-xl border border-gray-200 p-5">
+                <h3 class="text-sm font-semibold text-gray-700 mb-4">Add super admin</h3>
+                <form method="POST" action="{{ route('settings.staff.store') }}" class="space-y-3">
+                    @csrf
+                    <input type="hidden" name="role" value="super_admin">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Full name <span class="text-red-500">*</span></label>
+                        <input type="text" name="name" required class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Email <span class="text-red-500">*</span></label>
+                        <input type="email" name="email" required class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Password <span class="text-red-500">*</span></label>
+                        <input type="password" name="password" required minlength="8" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <button type="submit" class="w-full py-2 text-sm font-semibold text-white bg-purple-600 rounded-lg hover:bg-purple-700 transition">
+                        Add super admin
+                    </button>
+                </form>
+            </div>
+
+            {{-- Super admin list --}}
+            <div class="lg:col-span-2 bg-white rounded-xl border border-gray-200">
+                <div class="px-5 py-4 border-b border-gray-100">
+                    <h3 class="text-sm font-semibold text-gray-700">Super admins</h3>
+                    <p class="text-xs text-gray-400 mt-0.5">These users can log into the admin portal.</p>
+                </div>
+                <div class="divide-y divide-gray-100">
+                    @forelse($superAdmins as $su)
+                    <div x-data="{
+                            editOpen: false,
+                            name: '{{ addslashes($su->name) }}',
+                            email: '{{ addslashes($su->email) }}'
+                         }"
+                         class="px-5 py-3.5">
+                        <div class="flex items-center justify-between gap-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center text-sm font-bold text-purple-700 flex-shrink-0">
+                                    {{ strtoupper(substr($su->name, 0, 1)) }}
+                                </div>
+                                <div>
+                                    <p class="text-sm font-medium text-gray-800">{{ $su->name }}
+                                        @if($su->id === auth()->id())
+                                        <span class="text-xs text-gray-400">(you)</span>
+                                        @endif
+                                    </p>
+                                    <p class="text-xs text-gray-400">{{ $su->email }}</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2 flex-shrink-0">
+                                <span class="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">Super Admin</span>
+                                <button @click="editOpen = !editOpen"
+                                        class="px-2.5 py-1 text-xs font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
+                                    Edit
+                                </button>
+                                @if($su->id !== auth()->id())
+                                <form method="POST" action="{{ route('settings.staff.destroy', $su->id) }}"
+                                      onsubmit="return confirm('Delete {{ addslashes($su->name) }}? This cannot be undone.')">
+                                    @csrf @method('DELETE')
+                                    <button type="submit" class="px-2.5 py-1 text-xs font-medium text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition">
+                                        Delete
+                                    </button>
+                                </form>
+                                @endif
+                            </div>
+                        </div>
+                        <div x-show="editOpen" x-transition class="mt-3 pt-3 border-t border-gray-100">
+                            <form method="POST" action="{{ route('settings.staff.update', $su->id) }}" class="space-y-3">
+                                @csrf @method('PUT')
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-600 mb-1">Full name</label>
+                                        <input type="text" name="name" x-model="name" required
+                                               class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-600 mb-1">Email</label>
+                                        <input type="email" name="email" x-model="email" required
+                                               class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    </div>
+                                    <div class="col-span-2">
+                                        <label class="block text-xs font-medium text-gray-600 mb-1">New password <span class="text-gray-400">(leave blank to keep)</span></label>
+                                        <input type="password" name="password" minlength="8"
+                                               class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    </div>
+                                    <input type="hidden" name="role" value="super_admin">
+                                </div>
+                                <div class="flex gap-2 justify-end">
+                                    <button type="button" @click="editOpen = false"
+                                            class="px-3 py-1.5 text-xs font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
+                                        Cancel
+                                    </button>
+                                    <button type="submit"
+                                            class="px-3 py-1.5 text-xs font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 transition">
+                                        Save changes
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    @empty
+                    <div class="px-5 py-10 text-center">
+                        <p class="text-sm text-gray-400">No super admins yet.</p>
+                    </div>
+                    @endforelse
+                </div>
+            </div>
+        </div>
+    </div>
+
     {{-- ── STAFF USERS ───────────────────────────────────────────────────── --}}
     <div x-show="tab==='staff'" x-cloak>
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -166,7 +284,6 @@
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-1">Role</label>
                         <select name="role" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="super_admin">Super Admin</option>
                             <option value="admin">Admin</option>
                             <option value="staff">Staff</option>
                         </select>
@@ -253,7 +370,6 @@
                                         <label class="block text-xs font-medium text-gray-600 mb-1">Role</label>
                                         <select name="role" x-model="role"
                                                 class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                            <option value="super_admin">Super Admin</option>
                                             <option value="admin">Admin</option>
                                             <option value="staff">Staff</option>
                                         </select>
