@@ -17,7 +17,7 @@ class SettingsController extends Controller
     {
         $slaTemplates = SlaTemplate::latest()->get();
         $qtTemplates  = QuotationTemplate::latest()->get();
-        $staff        = User::orderBy('name')->get();
+        $staff        = User::whereNull('tenant_id')->orderBy('name')->get();
         return view('admin.settings.index', compact('slaTemplates', 'qtTemplates', 'staff'));
     }
 
@@ -119,24 +119,53 @@ class SettingsController extends Controller
             'name'     => 'required',
             'email'    => 'required|email|unique:users,email',
             'password' => 'required|min:8',
-            'role'     => 'required|in:admin,staff',
+            'role'     => 'required|in:super_admin,admin,staff',
         ]);
         User::create([
-            'name'     => $request->name,
-            'email'    => $request->email,
-            'password' => Hash::make($request->password),
-            'role'     => $request->role,
+            'name'      => $request->name,
+            'email'     => $request->email,
+            'password'  => Hash::make($request->password),
+            'role'      => $request->role,
+            'tenant_id' => null,
         ]);
         return back()->with('success', 'Staff user created.');
     }
 
+    public function updateStaff(Request $request, User $user)
+    {
+        $request->validate([
+            'name'     => 'required',
+            'email'    => 'required|email|unique:users,email,' . $user->id,
+            'password' => 'nullable|min:8',
+            'role'     => 'required|in:super_admin,admin,staff',
+        ]);
+        $data = [
+            'name'  => $request->name,
+            'email' => $request->email,
+            'role'  => $request->role,
+        ];
+        if ($request->filled('password')) {
+            $data['password'] = Hash::make($request->password);
+        }
+        $user->update($data);
+        return back()->with('success', 'User updated.')->with('tab', 'staff');
+    }
+
+    public function destroyStaff(User $user)
+    {
+        if ($user->id === auth()->id()) {
+            return back()->with('error', 'You cannot delete your own account.')->with('tab', 'staff');
+        }
+        $user->delete();
+        return back()->with('success', 'User deleted.')->with('tab', 'staff');
+    }
+
     public function toggleStaff(User $user)
     {
-        // We use a soft approach — just update role to 'inactive' or back
         if ($user->id === auth()->id()) {
             return back()->with('error', 'You cannot deactivate your own account.');
         }
-        $user->update(['role' => $user->role === 'staff' ? 'inactive' : 'staff']);
+        $user->update(['role' => $user->role === 'inactive' ? 'staff' : 'inactive']);
         return back()->with('success', 'User updated.');
     }
 

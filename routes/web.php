@@ -143,6 +143,8 @@ Route::middleware(['auth', \App\Http\Middleware\EnsureAdminUser::class])->group(
     Route::put('/settings/qt/{template}',           [SettingsController::class, 'updateQtTemplate'])->name('settings.qt.update');
     Route::patch('/settings/qt/{template}/toggle',  [SettingsController::class, 'toggleQtTemplate'])->name('settings.qt.toggle');
     Route::post('/settings/staff',                  [SettingsController::class, 'storeStaff'])->name('settings.staff.store');
+    Route::put('/settings/staff/{user}',            [SettingsController::class, 'updateStaff'])->name('settings.staff.update');
+    Route::delete('/settings/staff/{user}',         [SettingsController::class, 'destroyStaff'])->name('settings.staff.destroy');
     Route::patch('/settings/staff/{user}/toggle',   [SettingsController::class, 'toggleStaff'])->name('settings.staff.toggle');
     Route::post('/settings/certificate/upload',     [SettingsController::class, 'uploadCertificateAsset'])->name('settings.certificate.upload');
 
