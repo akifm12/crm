@@ -159,7 +159,7 @@ class CrmController extends Controller
     public function show(CrmClient $crm)
     {
         $crm->load(['shareholders', 'contacts', 'documents', 'notes.author', 'tasks.assignee', 'slas', 'quotations', 'tenant', 'assignee', 'trainings']);
-        $staff        = User::orderBy('name')->get();
+        $staff        = User::where('role', 'super_admin')->orderBy('name')->get();
         $slaTemplates = SlaTemplate::where('is_active', true)->orderBy('name')->get();
         $qtTemplates  = QuotationTemplate::where('is_active', true)->orderBy('name')->get();
         return view('admin.crm.show', compact('crm', 'staff', 'slaTemplates', 'qtTemplates'));
