@@ -17,14 +17,16 @@ class TrainingSessionController extends Controller
     public function index()
     {
         $sessions = CrmEmployeeTraining::select(
-                'training_type',
-                'training_date',
+                'crm_employee_trainings.training_type',
+                'crm_employee_trainings.training_date',
                 DB::raw('COUNT(*) as attendee_count'),
-                DB::raw('MAX(trainer) as trainer'),
-                DB::raw('MAX(certificate_template) as certificate_template')
+                DB::raw('MAX(crm_employee_trainings.trainer) as trainer'),
+                DB::raw('MAX(crm_employee_trainings.certificate_template) as certificate_template'),
+                DB::raw('GROUP_CONCAT(DISTINCT crm_clients.company_name ORDER BY crm_clients.company_name SEPARATOR ", ") as client_names')
             )
-            ->groupBy('training_type', 'training_date')
-            ->orderByDesc('training_date')
+            ->join('crm_clients', 'crm_employee_trainings.crm_client_id', '=', 'crm_clients.id')
+            ->groupBy('crm_employee_trainings.training_type', 'crm_employee_trainings.training_date')
+            ->orderByDesc('crm_employee_trainings.training_date')
             ->get();
 
         return view('admin.training.sessions', compact('sessions'));

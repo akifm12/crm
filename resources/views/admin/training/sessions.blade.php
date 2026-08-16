@@ -29,6 +29,7 @@
                 <thead>
                     <tr class="bg-gray-50 border-b border-gray-200">
                         <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Training Programme</th>
+                        <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Client(s)</th>
                         <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Date</th>
                         <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Trainer</th>
                         <th class="px-5 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wide">Attendees</th>
@@ -39,6 +40,13 @@
                     @foreach($sessions as $session)
                     <tr class="hover:bg-gray-50 transition">
                         <td class="px-5 py-3.5 font-semibold text-gray-800">{{ $session->training_type }}</td>
+                        <td class="px-5 py-3.5 text-gray-600 max-w-xs">
+                            @foreach(explode(', ', $session->client_names ?? '') as $name)
+                                @if($name)
+                                <span class="inline-block text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full mr-1 mb-0.5">{{ $name }}</span>
+                                @endif
+                            @endforeach
+                        </td>
                         <td class="px-5 py-3.5 text-gray-600">{{ \Carbon\Carbon::parse($session->training_date)->format('d M Y') }}</td>
                         <td class="px-5 py-3.5 text-gray-500">{{ $session->trainer ?: '—' }}</td>
                         <td class="px-5 py-3.5 text-center">
