@@ -41,7 +41,7 @@ class CrmController extends Controller
         if ($request->filled('status')) $query->where('status', $request->status);
 
         $clients  = $query->latest()->paginate(25)->withQueryString();
-        $staff    = User::orderBy('name')->get();
+        $staff    = User::whereIn('role', ['admin', 'super_admin'])->whereNull('tenant_id')->orderBy('name')->get();
 
         // Pipeline counts for summary bar
         $pipeline = CrmClient::selectRaw('stage, count(*) as total')
@@ -54,7 +54,7 @@ class CrmController extends Controller
     // ── Create form ────────────────────────────────────────────────────────
     public function create()
     {
-        $staff = User::orderBy('name')->get();
+        $staff = User::whereIn('role', ['admin', 'super_admin'])->whereNull('tenant_id')->orderBy('name')->get();
         return view('admin.crm.create', compact('staff'));
     }
 
