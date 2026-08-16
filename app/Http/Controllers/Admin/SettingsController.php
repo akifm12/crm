@@ -17,7 +17,7 @@ class SettingsController extends Controller
     {
         $slaTemplates = SlaTemplate::latest()->get();
         $qtTemplates  = QuotationTemplate::latest()->get();
-        $staff        = User::whereNull('tenant_id')->orderBy('name')->get();
+        $staff        = User::orderBy('name')->get();
         return view('admin.settings.index', compact('slaTemplates', 'qtTemplates', 'staff'));
     }
 
