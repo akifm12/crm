@@ -41,7 +41,7 @@ class CrmController extends Controller
         if ($request->filled('status')) $query->where('status', $request->status);
 
         $clients  = $query->latest()->paginate(25)->withQueryString();
-        $staff    = User::where('role', 'super_admin')->orderBy('name')->get();
+        $staff    = User::whereNull('tenant_id')->orderBy('name')->get();
 
         // Pipeline counts for summary bar
         $pipeline = CrmClient::selectRaw('stage, count(*) as total')
@@ -54,7 +54,7 @@ class CrmController extends Controller
     // ── Create form ────────────────────────────────────────────────────────
     public function create()
     {
-        $staff = User::where('role', 'super_admin')->orderBy('name')->get();
+        $staff = User::whereNull('tenant_id')->orderBy('name')->get();
         return view('admin.crm.create', compact('staff'));
     }
 
@@ -159,7 +159,7 @@ class CrmController extends Controller
     public function show(CrmClient $crm)
     {
         $crm->load(['shareholders', 'contacts', 'documents', 'notes.author', 'tasks.assignee', 'slas', 'quotations', 'tenant', 'assignee', 'trainings']);
-        $staff        = User::where('role', 'super_admin')->orderBy('name')->get();
+        $staff        = User::whereNull('tenant_id')->orderBy('name')->get();
         $slaTemplates = SlaTemplate::where('is_active', true)->orderBy('name')->get();
         $qtTemplates  = QuotationTemplate::where('is_active', true)->orderBy('name')->get();
         return view('admin.crm.show', compact('crm', 'staff', 'slaTemplates', 'qtTemplates'));
