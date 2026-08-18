@@ -196,9 +196,13 @@
                 <td class="py-2 text-gray-500">{{ str_replace('_', ' ', $payment->method ?? '—') }}</td>
                 <td class="py-2 text-gray-500">{{ $payment->purpose ?: $payment->reference }}</td>
                 <td class="py-2 text-right font-mono">{{ number_format($payment->amount, 2) }}</td>
+                <td class="py-2 text-right">
+                    <a href="{{ route('tenant.accounting.payments.receipt', [$tenant->slug, $payment->id]) }}" target="_blank"
+                       class="text-xs text-blue-600 hover:underline whitespace-nowrap">Print receipt</a>
+                </td>
             </tr>
             @empty
-            <tr><td colspan="4" class="py-3 text-center text-gray-400">No {{ strtolower($paymentWord) }} recorded yet.</td></tr>
+            <tr><td colspan="5" class="py-3 text-center text-gray-400">No {{ strtolower($paymentWord) }} recorded yet.</td></tr>
             @endforelse
         </tbody>
     </table>
