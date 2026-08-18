@@ -165,6 +165,7 @@
                         <label class="block text-xs text-gray-400 mb-0.5">Item / description</label>
                         <input type="text" :name="'lines['+i+'][description]'" x-model="line.description"
                                :list="['metal_out'].includes(line.line_type) ? 'inventory-items-in-stock' : 'inventory-items-list'"
+                               autocomplete="off"
                                required @input="matchItemByName(line)" placeholder="Pick an inventory item or type a description"
                                :class="line.outOfStock ? 'border-red-400' : 'border-gray-200'"
                                class="w-full px-2 py-1.5 text-sm border rounded-lg">
