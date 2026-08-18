@@ -253,10 +253,14 @@ class ReportingService
      * Metal movement ledger for a single client: one row per invoice line that moved metal,
      * showing grams in / grams out and a running gram balance per metal type.
      *
-     * "In"  = metal received FROM the client (purchase / exchange metal_in line) → dealer
-     *         owes the client the equivalent, so it's a credit to the client's metal balance.
-     * "Out" = metal issued TO the client (sale / exchange metal_out line) → reduces what
-     *         the dealer owes, or represents a delivery against a prior purchase.
+     * Only exchange-type invoices generate client metal balances. On a purchase invoice the
+     * client sells metal for cash — the transaction is complete once paid, so there is no
+     * ongoing metal obligation to show. On an exchange invoice the client deposits metal to
+     * be returned (in kind or a different form) later, which IS an outstanding balance.
+     *
+     * "In"  = metal received FROM the client on an exchange → dealer holds it for the client
+     *         → positive balance (dealer owes the client that metal or its equivalent).
+     * "Out" = metal delivered TO the client on an exchange → reduces what the dealer holds.
      *
      * Returns: ['rows' => Collection, 'metals' => string[], 'balances' => [metal => grams]]
      */
@@ -267,6 +271,7 @@ class ReportingService
             ->where('invoices.tenant_id', $tenant->id)
             ->where('invoices.bullion_client_id', $client->id)
             ->where('invoices.status', 'posted')
+            ->where('invoices.invoice_type', 'exchange')
             ->whereIn('invoice_lines.line_type', ['metal_in', 'metal_out'])
             ->whereNotNull('invoice_lines.metal_type')
             ->when($asOf, fn ($q) => $q->where('invoices.invoice_date', '<=', $asOf->toDateString()))
