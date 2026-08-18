@@ -330,12 +330,14 @@ PROMPT;
         if ($request->hasFile('documents')) {
             foreach ($request->file('documents') as $docType => $file) {
                 if (!$file || !$file->isValid()) continue;
+                // Strip trailing _N index from multi-upload slots (e.g. shareholder_passport_0 → shareholder_passport)
+                $storedType = preg_replace('/_\d+$/', '', $docType);
                 $path = $file->store("tenants/{$tenant->id}/clients/{$client->id}", 'local');
                 ClientDocument::create([
                     'bullion_client_id' => $client->id,
                     'tenant_id'         => $tenant->id,
-                    'document_type'     => $docType,
-                    'document_label'    => $request->input("doc_labels.{$docType}", $docType),
+                    'document_type'     => $storedType,
+                    'document_label'    => $request->input("doc_labels.{$docType}", $storedType),
                     'file_path'         => $path,
                     'file_name'         => $file->getClientOriginalName(),
                     'mime_type'         => $file->getMimeType(),

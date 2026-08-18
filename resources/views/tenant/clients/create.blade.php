@@ -810,17 +810,21 @@
                 ['type'=>'trade_license',       'label'=>'Trade licence',                    'required'=>true,  'has_expiry'=>true],
                 ['type'=>'moa',                 'label'=>'Memorandum of Association (MoA)',   'required'=>true,  'has_expiry'=>false],
                 ['type'=>'certificate_incorp',  'label'=>'Certificate of incorporation',      'required'=>true,  'has_expiry'=>false],
-                ['type'=>'signatory_passport',  'label'=>'Authorised signatory passport',     'required'=>true,  'has_expiry'=>true],
+                ['type'=>'signatory_passport',  'label'=>'Authorised signatory passport',     'required'=>true,  'has_expiry'=>true, 'multi'=>true],
                 ['type'=>'signatory_eid',       'label'=>'Authorised signatory Emirates ID',  'required'=>false, 'has_expiry'=>true],
-                ['type'=>'shareholder_passport','label'=>'Shareholder passport(s)',            'required'=>true,  'has_expiry'=>true],
-                ['type'=>'ubo_passport',        'label'=>'UBO passport(s)',                   'required'=>false, 'has_expiry'=>true],
+                ['type'=>'shareholder_passport','label'=>'Shareholder passport(s)',            'required'=>true,  'has_expiry'=>true, 'multi'=>true],
+                ['type'=>'ubo_passport',        'label'=>'UBO passport(s)',                   'required'=>false, 'has_expiry'=>true, 'multi'=>true],
                 ['type'=>'source_of_funds',     'label'=>'Source of funds evidence',          'required'=>false, 'has_expiry'=>false],
                 ['type'=>'bank_statement',      'label'=>'Bank statement (3 months)',          'required'=>false, 'has_expiry'=>false],
                 ['type'=>'other',               'label'=>'Other / additional document',        'required'=>false, 'has_expiry'=>false],
             ];
             @endphp
             @foreach($corpDocs as $doc)
+            @if(!empty($doc['multi']))
+            @include('tenant.clients._doc_row_multi', $doc)
+            @else
             @include('tenant.clients._doc_row', $doc)
+            @endif
             @endforeach
         </div>
 
