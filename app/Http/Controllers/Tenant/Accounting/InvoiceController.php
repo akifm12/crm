@@ -40,7 +40,10 @@ class InvoiceController extends Controller
         $tenant = app('tenant');
 
         $clients = BullionClient::where('tenant_id', $tenant->id)->orderBy('company_name')->orderBy('full_name')->get();
-        $items = InventoryItem::where('tenant_id', $tenant->id)->where('is_active', true)->orderBy('name')->get();
+        $items = InventoryItem::where('tenant_id', $tenant->id)->where('is_active', true)
+            ->with('balance')
+            ->orderBy('name')
+            ->get();
         $invoiceType = $request->input('type', 'purchase');
         $selectedClientId = $request->integer('client_id') ?: null;
 
@@ -70,6 +73,33 @@ class InvoiceController extends Controller
             'lines.*.inventory_item_id' => 'nullable|exists:inventory_items,id',
             'lines.*.metal_type' => 'nullable|string|max:20',
             'lines.*.description' => 'required|string|max:255',
+        ]);
+
+        // For fixed-price invoices, metal rates are required whenever a metal line is present.
+        $isFixed = ($request->input('pricing_type') ?: 'fixed') === 'fixed';
+        $hasMetalLine = collect($request->input('lines', []))
+            ->contains(fn ($l) => in_array($l['line_type'] ?? '', ['metal_in', 'metal_out']));
+
+        if ($isFixed && $hasMetalLine) {
+            $metalRates = $request->input('metal_rates', []);
+            $missing = [];
+            foreach ($metalRates as $metal => $rate) {
+                if (empty($rate['usd_per_oz']) || (float) $rate['usd_per_oz'] <= 0) {
+                    $missing[] = ucfirst($metal) . ' price/oz (USD)';
+                }
+                if (empty($rate['usd_aed_rate']) || (float) $rate['usd_aed_rate'] <= 0) {
+                    $missing[] = ucfirst($metal) . ' USD→AED rate';
+                }
+            }
+            if ($missing) {
+                return back()->withErrors(['metal_rates' => 'Metal rates are required for fixed invoices: ' . implode(', ', $missing) . '.'])->withInput();
+            }
+            if (empty($metalRates)) {
+                return back()->withErrors(['metal_rates' => 'Enter the metal rate (price/oz and USD→AED) before saving.'])->withInput();
+            }
+        }
+
+        $request->validate([
             'lines.*.purity' => 'nullable|numeric|min:0|max:999.999',
             'lines.*.quantity_grams' => 'nullable|numeric|min:0',
             'lines.*.gross_weight_grams' => 'nullable|numeric|min:0',

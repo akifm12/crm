@@ -15,6 +15,8 @@
         'purity' => $item->purity,
         'metal_type' => $item->metal_type,
         'nominal_weight_grams' => $item->nominal_weight_grams ? (float) $item->nominal_weight_grams : null,
+        'stock_grams' => $item->balance ? (float) $item->balance->quantity_grams : 0,
+        'stock_pcs' => $item->balance ? (int) $item->balance->pieces : 0,
     ]);
 @endphp
 
@@ -87,13 +89,23 @@
                     <div class="text-xs font-semibold text-gray-500 capitalize mb-2" x-text="metal + ' rate'"></div>
                     <div class="grid grid-cols-3 gap-4">
                         <div>
-                            <label class="block text-xs font-medium text-gray-600 mb-1">Price / oz (USD)</label>
-                            <input type="number" step="0.0001" min="0" :name="'metal_rates['+metal+'][usd_per_oz]'" x-model.number="metalRates[metal].usdPerOz"
+                            <label class="block text-xs font-medium text-gray-600 mb-1">
+                                Price / oz (USD) <span x-show="pricingType === 'fixed'" class="text-red-500">*</span>
+                            </label>
+                            <input type="number" step="0.0001" min="0.0001"
+                                   :name="'metal_rates['+metal+'][usd_per_oz]'"
+                                   x-model.number="metalRates[metal].usdPerOz"
+                                   :required="pricingType === 'fixed'"
                                    class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg">
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-gray-600 mb-1">USD → AED rate</label>
-                            <input type="number" step="0.0001" min="0" :name="'metal_rates['+metal+'][usd_aed_rate]'" x-model.number="metalRates[metal].usdAedRate"
+                            <label class="block text-xs font-medium text-gray-600 mb-1">
+                                USD → AED rate <span x-show="pricingType === 'fixed'" class="text-red-500">*</span>
+                            </label>
+                            <input type="number" step="0.0001" min="0.0001"
+                                   :name="'metal_rates['+metal+'][usd_aed_rate]'"
+                                   x-model.number="metalRates[metal].usdAedRate"
+                                   :required="pricingType === 'fixed'"
                                    class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg">
                         </div>
                         <div>
@@ -151,9 +163,15 @@
                     </div>
                     <div class="col-span-5">
                         <label class="block text-xs text-gray-400 mb-0.5">Item / description</label>
-                        <input type="text" :name="'lines['+i+'][description]'" x-model="line.description" list="inventory-items-list" required
-                               @input="matchItemByName(line)" placeholder="Pick an inventory item or type a description"
-                               class="w-full px-2 py-1.5 text-sm border border-gray-200 rounded-lg">
+                        <input type="text" :name="'lines['+i+'][description]'" x-model="line.description"
+                               :list="['metal_out'].includes(line.line_type) ? 'inventory-items-in-stock' : 'inventory-items-list'"
+                               required @input="matchItemByName(line)" placeholder="Pick an inventory item or type a description"
+                               :class="line.outOfStock ? 'border-red-400' : 'border-gray-200'"
+                               class="w-full px-2 py-1.5 text-sm border rounded-lg">
+                        <p x-show="line.outOfStock" class="text-xs text-red-500 mt-0.5">
+                            This item has no stock — cannot be sold.
+                        </p>
+                        <p x-show="line.stockLabel && !line.outOfStock" class="text-xs text-gray-400 mt-0.5" x-text="line.stockLabel"></p>
                         <input type="hidden" :name="'lines['+i+'][inventory_item_id]'" :value="line.inventory_item_id">
                         <input type="hidden" :name="'lines['+i+'][metal_type]'" :value="line.metal_type">
                     </div>
@@ -273,7 +291,12 @@
 
 <datalist id="inventory-items-list">
     @foreach($items as $item)
-    <option value="{{ $item->name }}"></option>
+    <option value="{{ $item->name }}">{{ $item->balance ? number_format($item->balance->quantity_grams, 3).'g in stock' : 'no stock record' }}</option>
+    @endforeach
+</datalist>
+<datalist id="inventory-items-in-stock">
+    @foreach($items->filter(fn($i) => $i->balance && $i->balance->quantity_grams > 0) as $item)
+    <option value="{{ $item->name }}">{{ number_format($item->balance->quantity_grams, 3) }}g in stock</option>
     @endforeach
 </datalist>
 
@@ -289,6 +312,13 @@ function invoiceForm() {
             this.lines = [this.blankLine()];
             @json($itemsForJs)
                 .forEach(it => this.itemsByName[it.name] = it);
+        },
+        stockLabel(item) {
+            if (!item) return '';
+            const g = item.stock_grams;
+            const pcs = item.stock_pcs;
+            if (g <= 0) return '';
+            return pcs > 0 ? `${pcs} pcs / ${g.toFixed(3)} g in stock` : `${g.toFixed(3)} g in stock`;
         },
         ensureMetalRate(metal) {
             if (metal && !this.metalRates[metal]) {
@@ -318,6 +348,8 @@ function invoiceForm() {
                 line.purity = match.purity;
                 line.metal_type = match.metal_type;
                 line.nominal_weight_grams = match.nominal_weight_grams;
+                line.outOfStock = line.line_type === 'metal_out' && match.stock_grams <= 0;
+                line.stockLabel = this.stockLabel(match);
                 this.ensureMetalRate(match.metal_type);
                 if (line.nominal_weight_grams && line.pcs) {
                     this.syncFromPcs(line);
@@ -328,6 +360,8 @@ function invoiceForm() {
                 line.inventory_item_id = '';
                 line.metal_type = '';
                 line.nominal_weight_grams = null;
+                line.outOfStock = false;
+                line.stockLabel = '';
             }
         },
         lineTypeOptionsFor(type) {
@@ -351,6 +385,7 @@ function invoiceForm() {
                 metal_vat_treatment: 'standard', metal_vat_rate: 5,
                 making_charge_rate: null,
                 making_vat_treatment: 'standard', making_vat_rate: 5,
+                outOfStock: false, stockLabel: '',
             };
         },
         onInvoiceTypeChange() {
