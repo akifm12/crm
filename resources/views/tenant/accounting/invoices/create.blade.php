@@ -29,7 +29,8 @@
 @endif
 
 <form method="POST" action="{{ route('tenant.accounting.invoices.store', $tenant->slug) }}"
-      x-data="invoiceForm()" class="max-w-6xl">
+      x-data="invoiceForm()" class="max-w-6xl"
+      @keydown.enter="if ($event.target.tagName === 'INPUT' && $event.target.type !== 'submit') $event.preventDefault()">
     @csrf
 
     <div class="bg-white rounded-xl border border-gray-200 p-5 mb-5">
@@ -385,9 +386,9 @@ function invoiceForm() {
                 line_type: this.lineTypeOptions[0].value, inventory_item_id: '', description: '',
                 metal_type: '', nominal_weight_grams: null, purity: null, gross_weight_grams: null, quantity_grams: null, pcs: null,
                 line_subtotal: null,
-                metal_vat_treatment: 'standard', metal_vat_rate: 5,
+                metal_vat_treatment: 'zero_rated', metal_vat_rate: 0,
                 making_charge_rate: null,
-                making_vat_treatment: 'standard', making_vat_rate: 5,
+                making_vat_treatment: 'zero_rated', making_vat_rate: 0,
                 outOfStock: false, stockLabel: '',
             };
         },

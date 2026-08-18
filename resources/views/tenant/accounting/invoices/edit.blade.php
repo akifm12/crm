@@ -70,7 +70,8 @@
 @endif
 
 <form method="POST" action="{{ route('tenant.accounting.invoices.update', [$tenant->slug, $invoice->id]) }}"
-      @if(!$isPosted) x-data="invoiceForm()" @endif class="max-w-6xl">
+      @if(!$isPosted) x-data="invoiceForm()" @endif class="max-w-6xl"
+      @keydown.enter="if ($event.target.tagName === 'INPUT' && $event.target.type !== 'submit') $event.preventDefault()">
     @csrf
     @method('PUT')
 
@@ -461,8 +462,8 @@ function invoiceForm() {
                 line_type: this.lineTypeOptions[0].value, inventory_item_id: '', description: '',
                 metal_type: '', nominal_weight_grams: null, purity: null, gross_weight_grams: null,
                 quantity_grams: null, pcs: null, line_subtotal: null,
-                metal_vat_treatment: 'standard', metal_vat_rate: 5,
-                making_charge_rate: null, making_vat_treatment: 'standard', making_vat_rate: 5,
+                metal_vat_treatment: 'zero_rated', metal_vat_rate: 0,
+                making_charge_rate: null, making_vat_treatment: 'zero_rated', making_vat_rate: 0,
                 outOfStock: false, stockLabel: '',
             };
         },
