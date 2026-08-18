@@ -541,7 +541,7 @@
   <div class="cover-body">
     <div class="cover-eyebrow">Company Portal</div>
     <div class="cover-title">User Guide</div>
-    <div class="cover-desc">Step-by-step instructions for onboarding clients and creating invoices within the Blue Arrow company portal. This guide covers client record generation and the accounting module.</div>
+    <div class="cover-desc">Step-by-step instructions for onboarding clients, creating invoices, managing inventory, and reading financial reports within the Blue Arrow company portal. Covers client record generation, the accounting module, inventory management, and reporting.</div>
   </div>
   <div class="cover-footer">
     <span>Blue Arrow Compliance Portal</span>
@@ -575,7 +575,32 @@
       <li><a href="#sale-invoice">Sale invoice — selling metal to the client</a></li>
       <li><a href="#purchase-invoice">Purchase invoice — buying metal from the client</a></li>
       <li><a href="#exchange-invoice">Metal exchange invoice</a></li>
-      <li><a href="#invoice-tips">Tips &amp; shortcuts — unfixed pricing, VAT, payments</a></li>
+      <li><a href="#payment-receipt">Recording payments &amp; printing receipts</a></li>
+      <li><a href="#invoice-tips">Tips &amp; shortcuts — unfixed pricing, VAT, mandatory fields</a></li>
+    </ul>
+  </div>
+
+  <div class="toc-section">
+    <div class="toc-section-label">
+      <span class="toc-letter">C</span>
+      <span class="toc-section-title">Inventory Management</span>
+    </div>
+    <ul class="toc-links">
+      <li><a href="#inventory-items">Creating and managing inventory items</a></li>
+      <li><a href="#sku-codes">Auto-generated SKU codes</a></li>
+      <li><a href="#form-types">Managing custom form types</a></li>
+    </ul>
+  </div>
+
+  <div class="toc-section">
+    <div class="toc-section-label">
+      <span class="toc-letter">D</span>
+      <span class="toc-section-title">Reports &amp; Statements</span>
+    </div>
+    <ul class="toc-links">
+      <li><a href="#client-statement">Client statement — combined cash &amp; metal view</a></li>
+      <li><a href="#balance-sheet-report">Balance sheet &amp; trial balance</a></li>
+      <li><a href="#export-formats">Exporting to PDF &amp; Excel</a></li>
     </ul>
   </div>
 </div>
@@ -621,7 +646,26 @@
         <li><a href="#sale-invoice" class="sub">Sale invoice</a></li>
         <li><a href="#purchase-invoice" class="sub">Purchase invoice</a></li>
         <li><a href="#exchange-invoice" class="sub">Metal exchange invoice</a></li>
+        <li><a href="#payment-receipt" class="sub">Payments &amp; receipts</a></li>
         <li><a href="#invoice-tips" class="sub">Tips &amp; shortcuts</a></li>
+      </ul>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Section C</div>
+      <ul class="nav-links">
+        <li><a href="#inventory-overview">Inventory</a></li>
+        <li><a href="#inventory-items" class="sub">Inventory items</a></li>
+        <li><a href="#sku-codes" class="sub">SKU codes</a></li>
+        <li><a href="#form-types" class="sub">Form types</a></li>
+      </ul>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Section D</div>
+      <ul class="nav-links">
+        <li><a href="#reports-overview">Reports</a></li>
+        <li><a href="#client-statement" class="sub">Client statement</a></li>
+        <li><a href="#balance-sheet-report" class="sub">Balance sheet &amp; TB</a></li>
+        <li><a href="#export-formats" class="sub">Exports</a></li>
       </ul>
     </div>
   </nav>
@@ -840,17 +884,198 @@
 
       <hr class="divider">
 
+      <div id="payment-receipt">
+        <h3>Recording Payments &amp; Printing Receipts</h3>
+        <p>Payments can be recorded either from an invoice's detail page or from the client's <strong>Statement of Accounts</strong> page. Once a payment is recorded, the system generates a printable cash receipt or payment voucher.</p>
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div><div class="step-body"><strong>Open the Statement of Accounts</strong><p>Go to <strong>Accounting → Reports → Client Statement</strong>, select the client and click <em>View statement</em>. The payment form appears at the bottom of the page.</p></div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-body"><strong>Select the invoice (optional)</strong><p>Choose the invoice you are settling from the dropdown. If the payment is a standalone margin deposit with no invoice yet, leave the invoice field blank and the amount will be held as an unapplied deposit.</p></div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-body"><strong>Enter payment details</strong><p>Set the date, amount, method (Cash / Bank transfer / Card), and an optional reference (e.g. bank transfer ref). For unlinked payments, also select the direction: <em>Receipt from client</em> or <em>Payment to client</em>.</p></div></div>
+          <div class="step"><div class="step-num">4</div><div class="step-body"><strong>Click Record</strong><p>The payment is posted to the ledger immediately. A green confirmation banner appears at the top of the page with a <strong>Print Receipt</strong> link.</p></div></div>
+          <div class="step"><div class="step-num">5</div><div class="step-body"><strong>Print the receipt</strong><p>Click <strong>Print Receipt</strong> to open the formatted document in a new tab. It shows your company header, client name, payment amount (large), payment method, direction badge (green Receipt / red Payment), and the linked invoice number. Use the <em>Print</em> button on that page to produce a PDF.</p></div></div>
+        </div>
+        <div class="note">
+          <strong>Note</strong>
+          The receipt link is only shown immediately after recording the payment. To reprint a receipt later, open the linked journal entry from <strong>Accounting → Journal</strong> and navigate to the payment record from there.
+        </div>
+      </div>
+
+      <hr class="divider">
+
       <div id="invoice-tips">
         <h3>Tips &amp; Shortcuts</h3>
         <div class="steps">
           <div class="step"><div class="step-num">①</div><div class="step-body"><strong>Unfixed invoices</strong><p>Create an Unfixed invoice to record the transaction before the price is agreed. Once the trade is fixed, open the invoice, click <strong>Fix price</strong>, enter the agreed rate, and save. The invoice updates to Fixed status automatically.</p></div></div>
           <div class="step"><div class="step-num">②</div><div class="step-body"><strong>VAT on metal lines</strong><p>Investment-grade gold (purity ≥ 99%) is typically zero-rated. For silver, platinum, or fabricated gold, tick the <em>Metal VAT</em> checkbox on the line and enter the applicable rate. The system adds VAT to the line subtotal.</p></div></div>
-          <div class="step"><div class="step-num">③</div><div class="step-body"><strong>Linking payments</strong><p>After saving an invoice, go to the client's <em>Payments</em> tab to record a payment. Select the invoice from the dropdown to link it directly. Once the full amount is received or paid, the invoice status changes to <em>Settled</em>.</p></div></div>
-          <div class="step"><div class="step-num">④</div><div class="step-body"><strong>Printing and PDF export</strong><p>Open any invoice and click <strong>Print / Export PDF</strong>. The printed invoice shows your company letterhead, the client's details, all line items, the metal rate used, and the total in AED.</p></div></div>
+          <div class="step"><div class="step-num">③</div><div class="step-body"><strong>Mandatory metal rates</strong><p>For any fixed-price invoice that contains a metal line (Sale, Purchase, or Exchange), the <em>spot price per troy oz (USD)</em> and <em>USD/AED rate</em> fields are required. The invoice cannot be saved without them. These fields are marked with a red asterisk and the form will highlight them if left empty.</p></div></div>
+          <div class="step"><div class="step-num">④</div><div class="step-body"><strong>Item description filter</strong><p>On a Sale invoice, the item description field shows a drop-down of your <em>in-stock</em> inventory items only — items with zero stock are excluded. For Purchase and Exchange lines, all inventory items are shown. Typing in the field filters the list; you can also type a free-form description if the item is not in the catalogue.</p></div></div>
+          <div class="step"><div class="step-num">⑤</div><div class="step-body"><strong>Printing and PDF export</strong><p>Open any invoice and click <strong>Print / Export PDF</strong>. The printed invoice shows your company letterhead, the client's details, all line items, the metal rate used, and the total in AED.</p></div></div>
         </div>
         <div class="note">
           <strong>Important</strong>
           All invoice amounts are stored and displayed in AED. If a transaction is agreed in USD, enter the USD/AED rate at the time of the deal. The rate is locked on the invoice and cannot be changed after saving.
+        </div>
+      </div>
+
+    </section>
+
+    {{-- ═══════ SECTION C ═══════ --}}
+    <section class="section" id="inventory-overview">
+      <div class="print-section-link">
+        <span>Section C — Inventory Management</span>
+        <a href="#toc">↑ Back to contents</a>
+      </div>
+      <div class="section-header">
+        <div class="section-letter">C</div>
+        <h2>Inventory Management</h2>
+      </div>
+
+      <p>The inventory module tracks your physical precious metal stock — what you have on hand, at what cost, and in what form. Each distinct product (e.g. Gold Bar 1 kg 999.9, Silver Coin 1 oz 999) is an <em>inventory item</em>. Stock movements are recorded automatically when invoices are posted.</p>
+
+      <div class="note">
+        <strong>Where to find it</strong>
+        Navigate to <strong>Accounting → Inventory</strong>. The index page lists all items with their current stock quantity (grams and pieces) and book value. Click any item to see its full movement history.
+      </div>
+
+      <hr class="divider">
+
+      <div id="inventory-items">
+        <h3>Creating an Inventory Item</h3>
+        <p>Navigate to <strong>Accounting → Inventory → New Item</strong>. Each item defines a distinct product in your catalogue.</p>
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div><div class="step-body"><strong>Select the metal</strong><p>Choose Gold, Silver, Platinum, or Palladium. This determines which inventory account the item is posted to in the ledger.</p></div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-body"><strong>Choose a bar / unit size (optional)</strong><p>Select a preset weight from the dropdown (e.g. 1 kg, 100 g, 1 oz) to auto-fill the nominal weight and name fields. Choose <em>Custom weight</em> to enter a non-standard size.</p></div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-body"><strong>Enter a name</strong><p>Give the item a clear name such as <em>Gold Bar 1 kg 999.9</em>. This name appears in the item dropdown when creating invoices.</p></div></div>
+          <div class="step"><div class="step-num">4</div><div class="step-body"><strong>Set purity, form, and nominal weight</strong><p>Enter the purity (e.g. 999.9 for four-nines gold), select or type the form (Bar, Coin, Jewellery, etc.), and confirm the nominal weight in grams. Nominal weight is informational — actual stock is always counted in grams per movement.</p></div></div>
+          <div class="step"><div class="step-num">5</div><div class="step-body"><strong>Review the SKU</strong><p>The SKU field is auto-generated from your selections (see <a href="#sku-codes">SKU Codes</a> below). You can override it by typing directly in the field — it will highlight blue to indicate a manual entry. Click <em>reset</em> to regenerate from the current fields.</p></div></div>
+          <div class="step"><div class="step-num">6</div><div class="step-body"><strong>Save</strong><p>Click <strong>Create item</strong>. The item is added to the catalogue with zero stock. Stock is built up as purchase and exchange invoices are posted against it.</p></div></div>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <div id="sku-codes">
+        <h3>Auto-Generated SKU Codes</h3>
+        <p>When you fill in the metal, purity, form, and weight fields, the system automatically builds a compact SKU code. The format is:</p>
+        <div class="note">
+          <strong>Format</strong>
+          <code style="font-family: monospace; font-size: 0.9em;">[METAL]-[PURITY]-[FORM]-[WEIGHT]</code>
+          &nbsp; e.g. &nbsp;
+          <code style="font-family: monospace; font-size: 0.9em; color: var(--gold);">AU-9999-BAR-1KG</code>
+          &nbsp; or &nbsp;
+          <code style="font-family: monospace; font-size: 0.9em; color: var(--gold);">AG-999-COIN-31G</code>
+        </div>
+        <ul class="field-list">
+          <li><span class="field-name">METAL</span><span>AU (Gold), AG (Silver), PT (Platinum), PD (Palladium)</span></li>
+          <li><span class="field-name">PURITY</span><span>Numeric purity with the decimal removed — 999.9 becomes 9999, 999 stays 999</span></li>
+          <li><span class="field-name">FORM</span><span>Abbreviated form — BAR, COIN, JWLRY, RAW, SCRP, or the first 4 characters of a custom form in uppercase</span></li>
+          <li><span class="field-name">WEIGHT</span><span>Nominal weight — whole kilograms shown as KG (e.g. 1KG, 5KG), otherwise grams (e.g. 31G, 100G)</span></li>
+        </ul>
+        <p>The SKU must be unique within your tenant. If you need to override it (e.g. to match your own product code), type directly into the SKU field — it highlights blue and shows <em>Custom — click reset to regenerate</em>. SKUs are checked for uniqueness on save.</p>
+      </div>
+
+      <hr class="divider">
+
+      <div id="form-types">
+        <h3>Managing Custom Form Types</h3>
+        <p>The <em>Form</em> field accepts free text so you can describe any physical form your metal takes. The system ships with five built-in types: Bar, Coin, Jewellery, Raw, Scrap. You can add your own (e.g. Granule, Powder, Wafer) and they will appear in the autocomplete dropdown across all items.</p>
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div><div class="step-body"><strong>Add a custom form type</strong><p>On the New Inventory Item page, type the new form name directly into the <em>Form</em> field and save the item. The new type is saved automatically and appears in the dropdown on future items.</p></div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-body"><strong>Manage the list</strong><p>Click <strong>Manage form types →</strong> at the bottom of the inventory item form to open the options page. Here you can add new types or remove custom ones. Built-in types (Bar, Coin, etc.) cannot be removed.</p></div></div>
+        </div>
+        <div class="note">
+          <strong>Note</strong>
+          Custom form types are stored per company (tenant). They appear in the dropdown only for your organisation.
+        </div>
+      </div>
+
+    </section>
+
+    {{-- ═══════ SECTION D ═══════ --}}
+    <section class="section" id="reports-overview">
+      <div class="print-section-link">
+        <span>Section D — Reports &amp; Statements</span>
+        <a href="#toc">↑ Back to contents</a>
+      </div>
+      <div class="section-header">
+        <div class="section-letter">D</div>
+        <h2>Reports &amp; Statements</h2>
+      </div>
+
+      <p>The Reports module provides real-time financial statements covering cash positions, metal inventory, VAT, and per-client account balances. All reports can be exported to PDF or Excel.</p>
+
+      <hr class="divider">
+
+      <div id="client-statement">
+        <h3>Client Statement — Combined Cash &amp; Metal View</h3>
+        <p>Navigate to <strong>Accounting → Reports → Client Statement</strong>, select a client, and click <em>View statement</em>. The statement shows all posted transactions for that client in a single combined table.</p>
+
+        <h4>Reading the combined table</h4>
+        <p>Each row is one transaction (an invoice posting or a payment). The columns are:</p>
+        <ul class="field-list">
+          <li><span class="field-name">Cash Dr</span><span>Amount added to what the client owes you (e.g. a sale invoice posting)</span></li>
+          <li><span class="field-name">Cash Cr</span><span>Amount credited to the client (e.g. a payment received, or a purchase invoice creating a payable)</span></li>
+          <li><span class="field-name">Cash Bal</span><span>Running cash balance — positive means the client owes you; negative (shown in brackets) means you owe the client</span></li>
+          <li><span class="field-name">Gold (g) In</span><span>Grams of gold received <em>from</em> the client on an exchange invoice — increases their metal balance held on account</span></li>
+          <li><span class="field-name">Gold (g) Out</span><span>Grams of gold delivered <em>to</em> the client — reduces their metal balance</span></li>
+          <li><span class="field-name">Gold Bal</span><span>Running gram balance of metal held on account for the client</span></li>
+        </ul>
+
+        <div class="note">
+          <strong>Purchase vs Exchange — important distinction</strong>
+          A <em>Purchase</em> invoice (you buy gold from the client for cash) does <strong>not</strong> appear in the metal balance columns. The transaction is complete once settled — you bought the gold outright and paid for it. Only <em>Exchange</em> invoices generate a metal balance, because the client has deposited metal that you still owe back to them in some form.
+        </div>
+
+        <h4>Summary cards</h4>
+        <p>Above the table, summary cards show the closing cash balance in AED and — when exchange activity exists — a separate card per metal type showing total grams held on account.</p>
+
+        <h4>Applying unapplied deposits</h4>
+        <p>If a payment was recorded before an invoice was created (e.g. a margin deposit), it appears in the <em>Unapplied deposits / margin</em> panel below the main table. Use the <em>Apply to…</em> dropdown to link it to an invoice once the invoice has been posted.</p>
+      </div>
+
+      <hr class="divider">
+
+      <div id="balance-sheet-report">
+        <h3>Balance Sheet &amp; Trial Balance</h3>
+        <p>Navigate to <strong>Accounting → Reports → Balance Sheet</strong> or <strong>Trial Balance</strong>. Both reports include an <em>as-of</em> date picker — change it to see the position at any past date.</p>
+
+        <h4>Physical Metal Inventory panel</h4>
+        <p>At the bottom of both the Balance Sheet and Trial Balance, a supplementary <em>Physical Metal Inventory</em> panel shows:</p>
+        <ul class="field-list">
+          <li><span class="field-name">Metal</span><span>The metal type (Gold, Silver, etc.)</span></li>
+          <li><span class="field-name">Quantity on Hand (g)</span><span>Total grams currently in your inventory across all items of that metal type</span></li>
+          <li><span class="field-name">Book Value (AED)</span><span>Total cost value of those grams at weighted average cost</span></li>
+        </ul>
+        <p>This panel is supplementary — the monetary values are already captured within the inventory asset accounts in the main Balance Sheet. The panel makes it easy to reconcile physical stock counts against the ledger without cross-referencing the inventory module separately.</p>
+
+        <div class="note">
+          <strong>Note</strong>
+          If your inventory has no items with stock on hand, the physical metal panel is hidden automatically.
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <div id="export-formats">
+        <h3>Exporting to PDF &amp; Excel</h3>
+        <p>Every report page has <strong>Export PDF</strong> and <strong>Export Excel</strong> buttons in the top-right corner.</p>
+
+        <h4>PDF export</h4>
+        <p>The PDF is generated server-side and opens in a new browser tab. It uses the same layout as the on-screen report, scaled for A4 paper, with your company name and address in the header. For the client statement, the combined cash + metal table is included, followed by summary balance figures.</p>
+
+        <h4>Excel export (CSV)</h4>
+        <p>The Excel export downloads a <code>.csv</code> file which opens natively in Microsoft Excel or Google Sheets. For the client statement, the file includes a formatted header block at the top with:</p>
+        <ul class="field-list">
+          <li><span class="field-name">Company name</span><span>Your company name and TRN</span></li>
+          <li><span class="field-name">Client details</span><span>Client name, client TRN (if set), and as-of date</span></li>
+          <li><span class="field-name">Net balance</span><span>Closing cash balance and whether the client owes you or vice versa</span></li>
+          <li><span class="field-name">Generated date</span><span>Timestamp of when the export was created</span></li>
+        </ul>
+        <p>The data rows follow below the header, with the cash ledger first and — where metal movements exist — a separate <em>Metal Movement Ledger</em> section appended at the bottom of the same sheet.</p>
+
+        <div class="note">
+          <strong>Tip</strong>
+          The CSV uses UTF-8 encoding with a BOM character so Arabic names and special characters display correctly when the file is opened in Excel on Windows without any conversion step.
         </div>
       </div>
 
