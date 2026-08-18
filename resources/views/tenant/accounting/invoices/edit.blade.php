@@ -127,37 +127,6 @@
         </div>
 
         @if(!$isPosted)
-        {{-- Metal rate boxes — only shown for draft edits --}}
-        <div x-show="usedMetals.length > 0" class="space-y-3">
-            <template x-for="metal in usedMetals" :key="metal">
-                <div class="p-3 border border-gray-100 rounded-lg">
-                    <div class="text-xs font-semibold text-gray-500 capitalize mb-2" x-text="metal + ' rate'"></div>
-                    <div class="grid grid-cols-3 gap-4">
-                        <div>
-                            <label class="block text-xs font-medium text-gray-600 mb-1">Price / oz (USD) <span class="text-red-500">*</span></label>
-                            <input type="number" step="0.0001" min="0.0001"
-                                   :name="'metal_rates['+metal+'][usd_per_oz]'"
-                                   x-model.number="metalRates[metal].usdPerOz"
-                                   class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-gray-600 mb-1">USD → AED rate <span class="text-red-500">*</span></label>
-                            <input type="number" step="0.0001" min="0.0001"
-                                   :name="'metal_rates['+metal+'][usd_aed_rate]'"
-                                   x-model.number="metalRates[metal].usdAedRate"
-                                   class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-gray-600 mb-1">Rate / gram (AED)</label>
-                            <input type="number" step="0.000001" min="0" :value="rateFor(metal).toFixed(6)" readonly
-                                   class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 text-gray-500">
-                        </div>
-                    </div>
-                </div>
-            </template>
-            <p class="text-xs text-gray-400">= (USD/oz ÷ 31.1035) × rate</p>
-        </div>
-
         @if($invoice->invoice_type === 'sale')
         <div class="grid grid-cols-4 gap-4 mt-4">
             <div>
@@ -364,6 +333,42 @@
         <option value="{{ $item->name }}">{{ number_format($item->balance->quantity_grams, 3) }}g in stock</option>
         @endforeach
     </datalist>
+    @endif
+
+    {{-- Metal rates — appears below lines so user fills items first, then rates --}}
+    @if(!$isPosted)
+    <div x-show="usedMetals.length > 0" class="bg-white rounded-xl border border-gray-200 p-5 mb-5">
+        <h3 class="text-sm font-semibold text-gray-700 mb-3">Metal rates</h3>
+        <div class="space-y-3">
+            <template x-for="metal in usedMetals" :key="metal">
+                <div class="p-3 border border-gray-100 rounded-lg">
+                    <div class="text-xs font-semibold text-gray-500 capitalize mb-2" x-text="metal + ' rate'"></div>
+                    <div class="grid grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Price / oz (USD) <span class="text-red-500">*</span></label>
+                            <input type="number" step="0.0001" min="0.0001"
+                                   :name="'metal_rates['+metal+'][usd_per_oz]'"
+                                   x-model.number="metalRates[metal].usdPerOz"
+                                   class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">USD → AED rate <span class="text-red-500">*</span></label>
+                            <input type="number" step="0.0001" min="0.0001"
+                                   :name="'metal_rates['+metal+'][usd_aed_rate]'"
+                                   x-model.number="metalRates[metal].usdAedRate"
+                                   class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Rate / gram (AED)</label>
+                            <input type="number" step="0.000001" min="0" :value="rateFor(metal).toFixed(6)" readonly
+                                   class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 text-gray-500">
+                        </div>
+                    </div>
+                </div>
+            </template>
+            <p class="text-xs text-gray-400">= (USD/oz ÷ 31.1035) × rate — applied per metal to matching lines above</p>
+        </div>
+    </div>
     @endif
 
     {{-- ── Notes ───────────────────────────────────────────────────────── --}}
