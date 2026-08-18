@@ -336,12 +336,68 @@ class LedgerController extends Controller
 
         $asOf = $request->filled('as_of') ? Carbon::parse($request->input('as_of')) : Carbon::today();
         $statement = $reporting->clientStatement($tenant, $client, $asOf);
+        $metalStatement = $reporting->clientMetalStatement($tenant, $client, $asOf);
 
+        // Build preamble: company identity + client details header block
+        $preamble = [[$tenant->name]];
+        if ($tenant->trn_number) {
+            $preamble[] = ['TRN: '.$tenant->trn_number];
+        }
+        if ($tenant->address) {
+            $preamble[] = [$tenant->address];
+        }
+        $preamble[] = [];
+        $preamble[] = ['STATEMENT OF ACCOUNTS'];
+        $preamble[] = ['Client', $client->displayName()];
+        if ($client->trn_number) {
+            $preamble[] = ['Client TRN', $client->trn_number];
+        }
+        $preamble[] = ['As of', $asOf->format('d M Y')];
+        $balanceLabel = $statement['balance'] > 0 ? 'Client owes the business'
+            : ($statement['balance'] < 0 ? 'Business owes the client' : 'Settled');
+        $preamble[] = ['Net Balance (AED)', number_format(abs($statement['balance']), 2), $balanceLabel];
+        $preamble[] = ['Generated', now()->format('d M Y H:i')];
+        $preamble[] = [];
+
+        // Cash movement rows
         $rows = collect($statement['rows'])->map(fn ($row) => [
-            $row['date']->format('Y-m-d'), $row['description'], $row['amount'], $row['balance'],
+            $row['date']->format('d M Y'),
+            $row['description'],
+            number_format($row['amount'], 2),
+            number_format($row['balance'], 2),
         ])->all();
 
-        return CsvExport::download('statement-'.str($client->displayName())->slug().'-'.$asOf->toDateString().'.csv', ['Date', 'Description', 'Amount', 'Balance'], $rows);
+        // Append metal movement section if present
+        if ($metalStatement['rows']->isNotEmpty()) {
+            $rows[] = [];
+            $rows[] = ['METAL MOVEMENT LEDGER'];
+            $rows[] = ['Date', 'Invoice', 'Description', 'Metal', 'Purity', 'In (g)', 'Out (g)', 'Balance (g)'];
+            foreach ($metalStatement['rows'] as $mr) {
+                $rows[] = [
+                    $mr['date']->format('d M Y'),
+                    $mr['invoice_number'],
+                    $mr['description'] ?: ucfirst($mr['invoice_type']),
+                    strtoupper($mr['metal_type']),
+                    $mr['purity'] ?: '',
+                    $mr['grams_in'] !== null ? number_format($mr['grams_in'], 3) : '',
+                    $mr['grams_out'] !== null ? number_format($mr['grams_out'], 3) : '',
+                    number_format($mr['balance'], 3),
+                ];
+            }
+            foreach ($metalStatement['metals'] as $metal) {
+                $rows[] = [
+                    '', '', '', '', ucfirst($metal).' balance held on account',
+                    '', '', number_format($metalStatement['balances'][$metal] ?? 0, 3).' g',
+                ];
+            }
+        }
+
+        return CsvExport::download(
+            'statement-'.str($client->displayName())->slug().'-'.$asOf->toDateString().'.csv',
+            ['Date', 'Description', 'Amount (AED)', 'Balance (AED)'],
+            $rows,
+            $preamble
+        );
     }
 
     public function clientBalances(ReportingService $reporting)
