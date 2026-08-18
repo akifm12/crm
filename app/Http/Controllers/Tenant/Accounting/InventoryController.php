@@ -50,7 +50,10 @@ class InventoryController extends Controller
 
         $request->validate([
             'name'                 => 'required|string|max:255',
-            'sku'                  => 'nullable|string|max:100',
+            'sku'                  => [
+                'nullable', 'string', 'max:100',
+                \Illuminate\Validation\Rule::unique('inventory_items')->where('tenant_id', $tenant->id),
+            ],
             'metal_type'           => 'required|in:'.implode(',', InventoryItem::METAL_TYPES),
             'purity'               => 'nullable|numeric|min:0|max:999.999',
             'nominal_weight_grams' => 'nullable|numeric|min:0',
