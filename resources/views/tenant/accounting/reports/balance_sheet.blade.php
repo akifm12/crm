@@ -89,4 +89,40 @@
     </div>
 </div>
 
+@if($metalSummary->isNotEmpty())
+<div class="mt-5 max-w-4xl">
+    <div class="bg-white rounded-xl border border-gray-200 p-5">
+        <h3 class="text-sm font-semibold text-gray-700 mb-1">Physical Metal Inventory</h3>
+        <p class="text-xs text-gray-400 mb-3">Quantity on hand from inventory records (supplementary — already included in asset balances above)</p>
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="border-b border-gray-100 text-left text-xs font-semibold text-gray-500 uppercase">
+                    <th class="py-2 pr-6">Metal</th>
+                    <th class="py-2 pr-6 text-right">Quantity on Hand (g)</th>
+                    <th class="py-2 text-right">Book Value (AED)</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-50">
+                @foreach($metalSummary as $row)
+                <tr>
+                    <td class="py-2 pr-6 font-semibold {{ $row->metal_type === 'gold' ? 'text-amber-600' : ($row->metal_type === 'silver' ? 'text-gray-500' : 'text-blue-600') }}">
+                        {{ ucfirst($row->metal_type) }}
+                    </td>
+                    <td class="py-2 pr-6 text-right font-mono">{{ number_format($row->total_grams, 3) }}</td>
+                    <td class="py-2 text-right font-mono">{{ number_format($row->total_value, 2) }}</td>
+                </tr>
+                @endforeach
+            </tbody>
+            <tfoot>
+                <tr class="border-t border-gray-200 font-semibold text-gray-800">
+                    <td class="pt-2">Total</td>
+                    <td class="pt-2 text-right font-mono">{{ number_format($metalSummary->sum('total_grams'), 3) }} g</td>
+                    <td class="pt-2 text-right font-mono">{{ number_format($metalSummary->sum('total_value'), 2) }}</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+@endif
+
 @endsection

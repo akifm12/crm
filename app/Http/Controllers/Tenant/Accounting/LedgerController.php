@@ -106,11 +106,12 @@ class LedgerController extends Controller
         $asOf = $request->filled('as_of') ? Carbon::parse($request->input('as_of')) : Carbon::today();
 
         $rows = $reporting->trialBalance($tenant, $asOf);
+        $metalSummary = $reporting->metalInventorySummary($tenant);
 
         $totalDebit = round($rows->sum('debit'), 2);
         $totalCredit = round($rows->sum('credit'), 2);
 
-        return view('tenant.accounting.reports.trial_balance', compact('tenant', 'rows', 'asOf', 'totalDebit', 'totalCredit'));
+        return view('tenant.accounting.reports.trial_balance', compact('tenant', 'rows', 'asOf', 'totalDebit', 'totalCredit', 'metalSummary'));
     }
 
     public function trialBalancePdf(Request $request, ReportingService $reporting)
@@ -119,10 +120,11 @@ class LedgerController extends Controller
         $asOf = $request->filled('as_of') ? Carbon::parse($request->input('as_of')) : Carbon::today();
 
         $rows = $reporting->trialBalance($tenant, $asOf);
+        $metalSummary = $reporting->metalInventorySummary($tenant);
         $totalDebit = round($rows->sum('debit'), 2);
         $totalCredit = round($rows->sum('credit'), 2);
 
-        $pdf = Pdf::loadView('tenant.accounting.reports.pdf.trial_balance', compact('tenant', 'rows', 'asOf', 'totalDebit', 'totalCredit'));
+        $pdf = Pdf::loadView('tenant.accounting.reports.pdf.trial_balance', compact('tenant', 'rows', 'asOf', 'totalDebit', 'totalCredit', 'metalSummary'));
 
         return $pdf->stream('trial-balance-'.$asOf->toDateString().'.pdf');
     }
@@ -146,8 +148,9 @@ class LedgerController extends Controller
         $asOf = $request->filled('as_of') ? Carbon::parse($request->input('as_of')) : Carbon::today();
 
         $report = $reporting->balanceSheet($tenant, $asOf);
+        $metalSummary = $reporting->metalInventorySummary($tenant);
 
-        return view('tenant.accounting.reports.balance_sheet', array_merge(compact('tenant', 'asOf'), $report));
+        return view('tenant.accounting.reports.balance_sheet', array_merge(compact('tenant', 'asOf', 'metalSummary'), $report));
     }
 
     public function balanceSheetPdf(Request $request, ReportingService $reporting)
@@ -156,8 +159,9 @@ class LedgerController extends Controller
         $asOf = $request->filled('as_of') ? Carbon::parse($request->input('as_of')) : Carbon::today();
 
         $report = $reporting->balanceSheet($tenant, $asOf);
+        $metalSummary = $reporting->metalInventorySummary($tenant);
 
-        $pdf = Pdf::loadView('tenant.accounting.reports.pdf.balance_sheet', array_merge(compact('tenant', 'asOf'), $report));
+        $pdf = Pdf::loadView('tenant.accounting.reports.pdf.balance_sheet', array_merge(compact('tenant', 'asOf', 'metalSummary'), $report));
 
         return $pdf->stream('balance-sheet-'.$asOf->toDateString().'.pdf');
     }
@@ -287,10 +291,13 @@ class LedgerController extends Controller
         $unlinkedDeposits = collect();
         $asOf = $request->filled('as_of') ? Carbon::parse($request->input('as_of')) : Carbon::today();
 
+        $metalStatement = null;
+
         if ($request->filled('client_id')) {
             $client = BullionClient::findOrFail($request->input('client_id'));
             abort_if($client->tenant_id !== $tenant->id, 404);
             $statement = $reporting->clientStatement($tenant, $client, $asOf);
+            $metalStatement = $reporting->clientMetalStatement($tenant, $client, $asOf);
             $clientInvoices = Invoice::where('tenant_id', $tenant->id)
                 ->where('bullion_client_id', $client->id)
                 ->where('status', '!=', 'void')
@@ -303,7 +310,7 @@ class LedgerController extends Controller
                 ->get();
         }
 
-        return view('tenant.accounting.reports.client_statement', compact('tenant', 'clients', 'client', 'statement', 'asOf', 'clientInvoices', 'unlinkedDeposits'));
+        return view('tenant.accounting.reports.client_statement', compact('tenant', 'clients', 'client', 'statement', 'metalStatement', 'asOf', 'clientInvoices', 'unlinkedDeposits'));
     }
 
     public function clientStatementPdf(Request $request, ReportingService $reporting)
@@ -314,8 +321,9 @@ class LedgerController extends Controller
 
         $asOf = $request->filled('as_of') ? Carbon::parse($request->input('as_of')) : Carbon::today();
         $statement = $reporting->clientStatement($tenant, $client, $asOf);
+        $metalStatement = $reporting->clientMetalStatement($tenant, $client, $asOf);
 
-        $pdf = Pdf::loadView('tenant.accounting.reports.pdf.client_statement', compact('tenant', 'client', 'statement', 'asOf'));
+        $pdf = Pdf::loadView('tenant.accounting.reports.pdf.client_statement', compact('tenant', 'client', 'statement', 'metalStatement', 'asOf'));
 
         return $pdf->stream('statement-'.str($client->displayName())->slug().'-'.$asOf->toDateString().'.pdf');
     }

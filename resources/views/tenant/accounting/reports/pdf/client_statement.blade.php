@@ -60,6 +60,48 @@
     </tbody>
 </table>
 
+@if(!empty($metalStatement['rows']) && $metalStatement['rows']->isNotEmpty())
+<div style="margin-top: 20px;">
+    <div class="report-title" style="font-size: 11px; margin-bottom: 6px;">Metal Movement Ledger</div>
+    <table>
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Invoice</th>
+                <th>Description</th>
+                <th>Metal</th>
+                <th class="text-right">In (g)</th>
+                <th class="text-right">Out (g)</th>
+                <th class="text-right">Balance (g)</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach($metalStatement['rows'] as $row)
+            <tr>
+                <td>{{ $row['date']->format('d M Y') }}</td>
+                <td>{{ $row['invoice_number'] }}</td>
+                <td>{{ $row['description'] ?: ucfirst($row['invoice_type']) }}</td>
+                <td>{{ strtoupper($row['metal_type']) }}@if($row['purity']) {{ $row['purity'] }}@endif</td>
+                <td class="text-right">{{ $row['grams_in'] !== null ? number_format($row['grams_in'], 3) : '' }}</td>
+                <td class="text-right">{{ $row['grams_out'] !== null ? number_format($row['grams_out'], 3) : '' }}</td>
+                <td class="text-right">{{ number_format($row['balance'], 3) }}</td>
+            </tr>
+            @endforeach
+        </tbody>
+        @if(!empty($metalStatement['metals']))
+        <tfoot>
+            @foreach($metalStatement['metals'] as $metal)
+            <tr style="font-weight: bold; border-top: 1px solid #ccc;">
+                <td colspan="6" style="text-align: right; font-size: 8px; text-transform: uppercase;">{{ ucfirst($metal) }} balance held on account</td>
+                <td style="text-align: right;">{{ number_format($metalStatement['balances'][$metal] ?? 0, 3) }} g</td>
+            </tr>
+            @endforeach
+        </tfoot>
+        @endif
+    </table>
+</div>
+@endif
+
 <div class="generated">Generated {{ now()->format('d M Y H:i') }}</div>
 
 </body>

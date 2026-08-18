@@ -9,6 +9,7 @@ use App\Models\ChartOfAccount;
 use App\Models\Invoice;
 use App\Models\InvoiceLine;
 use App\Models\InvoicePayment;
+use App\Models\InventoryBalance;
 use App\Models\JournalEntry;
 use App\Models\JournalEntryLine;
 use App\Models\Tenant;
@@ -246,6 +247,96 @@ class ReportingService
         }
 
         return ['rows' => $rows, 'balance' => $running];
+    }
+
+    /**
+     * Metal movement ledger for a single client: one row per invoice line that moved metal,
+     * showing grams in / grams out and a running gram balance per metal type.
+     *
+     * "In"  = metal received FROM the client (purchase / exchange metal_in line) → dealer
+     *         owes the client the equivalent, so it's a credit to the client's metal balance.
+     * "Out" = metal issued TO the client (sale / exchange metal_out line) → reduces what
+     *         the dealer owes, or represents a delivery against a prior purchase.
+     *
+     * Returns: ['rows' => Collection, 'metals' => string[], 'balances' => [metal => grams]]
+     */
+    public function clientMetalStatement(Tenant $tenant, BullionClient $client, ?Carbon $asOf = null): array
+    {
+        $lines = InvoiceLine::query()
+            ->join('invoices', 'invoices.id', '=', 'invoice_lines.invoice_id')
+            ->where('invoices.tenant_id', $tenant->id)
+            ->where('invoices.bullion_client_id', $client->id)
+            ->where('invoices.status', 'posted')
+            ->whereIn('invoice_lines.line_type', ['metal_in', 'metal_out'])
+            ->whereNotNull('invoice_lines.metal_type')
+            ->when($asOf, fn ($q) => $q->where('invoices.invoice_date', '<=', $asOf->toDateString()))
+            ->select(
+                'invoice_lines.*',
+                'invoices.invoice_number',
+                'invoices.invoice_type',
+                'invoices.invoice_date as inv_date',
+            )
+            ->orderBy('invoices.invoice_date')
+            ->orderBy('invoices.id')
+            ->orderBy('invoice_lines.line_order')
+            ->get();
+
+        $balances = []; // running gram balance per metal
+        $rows = collect();
+
+        foreach ($lines as $line) {
+            $metal = $line->metal_type;
+            $balances[$metal] ??= 0.0;
+            $grams = (float) $line->quantity_grams;
+
+            // metal_in: client delivered metal to dealer → dealer owes client → positive balance
+            // metal_out: dealer delivered metal to client → reduces what dealer owes → negative
+            if ($line->line_type === 'metal_in') {
+                $balances[$metal] = round($balances[$metal] + $grams, 3);
+                $gramsIn = $grams;
+                $gramsOut = null;
+            } else {
+                $balances[$metal] = round($balances[$metal] - $grams, 3);
+                $gramsIn = null;
+                $gramsOut = $grams;
+            }
+
+            $rows->push([
+                'date'           => Carbon::parse($line->inv_date),
+                'invoice_number' => $line->invoice_number,
+                'invoice_type'   => $line->invoice_type,
+                'description'    => $line->description,
+                'metal_type'     => $metal,
+                'purity'         => (float) $line->purity,
+                'gross_grams'    => $line->gross_weight_grams ? (float) $line->gross_weight_grams : null,
+                'pcs'            => $line->pcs,
+                'grams_in'       => $gramsIn,
+                'grams_out'      => $gramsOut,
+                'balance'        => $balances[$metal],
+            ]);
+        }
+
+        $metals = array_keys($balances);
+        sort($metals);
+
+        return ['rows' => $rows, 'metals' => $metals, 'balances' => $balances];
+    }
+
+    /**
+     * Physical metal on hand, grouped by metal type, from the inventory balance table.
+     * Used as a supplementary panel on the Balance Sheet and Trial Balance.
+     * Returns a Collection of ['metal_type', 'total_grams', 'total_value'] rows.
+     */
+    public function metalInventorySummary(Tenant $tenant): Collection
+    {
+        return InventoryBalance::query()
+            ->join('inventory_items', 'inventory_items.id', '=', 'inventory_balances.inventory_item_id')
+            ->where('inventory_items.tenant_id', $tenant->id)
+            ->where('inventory_balances.quantity_grams', '>', 0)
+            ->groupBy('inventory_items.metal_type')
+            ->selectRaw('inventory_items.metal_type, SUM(inventory_balances.quantity_grams) as total_grams, SUM(inventory_balances.total_value) as total_value')
+            ->orderBy('inventory_items.metal_type')
+            ->get();
     }
 
     /**

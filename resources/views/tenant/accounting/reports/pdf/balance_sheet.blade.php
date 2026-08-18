@@ -67,6 +67,36 @@
 <div class="warning">Assets do not equal Liabilities + Equity — please review recent journal entries.</div>
 @endunless
 
+@if($metalSummary->isNotEmpty())
+<div class="section-title">Physical Metal Inventory</div>
+<table>
+    <thead>
+        <tr>
+            <th>Metal</th>
+            <th class="text-right">Quantity on Hand (g)</th>
+            <th class="text-right">Book Value (AED)</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach($metalSummary as $row)
+        <tr>
+            <td>{{ ucfirst($row->metal_type) }}</td>
+            <td class="text-right">{{ number_format($row->total_grams, 3) }}</td>
+            <td class="text-right">{{ number_format($row->total_value, 2) }}</td>
+        </tr>
+        @endforeach
+    </tbody>
+    <tfoot>
+        <tr class="totals-row">
+            <td>Total</td>
+            <td class="text-right">{{ number_format($metalSummary->sum('total_grams'), 3) }} g</td>
+            <td class="text-right">{{ number_format($metalSummary->sum('total_value'), 2) }}</td>
+        </tr>
+    </tfoot>
+</table>
+<div class="muted" style="margin-bottom: 10px;">Supplementary — physical inventory already captured in asset account balances above.</div>
+@endif
+
 <div class="generated">Generated {{ now()->format('d M Y H:i') }}</div>
 
 </body>

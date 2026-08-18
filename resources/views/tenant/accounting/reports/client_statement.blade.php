@@ -101,6 +101,66 @@
     </table>
 </div>
 
+@if($metalStatement && $metalStatement['rows']->isNotEmpty())
+<div class="bg-white rounded-xl border border-gray-200 overflow-hidden max-w-3xl mt-5">
+    <div class="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
+        <h3 class="text-sm font-semibold text-gray-700">Metal Movement Ledger</h3>
+        <span class="text-xs text-gray-400">Grams held on account per metal type</span>
+    </div>
+    <table class="w-full text-sm">
+        <thead>
+            <tr class="border-b border-gray-100 text-left text-xs font-semibold text-gray-500 uppercase">
+                <th class="px-5 py-3">Date</th>
+                <th class="px-5 py-3">Invoice</th>
+                <th class="px-5 py-3">Description</th>
+                <th class="px-5 py-3">Metal</th>
+                <th class="px-5 py-3 text-right">In (g)</th>
+                <th class="px-5 py-3 text-right">Out (g)</th>
+                <th class="px-5 py-3 text-right">Balance (g)</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+            @foreach($metalStatement['rows'] as $row)
+            <tr>
+                <td class="px-5 py-2.5 text-gray-600 whitespace-nowrap">{{ $row['date']->format('d M Y') }}</td>
+                <td class="px-5 py-2.5 text-gray-600 font-mono text-xs">{{ $row['invoice_number'] }}</td>
+                <td class="px-5 py-2.5 text-gray-700">{{ $row['description'] ?: ucfirst($row['invoice_type']) }}</td>
+                <td class="px-5 py-2.5">
+                    <span class="text-xs font-semibold uppercase {{ $row['metal_type'] === 'gold' ? 'text-amber-600' : ($row['metal_type'] === 'silver' ? 'text-gray-500' : 'text-blue-600') }}">
+                        {{ $row['metal_type'] }}
+                    </span>
+                    @if($row['purity'])<span class="ml-1 text-xs text-gray-400">{{ $row['purity'] }}</span>@endif
+                </td>
+                <td class="px-5 py-2.5 text-right font-mono text-green-600">
+                    {{ $row['grams_in'] !== null ? number_format($row['grams_in'], 3) : '' }}
+                </td>
+                <td class="px-5 py-2.5 text-right font-mono text-red-500">
+                    {{ $row['grams_out'] !== null ? number_format($row['grams_out'], 3) : '' }}
+                </td>
+                <td class="px-5 py-2.5 text-right font-mono font-semibold {{ $row['balance'] > 0 ? 'text-gray-800' : ($row['balance'] < 0 ? 'text-red-600' : 'text-gray-400') }}">
+                    {{ number_format($row['balance'], 3) }}
+                </td>
+            </tr>
+            @endforeach
+        </tbody>
+        @if(!empty($metalStatement['balances']))
+        <tfoot class="border-t border-gray-200">
+            @foreach($metalStatement['metals'] as $metal)
+            <tr>
+                <td colspan="6" class="px-5 py-2 text-right text-xs font-semibold text-gray-500 uppercase">
+                    {{ ucfirst($metal) }} balance held on account
+                </td>
+                <td class="px-5 py-2 text-right font-mono font-bold {{ ($metalStatement['balances'][$metal] ?? 0) > 0 ? 'text-gray-800' : 'text-red-600' }}">
+                    {{ number_format($metalStatement['balances'][$metal] ?? 0, 3) }} g
+                </td>
+            </tr>
+            @endforeach
+        </tfoot>
+        @endif
+    </table>
+</div>
+@endif
+
 @if($unlinkedDeposits->isNotEmpty())
 <div class="bg-white rounded-xl border border-gray-200 p-5 mt-5 max-w-3xl">
     <h3 class="text-sm font-semibold text-gray-700 mb-3">Unapplied deposits / margin</h3>

@@ -54,6 +54,38 @@
     </tfoot>
 </table>
 
+@if($metalSummary->isNotEmpty())
+<div style="margin-top: 20px;">
+    <div class="report-title" style="font-size: 11px; margin-bottom: 4px;">Physical Metal Inventory Quantities</div>
+    <div class="muted" style="margin-bottom: 6px;">On-hand positions — monetary values are in the trial balance above</div>
+    <table>
+        <thead>
+            <tr>
+                <th>Metal</th>
+                <th class="text-right">Quantity on Hand (g)</th>
+                <th class="text-right">Book Value (AED)</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach($metalSummary as $row)
+            <tr>
+                <td>{{ ucfirst($row->metal_type) }}</td>
+                <td class="text-right">{{ number_format($row->total_grams, 3) }}</td>
+                <td class="text-right">{{ number_format($row->total_value, 2) }}</td>
+            </tr>
+            @endforeach
+        </tbody>
+        <tfoot>
+            <tr class="totals-row">
+                <td>Total</td>
+                <td class="text-right">{{ number_format($metalSummary->sum('total_grams'), 3) }} g</td>
+                <td class="text-right">{{ number_format($metalSummary->sum('total_value'), 2) }}</td>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+@endif
+
 <div class="generated">Generated {{ now()->format('d M Y H:i') }}</div>
 
 </body>
