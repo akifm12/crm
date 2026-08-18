@@ -41,23 +41,120 @@
 
 @if($client && $statement)
 
-<div class="flex justify-end gap-2 mb-3 max-w-3xl">
+@php
+// ── Merge cash rows and metal rows into one combined stream ──────────────────
+// Metal columns only appear if this client has exchange-type metal movements.
+$metals = $metalStatement ? $metalStatement['metals'] : [];
+
+// Aggregate metal movements per invoice: invoice_number → metal → {in, out, date, desc}
+// (multiple invoice_lines for same invoice+metal are summed)
+$metalByInvoice = [];
+if ($metalStatement) {
+    foreach ($metalStatement['rows'] as $mr) {
+        $inv   = $mr['invoice_number'];
+        $metal = $mr['metal_type'];
+        if (!isset($metalByInvoice[$inv][$metal])) {
+            $metalByInvoice[$inv][$metal] = [
+                'in' => 0.0, 'out' => 0.0,
+                'date' => $mr['date'], 'description' => $mr['description'], 'invoice_type' => $mr['invoice_type'],
+            ];
+        }
+        $metalByInvoice[$inv][$metal]['in']  += $mr['grams_in']  ?? 0;
+        $metalByInvoice[$inv][$metal]['out'] += $mr['grams_out'] ?? 0;
+    }
+}
+
+// Build a running metal-balance timeline keyed by invoice_number so we know
+// what the balance is after each metal event, regardless of row order.
+$metalBalanceTimeline = []; // invoice_number → [metal → balance_after]
+$_runBuild = array_fill_keys($metals, 0.0);
+if ($metalStatement) {
+    foreach ($metalStatement['rows'] as $mr) {
+        $_runBuild[$mr['metal_type']] = $mr['balance'];
+        $metalBalanceTimeline[$mr['invoice_number']] = $_runBuild;
+    }
+}
+
+// Walk cash rows, attach metal data for matching invoices
+$metalRunning  = array_fill_keys($metals, 0.0);
+$usedMetalInvoices = [];
+$combinedRows  = collect();
+
+foreach ($statement['rows'] as $cashRow) {
+    $invNum = $cashRow['invoice']?->invoice_number;
+    $amount = $cashRow['amount'];
+
+    // First time we see this invoice in cash rows, absorb any metal movement for it
+    $moves = [];
+    if ($invNum && isset($metalByInvoice[$invNum]) && !in_array($invNum, $usedMetalInvoices)) {
+        $moves = $metalByInvoice[$invNum];
+        // Advance the running balance to the post-invoice state
+        foreach ($metals as $m) {
+            if (isset($metalBalanceTimeline[$invNum][$m])) {
+                $metalRunning[$m] = $metalBalanceTimeline[$invNum][$m];
+            }
+        }
+        $usedMetalInvoices[] = $invNum;
+    }
+
+    $combinedRows->push([
+        'date'        => $cashRow['date'],
+        'description' => $cashRow['description'],
+        'invoice'     => $cashRow['invoice'],
+        'cash_dr'     => $amount > 0 ? $amount : null,
+        'cash_cr'     => $amount < 0 ? abs($amount) : null,
+        'cash_bal'    => $cashRow['balance'],
+        'metal_moves' => $moves,           // [metal → {in, out}] — only on first row per invoice
+        'metal_bal'   => $metalRunning,    // snapshot of running balance after this row
+    ]);
+}
+
+// Append any metal-only rows (exchange deposits with no cash counterpart yet)
+foreach ($metalByInvoice as $invNum => $moves) {
+    if (in_array($invNum, $usedMetalInvoices)) continue;
+    $firstMove = reset($moves);
+    foreach ($metals as $m) {
+        if (isset($metalBalanceTimeline[$invNum][$m])) {
+            $metalRunning[$m] = $metalBalanceTimeline[$invNum][$m];
+        }
+    }
+    $combinedRows->push([
+        'date'        => $firstMove['date'],
+        'description' => $firstMove['description'] ?: ucfirst($firstMove['invoice_type']),
+        'invoice'     => null,
+        'cash_dr'     => null,
+        'cash_cr'     => null,
+        'cash_bal'    => $statement['balance'],
+        'metal_moves' => $moves,
+        'metal_bal'   => $metalRunning,
+    ]);
+}
+
+$combinedRows = $combinedRows->sortBy('date')->values();
+$colSpan = 5 + count($metals) * 3;
+@endphp
+
+<div class="flex justify-end gap-2 mb-3">
     <a href="{{ route('tenant.accounting.reports.client-statement.pdf', $tenant->slug) }}?client_id={{ $client->id }}&as_of={{ $asOf->toDateString() }}" target="_blank"
        class="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50">Export PDF</a>
     <a href="{{ route('tenant.accounting.reports.client-statement.csv', $tenant->slug) }}?client_id={{ $client->id }}&as_of={{ $asOf->toDateString() }}"
        class="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50">Export Excel</a>
 </div>
 
-<div class="grid grid-cols-3 gap-4 mb-5 max-w-3xl">
-    <div class="bg-white rounded-xl border border-gray-200 p-4">
+{{-- Header cards --}}
+<div class="grid gap-4 mb-5" style="grid-template-columns: auto 1fr {{ count($metals) > 0 ? 'repeat('.count($metals).', auto)' : '' }}">
+    <div class="bg-white rounded-xl border border-gray-200 p-4 min-w-[160px]">
         <p class="text-xs text-gray-400 mb-1">Client</p>
         <p class="text-sm font-semibold text-gray-800">{{ $client->displayName() }}</p>
         @if($client->trn_number)<p class="text-xs text-gray-400">TRN: {{ $client->trn_number }}</p>@endif
     </div>
-    <div class="bg-white rounded-xl border border-gray-200 p-4 col-span-2">
-        <p class="text-xs text-gray-400 mb-1">Net balance as of {{ $asOf->format('d M Y') }}</p>
+    <div class="bg-white rounded-xl border border-gray-200 p-4">
+        <p class="text-xs text-gray-400 mb-1">Cash balance as of {{ $asOf->format('d M Y') }}</p>
         <p class="text-2xl font-bold {{ $statement['balance'] > 0 ? 'text-red-600' : ($statement['balance'] < 0 ? 'text-green-600' : 'text-gray-800') }}">
-            {{ number_format(abs($statement['balance']), 2) }} AED
+            @if($statement['balance'] < 0)({{ number_format(abs($statement['balance']), 2) }})
+            @else{{ number_format($statement['balance'], 2) }}
+            @endif
+            <span class="text-sm font-normal text-gray-400 ml-1">AED</span>
         </p>
         <p class="text-xs text-gray-400 mt-0.5">
             @if($statement['balance'] > 0) Client owes the business
@@ -66,100 +163,117 @@
             @endif
         </p>
     </div>
+    @foreach($metals as $metal)
+    @php $mBal = $metalStatement['balances'][$metal] ?? 0; @endphp
+    <div class="bg-white rounded-xl border border-gray-200 p-4 min-w-[140px]">
+        <p class="text-xs text-gray-400 mb-1">{{ ucfirst($metal) }} held on account</p>
+        <p class="text-2xl font-bold {{ $mBal > 0 ? 'text-amber-600' : ($mBal < 0 ? 'text-red-600' : 'text-gray-800') }}">
+            @if($mBal < 0)({{ number_format(abs($mBal), 3) }})
+            @else{{ number_format($mBal, 3) }}
+            @endif
+            <span class="text-sm font-normal text-gray-400 ml-1">g</span>
+        </p>
+    </div>
+    @endforeach
 </div>
 
-<div class="bg-white rounded-xl border border-gray-200 overflow-hidden max-w-3xl">
+{{-- Combined ledger table --}}
+<div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+    <div class="overflow-x-auto">
     <table class="w-full text-sm">
         <thead>
-            <tr class="border-b border-gray-100 text-left text-xs font-semibold text-gray-500 uppercase">
-                <th class="px-5 py-3">Date</th>
-                <th class="px-5 py-3">Description</th>
-                <th class="px-5 py-3 text-right">Amount</th>
-                <th class="px-5 py-3 text-right">Balance</th>
+            <tr class="border-b border-gray-100 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                <th class="px-4 py-3 whitespace-nowrap">Date</th>
+                <th class="px-4 py-3">Description</th>
+                <th class="px-4 py-3 text-right whitespace-nowrap">Cash Dr</th>
+                <th class="px-4 py-3 text-right whitespace-nowrap">Cash Cr</th>
+                <th class="px-4 py-3 text-right whitespace-nowrap">Cash Bal</th>
+                @foreach($metals as $metal)
+                <th class="px-4 py-3 text-right whitespace-nowrap border-l border-gray-100">{{ ucfirst($metal) }} (g) In</th>
+                <th class="px-4 py-3 text-right whitespace-nowrap">{{ ucfirst($metal) }} (g) Out</th>
+                <th class="px-4 py-3 text-right whitespace-nowrap">{{ ucfirst($metal) }} Bal</th>
+                @endforeach
             </tr>
         </thead>
         <tbody class="divide-y divide-gray-100">
-            @forelse($statement['rows'] as $row)
-            <tr>
-                <td class="px-5 py-2.5 text-gray-700">{{ $row['date']->format('d M Y') }}</td>
-                <td class="px-5 py-2.5 text-gray-700">
+            @forelse($combinedRows as $row)
+            <tr class="hover:bg-gray-50">
+                <td class="px-4 py-2.5 text-gray-600 whitespace-nowrap">{{ $row['date']->format('d M Y') }}</td>
+                <td class="px-4 py-2.5 text-gray-700">
                     @if($row['invoice'])
                     <a href="{{ route('tenant.accounting.invoices.show', [$tenant->slug, $row['invoice']->id]) }}" class="text-blue-600 hover:underline">{{ $row['description'] }}</a>
                     @else
                     {{ $row['description'] }}
                     @endif
                 </td>
-                <td class="px-5 py-2.5 text-right font-mono {{ $row['amount'] > 0 ? 'text-gray-700' : 'text-green-600' }}">
-                    {{ $row['amount'] > 0 ? '+' : '' }}{{ number_format($row['amount'], 2) }}
+                <td class="px-4 py-2.5 text-right font-mono text-gray-700">
+                    {{ $row['cash_dr'] !== null ? number_format($row['cash_dr'], 2) : '' }}
                 </td>
-                <td class="px-5 py-2.5 text-right font-mono font-semibold text-gray-800">{{ number_format($row['balance'], 2) }}</td>
+                <td class="px-4 py-2.5 text-right font-mono text-gray-700">
+                    {{ $row['cash_cr'] !== null ? number_format($row['cash_cr'], 2) : '' }}
+                </td>
+                <td class="px-4 py-2.5 text-right font-mono font-semibold whitespace-nowrap
+                    {{ $row['cash_bal'] < 0 ? 'text-green-600' : ($row['cash_bal'] > 0 ? 'text-gray-800' : 'text-gray-400') }}">
+                    @if($row['cash_bal'] < 0)({{ number_format(abs($row['cash_bal']), 2) }})
+                    @elseif($row['cash_bal'] > 0){{ number_format($row['cash_bal'], 2) }}
+                    @else —
+                    @endif
+                </td>
+                @foreach($metals as $metal)
+                @php
+                    $mv  = $row['metal_moves'][$metal] ?? null;
+                    $bal = $row['metal_bal'][$metal]   ?? 0;
+                @endphp
+                <td class="px-4 py-2.5 text-right font-mono text-green-700 border-l border-gray-100">
+                    {{ $mv && $mv['in'] > 0 ? number_format($mv['in'], 3) : '' }}
+                </td>
+                <td class="px-4 py-2.5 text-right font-mono text-red-500">
+                    {{ $mv && $mv['out'] > 0 ? number_format($mv['out'], 3) : '' }}
+                </td>
+                <td class="px-4 py-2.5 text-right font-mono font-semibold whitespace-nowrap
+                    {{ $bal < 0 ? 'text-red-600' : ($bal > 0 ? 'text-gray-800' : 'text-gray-400') }}">
+                    @if($bal < 0)({{ number_format(abs($bal), 3) }})
+                    @elseif($bal > 0){{ number_format($bal, 3) }}
+                    @else —
+                    @endif
+                </td>
+                @endforeach
             </tr>
             @empty
-            <tr><td colspan="4" class="px-5 py-6 text-center text-sm text-gray-400">No posted transactions for this client yet.</td></tr>
+            <tr><td colspan="{{ $colSpan }}" class="px-4 py-6 text-center text-sm text-gray-400">No posted transactions for this client yet.</td></tr>
             @endforelse
         </tbody>
-    </table>
-</div>
-
-@if($metalStatement && $metalStatement['rows']->isNotEmpty())
-<div class="bg-white rounded-xl border border-gray-200 overflow-hidden max-w-3xl mt-5">
-    <div class="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
-        <h3 class="text-sm font-semibold text-gray-700">Metal Movement Ledger</h3>
-        <span class="text-xs text-gray-400">Grams held on account per metal type</span>
-    </div>
-    <table class="w-full text-sm">
-        <thead>
-            <tr class="border-b border-gray-100 text-left text-xs font-semibold text-gray-500 uppercase">
-                <th class="px-5 py-3">Date</th>
-                <th class="px-5 py-3">Invoice</th>
-                <th class="px-5 py-3">Description</th>
-                <th class="px-5 py-3">Metal</th>
-                <th class="px-5 py-3 text-right">In (g)</th>
-                <th class="px-5 py-3 text-right">Out (g)</th>
-                <th class="px-5 py-3 text-right">Balance (g)</th>
+        @if($combinedRows->isNotEmpty())
+        <tfoot>
+            <tr class="border-t-2 border-gray-200 bg-gray-50 font-semibold text-sm">
+                <td colspan="2" class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Closing balance</td>
+                <td class="px-4 py-3"></td>
+                <td class="px-4 py-3"></td>
+                <td class="px-4 py-3 text-right font-mono whitespace-nowrap
+                    {{ $statement['balance'] < 0 ? 'text-green-600' : ($statement['balance'] > 0 ? 'text-gray-800' : 'text-gray-400') }}">
+                    @if($statement['balance'] < 0)({{ number_format(abs($statement['balance']), 2) }})
+                    @elseif($statement['balance'] > 0){{ number_format($statement['balance'], 2) }}
+                    @else —
+                    @endif
+                </td>
+                @foreach($metals as $metal)
+                @php $finalBal = $metalStatement['balances'][$metal] ?? 0; @endphp
+                <td class="border-l border-gray-100"></td>
+                <td></td>
+                <td class="px-4 py-3 text-right font-mono whitespace-nowrap
+                    {{ $finalBal < 0 ? 'text-red-600' : ($finalBal > 0 ? 'text-gray-800' : 'text-gray-400') }}">
+                    @if($finalBal < 0)({{ number_format(abs($finalBal), 3) }})
+                    @elseif($finalBal > 0){{ number_format($finalBal, 3) }}
+                    @else —
+                    @endif
+                </td>
+                @endforeach
             </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-100">
-            @foreach($metalStatement['rows'] as $row)
-            <tr>
-                <td class="px-5 py-2.5 text-gray-600 whitespace-nowrap">{{ $row['date']->format('d M Y') }}</td>
-                <td class="px-5 py-2.5 text-gray-600 font-mono text-xs">{{ $row['invoice_number'] }}</td>
-                <td class="px-5 py-2.5 text-gray-700">{{ $row['description'] ?: ucfirst($row['invoice_type']) }}</td>
-                <td class="px-5 py-2.5">
-                    <span class="text-xs font-semibold uppercase {{ $row['metal_type'] === 'gold' ? 'text-amber-600' : ($row['metal_type'] === 'silver' ? 'text-gray-500' : 'text-blue-600') }}">
-                        {{ $row['metal_type'] }}
-                    </span>
-                    @if($row['purity'])<span class="ml-1 text-xs text-gray-400">{{ $row['purity'] }}</span>@endif
-                </td>
-                <td class="px-5 py-2.5 text-right font-mono text-green-600">
-                    {{ $row['grams_in'] !== null ? number_format($row['grams_in'], 3) : '' }}
-                </td>
-                <td class="px-5 py-2.5 text-right font-mono text-red-500">
-                    {{ $row['grams_out'] !== null ? number_format($row['grams_out'], 3) : '' }}
-                </td>
-                <td class="px-5 py-2.5 text-right font-mono font-semibold {{ $row['balance'] > 0 ? 'text-gray-800' : ($row['balance'] < 0 ? 'text-red-600' : 'text-gray-400') }}">
-                    {{ number_format($row['balance'], 3) }}
-                </td>
-            </tr>
-            @endforeach
-        </tbody>
-        @if(!empty($metalStatement['balances']))
-        <tfoot class="border-t border-gray-200">
-            @foreach($metalStatement['metals'] as $metal)
-            <tr>
-                <td colspan="6" class="px-5 py-2 text-right text-xs font-semibold text-gray-500 uppercase">
-                    {{ ucfirst($metal) }} balance held on account
-                </td>
-                <td class="px-5 py-2 text-right font-mono font-bold {{ ($metalStatement['balances'][$metal] ?? 0) > 0 ? 'text-gray-800' : 'text-red-600' }}">
-                    {{ number_format($metalStatement['balances'][$metal] ?? 0, 3) }} g
-                </td>
-            </tr>
-            @endforeach
         </tfoot>
         @endif
     </table>
+    </div>
 </div>
-@endif
 
 @if($unlinkedDeposits->isNotEmpty())
 <div class="bg-white rounded-xl border border-gray-200 p-5 mt-5 max-w-3xl">
