@@ -71,14 +71,14 @@
         </div>
         <div>
             <label class="block text-xs font-medium text-gray-600 mb-1">Form</label>
-            <select name="form" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white">
-                <option value="">—</option>
-                <option value="bar">Bar</option>
-                <option value="coin">Coin</option>
-                <option value="jewellery">Jewellery</option>
-                <option value="raw">Raw</option>
-                <option value="scrap">Scrap</option>
-            </select>
+            <input type="text" name="form" list="form-types" autocomplete="off"
+                   placeholder="Bar, Coin, Jewellery…"
+                   class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg">
+            <datalist id="form-types">
+                @foreach($formTypes as $ft)
+                <option value="{{ ucfirst($ft) }}"></option>
+                @endforeach
+            </datalist>
         </div>
     </div>
     <div>
@@ -88,9 +88,13 @@
                class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg">
         <p class="text-xs text-gray-400 mt-1">Informational catalog size only — actual stock quantity is always entered per movement.</p>
     </div>
-    <button type="submit" class="px-5 py-2.5 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700">
-        Create item
-    </button>
+    <div class="flex items-center justify-between">
+        <button type="submit" class="px-5 py-2.5 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700">
+            Create item
+        </button>
+        <a href="{{ route('tenant.accounting.inventory.options', $tenant->slug) }}"
+           class="text-xs text-gray-400 hover:text-gray-600">Manage form types →</a>
+    </div>
 </form>
 
 @endsection

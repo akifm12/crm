@@ -28,11 +28,20 @@ class InventoryController extends Controller
         return view('tenant.accounting.inventory.index', compact('tenant', 'items'));
     }
 
+    public static array $defaultFormTypes = ['bar', 'coin', 'jewellery', 'raw', 'scrap'];
+
+    private function allFormTypes(\App\Models\Tenant $tenant): array
+    {
+        $custom = $tenant->settings['inventory_form_types'] ?? [];
+        return array_values(array_unique(array_merge(self::$defaultFormTypes, $custom)));
+    }
+
     public function create()
     {
         $tenant = app('tenant');
+        $formTypes = $this->allFormTypes($tenant);
 
-        return view('tenant.accounting.inventory.create', compact('tenant'));
+        return view('tenant.accounting.inventory.create', compact('tenant', 'formTypes'));
     }
 
     public function store(Request $request)
@@ -40,27 +49,87 @@ class InventoryController extends Controller
         $tenant = app('tenant');
 
         $request->validate([
-            'name' => 'required|string|max:255',
-            'sku' => 'nullable|string|max:100',
-            'metal_type' => 'required|in:'.implode(',', InventoryItem::METAL_TYPES),
-            'purity' => 'nullable|numeric|min:0|max:999.999',
+            'name'                 => 'required|string|max:255',
+            'sku'                  => 'nullable|string|max:100',
+            'metal_type'           => 'required|in:'.implode(',', InventoryItem::METAL_TYPES),
+            'purity'               => 'nullable|numeric|min:0|max:999.999',
             'nominal_weight_grams' => 'nullable|numeric|min:0',
-            'form' => 'nullable|in:bar,coin,jewellery,raw,scrap',
+            'form'                 => 'nullable|string|max:50',
         ]);
 
+        $form = $request->form ? trim($request->form) : null;
+
+        // Persist any new custom form type into tenant settings
+        if ($form && ! in_array(strtolower($form), array_map('strtolower', $this->allFormTypes($tenant)))) {
+            $settings = $tenant->settings ?? [];
+            $settings['inventory_form_types'] = array_values(array_unique(
+                array_merge($settings['inventory_form_types'] ?? [], [$form])
+            ));
+            $tenant->update(['settings' => $settings]);
+        }
+
         InventoryItem::create([
-            'tenant_id' => $tenant->id,
-            'name' => $request->name,
-            'sku' => $request->sku,
-            'metal_type' => $request->metal_type,
-            'purity' => $request->purity,
+            'tenant_id'            => $tenant->id,
+            'name'                 => $request->name,
+            'sku'                  => $request->sku,
+            'metal_type'           => $request->metal_type,
+            'purity'               => $request->purity,
             'nominal_weight_grams' => $request->nominal_weight_grams,
-            'form' => $request->form,
-            'is_active' => true,
+            'form'                 => $form,
+            'is_active'            => true,
         ]);
 
         return redirect()->route('tenant.accounting.inventory.index', $tenant->slug)
             ->with('success', 'Inventory item created.');
+    }
+
+    public function optionsIndex()
+    {
+        $tenant = app('tenant');
+        $defaultFormTypes = self::$defaultFormTypes;
+        $customFormTypes  = $tenant->settings['inventory_form_types'] ?? [];
+
+        return view('tenant.accounting.inventory.options', compact('tenant', 'defaultFormTypes', 'customFormTypes'));
+    }
+
+    public function optionsStore(Request $request)
+    {
+        $tenant = app('tenant');
+
+        $request->validate(['form_type' => 'required|string|max:50']);
+        $value = trim($request->form_type);
+
+        if (! in_array(strtolower($value), array_map('strtolower', $this->allFormTypes($tenant)))) {
+            $settings = $tenant->settings ?? [];
+            $settings['inventory_form_types'] = array_values(array_unique(
+                array_merge($settings['inventory_form_types'] ?? [], [$value])
+            ));
+            $tenant->update(['settings' => $settings]);
+        }
+
+        return back()->with('success', '"'.$value.'" added.');
+    }
+
+    public function optionsDestroy(Request $request)
+    {
+        $tenant = app('tenant');
+
+        $request->validate(['form_type' => 'required|string']);
+        $value = trim($request->form_type);
+
+        // Only custom types can be deleted — defaults are always present
+        if (in_array(strtolower($value), array_map('strtolower', self::$defaultFormTypes))) {
+            return back()->with('error', 'Built-in form types cannot be removed.');
+        }
+
+        $settings = $tenant->settings ?? [];
+        $settings['inventory_form_types'] = array_values(array_filter(
+            $settings['inventory_form_types'] ?? [],
+            fn ($t) => strtolower($t) !== strtolower($value)
+        ));
+        $tenant->update(['settings' => $settings]);
+
+        return back()->with('success', '"'.$value.'" removed.');
     }
 
     public function show(string $slug, InventoryItem $item)

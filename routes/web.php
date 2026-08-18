@@ -360,6 +360,9 @@ Route::prefix('{slug}')
                 Route::get('/inventory',                      [\App\Http\Controllers\Tenant\Accounting\InventoryController::class, 'index'])->name('inventory.index');
                 Route::get('/inventory/new',                  [\App\Http\Controllers\Tenant\Accounting\InventoryController::class, 'create'])->name('inventory.create');
                 Route::post('/inventory',                     [\App\Http\Controllers\Tenant\Accounting\InventoryController::class, 'store'])->name('inventory.store');
+                Route::get('/inventory/options',              [\App\Http\Controllers\Tenant\Accounting\InventoryController::class, 'optionsIndex'])->name('inventory.options');
+                Route::post('/inventory/options',             [\App\Http\Controllers\Tenant\Accounting\InventoryController::class, 'optionsStore'])->name('inventory.options.store');
+                Route::delete('/inventory/options',           [\App\Http\Controllers\Tenant\Accounting\InventoryController::class, 'optionsDestroy'])->name('inventory.options.destroy');
                 Route::get('/inventory/{item}',               [\App\Http\Controllers\Tenant\Accounting\InventoryController::class, 'show'])->name('inventory.show');
                 Route::post('/inventory/{item}/adjust',       [\App\Http\Controllers\Tenant\Accounting\InventoryController::class, 'adjust'])->name('inventory.adjust');
 
