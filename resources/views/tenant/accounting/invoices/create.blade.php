@@ -193,7 +193,7 @@
                                 <span x-text="(line.metal_type||'').charAt(0).toUpperCase()+(line.metal_type||'').slice(1)"></span>
                                 price / oz (USD) <span x-show="pricingType === 'fixed'" class="text-red-500">*</span>
                             </label>
-                            <input type="number" step="0.0001" min="0.0001"
+                            <input type="number" step="0.0001" :min="pricingType === 'fixed' ? '0.0001' : '0'"
                                    :name="'metal_rates['+line.metal_type+'][usd_per_oz]'"
                                    :value="metalRates[line.metal_type] ? metalRates[line.metal_type].usdPerOz : ''"
                                    @change="ensureMetalRate(line.metal_type); metalRates[line.metal_type].usdPerOz = parseFloat($event.target.value)"
@@ -202,7 +202,7 @@
                         </div>
                         <div>
                             <label class="block text-xs text-gray-500 mb-0.5">USD → AED rate <span x-show="pricingType === 'fixed'" class="text-red-500">*</span></label>
-                            <input type="number" step="0.0001" min="0.0001"
+                            <input type="number" step="0.0001" :min="pricingType === 'fixed' ? '0.0001' : '0'"
                                    :name="'metal_rates['+line.metal_type+'][usd_aed_rate]'"
                                    :value="metalRates[line.metal_type] ? metalRates[line.metal_type].usdAedRate : ''"
                                    @change="ensureMetalRate(line.metal_type); metalRates[line.metal_type].usdAedRate = parseFloat($event.target.value)"
