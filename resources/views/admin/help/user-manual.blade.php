@@ -160,6 +160,7 @@
 
   /* ── Main content ── */
   .main {
+    grid-column: 2;
     padding: 3rem 3.5rem 6rem;
     max-width: 780px;
   }
