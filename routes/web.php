@@ -131,6 +131,9 @@ Route::middleware(['auth', \App\Http\Middleware\EnsureAdminUser::class])->group(
         return back()->with('success', 'Status updated.');
     })->name('quotations.status');
 
+    // ── Help ──────────────────────────────────────────────────────────────
+    Route::get('/help/user-manual', fn() => view('admin.help.user-manual'))->name('help.user-manual');
+
     // ── Settings ──────────────────────────────────────────────────────────
     Route::get('/settings',                         [SettingsController::class, 'index'])->name('settings.index');
     Route::get('/settings/sla/new',                 [SettingsController::class, 'createSlaTemplate'])->name('settings.sla.create');
