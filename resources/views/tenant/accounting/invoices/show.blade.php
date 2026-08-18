@@ -182,7 +182,8 @@
 
 @if(in_array($invoice->status, ['posted', 'pending_fix']))
 <div class="bg-white rounded-xl border border-gray-200 p-5 max-w-3xl">
-    <h3 class="text-sm font-semibold text-gray-700 mb-3">{{ $invoice->status === 'pending_fix' ? 'Deposits' : 'Payments' }}</h3>
+    @php $paymentWord = $invoice->status === 'pending_fix' ? 'Deposits' : ($invoice->invoice_type === 'sale' ? 'Receipts' : 'Payments'); @endphp
+    <h3 class="text-sm font-semibold text-gray-700 mb-3">{{ $paymentWord }}</h3>
     @if($invoice->status === 'pending_fix')
     <p class="text-xs text-gray-500 mb-3">No price has been fixed yet, so there's no balance to pay down — any amount recorded here is held as a deposit and automatically applied once you fix the price.</p>
     @endif
@@ -197,7 +198,7 @@
                 <td class="py-2 text-right font-mono">{{ number_format($payment->amount, 2) }}</td>
             </tr>
             @empty
-            <tr><td colspan="4" class="py-3 text-center text-gray-400">No {{ $invoice->status === 'pending_fix' ? 'deposits' : 'payments' }} recorded yet.</td></tr>
+            <tr><td colspan="4" class="py-3 text-center text-gray-400">No {{ strtolower($paymentWord) }} recorded yet.</td></tr>
             @endforelse
         </tbody>
     </table>
@@ -233,7 +234,7 @@
         </div>
         @endif
         <button type="submit" class="px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700">
-            {{ $invoice->status === 'pending_fix' ? 'Record deposit' : 'Record payment' }}
+            {{ $invoice->status === 'pending_fix' ? 'Record deposit' : ($invoice->invoice_type === 'sale' ? 'Record receipt' : 'Record payment') }}
         </button>
     </form>
     @endif
