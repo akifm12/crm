@@ -126,23 +126,23 @@
             </div>
         </div>
 
-        @if(!$isPosted)
-        @if($invoice->invoice_type === 'sale')
+        @if(!$isPosted && $invoice->invoice_type === 'sale')
         <div class="grid grid-cols-4 gap-4 mt-4">
             <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">Premium (AED)</label>
-                <input type="number" step="0.01" min="0" name="premium_amount"
-                       value="{{ old('premium_amount', $invoice->premium_amount) }}"
+                <label class="block text-xs font-medium text-gray-600 mb-1">Premium (USD / oz)</label>
+                <input type="number" step="0.01" min="0" x-model.number="premiumUsdPerOz"
                        class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg">
+                <p class="text-xs text-gray-400 mt-0.5" x-show="premiumAed > 0">≈ AED <span x-text="premiumAed.toFixed(2)"></span></p>
+                <input type="hidden" name="premium_amount" :value="premiumAed.toFixed(2)">
             </div>
             <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">Discount (AED)</label>
-                <input type="number" step="0.01" min="0" name="discount_amount"
-                       value="{{ old('discount_amount', $invoice->discount_amount) }}"
+                <label class="block text-xs font-medium text-gray-600 mb-1">Discount (USD / oz)</label>
+                <input type="number" step="0.01" min="0" x-model.number="discountUsdPerOz"
                        class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg">
+                <p class="text-xs text-gray-400 mt-0.5" x-show="discountAed > 0">≈ AED <span x-text="discountAed.toFixed(2)"></span></p>
+                <input type="hidden" name="discount_amount" :value="discountAed.toFixed(2)">
             </div>
         </div>
-        @endif
         @endif
     </div>
 
@@ -235,31 +235,61 @@
                     <p class="col-span-3 text-xs text-amber-600 self-end pb-2">No matching inventory item — select the metal type so this purchase is posted to the correct account.</p>
                 </div>
 
-                <div class="grid grid-cols-4 gap-2 mb-2" x-show="['metal_in','metal_out'].includes(line.line_type)">
-                    <div>
-                        <label class="block text-xs text-gray-400 mb-0.5">Purity</label>
-                        <input type="number" step="0.001" min="0" max="999.999" :name="'lines['+i+'][purity]'" x-model.number="line.purity" @input="syncFromGross(line)"
-                               class="w-full px-2 py-1.5 text-sm border border-gray-200 rounded-lg text-right">
+                <div x-show="['metal_in','metal_out'].includes(line.line_type)">
+                    {{-- Row 1: Qty fields — Pcs first as that's what the user enters --}}
+                    <div class="grid grid-cols-4 gap-2 mb-2">
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-0.5">Pcs</label>
+                            <input type="number" step="1" min="0" :name="'lines['+i+'][pcs]'" x-model.number="line.pcs" @input="syncFromPcs(line)"
+                                   class="w-full px-2 py-1.5 text-sm border border-gray-200 rounded-lg text-right">
+                            <p class="text-xs text-gray-400 mt-0.5" x-show="line.nominal_weight_grams" x-text="line.nominal_weight_grams + 'g each'"></p>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-0.5">Gross (g)</label>
+                            <input type="number" step="0.001" min="0" :name="'lines['+i+'][gross_weight_grams]'" x-model.number="line.gross_weight_grams" @input="syncFromGross(line)"
+                                   class="w-full px-2 py-1.5 text-sm border border-gray-200 rounded-lg text-right">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-0.5">Pure (g)</label>
+                            <input type="number" step="0.001" min="0" :name="'lines['+i+'][quantity_grams]'" x-model.number="line.quantity_grams"
+                                   class="w-full px-2 py-1.5 text-sm border border-gray-200 rounded-lg text-right">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-0.5">Purity</label>
+                            <input type="number" step="0.001" min="0" max="999.999" :name="'lines['+i+'][purity]'" x-model.number="line.purity" @input="syncFromGross(line)"
+                                   class="w-full px-2 py-1.5 text-sm border border-gray-200 rounded-lg text-right">
+                        </div>
                     </div>
-                    <div>
-                        <label class="block text-xs text-gray-400 mb-0.5">Gross (g)</label>
-                        <input type="number" step="0.001" min="0" :name="'lines['+i+'][gross_weight_grams]'" x-model.number="line.gross_weight_grams" @input="syncFromGross(line)"
-                               class="w-full px-2 py-1.5 text-sm border border-gray-200 rounded-lg text-right">
+                    {{-- Row 2: Inline metal rate — appears as soon as an item with a metal type is picked --}}
+                    <div x-show="line.metal_type" class="grid grid-cols-3 gap-2 mb-2 p-2 bg-amber-50 border border-amber-100 rounded-lg">
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-0.5">
+                                <span x-text="(line.metal_type||'').charAt(0).toUpperCase()+(line.metal_type||'').slice(1)"></span>
+                                price / oz (USD) <span x-show="pricingType === 'fixed'" class="text-red-500">*</span>
+                            </label>
+                            <input type="number" step="0.0001" min="0.0001"
+                                   :name="'metal_rates['+line.metal_type+'][usd_per_oz]'"
+                                   :value="metalRates[line.metal_type] ? metalRates[line.metal_type].usdPerOz : ''"
+                                   @change="ensureMetalRate(line.metal_type); metalRates[line.metal_type].usdPerOz = parseFloat($event.target.value)"
+                                   :required="pricingType === 'fixed'"
+                                   class="w-full px-2 py-1.5 text-sm border border-amber-200 rounded-lg bg-white">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-0.5">USD → AED rate <span x-show="pricingType === 'fixed'" class="text-red-500">*</span></label>
+                            <input type="number" step="0.0001" min="0.0001"
+                                   :name="'metal_rates['+line.metal_type+'][usd_aed_rate]'"
+                                   :value="metalRates[line.metal_type] ? metalRates[line.metal_type].usdAedRate : ''"
+                                   @change="ensureMetalRate(line.metal_type); metalRates[line.metal_type].usdAedRate = parseFloat($event.target.value)"
+                                   class="w-full px-2 py-1.5 text-sm border border-amber-200 rounded-lg bg-white">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-0.5">AED / gram (auto)</label>
+                            <input type="number" step="0.000001" :value="rateFor(line.metal_type).toFixed(6)" readonly
+                                   class="w-full px-2 py-1.5 text-sm border border-gray-200 rounded-lg bg-gray-50 text-gray-500">
+                        </div>
                     </div>
-                    <div>
-                        <label class="block text-xs text-gray-400 mb-0.5">Pure (g)</label>
-                        <input type="number" step="0.001" min="0" :name="'lines['+i+'][quantity_grams]'" x-model.number="line.quantity_grams"
-                               class="w-full px-2 py-1.5 text-sm border border-gray-200 rounded-lg text-right">
-                    </div>
-                    <div>
-                        <label class="block text-xs text-gray-400 mb-0.5">Pcs</label>
-                        <input type="number" step="1" min="0" :name="'lines['+i+'][pcs]'" x-model.number="line.pcs" @input="syncFromPcs(line)"
-                               class="w-full px-2 py-1.5 text-sm border border-gray-200 rounded-lg text-right">
-                        <p class="text-xs text-gray-400 mt-0.5" x-show="line.nominal_weight_grams" x-text="line.nominal_weight_grams + 'g each'"></p>
-                    </div>
+                    <p x-show="!line.metal_type" class="text-xs text-amber-600 mb-2">Pick an inventory item above to set the metal type and rate.</p>
                     <input type="hidden" :name="'lines['+i+'][unit_price]'" :value="rateFor(line.metal_type).toFixed(4)">
-                    <p class="col-span-4 text-xs text-gray-400 -mt-1" x-show="line.metal_type">Priced at the <span x-text="line.metal_type"></span> rate above (<span x-text="rateFor(line.metal_type).toFixed(4)"></span> AED/g)</p>
-                    <p class="col-span-4 text-xs text-amber-600 -mt-1" x-show="!line.metal_type">Pick an inventory item above to price this line.</p>
                 </div>
 
                 <div class="grid grid-cols-4 gap-2 mb-2" x-show="!['metal_in','metal_out'].includes(line.line_type)">
@@ -318,6 +348,8 @@
             <div class="w-56 text-sm space-y-1">
                 <div class="flex justify-between"><span class="text-gray-500">Subtotal</span><span class="font-mono" x-text="subtotal.toFixed(2)"></span></div>
                 <div class="flex justify-between"><span class="text-gray-500">VAT</span><span class="font-mono" x-text="vatTotal.toFixed(2)"></span></div>
+                <div class="flex justify-between text-green-700" x-show="premiumAed > 0"><span>Premium</span><span class="font-mono" x-text="'+' + premiumAed.toFixed(2)"></span></div>
+                <div class="flex justify-between text-red-600" x-show="discountAed > 0"><span>Discount</span><span class="font-mono" x-text="'-' + discountAed.toFixed(2)"></span></div>
                 <div class="flex justify-between font-semibold text-gray-800"><span>Total</span><span class="font-mono" x-text="total.toFixed(2)"></span></div>
             </div>
         </div>
@@ -335,41 +367,6 @@
     </datalist>
     @endif
 
-    {{-- Metal rates — appears below lines so user fills items first, then rates --}}
-    @if(!$isPosted)
-    <div x-show="usedMetals.length > 0" class="bg-white rounded-xl border border-gray-200 p-5 mb-5">
-        <h3 class="text-sm font-semibold text-gray-700 mb-3">Metal rates</h3>
-        <div class="space-y-3">
-            <template x-for="metal in usedMetals" :key="metal">
-                <div class="p-3 border border-gray-100 rounded-lg">
-                    <div class="text-xs font-semibold text-gray-500 capitalize mb-2" x-text="metal + ' rate'"></div>
-                    <div class="grid grid-cols-3 gap-4">
-                        <div>
-                            <label class="block text-xs font-medium text-gray-600 mb-1">Price / oz (USD) <span class="text-red-500">*</span></label>
-                            <input type="number" step="0.0001" min="0.0001"
-                                   :name="'metal_rates['+metal+'][usd_per_oz]'"
-                                   x-model.number="metalRates[metal].usdPerOz"
-                                   class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-gray-600 mb-1">USD → AED rate <span class="text-red-500">*</span></label>
-                            <input type="number" step="0.0001" min="0.0001"
-                                   :name="'metal_rates['+metal+'][usd_aed_rate]'"
-                                   x-model.number="metalRates[metal].usdAedRate"
-                                   class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-gray-600 mb-1">Rate / gram (AED)</label>
-                            <input type="number" step="0.000001" min="0" :value="rateFor(metal).toFixed(6)" readonly
-                                   class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 text-gray-500">
-                        </div>
-                    </div>
-                </div>
-            </template>
-            <p class="text-xs text-gray-400">= (USD/oz ÷ 31.1035) × rate — applied per metal to matching lines above</p>
-        </div>
-    </div>
-    @endif
 
     {{-- ── Notes ───────────────────────────────────────────────────────── --}}
     <div class="bg-white rounded-xl border border-gray-200 p-5 mb-5">
@@ -393,6 +390,8 @@ function invoiceForm() {
         invoiceType: '{{ $invoice->invoice_type }}',
         pricingType: '{{ $invoice->pricing_type }}',
         metalRates: @json($existingMetalRates),
+        premiumUsdPerOz: 0,
+        discountUsdPerOz: 0,
         lines: [],
         itemsByName: {},
         init() {
@@ -423,11 +422,6 @@ function invoiceForm() {
             const oz = parseFloat(r.usdPerOz) || 0;
             const rate = parseFloat(r.usdAedRate) || 0;
             return oz > 0 ? (oz / 31.1035) * rate : 0;
-        },
-        get usedMetals() {
-            const set = new Set();
-            this.lines.forEach(l => { if (this.isMetalLine(l) && l.metal_type) set.add(l.metal_type); });
-            return Array.from(set);
         },
         matchItemByName(line) {
             const match = this.itemsByName[line.description];
@@ -504,7 +498,27 @@ function invoiceForm() {
         lineTotal(line)    { return this.lineSubtotal(line) + this.lineMetalVat(line) + this.lineMakingAmount(line) + this.lineMakingVat(line); },
         get subtotal()     { return this.lines.reduce((s, l) => s + this.lineSubtotal(l) + this.lineMakingAmount(l), 0); },
         get vatTotal()     { return this.lines.reduce((s, l) => s + this.lineMetalVat(l) + this.lineMakingVat(l), 0); },
-        get total()        { return this.subtotal + this.vatTotal; },
+        get premiumAed() {
+            const usdPerOz = parseFloat(this.premiumUsdPerOz) || 0;
+            if (usdPerOz <= 0) return 0;
+            return this.lines.filter(l => this.isMetalLine(l) && l.metal_type).reduce((s, l) => {
+                const grams = parseFloat(l.quantity_grams) || 0;
+                const r = this.metalRates[l.metal_type];
+                const usdAed = r ? (parseFloat(r.usdAedRate) || 3.674) : 3.674;
+                return s + grams * usdPerOz / 31.1035 * usdAed;
+            }, 0);
+        },
+        get discountAed() {
+            const usdPerOz = parseFloat(this.discountUsdPerOz) || 0;
+            if (usdPerOz <= 0) return 0;
+            return this.lines.filter(l => this.isMetalLine(l) && l.metal_type).reduce((s, l) => {
+                const grams = parseFloat(l.quantity_grams) || 0;
+                const r = this.metalRates[l.metal_type];
+                const usdAed = r ? (parseFloat(r.usdAedRate) || 3.674) : 3.674;
+                return s + grams * usdPerOz / 31.1035 * usdAed;
+            }, 0);
+        },
+        get total()        { return this.subtotal + this.vatTotal + this.premiumAed - this.discountAed; },
     };
 }
 </script>
