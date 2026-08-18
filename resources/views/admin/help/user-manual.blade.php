@@ -291,49 +291,211 @@
 
   .divider { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
 
+  /* ── Print-only elements (hidden on screen) ── */
+  .print-cover, .print-toc, .print-section-link { display: none; }
+
   /* ── Print / PDF ── */
   @media print {
-    @page { size: A4; margin: 18mm 20mm; }
+    @page { size: A4; margin: 18mm 22mm; }
+    @page :first { margin-top: 0; margin-bottom: 0; }
+
+    :root {
+      --bg:          #ffffff;
+      --surface:     #ffffff;
+      --surface-alt: #f2f2f2;
+      --gold:        #8a6a20;
+      --ink:         #000000;
+      --body:        #222222;
+      --muted:       #555555;
+      --border:      #cccccc;
+      --step-bg:     #f5f5f5;
+      --tag-bg:      #eeeeee;
+      --tag-text:    #555555;
+      --note-bg:     #fafafa;
+    }
 
     .topbar, .sidebar, .btn-pdf { display: none !important; }
 
-    body { background: white; color: #000; font-size: 11pt; }
+    body { background: #fff; font-size: 10.5pt; line-height: 1.6; }
 
-    .layout {
-      display: block;
-      padding-top: 0;
-    }
+    .layout { display: block; padding-top: 0; }
+    .main   { padding: 0; max-width: 100%; }
 
-    .main {
+    /* ── Cover page ── */
+    .print-cover {
+      display: flex !important;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 100vh;
+      page-break-after: always;
       padding: 0;
-      max-width: 100%;
     }
 
-    .section { page-break-inside: avoid; }
-    .wizard-steps { page-break-inside: avoid; overflow: visible; }
+    .print-cover .cover-top {
+      background: #1c2333;
+      padding: 2.5cm 2.2cm 2cm;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .print-cover .cover-top .letterhead-img {
+      max-width: 220px;
+      max-height: 70px;
+      object-fit: contain;
+      filter: brightness(0) invert(1);
+      display: block;
+      margin-bottom: 0.4cm;
+    }
+
+    .print-cover .cover-top .brand-text {
+      font-family: Georgia, serif;
+      font-size: 18pt;
+      color: #ffffff;
+      letter-spacing: 0.02em;
+    }
+
+    .print-cover .cover-top .brand-sub {
+      font-size: 9pt;
+      color: rgba(255,255,255,0.55);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-top: 3px;
+    }
+
+    .print-cover .cover-body {
+      padding: 2cm 2.2cm;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .print-cover .cover-eyebrow {
+      font-size: 8pt;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: #8a6a20;
+      font-weight: 700;
+      margin-bottom: 0.4cm;
+    }
+
+    .print-cover .cover-title {
+      font-family: Georgia, serif;
+      font-size: 28pt;
+      color: #1c2333;
+      line-height: 1.2;
+      margin-bottom: 0.5cm;
+    }
+
+    .print-cover .cover-desc {
+      font-size: 10.5pt;
+      color: #555;
+      max-width: 38em;
+      line-height: 1.6;
+    }
+
+    .print-cover .cover-footer {
+      padding: 1cm 2.2cm;
+      border-top: 1px solid #ddd;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 8.5pt;
+      color: #888;
+    }
+
+    /* ── Table of Contents page ── */
+    .print-toc {
+      display: block !important;
+      page-break-before: always;
+      page-break-after: always;
+      padding: 1.5cm 0 2cm;
+    }
+
+    .print-toc h2 {
+      font-family: Georgia, serif;
+      font-size: 16pt;
+      color: #1c2333;
+      margin-bottom: 0.8cm;
+      padding-bottom: 0.3cm;
+      border-bottom: 2px solid #ddd;
+    }
+
+    .print-toc .toc-section { margin-bottom: 0.6cm; }
+
+    .print-toc .toc-section-label {
+      display: flex;
+      align-items: center;
+      gap: 0.4cm;
+      margin-bottom: 0.2cm;
+    }
+
+    .print-toc .toc-letter {
+      width: 22px; height: 22px;
+      background: #8a6a20;
+      color: white;
+      font-family: Georgia, serif;
+      font-size: 10pt;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+      flex-shrink: 0;
+    }
+
+    .print-toc .toc-section-title {
+      font-family: Georgia, serif;
+      font-size: 12pt;
+      color: #1c2333;
+    }
+
+    .print-toc .toc-links { list-style: none; padding-left: 1.5cm; margin-top: 0.15cm; }
+
+    .print-toc .toc-links li { margin-bottom: 0.15cm; }
+
+    .print-toc .toc-links a {
+      font-size: 9.5pt;
+      color: #1c2333;
+      text-decoration: none;
+    }
+
+    .print-toc .toc-links a:hover { color: #8a6a20; }
+
+    /* ── Running page header (every page after cover) ── */
+    .print-section-link {
+      display: flex !important;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5cm;
+      padding-bottom: 0.3cm;
+      border-bottom: 1px solid #ddd;
+      font-size: 8pt;
+      color: #999;
+    }
+
+    .print-section-link a {
+      color: #8a6a20;
+      text-decoration: none;
+      font-size: 8pt;
+    }
+
+    /* ── Sections — each on its own page ── */
+    .section {
+      page-break-before: always;
+    }
+
+    .section:first-of-type { page-break-before: auto; }
+
+    .wizard-steps { overflow: visible; page-break-inside: auto; }
     .wizard-steps table { min-width: 0; }
+    .wizard-steps tr { page-break-inside: avoid; }
     .step { page-break-inside: avoid; }
 
     h1 { font-size: 20pt; }
-    h2 { font-size: 14pt; }
-    h3 { font-size: 12pt; }
-
-    :root {
-      --bg: #ffffff;
-      --surface: #ffffff;
-      --surface-alt: #f2f2f2;
-      --gold: #8a6a20;
-      --ink: #000000;
-      --body: #222222;
-      --muted: #555555;
-      --border: #cccccc;
-      --step-bg: #f5f5f5;
-      --tag-bg: #eeeeee;
-      --tag-text: #555555;
-      --note-bg: #fafafa;
-    }
-
-    a { color: inherit; text-decoration: none; }
+    h2 { font-size: 13pt; }
+    h3 { font-size: 11pt; margin-top: 1rem; }
+    h4 { font-size: 8.5pt; }
 
     .section-letter {
       background: #8a6a20 !important;
@@ -341,22 +503,18 @@
       print-color-adjust: exact;
     }
 
-    .page-break { page-break-before: always; }
+    /* Preserve gold and background tints */
+    .note { background: #fafafa !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .wizard-steps thead tr { background: #f2f2f2 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 
-    /* Print header */
-    .print-header {
-      display: flex !important;
-      justify-content: space-between;
-      align-items: flex-end;
-      padding-bottom: 1rem;
-      margin-bottom: 2rem;
-      border-bottom: 2px solid #ccc;
+    /* Make anchor links visible in PDF */
+    a[href^="#"] {
+      color: #8a6a20;
+      text-decoration: underline;
     }
-    .print-header .ph-brand { font-family: Georgia, serif; font-size: 10pt; color: #555; }
-    .print-header .ph-date  { font-size: 9pt; color: #888; }
-  }
 
-  .print-header { display: none; }
+    .invoice-types { page-break-inside: avoid; }
+  }
 
   @media (max-width: 720px) {
     .layout { grid-template-columns: 1fr; }
@@ -367,6 +525,59 @@
 </style>
 </head>
 <body>
+
+{{-- ═══ PRINT COVER PAGE (hidden on screen) ═══ --}}
+@php $letterheadPath = storage_path('app/public/certificate/letterhead.png'); @endphp
+<div class="print-cover">
+  <div class="cover-top">
+    @if(file_exists($letterheadPath))
+      <img src="{{ asset('storage/certificate/letterhead.png') }}" class="letterhead-img" alt="Blue Arrow">
+    @else
+      <div class="brand-text">Blue Arrow</div>
+      <div class="brand-sub">Compliance &amp; AML Solutions</div>
+    @endif
+  </div>
+  <div class="cover-body">
+    <div class="cover-eyebrow">Company Portal</div>
+    <div class="cover-title">User Guide</div>
+    <div class="cover-desc">Step-by-step instructions for onboarding clients and creating invoices within the Blue Arrow company portal. This guide covers client record generation and the accounting module.</div>
+  </div>
+  <div class="cover-footer">
+    <span>Blue Arrow Compliance Portal</span>
+    <span>Issued {{ now()->format('d M Y') }}</span>
+  </div>
+</div>
+
+{{-- ═══ PRINT TABLE OF CONTENTS (hidden on screen) ═══ --}}
+<div class="print-toc" id="toc">
+  <h2>Contents</h2>
+
+  <div class="toc-section">
+    <div class="toc-section-label">
+      <span class="toc-letter">A</span>
+      <span class="toc-section-title">Client Record Generation</span>
+    </div>
+    <ul class="toc-links">
+      <li><a href="#before-you-start">Before you start — documents to prepare</a></li>
+      <li><a href="#corporate-client">Creating a corporate client (9 steps)</a></li>
+      <li><a href="#individual-client">Creating an individual client (6 steps)</a></li>
+      <li><a href="#client-tips">Tips &amp; shortcuts — auto-fill, draft save, duplicates</a></li>
+    </ul>
+  </div>
+
+  <div class="toc-section">
+    <div class="toc-section-label">
+      <span class="toc-letter">B</span>
+      <span class="toc-section-title">Accounting — Creating Invoices</span>
+    </div>
+    <ul class="toc-links">
+      <li><a href="#sale-invoice">Sale invoice — selling metal to the client</a></li>
+      <li><a href="#purchase-invoice">Purchase invoice — buying metal from the client</a></li>
+      <li><a href="#exchange-invoice">Metal exchange invoice</a></li>
+      <li><a href="#invoice-tips">Tips &amp; shortcuts — unfixed pricing, VAT, payments</a></li>
+    </ul>
+  </div>
+</div>
 
 {{-- Top bar --}}
 <div class="topbar">
@@ -430,6 +641,10 @@
 
     {{-- ═══════ SECTION A ═══════ --}}
     <section class="section" id="client-overview">
+      <div class="print-section-link">
+        <span>Section A — Client Record Generation</span>
+        <a href="#toc">↑ Back to contents</a>
+      </div>
       <div class="section-header">
         <div class="section-letter">A</div>
         <h2>Client Record Generation</h2>
@@ -541,7 +756,11 @@
     </section>
 
     {{-- ═══════ SECTION B ═══════ --}}
-    <section class="section page-break" id="accounting-overview">
+    <section class="section" id="accounting-overview">
+      <div class="print-section-link">
+        <span>Section B — Accounting</span>
+        <a href="#toc">↑ Back to contents</a>
+      </div>
       <div class="section-header">
         <div class="section-letter">B</div>
         <h2>Accounting — Creating Invoices</h2>
