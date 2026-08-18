@@ -137,6 +137,112 @@ class InvoiceController extends Controller
             ->with('success', 'Draft invoice created.');
     }
 
+    public function edit(string $slug, Invoice $invoice)
+    {
+        $tenant = app('tenant');
+        abort_if($invoice->tenant_id !== $tenant->id, 404);
+        abort_if($invoice->status === 'void', 403, 'Voided invoices cannot be edited.');
+        abort_if($invoice->status === 'pending_fix', 403, 'Use "Fix Price" to complete this invoice.');
+
+        $invoice->load('lines.inventoryItem', 'client');
+
+        $clients = BullionClient::where('tenant_id', $tenant->id)->orderBy('company_name')->orderBy('full_name')->get();
+        $items   = InventoryItem::where('tenant_id', $tenant->id)->where('is_active', true)
+            ->with('balance')->orderBy('name')->get();
+
+        return view('tenant.accounting.invoices.edit', compact('tenant', 'invoice', 'clients', 'items'));
+    }
+
+    public function update(Request $request, string $slug, Invoice $invoice, InvoicingService $invoicing)
+    {
+        $tenant = app('tenant');
+        abort_if($invoice->tenant_id !== $tenant->id, 404);
+        abort_if($invoice->status === 'void', 403, 'Voided invoices cannot be edited.');
+        abort_if($invoice->status === 'pending_fix', 403, 'Use "Fix Price" to complete this invoice.');
+
+        // Posted invoices: only safe header fields can change (lines and financials are locked)
+        if ($invoice->status === 'posted') {
+            $request->validate([
+                'invoice_date'    => 'required|date',
+                'party_reference' => 'nullable|string|max:255',
+                'notes'           => 'nullable|string',
+            ]);
+            $invoice->update($request->only('invoice_date', 'party_reference', 'notes'));
+
+            return redirect()->route('tenant.accounting.invoices.show', [$tenant->slug, $invoice->id])
+                ->with('success', 'Invoice updated.');
+        }
+
+        // Draft invoices: full edit
+        $request->validate([
+            'invoice_date'     => 'required|date',
+            'currency_code'    => 'nullable|string|size:3',
+            'exchange_rate'    => 'nullable|numeric|min:0.000001',
+            'metal_rates'      => 'nullable|array',
+            'metal_rates.*.usd_per_oz'    => 'nullable|numeric|min:0',
+            'metal_rates.*.usd_aed_rate'  => 'nullable|numeric|min:0',
+            'party_reference'  => 'nullable|string|max:255',
+            'premium_amount'   => 'nullable|numeric|min:0',
+            'discount_amount'  => 'nullable|numeric|min:0',
+            'notes'            => 'nullable|string',
+            'lines'            => 'required|array|min:1',
+            'lines.*.line_type'         => ['required', Rule::in(InvoiceLine::LINE_TYPES)],
+            'lines.*.inventory_item_id' => 'nullable|exists:inventory_items,id',
+            'lines.*.metal_type'        => 'nullable|string|max:20',
+            'lines.*.description'       => 'required|string|max:255',
+            'lines.*.purity'            => 'nullable|numeric|min:0|max:999.999',
+            'lines.*.quantity_grams'    => 'nullable|numeric|min:0',
+            'lines.*.gross_weight_grams'=> 'nullable|numeric|min:0',
+            'lines.*.pcs'               => 'nullable|integer|min:0',
+            'lines.*.unit_price'        => 'nullable|numeric|min:0',
+            'lines.*.line_subtotal'     => 'nullable|numeric|min:0',
+            'lines.*.metal_vat_treatment' => ['nullable', Rule::in(InvoiceLine::VAT_TREATMENTS)],
+            'lines.*.metal_vat_rate'    => 'nullable|numeric|min:0|max:100',
+            'lines.*.making_charge_rate'=> 'nullable|numeric|min:0',
+            'lines.*.making_vat_treatment' => ['nullable', Rule::in(InvoiceLine::VAT_TREATMENTS)],
+            'lines.*.making_vat_rate'   => 'nullable|numeric|min:0|max:100',
+        ]);
+
+        $isFixed = ($invoice->pricing_type) === 'fixed';
+        $hasMetalLine = collect($request->input('lines', []))
+            ->contains(fn ($l) => in_array($l['line_type'] ?? '', ['metal_in', 'metal_out']));
+
+        if ($isFixed && $hasMetalLine) {
+            $metalRates = $request->input('metal_rates', []);
+            $missing = [];
+            foreach ($metalRates as $metal => $rate) {
+                if (empty($rate['usd_per_oz']) || (float) $rate['usd_per_oz'] <= 0) {
+                    $missing[] = ucfirst($metal) . ' price/oz (USD)';
+                }
+                if (empty($rate['usd_aed_rate']) || (float) $rate['usd_aed_rate'] <= 0) {
+                    $missing[] = ucfirst($metal) . ' USD→AED rate';
+                }
+            }
+            if ($missing) {
+                return back()->withErrors(['metal_rates' => 'Metal rates are required: ' . implode(', ', $missing) . '.'])->withInput();
+            }
+        }
+
+        try {
+            $invoicing->updateDraft($invoice, [
+                'invoice_date'    => $request->invoice_date,
+                'currency_code'   => $request->currency_code ?: 'AED',
+                'exchange_rate'   => $request->exchange_rate ?: 1,
+                'metal_rates'     => $request->input('metal_rates'),
+                'party_reference' => $request->party_reference,
+                'premium_amount'  => $request->premium_amount ?: 0,
+                'discount_amount' => $request->discount_amount ?: 0,
+                'notes'           => $request->notes,
+                'lines'           => $request->lines,
+            ]);
+        } catch (\RuntimeException $e) {
+            return back()->with('error', $e->getMessage())->withInput();
+        }
+
+        return redirect()->route('tenant.accounting.invoices.show', [$tenant->slug, $invoice->id])
+            ->with('success', 'Draft invoice updated.');
+    }
+
     public function show(string $slug, Invoice $invoice)
     {
         $tenant = app('tenant');

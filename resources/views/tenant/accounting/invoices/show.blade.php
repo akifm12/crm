@@ -30,8 +30,12 @@
     @endif
 
     @if($invoice->status === 'draft')
+    <a href="{{ route('tenant.accounting.invoices.edit', [$tenant->slug, $invoice->id]) }}"
+       class="px-4 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50">
+        Edit draft
+    </a>
     <form method="POST" action="{{ route('tenant.accounting.invoices.post', [$tenant->slug, $invoice->id]) }}"
-          onsubmit="return confirm('Post this invoice? This moves inventory{{ $invoice->pricing_type === 'fixed' ? ' and posts the journal entry' : '' }} — it cannot be edited afterwards.')">
+          onsubmit="return confirm('Post this invoice? This moves inventory{{ $invoice->pricing_type === 'fixed' ? ' and posts the journal entry' : '' }}.')">
         @csrf
         <button type="submit" class="px-4 py-1.5 text-xs font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700">
             Post invoice
@@ -60,6 +64,10 @@
     @endif
 
     @if($invoice->status === 'posted')
+    <a href="{{ route('tenant.accounting.invoices.edit', [$tenant->slug, $invoice->id]) }}"
+       class="px-4 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50">
+        Edit
+    </a>
     <a href="{{ route('tenant.accounting.invoices.pdf', [$tenant->slug, $invoice->id]) }}" target="_blank"
        class="px-4 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50">
         Download PDF

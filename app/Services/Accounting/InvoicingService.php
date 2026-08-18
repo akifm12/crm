@@ -110,6 +110,67 @@ class InvoicingService
         });
     }
 
+    public function updateDraft(Invoice $invoice, array $data): Invoice
+    {
+        abort_if($invoice->status !== 'draft', 422, 'Only draft invoices can be edited.');
+
+        return DB::transaction(function () use ($invoice, $data) {
+            $computedLines = $this->computeLines($data['lines']);
+            $invoiceType   = $invoice->invoice_type;
+
+            if ($invoiceType === 'exchange') {
+                $subtotal = 0.0;
+                $vatTotal = 0.0;
+                foreach ($computedLines as $line) {
+                    if ($line['line_type'] === 'cash_topup') {
+                        $subtotal += (float) $line['line_subtotal'];
+                        $vatTotal += (float) $line['metal_vat_amount'];
+                    }
+                    $subtotal += (float) $line['making_charge_amount'];
+                    $vatTotal += (float) $line['making_vat_amount'];
+                }
+                $subtotal = round($subtotal, 2);
+                $vatTotal = round($vatTotal, 2);
+            } else {
+                $subtotal = round(
+                    collect($computedLines)->sum('line_subtotal') + collect($computedLines)->sum('making_charge_amount'),
+                    2
+                );
+                $vatTotal = round(
+                    collect($computedLines)->sum('metal_vat_amount') + collect($computedLines)->sum('making_vat_amount'),
+                    2
+                );
+            }
+            $premium  = round((float) ($data['premium_amount'] ?? 0), 2);
+            $discount = round((float) ($data['discount_amount'] ?? 0), 2);
+            $total    = round($subtotal + $vatTotal + $premium - $discount, 2);
+
+            $invoice->update([
+                'invoice_date'     => $data['invoice_date'],
+                'currency_code'    => $data['currency_code'] ?? 'AED',
+                'exchange_rate'    => $data['exchange_rate'] ?? 1,
+                'metal_rates'      => $data['metal_rates'] ?? null,
+                'party_reference'  => $data['party_reference'] ?? null,
+                'premium_amount'   => $premium,
+                'discount_amount'  => $discount,
+                'subtotal'         => $subtotal,
+                'vat_total'        => $vatTotal,
+                'total'            => $total,
+                'notes'            => $data['notes'] ?? null,
+            ]);
+
+            $invoice->lines()->delete();
+            foreach ($computedLines as $i => $line) {
+                InvoiceLine::create(array_merge($line, [
+                    'invoice_id' => $invoice->id,
+                    'line_order' => $i,
+                ]));
+            }
+
+            return $invoice->fresh('lines');
+        });
+    }
+
     private function computeLines(array $lines): array
     {
         return collect($lines)->map(function (array $line) {

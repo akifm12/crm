@@ -370,6 +370,8 @@ Route::prefix('{slug}')
                 Route::get('/invoices/new',                      [\App\Http\Controllers\Tenant\Accounting\InvoiceController::class, 'create'])->name('invoices.create');
                 Route::post('/invoices',                         [\App\Http\Controllers\Tenant\Accounting\InvoiceController::class, 'store'])->name('invoices.store');
                 Route::get('/invoices/{invoice}',                [\App\Http\Controllers\Tenant\Accounting\InvoiceController::class, 'show'])->name('invoices.show');
+                Route::get('/invoices/{invoice}/edit',           [\App\Http\Controllers\Tenant\Accounting\InvoiceController::class, 'edit'])->name('invoices.edit');
+                Route::put('/invoices/{invoice}',                [\App\Http\Controllers\Tenant\Accounting\InvoiceController::class, 'update'])->name('invoices.update');
                 Route::delete('/invoices/{invoice}',             [\App\Http\Controllers\Tenant\Accounting\InvoiceController::class, 'destroy'])->name('invoices.destroy');
                 Route::post('/invoices/{invoice}/post',          [\App\Http\Controllers\Tenant\Accounting\InvoiceController::class, 'post'])->name('invoices.post');
                 Route::get('/invoices/{invoice}/fix',            [\App\Http\Controllers\Tenant\Accounting\InvoiceController::class, 'fixPriceForm'])->name('invoices.fix.form');
