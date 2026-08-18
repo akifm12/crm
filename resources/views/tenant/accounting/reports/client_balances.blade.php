@@ -5,19 +5,40 @@
 
 @section('content')
 
-<div class="flex items-start justify-between gap-4 mb-4">
-    <p class="text-xs text-gray-400 max-w-2xl">
-        The Trial Balance keeps Accounts Receivable and Sales Revenue as single control accounts (standard practice —
-        one row per customer would make it unreadable). This report is the subsidiary-ledger detail behind those
-        control accounts: each corporate client gets its own row; individuals are combined into one row below.
-    </p>
-    <div class="flex gap-2 shrink-0">
-        <a href="{{ route('tenant.accounting.reports.client-balances.pdf', $tenant->slug) }}" target="_blank"
+@php $balanceExportParams = ($from ? 'from='.$from->toDateString().'&' : '').($asOf ? 'as_of='.$asOf->toDateString() : ''); @endphp
+<div class="flex flex-wrap items-end gap-3 mb-5">
+    <form method="GET" class="flex flex-wrap items-end gap-3">
+        <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">From</label>
+            <input type="date" name="from" value="{{ $from?->toDateString() }}" class="px-3 py-2 text-sm border border-gray-200 rounded-lg">
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">To</label>
+            <input type="date" name="as_of" value="{{ $asOf?->toDateString() }}" class="px-3 py-2 text-sm border border-gray-200 rounded-lg">
+        </div>
+        <button type="submit" class="px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700">Apply</button>
+        @if($from || $asOf)
+        <a href="{{ route('tenant.accounting.reports.client-balances', $tenant->slug) }}" class="px-4 py-2 text-sm text-gray-500 hover:text-gray-700">Clear</a>
+        @endif
+    </form>
+    <div class="flex gap-2 ml-auto">
+        <a href="{{ route('tenant.accounting.reports.client-balances.pdf', $tenant->slug) }}{{ $balanceExportParams ? '?'.$balanceExportParams : '' }}" target="_blank"
            class="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50">Export PDF</a>
-        <a href="{{ route('tenant.accounting.reports.client-balances.csv', $tenant->slug) }}"
+        <a href="{{ route('tenant.accounting.reports.client-balances.csv', $tenant->slug) }}{{ $balanceExportParams ? '?'.$balanceExportParams : '' }}"
            class="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50">Export Excel</a>
     </div>
 </div>
+@if($from || $asOf)
+<p class="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 mb-4">
+    Showing activity{{ $from ? ' from '.$from->format('d M Y') : '' }}{{ $asOf ? ' to '.$asOf->format('d M Y') : '' }}.
+    Balance reflects net movement in this period, not the all-time outstanding balance.
+</p>
+@endif
+<p class="text-xs text-gray-400 max-w-2xl mb-4">
+    The Trial Balance keeps Accounts Receivable and Sales Revenue as single control accounts (standard practice —
+    one row per customer would make it unreadable). This report is the subsidiary-ledger detail behind those
+    control accounts: each corporate client gets its own row; individuals are combined into one row below.
+</p>
 
 <div class="bg-white rounded-xl border border-gray-200 overflow-hidden mb-6">
     <table class="w-full text-sm">

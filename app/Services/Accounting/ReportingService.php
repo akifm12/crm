@@ -171,7 +171,7 @@ class ReportingService
      * reclass entries (Deposits -> AR/AP once an invoice is priced) net to zero across these
      * four accounts by construction, so they're automatically skipped as zero-amount rows.
      */
-    public function clientStatement(Tenant $tenant, BullionClient $client, ?Carbon $asOf = null): array
+    public function clientStatement(Tenant $tenant, BullionClient $client, ?Carbon $asOf = null, ?Carbon $from = null): array
     {
         $arAccount = ChartOfAccount::where('tenant_id', $tenant->id)->where('subtype', 'ar')->first();
         $apAccount = ChartOfAccount::where('tenant_id', $tenant->id)->where('subtype', 'ap')->first();
@@ -191,37 +191,58 @@ class ReportingService
             ->pluck('journal_entry_id');
 
         if (($invoiceIds->isEmpty() && $paymentJournalIds->isEmpty()) || empty($accountIds)) {
-            return ['rows' => collect(), 'balance' => 0.0];
+            return ['rows' => collect(), 'balance' => 0.0, 'opening_balance' => 0.0];
         }
 
         $invoicesById = Invoice::whereIn('id', $invoiceIds)->get()->keyBy('id');
 
-        $entries = JournalEntry::where('tenant_id', $tenant->id)
+        // Build the base entry query (callable, so we can run it twice for opening + period).
+        $buildQuery = fn () => JournalEntry::where('tenant_id', $tenant->id)
             ->where(function ($q) use ($invoiceIds, $paymentJournalIds) {
                 $q->where(fn ($q2) => $q2->whereIn('source_type', ['invoice', 'deposit_reclass'])->whereIn('source_id', $invoiceIds))
                     ->orWhereIn('id', $paymentJournalIds);
             })
-            ->when($asOf, fn ($q) => $q->where('entry_date', '<=', $asOf->toDateString()))
-            ->with(['lines' => fn ($q) => $q->whereIn('chart_of_account_id', $accountIds)])
-            ->orderBy('entry_date')
-            ->orderBy('id')
-            ->get();
+            ->with(['lines' => fn ($q) => $q->whereIn('chart_of_account_id', $accountIds)]);
 
-        $rows = collect();
-        $running = 0.0;
-
-        foreach ($entries as $entry) {
-            $sum = fn (?int $accountId, string $column) => $accountId
-                ? (float) $entry->lines->where('chart_of_account_id', $accountId)->sum($column)
+        // Per-entry net balance movement.
+        $netOf = function (JournalEntry $entry) use ($arAccount, $apAccount, $customerDepositsAccount, $supplierDepositsAccount): float {
+            $sum = fn (?int $id, string $col) => $id
+                ? (float) $entry->lines->where('chart_of_account_id', $id)->sum($col)
                 : 0.0;
-
-            $net = round(
+            return round(
                 ($sum($arAccount?->id, 'base_debit') - $sum($arAccount?->id, 'base_credit'))
                 - ($sum($apAccount?->id, 'base_credit') - $sum($apAccount?->id, 'base_debit'))
                 - ($sum($customerDepositsAccount?->id, 'base_credit') - $sum($customerDepositsAccount?->id, 'base_debit'))
                 + ($sum($supplierDepositsAccount?->id, 'base_debit') - $sum($supplierDepositsAccount?->id, 'base_credit')),
                 2
             );
+        };
+
+        // Opening balance = net of all entries strictly before $from.
+        $openingBalance = 0.0;
+        if ($from) {
+            $buildQuery()
+                ->where('entry_date', '<', $from->toDateString())
+                ->orderBy('entry_date')->orderBy('id')
+                ->get()
+                ->each(function ($entry) use ($netOf, &$openingBalance) {
+                    $openingBalance = round($openingBalance + $netOf($entry), 2);
+                });
+        }
+
+        // Period entries.
+        $entries = $buildQuery()
+            ->when($asOf, fn ($q) => $q->where('entry_date', '<=', $asOf->toDateString()))
+            ->when($from,  fn ($q) => $q->where('entry_date', '>=', $from->toDateString()))
+            ->orderBy('entry_date')
+            ->orderBy('id')
+            ->get();
+
+        $rows = collect();
+        $running = $openingBalance;
+
+        foreach ($entries as $entry) {
+            $net = $netOf($entry);
 
             if (abs($net) < 0.001) {
                 continue;
@@ -246,7 +267,7 @@ class ReportingService
             ]);
         }
 
-        return ['rows' => $rows, 'balance' => $running];
+        return ['rows' => $rows, 'balance' => $running, 'opening_balance' => $openingBalance];
     }
 
     /**
@@ -264,17 +285,38 @@ class ReportingService
      *
      * Returns: ['rows' => Collection, 'metals' => string[], 'balances' => [metal => grams]]
      */
-    public function clientMetalStatement(Tenant $tenant, BullionClient $client, ?Carbon $asOf = null): array
+    public function clientMetalStatement(Tenant $tenant, BullionClient $client, ?Carbon $asOf = null, ?Carbon $from = null): array
     {
-        $lines = InvoiceLine::query()
+        $baseConditions = fn ($q) => $q
             ->join('invoices', 'invoices.id', '=', 'invoice_lines.invoice_id')
             ->where('invoices.tenant_id', $tenant->id)
             ->where('invoices.bullion_client_id', $client->id)
             ->where('invoices.status', 'posted')
             ->where('invoices.invoice_type', 'exchange')
             ->whereIn('invoice_lines.line_type', ['metal_in', 'metal_out'])
-            ->whereNotNull('invoice_lines.metal_type')
+            ->whereNotNull('invoice_lines.metal_type');
+
+        // Opening gram balances: all exchange lines strictly before $from.
+        $openingBalances = [];
+        if ($from) {
+            $openingLines = $baseConditions(InvoiceLine::query())
+                ->where('invoices.invoice_date', '<', $from->toDateString())
+                ->select('invoice_lines.line_type', 'invoice_lines.metal_type', 'invoice_lines.quantity_grams')
+                ->orderBy('invoices.invoice_date')->orderBy('invoices.id')->orderBy('invoice_lines.line_order')
+                ->get();
+            foreach ($openingLines as $ol) {
+                $metal = $ol->metal_type;
+                $openingBalances[$metal] ??= 0.0;
+                $g = (float) $ol->quantity_grams;
+                $openingBalances[$metal] = $ol->line_type === 'metal_in'
+                    ? round($openingBalances[$metal] + $g, 3)
+                    : round($openingBalances[$metal] - $g, 3);
+            }
+        }
+
+        $lines = $baseConditions(InvoiceLine::query())
             ->when($asOf, fn ($q) => $q->where('invoices.invoice_date', '<=', $asOf->toDateString()))
+            ->when($from,  fn ($q) => $q->where('invoices.invoice_date', '>=', $from->toDateString()))
             ->select(
                 'invoice_lines.*',
                 'invoices.invoice_number',
@@ -286,7 +328,8 @@ class ReportingService
             ->orderBy('invoice_lines.line_order')
             ->get();
 
-        $balances = []; // running gram balance per metal
+        // Start running balances from any pre-period opening.
+        $balances = $openingBalances;
         $rows = collect();
 
         foreach ($lines as $line) {
@@ -324,7 +367,7 @@ class ReportingService
         $metals = array_keys($balances);
         sort($metals);
 
-        return ['rows' => $rows, 'metals' => $metals, 'balances' => $balances];
+        return ['rows' => $rows, 'metals' => $metals, 'balances' => $balances, 'opening_balances' => $openingBalances];
     }
 
     /**
@@ -356,7 +399,7 @@ class ReportingService
      * joins), this uses journal_entries.bullion_client_id directly — a single grouped query
      * across every client at once rather than one query per client.
      */
-    public function clientBalancesSummary(Tenant $tenant): array
+    public function clientBalancesSummary(Tenant $tenant, ?Carbon $asOf = null, ?Carbon $from = null): array
     {
         $arAccount = ChartOfAccount::where('tenant_id', $tenant->id)->where('subtype', 'ar')->first();
         $apAccount = ChartOfAccount::where('tenant_id', $tenant->id)->where('subtype', 'ap')->first();
@@ -372,6 +415,8 @@ class ReportingService
             ->join('journal_entries', 'journal_entries.id', '=', 'journal_entry_lines.journal_entry_id')
             ->where('journal_entries.tenant_id', $tenant->id)
             ->whereNotNull('journal_entries.bullion_client_id')
+            ->when($asOf, fn ($q) => $q->where('journal_entries.entry_date', '<=', $asOf->toDateString()))
+            ->when($from,  fn ($q) => $q->where('journal_entries.entry_date', '>=', $from->toDateString()))
             ->groupBy('journal_entries.bullion_client_id', 'journal_entry_lines.chart_of_account_id')
             ->selectRaw('journal_entries.bullion_client_id as client_id, journal_entry_lines.chart_of_account_id as account_id, SUM(journal_entry_lines.base_debit) as total_debit, SUM(journal_entry_lines.base_credit) as total_credit')
             ->get()

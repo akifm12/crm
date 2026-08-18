@@ -5,7 +5,7 @@
 
 @section('content')
 
-<form method="GET" class="mb-5 flex items-end gap-3">
+<form method="GET" class="mb-5 flex flex-wrap items-end gap-3">
     <div>
         <label class="block text-xs font-medium text-gray-600 mb-1">Client</label>
         <select name="client_id" required class="px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white min-w-[240px]">
@@ -16,7 +16,11 @@
         </select>
     </div>
     <div>
-        <label class="block text-xs font-medium text-gray-600 mb-1">As of</label>
+        <label class="block text-xs font-medium text-gray-600 mb-1">From</label>
+        <input type="date" name="from" value="{{ $from?->toDateString() }}" class="px-3 py-2 text-sm border border-gray-200 rounded-lg">
+    </div>
+    <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">To</label>
         <input type="date" name="as_of" value="{{ $asOf->toDateString() }}" class="px-3 py-2 text-sm border border-gray-200 rounded-lg">
     </div>
     <button type="submit" class="px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700">
@@ -134,10 +138,11 @@ $combinedRows = $combinedRows->sortBy('date')->values();
 $colSpan = 5 + count($metals) * 3;
 @endphp
 
+@php $exportParams = 'client_id='.$client->id.'&as_of='.$asOf->toDateString().($from ? '&from='.$from->toDateString() : ''); @endphp
 <div class="flex justify-end gap-2 mb-3">
-    <a href="{{ route('tenant.accounting.reports.client-statement.pdf', $tenant->slug) }}?client_id={{ $client->id }}&as_of={{ $asOf->toDateString() }}" target="_blank"
+    <a href="{{ route('tenant.accounting.reports.client-statement.pdf', $tenant->slug) }}?{{ $exportParams }}" target="_blank"
        class="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50">Export PDF</a>
-    <a href="{{ route('tenant.accounting.reports.client-statement.csv', $tenant->slug) }}?client_id={{ $client->id }}&as_of={{ $asOf->toDateString() }}"
+    <a href="{{ route('tenant.accounting.reports.client-statement.csv', $tenant->slug) }}?{{ $exportParams }}"
        class="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50">Export Excel</a>
 </div>
 
@@ -149,7 +154,9 @@ $colSpan = 5 + count($metals) * 3;
         @if($client->trn_number)<p class="text-xs text-gray-400">TRN: {{ $client->trn_number }}</p>@endif
     </div>
     <div class="bg-white rounded-xl border border-gray-200 p-4">
-        <p class="text-xs text-gray-400 mb-1">Cash balance as of {{ $asOf->format('d M Y') }}</p>
+        <p class="text-xs text-gray-400 mb-1">
+            Cash balance {{ $from ? 'from '.$from->format('d M Y').' to' : 'as of' }} {{ $asOf->format('d M Y') }}
+        </p>
         <p class="text-2xl font-bold {{ $statement['balance'] > 0 ? 'text-red-600' : ($statement['balance'] < 0 ? 'text-green-600' : 'text-gray-800') }}">
             @if($statement['balance'] < 0)({{ number_format(abs($statement['balance']), 2) }})
             @else{{ number_format($statement['balance'], 2) }}
@@ -196,6 +203,33 @@ $colSpan = 5 + count($metals) * 3;
             </tr>
         </thead>
         <tbody class="divide-y divide-gray-100">
+            @if($from)
+            <tr class="bg-gray-50 text-xs font-semibold text-gray-500">
+                <td class="px-4 py-2 whitespace-nowrap">{{ $from->format('d M Y') }}</td>
+                <td class="px-4 py-2 italic">Opening balance</td>
+                <td class="px-4 py-2"></td>
+                <td class="px-4 py-2"></td>
+                <td class="px-4 py-2 text-right font-mono font-semibold whitespace-nowrap
+                    {{ $statement['opening_balance'] < 0 ? 'text-green-600' : ($statement['opening_balance'] > 0 ? 'text-gray-700' : 'text-gray-400') }}">
+                    @if($statement['opening_balance'] < 0)({{ number_format(abs($statement['opening_balance']), 2) }})
+                    @elseif($statement['opening_balance'] > 0){{ number_format($statement['opening_balance'], 2) }}
+                    @else —
+                    @endif
+                </td>
+                @foreach($metals as $metal)
+                @php $ob = $metalStatement['opening_balances'][$metal] ?? 0; @endphp
+                <td class="px-4 py-2 border-l border-gray-100"></td>
+                <td class="px-4 py-2"></td>
+                <td class="px-4 py-2 text-right font-mono font-semibold whitespace-nowrap
+                    {{ $ob < 0 ? 'text-red-600' : ($ob > 0 ? 'text-gray-700' : 'text-gray-400') }}">
+                    @if($ob < 0)({{ number_format(abs($ob), 3) }})
+                    @elseif($ob > 0){{ number_format($ob, 3) }}
+                    @else —
+                    @endif
+                </td>
+                @endforeach
+            </tr>
+            @endif
             @forelse($combinedRows as $row)
             <tr class="hover:bg-gray-50">
                 <td class="px-4 py-2.5 text-gray-600 whitespace-nowrap">{{ $row['date']->format('d M Y') }}</td>

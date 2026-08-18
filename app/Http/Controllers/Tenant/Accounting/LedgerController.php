@@ -290,14 +290,15 @@ class LedgerController extends Controller
         $clientInvoices = collect();
         $unlinkedDeposits = collect();
         $asOf = $request->filled('as_of') ? Carbon::parse($request->input('as_of')) : Carbon::today();
+        $from = $request->filled('from') ? Carbon::parse($request->input('from')) : null;
 
         $metalStatement = null;
 
         if ($request->filled('client_id')) {
             $client = BullionClient::findOrFail($request->input('client_id'));
             abort_if($client->tenant_id !== $tenant->id, 404);
-            $statement = $reporting->clientStatement($tenant, $client, $asOf);
-            $metalStatement = $reporting->clientMetalStatement($tenant, $client, $asOf);
+            $statement = $reporting->clientStatement($tenant, $client, $asOf, $from);
+            $metalStatement = $reporting->clientMetalStatement($tenant, $client, $asOf, $from);
             $clientInvoices = Invoice::where('tenant_id', $tenant->id)
                 ->where('bullion_client_id', $client->id)
                 ->where('status', '!=', 'void')
@@ -310,7 +311,7 @@ class LedgerController extends Controller
                 ->get();
         }
 
-        return view('tenant.accounting.reports.client_statement', compact('tenant', 'clients', 'client', 'statement', 'metalStatement', 'asOf', 'clientInvoices', 'unlinkedDeposits'));
+        return view('tenant.accounting.reports.client_statement', compact('tenant', 'clients', 'client', 'statement', 'metalStatement', 'asOf', 'from', 'clientInvoices', 'unlinkedDeposits'));
     }
 
     public function clientStatementPdf(Request $request, ReportingService $reporting)
@@ -320,10 +321,11 @@ class LedgerController extends Controller
         abort_if($client->tenant_id !== $tenant->id, 404);
 
         $asOf = $request->filled('as_of') ? Carbon::parse($request->input('as_of')) : Carbon::today();
-        $statement = $reporting->clientStatement($tenant, $client, $asOf);
-        $metalStatement = $reporting->clientMetalStatement($tenant, $client, $asOf);
+        $from = $request->filled('from') ? Carbon::parse($request->input('from')) : null;
+        $statement = $reporting->clientStatement($tenant, $client, $asOf, $from);
+        $metalStatement = $reporting->clientMetalStatement($tenant, $client, $asOf, $from);
 
-        $pdf = Pdf::loadView('tenant.accounting.reports.pdf.client_statement', compact('tenant', 'client', 'statement', 'metalStatement', 'asOf'));
+        $pdf = Pdf::loadView('tenant.accounting.reports.pdf.client_statement', compact('tenant', 'client', 'statement', 'metalStatement', 'asOf', 'from'));
 
         return $pdf->stream('statement-'.str($client->displayName())->slug().'-'.$asOf->toDateString().'.pdf');
     }
@@ -335,8 +337,9 @@ class LedgerController extends Controller
         abort_if($client->tenant_id !== $tenant->id, 404);
 
         $asOf = $request->filled('as_of') ? Carbon::parse($request->input('as_of')) : Carbon::today();
-        $statement = $reporting->clientStatement($tenant, $client, $asOf);
-        $metalStatement = $reporting->clientMetalStatement($tenant, $client, $asOf);
+        $from = $request->filled('from') ? Carbon::parse($request->input('from')) : null;
+        $statement = $reporting->clientStatement($tenant, $client, $asOf, $from);
+        $metalStatement = $reporting->clientMetalStatement($tenant, $client, $asOf, $from);
 
         // Build preamble: company identity + client details header block
         $preamble = [[$tenant->name]];
@@ -352,7 +355,10 @@ class LedgerController extends Controller
         if ($client->trn_number) {
             $preamble[] = ['Client TRN', $client->trn_number];
         }
-        $preamble[] = ['As of', $asOf->format('d M Y')];
+        if ($from) {
+            $preamble[] = ['From', $from->format('d M Y')];
+        }
+        $preamble[] = [$from ? 'To' : 'As of', $asOf->format('d M Y')];
         $balanceLabel = $statement['balance'] > 0 ? 'Client owes the business'
             : ($statement['balance'] < 0 ? 'Business owes the client' : 'Settled');
         $preamble[] = ['Net Balance (AED)', number_format(abs($statement['balance']), 2), $balanceLabel];
@@ -400,31 +406,37 @@ class LedgerController extends Controller
         );
     }
 
-    public function clientBalances(ReportingService $reporting)
+    public function clientBalances(Request $request, ReportingService $reporting)
     {
         $tenant = app('tenant');
+        $asOf = $request->filled('as_of') ? Carbon::parse($request->input('as_of')) : null;
+        $from = $request->filled('from') ? Carbon::parse($request->input('from')) : null;
 
-        $summary = $reporting->clientBalancesSummary($tenant);
+        $summary = $reporting->clientBalancesSummary($tenant, $asOf, $from);
 
-        return view('tenant.accounting.reports.client_balances', array_merge(compact('tenant'), $summary));
+        return view('tenant.accounting.reports.client_balances', array_merge(compact('tenant', 'asOf', 'from'), $summary));
     }
 
-    public function clientBalancesPdf(ReportingService $reporting)
+    public function clientBalancesPdf(Request $request, ReportingService $reporting)
     {
         $tenant = app('tenant');
+        $asOf = $request->filled('as_of') ? Carbon::parse($request->input('as_of')) : null;
+        $from = $request->filled('from') ? Carbon::parse($request->input('from')) : null;
 
-        $summary = $reporting->clientBalancesSummary($tenant);
+        $summary = $reporting->clientBalancesSummary($tenant, $asOf, $from);
 
-        $pdf = Pdf::loadView('tenant.accounting.reports.pdf.client_balances', array_merge(compact('tenant'), $summary));
+        $pdf = Pdf::loadView('tenant.accounting.reports.pdf.client_balances', array_merge(compact('tenant', 'asOf', 'from'), $summary));
 
         return $pdf->stream('client-balances-'.now()->toDateString().'.pdf');
     }
 
-    public function clientBalancesCsv(ReportingService $reporting)
+    public function clientBalancesCsv(Request $request, ReportingService $reporting)
     {
         $tenant = app('tenant');
+        $asOf = $request->filled('as_of') ? Carbon::parse($request->input('as_of')) : null;
+        $from = $request->filled('from') ? Carbon::parse($request->input('from')) : null;
 
-        $summary = $reporting->clientBalancesSummary($tenant);
+        $summary = $reporting->clientBalancesSummary($tenant, $asOf, $from);
 
         $rows = $summary['corporate']->map(fn ($row) => [
             $row['client']->displayName(), ucfirst(str_replace('_', ' ', $row['client']->client_type)), $row['balance'], $row['sales_revenue'],
