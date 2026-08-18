@@ -9,6 +9,45 @@
 <div class="p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700 mb-4">{{ session('success') }}</div>
 @endif
 
+{{-- ── Stock summary by metal + purity ─────────────────────────────── --}}
+@php
+    $summary = $items
+        ->filter(fn($i) => ($i->balance->quantity_grams ?? 0) > 0)
+        ->groupBy('metal_type')
+        ->map(fn($group) =>
+            $group->groupBy(fn($i) => $i->purity ? number_format((float)$i->purity, 0) : '—')
+                  ->map(fn($g) => $g->sum(fn($i) => (float)($i->balance->quantity_grams ?? 0)))
+                  ->sortKeysDesc()
+        )
+        ->sortKeys();
+@endphp
+
+@if($summary->isNotEmpty())
+<div class="bg-white rounded-xl border border-gray-200 p-5 mb-5">
+    <h3 class="text-sm font-semibold text-gray-700 mb-3">Stock summary</h3>
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+        @foreach($summary as $metal => $purities)
+            @foreach($purities as $purity => $grams)
+            <div class="p-3 rounded-lg border border-gray-100 bg-gray-50">
+                <div class="flex items-center gap-1.5 mb-1">
+                    <span @class([
+                        'w-2 h-2 rounded-full flex-shrink-0',
+                        'bg-amber-500' => $metal === 'gold',
+                        'bg-gray-400'  => $metal === 'silver',
+                        'bg-sky-500'   => $metal === 'platinum',
+                        'bg-purple-500'=> $metal === 'palladium',
+                    ])></span>
+                    <span class="text-xs font-semibold text-gray-600 capitalize">{{ $metal }}</span>
+                    <span class="text-xs text-gray-400">{{ $purity }}</span>
+                </div>
+                <div class="font-mono text-base font-semibold text-gray-800">{{ number_format($grams, 3) }} g</div>
+            </div>
+            @endforeach
+        @endforeach
+    </div>
+</div>
+@endif
+
 <div class="flex justify-end mb-4">
     <a href="{{ route('tenant.accounting.inventory.create', $tenant->slug) }}"
        class="px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700">
