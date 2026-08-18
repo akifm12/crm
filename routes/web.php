@@ -354,6 +354,7 @@ Route::prefix('{slug}')
                 Route::get('/reports/client-balances/csv', [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'clientBalancesCsv'])->name('reports.client-balances.csv');
 
                 Route::post('/clients/{client}/payments',            [\App\Http\Controllers\Tenant\Accounting\ClientPaymentController::class, 'store'])->name('clients.payments.store');
+                Route::get('/payments/{payment}/receipt',            [\App\Http\Controllers\Tenant\Accounting\ClientPaymentController::class, 'receipt'])->name('payments.receipt');
                 Route::post('/deposits/{deposit}/apply',              [\App\Http\Controllers\Tenant\Accounting\ClientPaymentController::class, 'apply'])->name('deposits.apply');
 
                 Route::get('/inventory',                      [\App\Http\Controllers\Tenant\Accounting\InventoryController::class, 'index'])->name('inventory.index');

@@ -42,7 +42,7 @@ class ClientPaymentController extends Controller
         }
 
         try {
-            app(InvoicingService::class)->recordClientPayment($tenant, $client, [
+            $payment = app(InvoicingService::class)->recordClientPayment($tenant, $client, [
                 'invoice_id'   => $request->invoice_id,
                 'direction'    => $request->direction,
                 'payment_date' => $request->payment_date,
@@ -57,7 +57,18 @@ class ClientPaymentController extends Controller
         }
 
         return redirect()->route('tenant.accounting.reports.client-statement', [$tenant->slug, 'client_id' => $client->id])
-            ->with('success', 'Payment recorded.');
+            ->with('success', 'Payment recorded.')
+            ->with('receipt_payment_id', $payment->id);
+    }
+
+    public function receipt(string $slug, InvoicePayment $payment)
+    {
+        $tenant = app('tenant');
+        abort_if($payment->tenant_id !== $tenant->id, 404);
+
+        $payment->load(['client', 'invoice', 'creator']);
+
+        return view('tenant.accounting.payments.receipt', compact('tenant', 'payment'));
     }
 
     public function apply(Request $request, string $slug, InvoicePayment $deposit)

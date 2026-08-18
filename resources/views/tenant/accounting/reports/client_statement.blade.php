@@ -25,7 +25,15 @@
 </form>
 
 @if(session('success'))
-<div class="p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700 mb-4">{{ session('success') }}</div>
+<div class="p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700 mb-4 flex items-center justify-between">
+    <span>{{ session('success') }}</span>
+    @if(session('receipt_payment_id'))
+    <a href="{{ route('tenant.accounting.payments.receipt', [$tenant->slug, session('receipt_payment_id')]) }}" target="_blank"
+       class="ml-4 px-3 py-1 text-xs font-semibold bg-green-700 text-white rounded hover:bg-green-800 whitespace-nowrap">
+        Print Receipt
+    </a>
+    @endif
+</div>
 @endif
 @if(session('error'))
 <div class="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 mb-4">{{ session('error') }}</div>

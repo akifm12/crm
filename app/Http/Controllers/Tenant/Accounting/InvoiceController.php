@@ -224,7 +224,7 @@ class InvoiceController extends Controller
             'purpose' => 'nullable|string|max:255',
         ]);
 
-        $invoicing->recordPayment($invoice, [
+        $payment = $invoicing->recordPayment($invoice, [
             'payment_date' => $request->payment_date,
             'amount' => $request->amount,
             'method' => $request->method,
@@ -233,6 +233,8 @@ class InvoiceController extends Controller
             'created_by' => auth()->id(),
         ]);
 
-        return back()->with('success', $invoice->status === 'pending_fix' ? 'Deposit recorded.' : 'Payment recorded.');
+        return back()
+            ->with('success', $invoice->status === 'pending_fix' ? 'Deposit recorded.' : 'Payment recorded.')
+            ->with('receipt_payment_id', $payment->id);
     }
 }
