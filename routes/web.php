@@ -391,6 +391,11 @@ Route::prefix('{slug}')
                 Route::post('/bills/{bill}/void',             [\App\Http\Controllers\Tenant\Accounting\BillController::class, 'void'])->name('bills.void');
                 Route::post('/bills/{bill}/payments',         [\App\Http\Controllers\Tenant\Accounting\BillController::class, 'storePayment'])->name('bills.payments.store');
 
+                Route::get('/suppliers',                      [\App\Http\Controllers\Tenant\Accounting\SupplierController::class, 'index'])->name('suppliers.index');
+                Route::post('/suppliers',                     [\App\Http\Controllers\Tenant\Accounting\SupplierController::class, 'store'])->name('suppliers.store');
+                Route::put('/suppliers/{supplier}',           [\App\Http\Controllers\Tenant\Accounting\SupplierController::class, 'update'])->name('suppliers.update');
+                Route::delete('/suppliers/{supplier}',        [\App\Http\Controllers\Tenant\Accounting\SupplierController::class, 'destroy'])->name('suppliers.destroy');
+
                 Route::get('/reports/vat-return',    [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'vatReturn'])->name('reports.vat-return');
             });
     });

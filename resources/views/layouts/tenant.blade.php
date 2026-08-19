@@ -173,6 +173,8 @@
                    class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.inventory*') ? 'active' : '' }}">Inventory</a>
                 <a href="{{ route('tenant.accounting.journal.index', $slug) }}"
                    class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.journal*') ? 'active' : '' }}">Journal</a>
+                <a href="{{ route('tenant.accounting.suppliers.index', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.suppliers*') ? 'active' : '' }}">Suppliers</a>
                 <a href="{{ route('tenant.accounting.reports.vat-return', $slug) }}"
                    class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.reports.vat-return') ? 'active' : '' }}">VAT Return</a>
                 <a href="{{ route('tenant.accounting.reports.client-statement', $slug) }}"

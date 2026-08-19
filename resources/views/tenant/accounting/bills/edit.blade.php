@@ -31,17 +31,52 @@ $existingLines = $bill->lines->map(fn ($l) => [
     @csrf @method('PUT')
 
     {{-- Header --}}
-    <div class="bg-white rounded-xl border border-gray-200 p-5 mb-5">
+    @php
+        $suppliersList = $suppliers->map(fn($s) => ['id'=>$s->id,'name'=>$s->name,'vat'=>$s->vat_number??''])->values()->toArray();
+        $initSupplierId = old('supplier_id', $bill->supplier_id ?? ($suppliers->isEmpty() ? '0' : ''));
+    @endphp
+    <div class="bg-white rounded-xl border border-gray-200 p-5 mb-5"
+         x-data="{
+             suppliers: @json($suppliersList),
+             selectedId: '{{ $initSupplierId }}',
+             manualName: '{{ old('supplier_name', $bill->supplier_name) }}',
+             manualVat: '{{ old('supplier_vat_number', $bill->supplier_vat_number) }}',
+             get isManual() { return this.selectedId === '' || this.selectedId === '0'; },
+             pick(id) {
+                 this.selectedId = id;
+                 if (!this.isManual) {
+                     let s = this.suppliers.find(x => x.id == id);
+                     if (s) { this.manualName = s.name; this.manualVat = s.vat; }
+                 }
+             }
+         }">
         <div class="grid grid-cols-2 gap-4 mb-4">
             <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Supplier <span class="text-red-500">*</span></label>
+                <select name="supplier_id" x-model="selectedId" @change="pick(selectedId)"
+                        class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white">
+                    <option value="">— Select supplier —</option>
+                    @foreach($suppliers as $s)
+                    <option value="{{ $s->id }}">{{ $s->name }}</option>
+                    @endforeach
+                    <option value="0">Other / manual entry</option>
+                </select>
+            </div>
+            <div x-show="!isManual && selectedId !== ''" x-cloak>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Supplier VAT #</label>
+                <p class="px-3 py-2 text-sm text-gray-700" x-text="manualVat || '—'"></p>
+            </div>
+        </div>
+        <input type="hidden" name="supplier_name" :value="isManual ? manualName : (suppliers.find(x=>x.id==selectedId)?.name ?? '')">
+        <input type="hidden" name="supplier_vat_number" :value="isManual ? manualVat : (suppliers.find(x=>x.id==selectedId)?.vat ?? '')">
+        <div x-show="isManual" x-cloak class="grid grid-cols-2 gap-4 mb-4">
+            <div>
                 <label class="block text-xs font-medium text-gray-600 mb-1">Supplier name <span class="text-red-500">*</span></label>
-                <input type="text" name="supplier_name" value="{{ old('supplier_name', $bill->supplier_name) }}" required
-                       class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg">
+                <input type="text" x-model="manualName" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg">
             </div>
             <div>
                 <label class="block text-xs font-medium text-gray-600 mb-1">Supplier VAT number</label>
-                <input type="text" name="supplier_vat_number" value="{{ old('supplier_vat_number', $bill->supplier_vat_number) }}"
-                       class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg">
+                <input type="text" x-model="manualVat" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg">
             </div>
         </div>
         <div class="grid grid-cols-3 gap-4">

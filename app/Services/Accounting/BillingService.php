@@ -23,11 +23,14 @@ class BillingService
             $vatTotal = round(collect($computed)->sum('vat_amount'), 2);
             $total    = round($subtotal + $vatTotal, 2);
 
+            [$supplierName, $supplierVat, $supplierId] = $this->resolveSupplier($data);
+
             $bill = Bill::create([
                 'tenant_id'           => $tenant->id,
+                'supplier_id'         => $supplierId,
                 'bill_number'         => $this->nextNumber($tenant),
-                'supplier_name'       => $data['supplier_name'],
-                'supplier_vat_number' => $data['supplier_vat_number'] ?? null,
+                'supplier_name'       => $supplierName,
+                'supplier_vat_number' => $supplierVat,
                 'reference'           => $data['reference'] ?? null,
                 'bill_date'           => $data['bill_date'],
                 'due_date'            => $data['due_date'] ?? null,
@@ -57,9 +60,12 @@ class BillingService
             $vatTotal = round(collect($computed)->sum('vat_amount'), 2);
             $total    = round($subtotal + $vatTotal, 2);
 
+            [$supplierName, $supplierVat, $supplierId] = $this->resolveSupplier($data);
+
             $bill->update([
-                'supplier_name'       => $data['supplier_name'],
-                'supplier_vat_number' => $data['supplier_vat_number'] ?? null,
+                'supplier_id'         => $supplierId,
+                'supplier_name'       => $supplierName,
+                'supplier_vat_number' => $supplierVat,
                 'reference'           => $data['reference'] ?? null,
                 'bill_date'           => $data['bill_date'],
                 'due_date'            => $data['due_date'] ?? null,
@@ -198,6 +204,17 @@ class BillingService
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private function resolveSupplier(array $data): array
+    {
+        if (! empty($data['supplier_id'])) {
+            $supplier = \App\Models\Supplier::find($data['supplier_id']);
+            if ($supplier) {
+                return [$supplier->name, $supplier->vat_number, $supplier->id];
+            }
+        }
+        return [$data['supplier_name'] ?? '', $data['supplier_vat_number'] ?? null, null];
+    }
 
     private function computeLines(array $lines): array
     {

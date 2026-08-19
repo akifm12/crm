@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Tenant\Accounting;
 
 use App\Http\Controllers\Controller;
 use App\Models\Bill;
+use App\Models\Supplier;
 use App\Services\Accounting\BillingService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -24,8 +25,9 @@ class BillController extends Controller
 
     public function create()
     {
-        $tenant = app('tenant');
-        return view('tenant.accounting.bills.create', compact('tenant'));
+        $tenant    = app('tenant');
+        $suppliers = Supplier::where('tenant_id', $tenant->id)->where('is_active', true)->orderBy('name')->get();
+        return view('tenant.accounting.bills.create', compact('tenant', 'suppliers'));
     }
 
     public function store(Request $request, BillingService $billing)
@@ -35,7 +37,7 @@ class BillController extends Controller
 
         try {
             $bill = $billing->createDraft($tenant, $request->only(
-                'supplier_name', 'supplier_vat_number', 'reference', 'bill_date', 'due_date', 'notes', 'lines'
+                'supplier_id', 'supplier_name', 'supplier_vat_number', 'reference', 'bill_date', 'due_date', 'notes', 'lines'
             ));
         } catch (\RuntimeException $e) {
             return back()->with('error', $e->getMessage())->withInput();
@@ -56,12 +58,13 @@ class BillController extends Controller
 
     public function edit(string $slug, Bill $bill)
     {
-        $tenant = app('tenant');
+        $tenant    = app('tenant');
         abort_if($bill->tenant_id !== $tenant->id, 404);
         abort_if($bill->status !== 'draft', 403, 'Only draft bills can be edited.');
         $bill->load('lines');
+        $suppliers = Supplier::where('tenant_id', $tenant->id)->where('is_active', true)->orderBy('name')->get();
 
-        return view('tenant.accounting.bills.edit', compact('tenant', 'bill'));
+        return view('tenant.accounting.bills.edit', compact('tenant', 'bill', 'suppliers'));
     }
 
     public function update(Request $request, string $slug, Bill $bill, BillingService $billing)
@@ -72,7 +75,7 @@ class BillController extends Controller
 
         try {
             $billing->updateDraft($bill, $request->only(
-                'supplier_name', 'supplier_vat_number', 'reference', 'bill_date', 'due_date', 'notes', 'lines'
+                'supplier_id', 'supplier_name', 'supplier_vat_number', 'reference', 'bill_date', 'due_date', 'notes', 'lines'
             ));
         } catch (\RuntimeException $e) {
             return back()->with('error', $e->getMessage())->withInput();
@@ -150,7 +153,8 @@ class BillController extends Controller
     private function lineRules(): array
     {
         return [
-            'supplier_name'       => 'required|string|max:255',
+            'supplier_id'         => 'nullable|integer',
+            'supplier_name'       => 'nullable|string|max:255',
             'supplier_vat_number' => 'nullable|string|max:50',
             'reference'           => 'nullable|string|max:255',
             'bill_date'           => 'required|date',

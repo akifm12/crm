@@ -24,7 +24,7 @@ class Bill extends Model
     const VAT_TREATMENTS = ['standard', 'zero_rated', 'reverse_charge', 'exempt'];
 
     protected $fillable = [
-        'tenant_id', 'bill_number', 'supplier_name', 'supplier_vat_number',
+        'tenant_id', 'supplier_id', 'bill_number', 'supplier_name', 'supplier_vat_number',
         'reference', 'bill_date', 'due_date', 'status',
         'subtotal', 'vat_total', 'total', 'amount_paid',
         'journal_entry_id', 'notes', 'created_by', 'posted_at', 'voided_at',
@@ -40,6 +40,11 @@ class Bill extends Model
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class);
+    }
+
+    public function supplier(): BelongsTo
+    {
+        return $this->belongsTo(Supplier::class);
     }
 
     public function lines(): HasMany
