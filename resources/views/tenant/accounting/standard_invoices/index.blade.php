@@ -1,10 +1,11 @@
 @extends('layouts.tenant')
 
 @php
-    $isRE      = $moduleType === 'real_estate';
-    $label     = $isRE ? 'Rent Invoices' : 'Invoices';
-    $prefix    = $isRE ? 'RENT' : 'INV';
-    $createRoute = route('tenant.accounting.standard-invoices.create', [$slug, $moduleType]);
+    $isRE        = $moduleType === 'real_estate';
+    $label       = $isRE ? 'Rent Invoices' : 'Invoices';
+    $prefix      = $isRE ? 'RENT' : 'INV';
+    $rp          = $isRE ? 'tenant.accounting.re.invoices.' : 'tenant.accounting.general.invoices.';
+    $createRoute = route($rp . 'create', $slug);
 @endphp
 
 @section('title', $label)
@@ -47,7 +48,7 @@
                 @forelse($invoices as $inv)
                 <tr class="hover:bg-gray-50 transition">
                     <td class="px-4 py-3 font-mono text-blue-700">
-                        <a href="{{ route('tenant.accounting.standard-invoices.show', [$slug, $moduleType, $inv->id]) }}" class="hover:underline">
+                        <a href="{{ route($rp . 'show', [$slug, $inv->id]) }}" class="hover:underline">
                             {{ $inv->invoice_number }}
                         </a>
                     </td>
@@ -82,7 +83,7 @@
                         @endif
                     </td>
                     <td class="px-4 py-3 text-right">
-                        <a href="{{ route('tenant.accounting.standard-invoices.show', [$slug, $moduleType, $inv->id]) }}"
+                        <a href="{{ route($rp . 'show', [$slug, $inv->id]) }}"
                            class="text-blue-600 hover:text-blue-800 text-xs font-medium">View</a>
                     </td>
                 </tr>

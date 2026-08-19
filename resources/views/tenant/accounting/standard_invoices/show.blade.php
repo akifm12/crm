@@ -3,6 +3,7 @@
 @php
     $isRE  = $moduleType === 'real_estate';
     $label = $isRE ? 'Rent Invoice' : 'Invoice';
+    $rp    = $isRE ? 'tenant.accounting.re.invoices.' : 'tenant.accounting.general.invoices.';
 @endphp
 
 @section('title', $label . ' ' . $invoice->invoice_number)
@@ -13,7 +14,7 @@
     {{-- Header bar --}}
     <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div class="flex items-center gap-3">
-            <a href="{{ route('tenant.accounting.standard-invoices.index', [$slug, $moduleType]) }}"
+            <a href="{{ route($rp . 'index', $slug) }}"
                class="text-gray-400 hover:text-gray-600">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
@@ -42,7 +43,7 @@
         <div class="flex gap-2 flex-wrap">
             {{-- PDF --}}
             @if($invoice->status !== 'void')
-            <a href="{{ route('tenant.accounting.standard-invoices.pdf', [$slug, $moduleType, $invoice->id]) }}" target="_blank"
+            <a href="{{ route($rp . 'pdf', [$slug, $invoice->id]) }}" target="_blank"
                class="inline-flex items-center gap-1.5 bg-gray-700 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
@@ -52,12 +53,12 @@
             @endif
 
             @if($invoice->status === 'draft')
-            <a href="{{ route('tenant.accounting.standard-invoices.edit', [$slug, $moduleType, $invoice->id]) }}"
+            <a href="{{ route($rp . 'edit', [$slug, $invoice->id]) }}"
                class="inline-flex items-center gap-1.5 border border-gray-300 text-gray-700 px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition">
                 Edit
             </a>
 
-            <form method="POST" action="{{ route('tenant.accounting.standard-invoices.post', [$slug, $moduleType, $invoice->id]) }}" class="inline">
+            <form method="POST" action="{{ route($rp . 'post', [$slug, $invoice->id]) }}" class="inline">
                 @csrf
                 <button type="submit" class="bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition"
                         onclick="return confirm('Post this invoice? This will create a journal entry.')">
@@ -65,7 +66,7 @@
                 </button>
             </form>
 
-            <form method="POST" action="{{ route('tenant.accounting.standard-invoices.destroy', [$slug, $moduleType, $invoice->id]) }}" class="inline">
+            <form method="POST" action="{{ route($rp . 'destroy', [$slug, $invoice->id]) }}" class="inline">
                 @csrf @method('DELETE')
                 <button type="submit" class="text-red-600 border border-red-200 px-3 py-2 rounded-lg text-sm font-medium hover:bg-red-50 transition"
                         onclick="return confirm('Delete this draft?')">
@@ -75,7 +76,7 @@
             @endif
 
             @if($invoice->status === 'posted')
-            <form method="POST" action="{{ route('tenant.accounting.standard-invoices.void', [$slug, $moduleType, $invoice->id]) }}" class="inline">
+            <form method="POST" action="{{ route($rp . 'void', [$slug, $invoice->id]) }}" class="inline">
                 @csrf
                 <button type="submit" class="text-red-600 border border-red-200 px-3 py-2 rounded-lg text-sm font-medium hover:bg-red-50 transition"
                         onclick="return confirm('Void this invoice? This will reverse the journal entry.')">
@@ -220,7 +221,7 @@
         @if(!$invoice->isFullyPaid())
         <div class="border-t border-gray-100 pt-4">
             <h3 class="text-sm font-medium text-gray-700 mb-3">Record Payment</h3>
-            <form method="POST" action="{{ route('tenant.accounting.standard-invoices.payments.store', [$slug, $moduleType, $invoice->id]) }}"
+            <form method="POST" action="{{ route($rp . 'payments.store', [$slug, $invoice->id]) }}"
                   class="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 @csrf
                 <div>

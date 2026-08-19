@@ -11,10 +11,16 @@ use Illuminate\Validation\Rule;
 
 class StandardInvoiceController extends Controller
 {
-    public function index(string $slug, string $moduleType)
+    private function moduleType(): string
     {
-        $tenant   = app('tenant');
-        $invoices = StandardInvoice::where('tenant_id', $tenant->id)
+        return request()->route()->defaults['moduleType'] ?? 'general';
+    }
+
+    public function index(string $slug)
+    {
+        $tenant     = app('tenant');
+        $moduleType = $this->moduleType();
+        $invoices   = StandardInvoice::where('tenant_id', $tenant->id)
             ->where('module_type', $moduleType)
             ->orderByDesc('invoice_date')
             ->orderByDesc('id')
@@ -23,15 +29,17 @@ class StandardInvoiceController extends Controller
         return view('tenant.accounting.standard_invoices.index', compact('tenant', 'invoices', 'moduleType'));
     }
 
-    public function create(string $slug, string $moduleType)
+    public function create(string $slug)
     {
-        $tenant = app('tenant');
+        $tenant     = app('tenant');
+        $moduleType = $this->moduleType();
         return view('tenant.accounting.standard_invoices.create', compact('tenant', 'moduleType'));
     }
 
-    public function store(Request $request, string $slug, string $moduleType, StandardInvoicingService $svc)
+    public function store(Request $request, string $slug, StandardInvoicingService $svc)
     {
-        $tenant = app('tenant');
+        $tenant     = app('tenant');
+        $moduleType = $this->moduleType();
         $request->validate($this->lineRules());
 
         try {
@@ -42,22 +50,24 @@ class StandardInvoiceController extends Controller
             return back()->with('error', $e->getMessage())->withInput();
         }
 
-        return redirect()->route('tenant.accounting.standard-invoices.show', [$slug, $moduleType, $invoice->id])
+        return redirect()->route($this->showRouteName($moduleType), [$slug, $invoice->id])
             ->with('success', 'Invoice saved as draft.');
     }
 
-    public function show(string $slug, string $moduleType, StandardInvoice $invoice)
+    public function show(string $slug, StandardInvoice $invoice)
     {
-        $tenant = app('tenant');
+        $tenant     = app('tenant');
+        $moduleType = $this->moduleType();
         abort_if($invoice->tenant_id !== $tenant->id, 404);
         $invoice->load('lines', 'payments', 'journalEntry');
 
         return view('tenant.accounting.standard_invoices.show', compact('tenant', 'invoice', 'moduleType'));
     }
 
-    public function edit(string $slug, string $moduleType, StandardInvoice $invoice)
+    public function edit(string $slug, StandardInvoice $invoice)
     {
-        $tenant = app('tenant');
+        $tenant     = app('tenant');
+        $moduleType = $this->moduleType();
         abort_if($invoice->tenant_id !== $tenant->id, 404);
         abort_if($invoice->status !== 'draft', 403, 'Only draft invoices can be edited.');
         $invoice->load('lines');
@@ -65,9 +75,10 @@ class StandardInvoiceController extends Controller
         return view('tenant.accounting.standard_invoices.edit', compact('tenant', 'invoice', 'moduleType'));
     }
 
-    public function update(Request $request, string $slug, string $moduleType, StandardInvoice $invoice, StandardInvoicingService $svc)
+    public function update(Request $request, string $slug, StandardInvoice $invoice, StandardInvoicingService $svc)
     {
-        $tenant = app('tenant');
+        $tenant     = app('tenant');
+        $moduleType = $this->moduleType();
         abort_if($invoice->tenant_id !== $tenant->id, 404);
         $request->validate($this->lineRules());
 
@@ -79,26 +90,28 @@ class StandardInvoiceController extends Controller
             return back()->with('error', $e->getMessage())->withInput();
         }
 
-        return redirect()->route('tenant.accounting.standard-invoices.show', [$slug, $moduleType, $invoice->id])
+        return redirect()->route($this->showRouteName($moduleType), [$slug, $invoice->id])
             ->with('success', 'Invoice updated.');
     }
 
-    public function destroy(string $slug, string $moduleType, StandardInvoice $invoice)
+    public function destroy(string $slug, StandardInvoice $invoice)
     {
-        $tenant = app('tenant');
+        $tenant     = app('tenant');
+        $moduleType = $this->moduleType();
         abort_if($invoice->tenant_id !== $tenant->id, 404);
         abort_if($invoice->status !== 'draft', 403, 'Only draft invoices can be deleted.');
 
         $invoice->lines()->delete();
         $invoice->delete();
 
-        return redirect()->route('tenant.accounting.standard-invoices.index', [$slug, $moduleType])
+        return redirect()->route($this->indexRouteName($moduleType), [$slug])
             ->with('success', 'Draft deleted.');
     }
 
-    public function post(string $slug, string $moduleType, StandardInvoice $invoice, StandardInvoicingService $svc)
+    public function post(string $slug, StandardInvoice $invoice, StandardInvoicingService $svc)
     {
-        $tenant = app('tenant');
+        $tenant     = app('tenant');
+        $moduleType = $this->moduleType();
         abort_if($invoice->tenant_id !== $tenant->id, 404);
 
         try {
@@ -107,13 +120,14 @@ class StandardInvoiceController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        return redirect()->route('tenant.accounting.standard-invoices.show', [$slug, $moduleType, $invoice->id])
+        return redirect()->route($this->showRouteName($moduleType), [$slug, $invoice->id])
             ->with('success', 'Invoice posted.');
     }
 
-    public function void(Request $request, string $slug, string $moduleType, StandardInvoice $invoice, StandardInvoicingService $svc)
+    public function void(Request $request, string $slug, StandardInvoice $invoice, StandardInvoicingService $svc)
     {
-        $tenant = app('tenant');
+        $tenant     = app('tenant');
+        $moduleType = $this->moduleType();
         abort_if($invoice->tenant_id !== $tenant->id, 404);
 
         try {
@@ -122,11 +136,11 @@ class StandardInvoiceController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        return redirect()->route('tenant.accounting.standard-invoices.show', [$slug, $moduleType, $invoice->id])
+        return redirect()->route($this->showRouteName($moduleType), [$slug, $invoice->id])
             ->with('success', 'Invoice voided.');
     }
 
-    public function storePayment(Request $request, string $slug, string $moduleType, StandardInvoice $invoice, StandardInvoicingService $svc)
+    public function storePayment(Request $request, string $slug, StandardInvoice $invoice, StandardInvoicingService $svc)
     {
         $tenant = app('tenant');
         abort_if($invoice->tenant_id !== $tenant->id, 404);
@@ -148,9 +162,10 @@ class StandardInvoiceController extends Controller
         return back()->with('success', 'Payment recorded.');
     }
 
-    public function pdf(string $slug, string $moduleType, StandardInvoice $invoice)
+    public function pdf(string $slug, StandardInvoice $invoice)
     {
-        $tenant = app('tenant');
+        $tenant     = app('tenant');
+        $moduleType = $this->moduleType();
         abort_if($invoice->tenant_id !== $tenant->id, 404);
         $invoice->load('lines');
 
@@ -159,21 +174,35 @@ class StandardInvoiceController extends Controller
         return $pdf->stream("{$invoice->invoice_number}.pdf");
     }
 
+    private function showRouteName(string $moduleType): string
+    {
+        return $moduleType === 'real_estate'
+            ? 'tenant.accounting.re.invoices.show'
+            : 'tenant.accounting.general.invoices.show';
+    }
+
+    private function indexRouteName(string $moduleType): string
+    {
+        return $moduleType === 'real_estate'
+            ? 'tenant.accounting.re.invoices.index'
+            : 'tenant.accounting.general.invoices.index';
+    }
+
     private function lineRules(): array
     {
         return [
-            'client_name'         => 'required|string|max:255',
-            'client_vat_number'   => 'nullable|string|max:50',
-            'reference'           => 'nullable|string|max:255',
-            'invoice_date'        => 'required|date',
-            'due_date'            => 'nullable|date|after_or_equal:invoice_date',
-            'notes'               => 'nullable|string',
-            'lines'               => 'required|array|min:1',
-            'lines.*.description' => 'required|string|max:255',
-            'lines.*.quantity'    => 'required|numeric|min:0.0001',
-            'lines.*.unit_price'  => 'required|numeric|min:0',
+            'client_name'           => 'required|string|max:255',
+            'client_vat_number'     => 'nullable|string|max:50',
+            'reference'             => 'nullable|string|max:255',
+            'invoice_date'          => 'required|date',
+            'due_date'              => 'nullable|date|after_or_equal:invoice_date',
+            'notes'                 => 'nullable|string',
+            'lines'                 => 'required|array|min:1',
+            'lines.*.description'   => 'required|string|max:255',
+            'lines.*.quantity'      => 'required|numeric|min:0.0001',
+            'lines.*.unit_price'    => 'required|numeric|min:0',
             'lines.*.vat_treatment' => ['required', Rule::in(StandardInvoice::VAT_TREATMENTS)],
-            'lines.*.vat_rate'    => 'required|numeric|min:0|max:100',
+            'lines.*.vat_rate'      => 'required|numeric|min:0|max:100',
         ];
     }
 }

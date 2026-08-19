@@ -3,6 +3,7 @@
 @php
     $isRE  = $moduleType === 'real_estate';
     $label = 'Edit ' . $invoice->invoice_number;
+    $rp    = $isRE ? 'tenant.accounting.re.invoices.' : 'tenant.accounting.general.invoices.';
 @endphp
 
 @section('title', $label)
@@ -11,7 +12,7 @@
 <div class="max-w-4xl mx-auto px-4 py-6">
 
     <div class="flex items-center gap-3 mb-6">
-        <a href="{{ route('tenant.accounting.standard-invoices.show', [$slug, $moduleType, $invoice->id]) }}"
+        <a href="{{ route($rp . 'show', [$slug, $invoice->id]) }}"
            class="text-gray-400 hover:text-gray-600">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
@@ -66,7 +67,7 @@
     }
     </script>
 
-    <form method="POST" action="{{ route('tenant.accounting.standard-invoices.update', [$slug, $moduleType, $invoice->id]) }}"
+    <form method="POST" action="{{ route($rp . 'update', [$slug, $invoice->id]) }}"
           x-data="stdInvoiceEdit()">
         @csrf @method('PUT')
 
@@ -204,7 +205,7 @@
             <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition">
                 Save Changes
             </button>
-            <a href="{{ route('tenant.accounting.standard-invoices.show', [$slug, $moduleType, $invoice->id]) }}"
+            <a href="{{ route($rp . 'show', [$slug, $invoice->id]) }}"
                class="px-6 py-2 rounded-lg text-sm font-medium border border-gray-300 text-gray-700 hover:bg-gray-50 transition">
                 Cancel
             </a>

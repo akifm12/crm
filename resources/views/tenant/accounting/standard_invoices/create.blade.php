@@ -3,7 +3,7 @@
 @php
     $isRE  = $moduleType === 'real_estate';
     $label = $isRE ? 'New Rent Invoice' : 'New Invoice';
-    $vatTreatments = \App\Models\StandardInvoice::VAT_TREATMENTS;
+    $rp    = $isRE ? 'tenant.accounting.re.invoices.' : 'tenant.accounting.general.invoices.';
 @endphp
 
 @section('title', $label)
@@ -12,7 +12,7 @@
 <div class="max-w-4xl mx-auto px-4 py-6">
 
     <div class="flex items-center gap-3 mb-6">
-        <a href="{{ route('tenant.accounting.standard-invoices.index', [$slug, $moduleType]) }}"
+        <a href="{{ route($rp . 'index', $slug) }}"
            class="text-gray-400 hover:text-gray-600">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
@@ -63,7 +63,7 @@
     }
     </script>
 
-    <form method="POST" action="{{ route('tenant.accounting.standard-invoices.store', [$slug, $moduleType]) }}"
+    <form method="POST" action="{{ route($rp . 'store', $slug) }}"
           x-data="stdInvoiceForm()">
         @csrf
 
@@ -201,7 +201,7 @@
             <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition">
                 Save Draft
             </button>
-            <a href="{{ route('tenant.accounting.standard-invoices.index', [$slug, $moduleType]) }}"
+            <a href="{{ route($rp . 'index', $slug) }}"
                class="px-6 py-2 rounded-lg text-sm font-medium border border-gray-300 text-gray-700 hover:bg-gray-50 transition">
                 Cancel
             </a>
