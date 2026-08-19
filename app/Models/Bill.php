@@ -27,7 +27,7 @@ class Bill extends Model
         'tenant_id', 'supplier_id', 'bill_number', 'supplier_name', 'supplier_vat_number',
         'reference', 'bill_date', 'due_date', 'status',
         'subtotal', 'vat_total', 'total', 'amount_paid',
-        'journal_entry_id', 'notes', 'created_by', 'posted_at', 'voided_at',
+        'journal_entry_id', 'notes', 'attachment_path', 'attachment_name', 'created_by', 'posted_at', 'voided_at',
     ];
 
     protected $casts = [

@@ -8,6 +8,7 @@ use App\Models\Supplier;
 use App\Services\Accounting\BillingService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class BillController extends Controller
@@ -127,6 +128,44 @@ class BillController extends Controller
 
         return redirect()->route('tenant.accounting.bills.show', [$tenant->slug, $bill->id])
             ->with('success', 'Bill voided.');
+    }
+
+    public function uploadAttachment(Request $request, string $slug, Bill $bill)
+    {
+        $tenant = app('tenant');
+        abort_if($bill->tenant_id !== $tenant->id, 404);
+
+        $request->validate([
+            'attachment' => 'required|file|max:10240|mimes:pdf,jpg,jpeg,png,webp',
+        ]);
+
+        if ($bill->attachment_path) {
+            Storage::disk('local')->delete($bill->attachment_path);
+        }
+
+        $file = $request->file('attachment');
+        $path = $file->storeAs(
+            "bills/{$tenant->id}/{$bill->id}",
+            $bill->bill_number . '.' . $file->getClientOriginalExtension(),
+            'local'
+        );
+
+        $bill->update([
+            'attachment_path' => $path,
+            'attachment_name' => $file->getClientOriginalName(),
+        ]);
+
+        return back()->with('success', 'Attachment uploaded.');
+    }
+
+    public function downloadAttachment(string $slug, Bill $bill)
+    {
+        $tenant = app('tenant');
+        abort_if($bill->tenant_id !== $tenant->id, 404);
+        abort_if(! $bill->attachment_path, 404);
+        abort_if(! Storage::disk('local')->exists($bill->attachment_path), 404);
+
+        return Storage::disk('local')->download($bill->attachment_path, $bill->attachment_name);
     }
 
     public function pdf(string $slug, Bill $bill)

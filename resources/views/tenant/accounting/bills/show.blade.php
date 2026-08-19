@@ -132,6 +132,36 @@
     @endif
 </div>
 
+{{-- Vendor invoice attachment --}}
+<div class="bg-white rounded-xl border border-gray-200 p-5 mb-5 max-w-3xl">
+    <div class="flex items-center justify-between mb-3">
+        <h3 class="text-sm font-semibold text-gray-700">Vendor Invoice</h3>
+        @if($bill->attachment_path)
+        <a href="{{ route('tenant.accounting.bills.attachment.download', [$tenant->slug, $bill->id]) }}"
+           class="px-4 py-1.5 text-xs font-semibold text-blue-600 border border-blue-200 bg-blue-50 rounded-lg hover:bg-blue-100 flex items-center gap-1.5">
+            ↓ Download — {{ $bill->attachment_name }}
+        </a>
+        @endif
+    </div>
+
+    <form method="POST" action="{{ route('tenant.accounting.bills.attachment.upload', [$tenant->slug, $bill->id]) }}"
+          enctype="multipart/form-data" class="flex items-end gap-3">
+        @csrf
+        <div class="flex-1">
+            <label class="block text-xs font-medium text-gray-600 mb-1">
+                {{ $bill->attachment_path ? 'Replace attachment' : 'Upload vendor invoice' }}
+            </label>
+            <input type="file" name="attachment" accept=".pdf,.jpg,.jpeg,.png,.webp" required
+                   class="w-full text-sm text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border file:border-gray-200 file:text-xs file:font-semibold file:bg-white file:text-gray-700 hover:file:bg-gray-50">
+            <p class="text-xs text-gray-400 mt-1">PDF, JPG, or PNG — max 10 MB</p>
+        </div>
+        <button type="submit"
+                class="px-4 py-2 text-xs font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 whitespace-nowrap">
+            Upload
+        </button>
+    </form>
+</div>
+
 {{-- Payments --}}
 @if($bill->status === 'posted')
 <div class="bg-white rounded-xl border border-gray-200 p-5 max-w-3xl">
