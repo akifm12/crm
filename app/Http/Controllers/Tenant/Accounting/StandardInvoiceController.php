@@ -13,7 +13,8 @@ class StandardInvoiceController extends Controller
 {
     private function moduleType(): string
     {
-        return request()->route()->defaults['moduleType'] ?? 'general';
+        $name = request()->route()?->getName() ?? '';
+        return str_contains($name, 'tenant.accounting.re.') ? 'real_estate' : 'general';
     }
 
     public function index(string $slug)

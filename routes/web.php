@@ -364,7 +364,7 @@ Route::prefix('{slug}')
             // Module-specific dashboards + standard invoices
             Route::middleware('module:general_accounting')->prefix('general')->name('general.')->group(function () {
                 Route::get('/', [\App\Http\Controllers\Tenant\GeneralAccounting\DashboardController::class, 'index'])->name('dashboard');
-                Route::prefix('invoices')->name('invoices.')->defaults('moduleType', 'general')->group(function () {
+                Route::prefix('invoices')->name('invoices.')->group(function () {
                     Route::get('/',              [\App\Http\Controllers\Tenant\Accounting\StandardInvoiceController::class, 'index'])->name('index');
                     Route::get('/new',           [\App\Http\Controllers\Tenant\Accounting\StandardInvoiceController::class, 'create'])->name('create');
                     Route::post('/',             [\App\Http\Controllers\Tenant\Accounting\StandardInvoiceController::class, 'store'])->name('store');
@@ -381,7 +381,7 @@ Route::prefix('{slug}')
 
             Route::middleware('module:real_estate_accounting')->prefix('re')->name('re.')->group(function () {
                 Route::get('/', [\App\Http\Controllers\Tenant\RealEstate\DashboardController::class, 'index'])->name('dashboard');
-                Route::prefix('invoices')->name('invoices.')->defaults('moduleType', 'real_estate')->group(function () {
+                Route::prefix('invoices')->name('invoices.')->group(function () {
                     Route::get('/',              [\App\Http\Controllers\Tenant\Accounting\StandardInvoiceController::class, 'index'])->name('index');
                     Route::get('/new',           [\App\Http\Controllers\Tenant\Accounting\StandardInvoiceController::class, 'create'])->name('create');
                     Route::post('/',             [\App\Http\Controllers\Tenant\Accounting\StandardInvoiceController::class, 'store'])->name('store');
