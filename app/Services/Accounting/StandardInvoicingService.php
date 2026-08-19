@@ -16,7 +16,7 @@ class StandardInvoicingService
     public function createDraft(Tenant $tenant, string $moduleType, array $data): StandardInvoice
     {
         return DB::transaction(function () use ($tenant, $moduleType, $data) {
-            $computed = $this->computeLines($data['lines'] ?? []);
+            $computed = $this->computeLines($data['lines'] ?? [], $moduleType);
             $subtotal = round(collect($computed)->sum('amount'), 2);
             $vatTotal = round(collect($computed)->sum('vat_amount'), 2);
             $total    = round($subtotal + $vatTotal, 2);
@@ -51,7 +51,7 @@ class StandardInvoicingService
         abort_if($invoice->status !== 'draft', 422, 'Only draft invoices can be edited.');
 
         return DB::transaction(function () use ($invoice, $data) {
-            $computed = $this->computeLines($data['lines'] ?? []);
+            $computed = $this->computeLines($data['lines'] ?? [], $invoice->module_type);
             $subtotal = round(collect($computed)->sum('amount'), 2);
             $vatTotal = round(collect($computed)->sum('vat_amount'), 2);
             $total    = round($subtotal + $vatTotal, 2);
@@ -187,12 +187,15 @@ class StandardInvoicingService
         });
     }
 
-    private function computeLines(array $lines): array
+    private function computeLines(array $lines, string $moduleType = 'general'): array
     {
-        return collect($lines)->map(function (array $line) {
+        return collect($lines)->map(function (array $line) use ($moduleType) {
             $qty       = (float) ($line['quantity'] ?? 1);
             $unitPrice = (float) ($line['unit_price'] ?? 0);
-            $amount    = round($qty * $unitPrice, 2);
+            // For real estate: quantity = property value, unit_price = commission rate %
+            $amount = $moduleType === 'real_estate'
+                ? round($qty * $unitPrice / 100, 2)
+                : round($qty * $unitPrice, 2);
             $vatRate   = (float) ($line['vat_rate'] ?? 0);
             $treatment = $line['vat_treatment'] ?? 'standard';
 

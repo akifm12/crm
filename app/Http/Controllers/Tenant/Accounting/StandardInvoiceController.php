@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Tenant\Accounting;
 
 use App\Http\Controllers\Controller;
+use App\Models\BullionClient;
 use App\Models\StandardInvoice;
 use App\Services\Accounting\StandardInvoicingService;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -34,7 +35,8 @@ class StandardInvoiceController extends Controller
     {
         $tenant     = app('tenant');
         $moduleType = $this->moduleType();
-        return view('tenant.accounting.standard_invoices.create', compact('tenant', 'moduleType', 'slug'));
+        $clientsList = $this->clientsList($tenant->id);
+        return view('tenant.accounting.standard_invoices.create', compact('tenant', 'moduleType', 'slug', 'clientsList'));
     }
 
     public function store(Request $request, string $slug, StandardInvoicingService $svc)
@@ -72,8 +74,9 @@ class StandardInvoiceController extends Controller
         abort_if($invoice->tenant_id !== $tenant->id, 404);
         abort_if($invoice->status !== 'draft', 403, 'Only draft invoices can be edited.');
         $invoice->load('lines');
+        $clientsList = $this->clientsList($tenant->id);
 
-        return view('tenant.accounting.standard_invoices.edit', compact('tenant', 'invoice', 'moduleType', 'slug'));
+        return view('tenant.accounting.standard_invoices.edit', compact('tenant', 'invoice', 'moduleType', 'slug', 'clientsList'));
     }
 
     public function update(Request $request, string $slug, StandardInvoice $invoice, StandardInvoicingService $svc)
@@ -187,6 +190,20 @@ class StandardInvoiceController extends Controller
         return $moduleType === 'real_estate'
             ? 'tenant.accounting.re.invoices.index'
             : 'tenant.accounting.general.invoices.index';
+    }
+
+    private function clientsList(int $tenantId): array
+    {
+        return BullionClient::where('tenant_id', $tenantId)
+            ->orderBy('company_name')
+            ->orderBy('full_name')
+            ->get()
+            ->map(fn($c) => [
+                'id'   => $c->id,
+                'name' => $c->display_name ?? ($c->company_name ?: $c->full_name),
+                'trn'  => $c->trn_number ?? '',
+            ])
+            ->toArray();
     }
 
     private function lineRules(): array

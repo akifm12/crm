@@ -126,9 +126,15 @@
             <thead class="bg-gray-50 border-b border-gray-200">
                 <tr>
                     <th class="text-left px-4 py-3 font-medium text-gray-600">Description</th>
-                    <th class="text-right px-4 py-3 font-medium text-gray-600">Qty</th>
-                    <th class="text-right px-4 py-3 font-medium text-gray-600">Unit Price</th>
-                    <th class="text-right px-4 py-3 font-medium text-gray-600">Amount</th>
+                    @if($isRE)
+                        <th class="text-right px-4 py-3 font-medium text-gray-600">Property Value</th>
+                        <th class="text-right px-4 py-3 font-medium text-gray-600">Commission %</th>
+                        <th class="text-right px-4 py-3 font-medium text-gray-600">Commission</th>
+                    @else
+                        <th class="text-right px-4 py-3 font-medium text-gray-600">Qty</th>
+                        <th class="text-right px-4 py-3 font-medium text-gray-600">Unit Price</th>
+                        <th class="text-right px-4 py-3 font-medium text-gray-600">Amount</th>
+                    @endif
                     <th class="text-right px-4 py-3 font-medium text-gray-600">VAT</th>
                     <th class="text-right px-4 py-3 font-medium text-gray-600">Total</th>
                 </tr>
@@ -146,9 +152,15 @@
                             @endif
                         </div>
                     </td>
-                    <td class="px-4 py-3 text-right font-mono text-gray-700">{{ rtrim(rtrim(number_format($line->quantity, 4), '0'), '.') }}</td>
-                    <td class="px-4 py-3 text-right font-mono text-gray-700">{{ number_format($line->unit_price, 2) }}</td>
-                    <td class="px-4 py-3 text-right font-mono text-gray-700">{{ number_format($line->amount, 2) }}</td>
+                    @if($isRE)
+                        <td class="px-4 py-3 text-right font-mono text-gray-700">{{ number_format($line->quantity, 2) }}</td>
+                        <td class="px-4 py-3 text-right font-mono text-gray-700">{{ number_format($line->unit_price, 2) }}%</td>
+                        <td class="px-4 py-3 text-right font-mono text-gray-700">{{ number_format($line->amount, 2) }}</td>
+                    @else
+                        <td class="px-4 py-3 text-right font-mono text-gray-700">{{ rtrim(rtrim(number_format($line->quantity, 4), '0'), '.') }}</td>
+                        <td class="px-4 py-3 text-right font-mono text-gray-700">{{ number_format($line->unit_price, 2) }}</td>
+                        <td class="px-4 py-3 text-right font-mono text-gray-700">{{ number_format($line->amount, 2) }}</td>
+                    @endif
                     <td class="px-4 py-3 text-right font-mono text-gray-700">{{ number_format($line->vat_amount, 2) }}</td>
                     <td class="px-4 py-3 text-right font-mono font-medium text-gray-900">{{ number_format($line->line_total, 2) }}</td>
                 </tr>
@@ -156,7 +168,7 @@
             </tbody>
             <tfoot class="border-t border-gray-200 bg-gray-50">
                 <tr>
-                    <td colspan="5" class="px-4 py-2 text-right text-sm text-gray-600 font-medium">Subtotal</td>
+                    <td colspan="5" class="px-4 py-2 text-right text-sm text-gray-600 font-medium">{{ $isRE ? 'Total Commission' : 'Subtotal' }}</td>
                     <td class="px-4 py-2 text-right font-mono font-medium">{{ number_format($invoice->subtotal, 2) }}</td>
                 </tr>
                 <tr>

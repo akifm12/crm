@@ -2,9 +2,9 @@
 
 @php
     $isRE         = $moduleType === 'real_estate';
-    $label        = $isRE ? 'New Rent Invoice' : 'New Invoice';
+    $label        = $isRE ? 'New Commission Invoice' : 'New Invoice';
     $rp           = $isRE ? 'tenant.accounting.re.invoices.' : 'tenant.accounting.general.invoices.';
-    $defaultLines = old('lines', [['description'=>'','quantity'=>1,'unit_price'=>'','vat_treatment'=>'standard','vat_rate'=>5]]);
+    $defaultLines = old('lines', [['description'=>'','quantity'=>'','unit_price'=>'','vat_treatment'=>'standard','vat_rate'=>5]]);
 @endphp
 
 @section('title', $label)
@@ -13,8 +13,7 @@
 <div class="max-w-4xl mx-auto px-4 py-6">
 
     <div class="flex items-center gap-3 mb-6">
-        <a href="{{ route($rp . 'index', $slug) }}"
-           class="text-gray-400 hover:text-gray-600">
+        <a href="{{ route($rp . 'index', $slug) }}" class="text-gray-400 hover:text-gray-600">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
             </svg>
@@ -31,51 +30,81 @@
     @endif
 
     <script>
-    function stdInvoiceForm() {
+    function stdInvoiceNew() {
+        const isRE    = {{ $isRE ? 'true' : 'false' }};
+        const clients = @json($clientsList);
         return {
-            lines: @json($defaultLines),
-
-            get subtotal() {
-                return this.lines.reduce((s, l) => s + (parseFloat(l.quantity)||0) * (parseFloat(l.unit_price)||0), 0);
+            // client picker
+            clientName: @json(old('client_name', '')),
+            clientVat:  @json(old('client_vat_number', '')),
+            pickClient(id) {
+                if (!id) return;
+                const c = clients.find(x => x.id == id);
+                if (c) { this.clientName = c.name; this.clientVat = c.trn; }
             },
+
+            // line items
+            lines: @json($defaultLines),
+            lineAmt(l) {
+                const qty   = parseFloat(l.quantity)  || 0;
+                const price = parseFloat(l.unit_price) || 0;
+                return isRE ? qty * price / 100 : qty * price;
+            },
+            get subtotal() { return this.lines.reduce((s,l) => s + this.lineAmt(l), 0); },
             get vatTotal() {
-                return this.lines.reduce((s, l) => {
+                return this.lines.reduce((s,l) => {
                     if (!['standard','reverse_charge'].includes(l.vat_treatment)) return s;
-                    const amt = (parseFloat(l.quantity)||0) * (parseFloat(l.unit_price)||0);
-                    return s + amt * (parseFloat(l.vat_rate)||0) / 100;
+                    return s + this.lineAmt(l) * (parseFloat(l.vat_rate)||0) / 100;
                 }, 0);
             },
             get grandTotal() { return this.subtotal + this.vatTotal; },
-
-            addLine() {
-                this.lines.push({ description: '', quantity: 1, unit_price: '', vat_treatment: 'standard', vat_rate: 5 });
-            },
-            removeLine(i) {
-                if (this.lines.length > 1) this.lines.splice(i, 1);
-            },
-            fmt(n) { return parseFloat(n||0).toFixed(2); },
+            addLine()       { this.lines.push({description:'',quantity:'',unit_price:'',vat_treatment:'standard',vat_rate:5}); },
+            removeLine(i)   { if (this.lines.length > 1) this.lines.splice(i, 1); },
+            fmt(n)          { return parseFloat(n||0).toFixed(2); },
         };
     }
     </script>
 
-    <form method="POST" action="{{ route($rp . 'store', $slug) }}"
-          x-data="stdInvoiceForm()">
+    <form method="POST" action="{{ route($rp . 'store', $slug) }}" x-data="stdInvoiceNew()">
         @csrf
 
-        {{-- Header --}}
+        {{-- Client --}}
         <div class="bg-white rounded-xl border border-gray-200 p-5 mb-5">
-            <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-4">Invoice Details</h2>
+            <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-4">Client</h2>
+
+            @if(count($clientsList))
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Select from client list</label>
+                <select @change="pickClient($event.target.value)"
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">— Manual entry / not in list —</option>
+                    @foreach($clientsList as $c)
+                        <option value="{{ $c['id'] }}" {{ old('client_name') === $c['name'] ? 'selected' : '' }}>
+                            {{ $c['name'] }}{{ $c['trn'] ? ' (TRN: '.$c['trn'].')' : '' }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+            @endif
+
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Client Name <span class="text-red-500">*</span></label>
-                    <input type="text" name="client_name" value="{{ old('client_name') }}" required
+                    <input type="text" name="client_name" x-model="clientName" required
                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Client TRN / VAT No.</label>
-                    <input type="text" name="client_vat_number" value="{{ old('client_vat_number') }}"
+                    <input type="text" name="client_vat_number" x-model="clientVat"
                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
+            </div>
+        </div>
+
+        {{-- Invoice details --}}
+        <div class="bg-white rounded-xl border border-gray-200 p-5 mb-5">
+            <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-4">Invoice Details</h2>
+            <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Invoice Date <span class="text-red-500">*</span></label>
                     <input type="date" name="invoice_date" value="{{ old('invoice_date', date('Y-m-d')) }}" required
@@ -87,7 +116,7 @@
                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
                 <div class="col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Reference / PO Number</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Reference / Property / Contract No.</label>
                     <input type="text" name="reference" value="{{ old('reference') }}"
                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
@@ -96,17 +125,18 @@
 
         {{-- Lines --}}
         <div class="bg-white rounded-xl border border-gray-200 p-5 mb-5">
-            <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-4">Line Items</h2>
-
+            <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-4">
+                {{ $isRE ? 'Commission Lines' : 'Line Items' }}
+            </h2>
             <div class="overflow-x-auto">
                 <table class="w-full text-sm">
                     <thead>
                         <tr class="border-b border-gray-200">
                             <th class="text-left pb-2 font-medium text-gray-600 w-5/12">Description</th>
-                            <th class="text-right pb-2 font-medium text-gray-600 w-1/12">Qty</th>
-                            <th class="text-right pb-2 font-medium text-gray-600 w-2/12">Unit Price</th>
+                            <th class="text-right pb-2 font-medium text-gray-600 w-2/12">{{ $isRE ? 'Property Value (AED)' : 'Qty' }}</th>
+                            <th class="text-right pb-2 font-medium text-gray-600 w-2/12">{{ $isRE ? 'Commission %' : 'Unit Price' }}</th>
                             <th class="text-left pb-2 font-medium text-gray-600 w-2/12 px-2">VAT</th>
-                            <th class="text-right pb-2 font-medium text-gray-600 w-2/12">Total</th>
+                            <th class="text-right pb-2 font-medium text-gray-600 w-1/12">{{ $isRE ? 'Commission' : 'Amount' }}</th>
                             <th class="w-8"></th>
                         </tr>
                     </thead>
@@ -115,14 +145,17 @@
                             <tr class="border-b border-gray-100">
                                 <td class="py-2 pr-2">
                                     <input type="text" :name="`lines[${i}][description]`" x-model="line.description" required
-                                           class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                           class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                           :placeholder="{{ $isRE ? '\'e.g. Rental Commission — Unit 4B, Marina\'' : '\'Description\'' }}">
                                 </td>
                                 <td class="py-2 px-1">
-                                    <input type="number" :name="`lines[${i}][quantity]`" x-model="line.quantity" min="0.0001" step="any" required
+                                    <input type="number" :name="`lines[${i}][quantity]`" x-model="line.quantity"
+                                           min="0" step="any" required
                                            class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm text-right focus:outline-none focus:ring-1 focus:ring-blue-500">
                                 </td>
                                 <td class="py-2 px-1">
-                                    <input type="number" :name="`lines[${i}][unit_price]`" x-model="line.unit_price" min="0" step="any" required
+                                    <input type="number" :name="`lines[${i}][unit_price]`" x-model="line.unit_price"
+                                           min="0" step="any" required
                                            class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm text-right focus:outline-none focus:ring-1 focus:ring-blue-500">
                                 </td>
                                 <td class="py-2 px-2">
@@ -136,19 +169,17 @@
                                     <template x-if="['standard','reverse_charge'].includes(line.vat_treatment)">
                                         <input type="number" :name="`lines[${i}][vat_rate]`" x-model="line.vat_rate"
                                                min="0" max="100" step="0.01"
-                                               class="w-full border border-gray-300 rounded px-2 py-1 text-xs text-right focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                               placeholder="Rate %">
+                                               class="w-full border border-gray-300 rounded px-2 py-1 text-xs text-right focus:outline-none focus:ring-1 focus:ring-blue-500">
                                     </template>
                                     <template x-if="!['standard','reverse_charge'].includes(line.vat_treatment)">
                                         <input type="hidden" :name="`lines[${i}][vat_rate]`" value="0">
                                     </template>
                                 </td>
                                 <td class="py-2 pl-2 text-right font-mono text-gray-800">
-                                    <span x-text="fmt((parseFloat(line.quantity)||0)*(parseFloat(line.unit_price)||0))"></span>
+                                    <span x-text="fmt(lineAmt(line))"></span>
                                 </td>
                                 <td class="py-2 pl-1">
-                                    <button type="button" @click="removeLine(i)"
-                                            class="text-red-400 hover:text-red-600" title="Remove">
+                                    <button type="button" @click="removeLine(i)" class="text-red-400 hover:text-red-600">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                                         </svg>
@@ -168,10 +199,9 @@
                 Add Line
             </button>
 
-            {{-- Totals --}}
             <div class="mt-4 border-t border-gray-100 pt-4 flex flex-col items-end gap-1 text-sm">
                 <div class="flex gap-8">
-                    <span class="text-gray-500">Subtotal</span>
+                    <span class="text-gray-500">{{ $isRE ? 'Total Commission' : 'Subtotal' }}</span>
                     <span class="font-mono w-28 text-right" x-text="'AED ' + fmt(subtotal)"></span>
                 </div>
                 <div class="flex gap-8">
@@ -185,7 +215,6 @@
             </div>
         </div>
 
-        {{-- Notes --}}
         <div class="bg-white rounded-xl border border-gray-200 p-5 mb-5">
             <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
             <textarea name="notes" rows="3"
