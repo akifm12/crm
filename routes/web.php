@@ -390,6 +390,7 @@ Route::prefix('{slug}')
                 Route::post('/bills/{bill}/post',             [\App\Http\Controllers\Tenant\Accounting\BillController::class, 'post'])->name('bills.post');
                 Route::post('/bills/{bill}/void',             [\App\Http\Controllers\Tenant\Accounting\BillController::class, 'void'])->name('bills.void');
                 Route::post('/bills/{bill}/payments',         [\App\Http\Controllers\Tenant\Accounting\BillController::class, 'storePayment'])->name('bills.payments.store');
+                Route::get('/bills/{bill}/pdf',              [\App\Http\Controllers\Tenant\Accounting\BillController::class, 'pdf'])->name('bills.pdf');
 
                 Route::get('/suppliers',                      [\App\Http\Controllers\Tenant\Accounting\SupplierController::class, 'index'])->name('suppliers.index');
                 Route::post('/suppliers',                     [\App\Http\Controllers\Tenant\Accounting\SupplierController::class, 'store'])->name('suppliers.store');

@@ -14,6 +14,10 @@
 
 {{-- Status bar --}}
 <div class="flex items-center gap-2 mb-5 flex-wrap">
+    <a href="{{ route('tenant.accounting.bills.pdf', [$tenant->slug, $bill->id]) }}" target="_blank"
+       class="px-4 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50">
+        Print / Download PDF
+    </a>
     @php
         $statusClass = match($bill->status) {
             'posted' => $bill->isFullyPaid() ? 'bg-green-50 text-green-700' : ($bill->isOverdue() ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-700'),

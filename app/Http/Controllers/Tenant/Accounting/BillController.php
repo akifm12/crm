@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Bill;
 use App\Models\Supplier;
 use App\Services\Accounting\BillingService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -126,6 +127,17 @@ class BillController extends Controller
 
         return redirect()->route('tenant.accounting.bills.show', [$tenant->slug, $bill->id])
             ->with('success', 'Bill voided.');
+    }
+
+    public function pdf(string $slug, Bill $bill)
+    {
+        $tenant = app('tenant');
+        abort_if($bill->tenant_id !== $tenant->id, 404);
+        $bill->load('lines');
+
+        $pdf = Pdf::loadView('tenant.accounting.bills.pdf', compact('tenant', 'bill'));
+
+        return $pdf->stream("{$bill->bill_number}.pdf");
     }
 
     public function storePayment(Request $request, string $slug, Bill $bill, BillingService $billing)
