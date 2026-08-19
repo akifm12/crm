@@ -19,21 +19,25 @@
 
     {{-- Header --}}
     @php $suppliersList = $suppliers->map(fn($s) => ['id'=>$s->id,'name'=>$s->name,'vat'=>$s->vat_number??''])->values()->toArray(); @endphp
-    <div class="bg-white rounded-xl border border-gray-200 p-5 mb-5"
-         x-data="{
-             suppliers: @json($suppliersList),
-             selectedId: '{{ old('supplier_id') }}',
-             manualName: '{{ old('supplier_name') }}',
-             manualVat: '{{ old('supplier_vat_number') }}',
-             get isManual() { return this.selectedId === '' || this.selectedId === '0'; },
-             pick(id) {
-                 this.selectedId = id;
-                 if (!this.isManual) {
-                     let s = this.suppliers.find(x => x.id == id);
-                     if (s) { this.manualName = s.name; this.manualVat = s.vat; }
-                 }
-             }
-         }">
+    <script>
+    function supplierPickerNew() {
+        return {
+            suppliers: @json($suppliersList),
+            selectedId: @json(old('supplier_id', '')),
+            manualName: @json(old('supplier_name', '')),
+            manualVat:  @json(old('supplier_vat_number', '')),
+            get isManual() { return this.selectedId === '' || this.selectedId === '0'; },
+            pick(id) {
+                this.selectedId = id;
+                if (!this.isManual) {
+                    let s = this.suppliers.find(x => x.id == id);
+                    if (s) { this.manualName = s.name; this.manualVat = s.vat; }
+                }
+            }
+        };
+    }
+    </script>
+    <div class="bg-white rounded-xl border border-gray-200 p-5 mb-5" x-data="supplierPickerNew()">
         <div class="grid grid-cols-2 gap-4 mb-4">
             <div>
                 <label class="block text-xs font-medium text-gray-600 mb-1">Supplier <span class="text-red-500">*</span></label>

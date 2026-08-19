@@ -32,24 +32,30 @@ $existingLines = $bill->lines->map(fn ($l) => [
 
     {{-- Header --}}
     @php
-        $suppliersList = $suppliers->map(fn($s) => ['id'=>$s->id,'name'=>$s->name,'vat'=>$s->vat_number??''])->values()->toArray();
-        $initSupplierId = old('supplier_id', $bill->supplier_id ?? ($suppliers->isEmpty() ? '0' : ''));
+        $suppliersList   = $suppliers->map(fn($s) => ['id'=>$s->id,'name'=>$s->name,'vat'=>$s->vat_number??''])->values()->toArray();
+        $initSupplierId  = old('supplier_id', $bill->supplier_id ?? ($suppliers->isEmpty() ? '0' : ''));
+        $initManualName  = old('supplier_name', $bill->supplier_name);
+        $initManualVat   = old('supplier_vat_number', $bill->supplier_vat_number);
     @endphp
-    <div class="bg-white rounded-xl border border-gray-200 p-5 mb-5"
-         x-data="{
-             suppliers: @json($suppliersList),
-             selectedId: '{{ $initSupplierId }}',
-             manualName: '{{ old('supplier_name', $bill->supplier_name) }}',
-             manualVat: '{{ old('supplier_vat_number', $bill->supplier_vat_number) }}',
-             get isManual() { return this.selectedId === '' || this.selectedId === '0'; },
-             pick(id) {
-                 this.selectedId = id;
-                 if (!this.isManual) {
-                     let s = this.suppliers.find(x => x.id == id);
-                     if (s) { this.manualName = s.name; this.manualVat = s.vat; }
-                 }
-             }
-         }">
+    <script>
+    function supplierPickerEdit() {
+        return {
+            suppliers: @json($suppliersList),
+            selectedId: @json((string) $initSupplierId),
+            manualName: @json($initManualName),
+            manualVat:  @json($initManualVat),
+            get isManual() { return this.selectedId === '' || this.selectedId === '0'; },
+            pick(id) {
+                this.selectedId = id;
+                if (!this.isManual) {
+                    let s = this.suppliers.find(x => x.id == id);
+                    if (s) { this.manualName = s.name; this.manualVat = s.vat; }
+                }
+            }
+        };
+    }
+    </script>
+    <div class="bg-white rounded-xl border border-gray-200 p-5 mb-5" x-data="supplierPickerEdit()">
         <div class="grid grid-cols-2 gap-4 mb-4">
             <div>
                 <label class="block text-xs font-medium text-gray-600 mb-1">Supplier <span class="text-red-500">*</span></label>
