@@ -1,9 +1,10 @@
 @extends('layouts.tenant')
 
 @php
-    $isRE  = $moduleType === 'real_estate';
-    $label = $isRE ? 'New Rent Invoice' : 'New Invoice';
-    $rp    = $isRE ? 'tenant.accounting.re.invoices.' : 'tenant.accounting.general.invoices.';
+    $isRE         = $moduleType === 'real_estate';
+    $label        = $isRE ? 'New Rent Invoice' : 'New Invoice';
+    $rp           = $isRE ? 'tenant.accounting.re.invoices.' : 'tenant.accounting.general.invoices.';
+    $defaultLines = old('lines', [['description'=>'','quantity'=>1,'unit_price'=>'','vat_treatment'=>'standard','vat_rate'=>5]]);
 @endphp
 
 @section('title', $label)
@@ -32,13 +33,7 @@
     <script>
     function stdInvoiceForm() {
         return {
-            lines: @json(old('lines', [[
-                'description' => '',
-                'quantity' => 1,
-                'unit_price' => '',
-                'vat_treatment' => 'standard',
-                'vat_rate' => 5,
-            ]])),
+            lines: @json($defaultLines),
 
             get subtotal() {
                 return this.lines.reduce((s, l) => s + (parseFloat(l.quantity)||0) * (parseFloat(l.unit_price)||0), 0);
