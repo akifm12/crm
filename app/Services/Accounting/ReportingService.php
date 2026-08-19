@@ -159,6 +159,45 @@ class ReportingService
     }
 
     /**
+     * VAT Return: net Output VAT (from sales invoices) against Input VAT (from bills)
+     * for the given period, producing a simple FTA-style box summary.
+     */
+    public function vatReturn(Tenant $tenant, \Carbon\Carbon $from, \Carbon\Carbon $to): array
+    {
+        // Output VAT — invoice lines in the period
+        $invoiceLines = \App\Models\InvoiceLine::query()
+            ->join('invoices', 'invoices.id', '=', 'invoice_lines.invoice_id')
+            ->where('invoices.tenant_id', $tenant->id)
+            ->where('invoices.status', 'posted')
+            ->whereBetween('invoices.invoice_date', [$from->toDateString(), $to->toDateString()])
+            ->select('invoice_lines.*')
+            ->get();
+
+        $outputSubtotal = 0.0;
+        $outputVat      = 0.0;
+        foreach ($invoiceLines as $line) {
+            $outputSubtotal += (float) $line->line_subtotal + (float) $line->making_charge_amount;
+            $outputVat      += (float) $line->metal_vat_amount + (float) $line->making_vat_amount;
+        }
+
+        // Input VAT — bill lines in the period
+        $billLines = \App\Models\BillLine::query()
+            ->join('bills', 'bills.id', '=', 'bill_lines.bill_id')
+            ->where('bills.tenant_id', $tenant->id)
+            ->where('bills.status', 'posted')
+            ->whereBetween('bills.bill_date', [$from->toDateString(), $to->toDateString()])
+            ->select('bill_lines.*')
+            ->get();
+
+        $inputSubtotal = round($billLines->sum('amount'), 2);
+        $inputVat      = round($billLines->sum('vat_amount'), 2);
+
+        $netVat = round($outputVat - $inputVat, 2);
+
+        return compact('outputSubtotal', 'outputVat', 'inputSubtotal', 'inputVat', 'netVat');
+    }
+
+    /**
      * Statement of accounts for a single client: a chronological ledger of every posted
      * invoice, payment, and deposit that moved their balance, with a running total.
      * Positive balance = client owes the dealer; negative = dealer owes client. A held

@@ -379,5 +379,18 @@ Route::prefix('{slug}')
                 Route::post('/invoices/{invoice}/void',          [\App\Http\Controllers\Tenant\Accounting\InvoiceController::class, 'void'])->name('invoices.void');
                 Route::get('/invoices/{invoice}/pdf',            [\App\Http\Controllers\Tenant\Accounting\InvoiceController::class, 'pdf'])->name('invoices.pdf');
                 Route::post('/invoices/{invoice}/payments',      [\App\Http\Controllers\Tenant\Accounting\InvoiceController::class, 'storePayment'])->name('invoices.payments.store');
+
+                Route::get('/bills',                          [\App\Http\Controllers\Tenant\Accounting\BillController::class, 'index'])->name('bills.index');
+                Route::get('/bills/new',                      [\App\Http\Controllers\Tenant\Accounting\BillController::class, 'create'])->name('bills.create');
+                Route::post('/bills',                         [\App\Http\Controllers\Tenant\Accounting\BillController::class, 'store'])->name('bills.store');
+                Route::get('/bills/{bill}',                   [\App\Http\Controllers\Tenant\Accounting\BillController::class, 'show'])->name('bills.show');
+                Route::get('/bills/{bill}/edit',              [\App\Http\Controllers\Tenant\Accounting\BillController::class, 'edit'])->name('bills.edit');
+                Route::put('/bills/{bill}',                   [\App\Http\Controllers\Tenant\Accounting\BillController::class, 'update'])->name('bills.update');
+                Route::delete('/bills/{bill}',                [\App\Http\Controllers\Tenant\Accounting\BillController::class, 'destroy'])->name('bills.destroy');
+                Route::post('/bills/{bill}/post',             [\App\Http\Controllers\Tenant\Accounting\BillController::class, 'post'])->name('bills.post');
+                Route::post('/bills/{bill}/void',             [\App\Http\Controllers\Tenant\Accounting\BillController::class, 'void'])->name('bills.void');
+                Route::post('/bills/{bill}/payments',         [\App\Http\Controllers\Tenant\Accounting\BillController::class, 'storePayment'])->name('bills.payments.store');
+
+                Route::get('/reports/vat-return',    [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'vatReturn'])->name('reports.vat-return');
             });
     });

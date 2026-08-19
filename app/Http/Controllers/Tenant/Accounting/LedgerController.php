@@ -279,6 +279,17 @@ class LedgerController extends Controller
         return CsvExport::download('vat-summary-'.$from->toDateString().'-to-'.$to->toDateString().'.csv', ['VAT Treatment', 'Subtotal (AED)', 'VAT (AED)'], $csvRows);
     }
 
+    public function vatReturn(Request $request, ReportingService $reporting)
+    {
+        $tenant = app('tenant');
+        $from = $request->filled('from') ? Carbon::parse($request->input('from')) : Carbon::now()->startOfQuarter();
+        $to   = $request->filled('to')   ? Carbon::parse($request->input('to'))   : Carbon::today();
+
+        $data = $reporting->vatReturn($tenant, $from, $to);
+
+        return view('tenant.accounting.reports.vat_return', compact('tenant', 'from', 'to') + $data);
+    }
+
     public function clientStatement(Request $request, ReportingService $reporting)
     {
         $tenant = app('tenant');
