@@ -88,18 +88,25 @@ class TenantController extends Controller
             'contact_email' => 'required|email',
         ]);
 
-        $wasEnabled = $tenant->hasModule('bullion_accounting');
-
         $settings = $tenant->settings ?? [];
-        $settings['enabled_modules']['bullion_accounting'] = $request->boolean('module_bullion_accounting');
+
+        $modules = ['bullion_accounting', 'general_accounting', 'real_estate_accounting'];
+        $wasEnabled = [];
+        foreach ($modules as $mod) {
+            $wasEnabled[$mod] = $tenant->hasModule($mod);
+            $settings['enabled_modules'][$mod] = $request->boolean("module_{$mod}");
+        }
 
         $tenant->update($request->only([
             'name', 'business_type', 'contact_email',
             'phone', 'address', 'dnfbp_reg_no', 'vat_trn', 'is_active',
         ]) + ['settings' => $settings]);
 
-        if (! $wasEnabled && $request->boolean('module_bullion_accounting')) {
-            app(ChartOfAccountSeeder::class)->seedForTenant($tenant->fresh());
+        $fresh = $tenant->fresh();
+        foreach ($modules as $mod) {
+            if (! $wasEnabled[$mod] && $request->boolean("module_{$mod}")) {
+                app(ChartOfAccountSeeder::class)->seedForTenant($fresh, ChartOfAccountSeeder::templateForModule($mod));
+            }
         }
 
         return back()->with('success', 'Tenant updated.');

@@ -16,6 +16,15 @@ class ChartOfAccountSeeder
      * later); only codes the tenant doesn't already have get inserted, existing accounts
      * are left untouched.
      */
+    public static function templateForModule(string $module): string
+    {
+        return match ($module) {
+            'general_accounting'    => 'general_business',
+            'real_estate_accounting'=> 'real_estate',
+            default                 => 'bullion_dealer',
+        };
+    }
+
     public function seedForTenant(Tenant $tenant, string $template = 'bullion_dealer'): void
     {
         $rows = ChartOfAccountTemplates::get($template);

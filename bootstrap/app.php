@@ -13,8 +13,9 @@ return Application::configure(basePath: dirname(__DIR__))
     )
 	->withMiddleware(function (Middleware $middleware) {
 		$middleware->alias([
-			'resolve.tenant' => \App\Http\Middleware\ResolveTenant::class,
-			'module' => \App\Http\Middleware\EnsureModuleEnabled::class,
+			'resolve.tenant'    => \App\Http\Middleware\ResolveTenant::class,
+			'module'            => \App\Http\Middleware\EnsureModuleEnabled::class,
+			'any.accounting'    => \App\Http\Middleware\EnsureAnyAccountingEnabled::class,
 		]);
 
 		$middleware->redirectGuestsTo(fn ($request) => $request->is('account*')

@@ -73,12 +73,35 @@
 </div>
 
 <div class="bg-white rounded-xl border border-gray-200 p-5">
-    <h3 class="text-sm font-semibold text-gray-700 mb-4 pb-2 border-b border-gray-100">Modules</h3>
-    <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-        <input type="checkbox" name="module_bullion_accounting" value="1" id="module_bullion_accounting"
-               {{ $tenant->hasModule('bullion_accounting') ? 'checked' : '' }}
-               class="rounded border-gray-300 text-blue-600">
-        <label for="module_bullion_accounting" class="text-sm text-gray-700">Enable Bullion Accounting module — invoicing, ledger, trial balance &amp; balance sheet</label>
+    <h3 class="text-sm font-semibold text-gray-700 mb-4 pb-2 border-b border-gray-100">Accounting Modules</h3>
+    <div class="space-y-2">
+        <div class="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+            <input type="checkbox" name="module_bullion_accounting" value="1" id="module_bullion_accounting"
+                   {{ $tenant->hasModule('bullion_accounting') ? 'checked' : '' }}
+                   class="mt-0.5 rounded border-gray-300 text-blue-600">
+            <div>
+                <label for="module_bullion_accounting" class="text-sm font-medium text-gray-700">Bullion Accounting</label>
+                <p class="text-xs text-gray-400 mt-0.5">Gold/silver invoicing, metal inventory, making charges, trial balance &amp; balance sheet</p>
+            </div>
+        </div>
+        <div class="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+            <input type="checkbox" name="module_general_accounting" value="1" id="module_general_accounting"
+                   {{ $tenant->hasModule('general_accounting') ? 'checked' : '' }}
+                   class="mt-0.5 rounded border-gray-300 text-blue-600">
+            <div>
+                <label for="module_general_accounting" class="text-sm font-medium text-gray-700">General Accounting</label>
+                <p class="text-xs text-gray-400 mt-0.5">Standard service/product invoicing, bills, journal, VAT return — suitable for any business</p>
+            </div>
+        </div>
+        <div class="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+            <input type="checkbox" name="module_real_estate_accounting" value="1" id="module_real_estate_accounting"
+                   {{ $tenant->hasModule('real_estate_accounting') ? 'checked' : '' }}
+                   class="mt-0.5 rounded border-gray-300 text-blue-600">
+            <div>
+                <label for="module_real_estate_accounting" class="text-sm font-medium text-gray-700">Real Estate Accounting</label>
+                <p class="text-xs text-gray-400 mt-0.5">Rental income, property expenses, maintenance bills, tenant management</p>
+            </div>
+        </div>
     </div>
 </div>
 
