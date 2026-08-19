@@ -27,14 +27,14 @@ class StandardInvoiceController extends Controller
             ->orderByDesc('id')
             ->paginate(40);
 
-        return view('tenant.accounting.standard_invoices.index', compact('tenant', 'invoices', 'moduleType'));
+        return view('tenant.accounting.standard_invoices.index', compact('tenant', 'invoices', 'moduleType', 'slug'));
     }
 
     public function create(string $slug)
     {
         $tenant     = app('tenant');
         $moduleType = $this->moduleType();
-        return view('tenant.accounting.standard_invoices.create', compact('tenant', 'moduleType'));
+        return view('tenant.accounting.standard_invoices.create', compact('tenant', 'moduleType', 'slug'));
     }
 
     public function store(Request $request, string $slug, StandardInvoicingService $svc)
@@ -62,7 +62,7 @@ class StandardInvoiceController extends Controller
         abort_if($invoice->tenant_id !== $tenant->id, 404);
         $invoice->load('lines', 'payments', 'journalEntry');
 
-        return view('tenant.accounting.standard_invoices.show', compact('tenant', 'invoice', 'moduleType'));
+        return view('tenant.accounting.standard_invoices.show', compact('tenant', 'invoice', 'moduleType', 'slug'));
     }
 
     public function edit(string $slug, StandardInvoice $invoice)
@@ -73,7 +73,7 @@ class StandardInvoiceController extends Controller
         abort_if($invoice->status !== 'draft', 403, 'Only draft invoices can be edited.');
         $invoice->load('lines');
 
-        return view('tenant.accounting.standard_invoices.edit', compact('tenant', 'invoice', 'moduleType'));
+        return view('tenant.accounting.standard_invoices.edit', compact('tenant', 'invoice', 'moduleType', 'slug'));
     }
 
     public function update(Request $request, string $slug, StandardInvoice $invoice, StandardInvoicingService $svc)
@@ -170,7 +170,7 @@ class StandardInvoiceController extends Controller
         abort_if($invoice->tenant_id !== $tenant->id, 404);
         $invoice->load('lines');
 
-        $pdf = Pdf::loadView('tenant.accounting.standard_invoices.pdf', compact('tenant', 'invoice', 'moduleType'));
+        $pdf = Pdf::loadView('tenant.accounting.standard_invoices.pdf', compact('tenant', 'invoice', 'moduleType', 'slug'));
 
         return $pdf->stream("{$invoice->invoice_number}.pdf");
     }
