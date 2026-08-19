@@ -400,6 +400,21 @@ Route::prefix('{slug}')
                 Route::put('/suppliers/{supplier}',         [\App\Http\Controllers\Tenant\Accounting\SupplierController::class, 'update'])->name('suppliers.update');
                 Route::delete('/suppliers/{supplier}',      [\App\Http\Controllers\Tenant\Accounting\SupplierController::class, 'destroy'])->name('suppliers.destroy');
 
+                // Standard invoices (General + Real Estate)
+                Route::prefix('/invoices/{moduleType}')->name('standard-invoices.')->group(function () {
+                    Route::get('/',           [\App\Http\Controllers\Tenant\Accounting\StandardInvoiceController::class, 'index'])->name('index');
+                    Route::get('/new',        [\App\Http\Controllers\Tenant\Accounting\StandardInvoiceController::class, 'create'])->name('create');
+                    Route::post('/',          [\App\Http\Controllers\Tenant\Accounting\StandardInvoiceController::class, 'store'])->name('store');
+                    Route::get('/{invoice}',  [\App\Http\Controllers\Tenant\Accounting\StandardInvoiceController::class, 'show'])->name('show');
+                    Route::get('/{invoice}/edit',         [\App\Http\Controllers\Tenant\Accounting\StandardInvoiceController::class, 'edit'])->name('edit');
+                    Route::put('/{invoice}',              [\App\Http\Controllers\Tenant\Accounting\StandardInvoiceController::class, 'update'])->name('update');
+                    Route::delete('/{invoice}',           [\App\Http\Controllers\Tenant\Accounting\StandardInvoiceController::class, 'destroy'])->name('destroy');
+                    Route::post('/{invoice}/post',        [\App\Http\Controllers\Tenant\Accounting\StandardInvoiceController::class, 'post'])->name('post');
+                    Route::post('/{invoice}/void',        [\App\Http\Controllers\Tenant\Accounting\StandardInvoiceController::class, 'void'])->name('void');
+                    Route::post('/{invoice}/payments',    [\App\Http\Controllers\Tenant\Accounting\StandardInvoiceController::class, 'storePayment'])->name('payments.store');
+                    Route::get('/{invoice}/pdf',          [\App\Http\Controllers\Tenant\Accounting\StandardInvoiceController::class, 'pdf'])->name('pdf');
+                });
+
                 Route::get('/reports/trial-balance',        [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'trialBalance'])->name('reports.trial-balance');
                 Route::get('/reports/trial-balance/pdf',    [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'trialBalancePdf'])->name('reports.trial-balance.pdf');
                 Route::get('/reports/trial-balance/csv',    [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'trialBalanceCsv'])->name('reports.trial-balance.csv');

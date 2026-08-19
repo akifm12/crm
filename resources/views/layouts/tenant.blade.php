@@ -199,6 +199,8 @@
             <div x-show="open" x-cloak style="padding-left:28px;margin-top:2px;display:flex;flex-direction:column;gap:2px">
                 <a href="{{ route('tenant.accounting.general.dashboard', $slug) }}"
                    class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.general.dashboard') ? 'active' : '' }}">Dashboard</a>
+                <a href="{{ route('tenant.accounting.standard-invoices.index', [$slug, 'general']) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.standard-invoices*') && request()->route('moduleType') === 'general' ? 'active' : '' }}">Invoices</a>
                 <a href="{{ route('tenant.accounting.bills.index', $slug) }}"
                    class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.bills*') ? 'active' : '' }}">Bills</a>
                 <a href="{{ route('tenant.accounting.suppliers.index', $slug) }}"
@@ -229,6 +231,8 @@
             <div x-show="open" x-cloak style="padding-left:28px;margin-top:2px;display:flex;flex-direction:column;gap:2px">
                 <a href="{{ route('tenant.accounting.re.dashboard', $slug) }}"
                    class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.re.dashboard') ? 'active' : '' }}">Dashboard</a>
+                <a href="{{ route('tenant.accounting.standard-invoices.index', [$slug, 'real_estate']) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.standard-invoices*') && request()->route('moduleType') === 'real_estate' ? 'active' : '' }}">Rent Invoices</a>
                 <a href="{{ route('tenant.accounting.bills.index', $slug) }}"
                    class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.bills*') ? 'active' : '' }}">Bills / Expenses</a>
                 <a href="{{ route('tenant.accounting.suppliers.index', $slug) }}"
