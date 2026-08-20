@@ -11,6 +11,7 @@ class ImportEltorro extends Command
     protected $signature   = 'import:eltorro
                                 {--sql= : Path to SQL dump (default: C:/Users/akif/Downloads/eltorro_export.sql)}
                                 {--dry-run : Parse and count records without writing anything}
+                                {--accounts-only : Import chart of accounts only — skip journal entries, invoices, and bills}
                                 {--wipe : Delete existing Eltorro data first (use with care)}';
     protected $description = 'Import Eltorro Real Estate data from a standalone-accounting PostgreSQL dump into bluearrow-portal';
 
@@ -37,8 +38,9 @@ class ImportEltorro extends Command
     public function handle(): int
     {
         $sqlFile = $this->option('sql') ?: self::SQL_DEFAULT;
-        $dry     = (bool) $this->option('dry-run');
-        $wipe    = (bool) $this->option('wipe');
+        $dry          = (bool) $this->option('dry-run');
+        $wipe         = (bool) $this->option('wipe');
+        $accountsOnly = (bool) $this->option('accounts-only');
 
         if (!file_exists($sqlFile)) {
             $this->error("SQL dump not found: {$sqlFile}");
@@ -57,6 +59,27 @@ class ImportEltorro extends Command
              'opening_balance_date','created_at','updated_at'],
             fn($r) => (int)$r['company_id'] === self::SOURCE_COMPANY
         );
+
+        if ($accountsOnly) {
+            $this->table(['Table', 'Records'], [
+                ['accounts', count($srcAccounts)],
+            ]);
+            if ($dry) { $this->info('--dry-run: nothing written.'); return 0; }
+            if (!$this->confirm('Import chart of accounts only (existing codes will be skipped)?', true)) { return 0; }
+            $now = now();
+            DB::transaction(function () use ($srcAccounts, $now) {
+                $tenant = DB::table('tenants')
+                    ->where('slug', self::TENANT_SLUG)
+                    ->orWhere('name', self::TENANT_NAME)
+                    ->first();
+                if (!$tenant) { $this->error('Eltorro tenant not found. Create it first.'); return; }
+                $tenantId = $tenant->id;
+                $this->info("Using tenant ID {$tenantId}: {$tenant->name}");
+                $this->insertAccounts($srcAccounts, $tenantId, $now);
+            });
+            $this->info('Import complete.');
+            return 0;
+        }
 
         $srcJEs = $this->parseTable($lines, 'journal_entries',
             ['id','company_id','period_id','entry_number','entry_date',
@@ -211,42 +234,7 @@ class ImportEltorro extends Command
             }
 
             // ── 2. Chart of accounts ───────────────────────────────────
-            // Two passes: insert without parent_id, then fix parents
-            $srcIdToNewId = [];  // source account id → new chart_of_accounts id
-
-            // Sort: parents first (those with parent_id=null in source)
-            usort($srcAccounts, fn($a, $b) =>
-                ($a['parent_id'] === null ? 0 : 1) <=> ($b['parent_id'] === null ? 0 : 1)
-            );
-
-            foreach ($srcAccounts as $acct) {
-                $newId = DB::table('chart_of_accounts')->insertGetId([
-                    'tenant_id'      => $tenantId,
-                    'parent_id'      => null, // will fix in second pass
-                    'code'           => $acct['code'],
-                    'name'           => $acct['name'],
-                    'type'           => self::TYPE_MAP[$acct['account_type']] ?? 'asset',
-                    'subtype'        => $this->mapSubtype($acct),
-                    'normal_balance' => strtolower($acct['normal_balance']),
-                    'is_system'      => false,
-                    'is_active'      => $acct['is_active'] !== 'false',
-                    'description'    => $acct['description'],
-                    'created_at'     => $now,
-                    'updated_at'     => $now,
-                ]);
-                $srcIdToNewId[$acct['id']] = $newId;
-            }
-
-            // Second pass: set parent_ids
-            foreach ($srcAccounts as $acct) {
-                if ($acct['parent_id'] !== null && isset($srcIdToNewId[$acct['parent_id']])) {
-                    DB::table('chart_of_accounts')
-                        ->where('id', $srcIdToNewId[$acct['id']])
-                        ->update(['parent_id' => $srcIdToNewId[$acct['parent_id']]]);
-                }
-            }
-
-            $this->info('  ✓ ' . count($srcAccounts) . ' accounts imported');
+            $srcIdToNewId = $this->insertAccounts($srcAccounts, $tenantId, $now);
 
             // ── 3. Journal entries + lines ─────────────────────────────
             $srcJEToNewJE = [];  // source JE id → new JE id
@@ -415,6 +403,64 @@ class ImportEltorro extends Command
     // ------------------------------------------------------------------
     // Helpers
     // ------------------------------------------------------------------
+
+    /**
+     * Insert chart-of-accounts rows, skipping any code that already exists
+     * for this tenant. Returns a map of source_id → new target id.
+     */
+    private function insertAccounts(array $srcAccounts, int $tenantId, $now): array
+    {
+        // Parents first
+        usort($srcAccounts, fn($a, $b) =>
+            ($a['parent_id'] === null ? 0 : 1) <=> ($b['parent_id'] === null ? 0 : 1)
+        );
+
+        $srcIdToNewId = [];
+
+        // First pass: insert (skip duplicates by code)
+        foreach ($srcAccounts as $acct) {
+            $existing = DB::table('chart_of_accounts')
+                ->where('tenant_id', $tenantId)
+                ->where('code', $acct['code'])
+                ->value('id');
+
+            if ($existing) {
+                $srcIdToNewId[$acct['id']] = $existing;
+                continue; // already exists — don't overwrite
+            }
+
+            $newId = DB::table('chart_of_accounts')->insertGetId([
+                'tenant_id'      => $tenantId,
+                'parent_id'      => null,
+                'code'           => $acct['code'],
+                'name'           => $acct['name'],
+                'type'           => self::TYPE_MAP[$acct['account_type']] ?? 'asset',
+                'subtype'        => $this->mapSubtype($acct),
+                'normal_balance' => strtolower($acct['normal_balance']),
+                'is_system'      => false,
+                'is_active'      => $acct['is_active'] !== 'false',
+                'description'    => $acct['description'],
+                'created_at'     => $now,
+                'updated_at'     => $now,
+            ]);
+            $srcIdToNewId[$acct['id']] = $newId;
+        }
+
+        // Second pass: wire up parent_ids for newly inserted rows
+        foreach ($srcAccounts as $acct) {
+            if ($acct['parent_id'] !== null && isset($srcIdToNewId[$acct['parent_id']], $srcIdToNewId[$acct['id']])) {
+                DB::table('chart_of_accounts')
+                    ->where('id', $srcIdToNewId[$acct['id']])
+                    ->whereNull('parent_id')
+                    ->update(['parent_id' => $srcIdToNewId[$acct['parent_id']]]);
+            }
+        }
+
+        $inserted = count(array_filter(array_keys($srcIdToNewId)));
+        $this->info('  ✓ ' . count($srcAccounts) . ' accounts processed (' . $inserted . ' new, ' . (count($srcAccounts) - $inserted) . ' skipped — already existed)');
+
+        return $srcIdToNewId;
+    }
 
     private function mapSubtype(array $acct): ?string
     {
