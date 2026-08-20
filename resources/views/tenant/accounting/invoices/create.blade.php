@@ -175,9 +175,9 @@
                                    class="w-full px-2 py-1.5 text-sm border border-gray-200 rounded-lg text-right">
                         </div>
                         <div>
-                            <label class="block text-xs text-gray-400 mb-0.5">Pure (g) <span class="text-gray-300 text-xs font-normal">auto</span></label>
-                            <input type="number" step="0.001" min="0" :name="'lines['+i+'][quantity_grams]'" x-model.number="line.quantity_grams" readonly
-                                   class="w-full px-2 py-1.5 text-sm border border-gray-200 rounded-lg text-right bg-gray-50 text-gray-600">
+                            <label class="block text-xs text-gray-400 mb-0.5">Pure (g)</label>
+                            <input type="number" step="0.001" min="0" :name="'lines['+i+'][quantity_grams]'" x-model.number="line.quantity_grams" @input="syncFromPure(line)"
+                                   class="w-full px-2 py-1.5 text-sm border border-gray-200 rounded-lg text-right">
                         </div>
                         <div>
                             <label class="block text-xs text-gray-400 mb-0.5">Pcs <span class="text-gray-400 text-xs font-normal">(optional)</span></label>
@@ -414,6 +414,14 @@ function invoiceForm() {
             const purity = parseFloat(line.purity);
             if (gross > 0 && purity > 0) {
                 line.quantity_grams = Math.round(gross * (purity / 1000) * 1000) / 1000;
+            }
+        },
+        // Back-calculate purity from gross weight and pure weight.
+        syncFromPure(line) {
+            const gross = parseFloat(line.gross_weight_grams);
+            const pure = parseFloat(line.quantity_grams);
+            if (gross > 0 && pure > 0) {
+                line.purity = Math.round(pure / gross * 1000 * 1000) / 1000;
             }
         },
         // For a denominated item (has a nominal weight, e.g. a "10 Gram" bar), piece count
