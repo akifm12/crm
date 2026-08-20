@@ -190,7 +190,7 @@ class InvoiceController extends Controller
             'lines.*.inventory_item_id' => 'nullable|exists:inventory_items,id',
             'lines.*.metal_type'        => 'nullable|string|max:20',
             'lines.*.description'       => 'required|string|max:255',
-            'lines.*.purity'            => 'nullable|numeric|min:0|max:999.999',
+            'lines.*.purity'            => 'nullable|numeric|min:0|max:1000',
             'lines.*.quantity_grams'    => 'nullable|numeric|min:0',
             'lines.*.gross_weight_grams'=> 'nullable|numeric|min:0',
             'lines.*.pcs'               => 'nullable|integer|min:0',
