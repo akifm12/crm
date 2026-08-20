@@ -86,10 +86,10 @@ class ChartOfAccountTemplates
             ['code' => '3010', 'name' => "Owner's Equity",              'type' => 'equity',    'normal_balance' => 'credit', 'subtype' => 'owners_equity',     'parent_code' => '3000'],
             ['code' => '3020', 'name' => 'Retained Earnings',           'type' => 'equity',    'normal_balance' => 'credit', 'subtype' => 'retained_earnings', 'parent_code' => '3000'],
             // Income
-            ['code' => '4000', 'name' => 'Income',                      'type' => 'income',    'normal_balance' => 'credit', 'subtype' => null,                'parent_code' => null],
-            ['code' => '4010', 'name' => 'Rental Income',               'type' => 'income',    'normal_balance' => 'credit', 'subtype' => 'sales_revenue',     'parent_code' => '4000'],
-            ['code' => '4020', 'name' => 'Service Charge Income',       'type' => 'income',    'normal_balance' => 'credit', 'subtype' => 'service_revenue',   'parent_code' => '4000'],
-            ['code' => '4030', 'name' => 'Other Property Income',       'type' => 'income',    'normal_balance' => 'credit', 'subtype' => null,                'parent_code' => '4000'],
+            ['code' => '4000', 'name' => 'Income',                          'type' => 'income', 'normal_balance' => 'credit', 'subtype' => null,              'parent_code' => null],
+            ['code' => '4010', 'name' => 'Commission Income — Rental',      'type' => 'income', 'normal_balance' => 'credit', 'subtype' => 'sales_revenue',   'parent_code' => '4000'],
+            ['code' => '4020', 'name' => 'Commission Income — Sales',       'type' => 'income', 'normal_balance' => 'credit', 'subtype' => 'service_revenue', 'parent_code' => '4000'],
+            ['code' => '4030', 'name' => 'Other Commission Income',         'type' => 'income', 'normal_balance' => 'credit', 'subtype' => null,              'parent_code' => '4000'],
             // Expenses
             ['code' => '5000', 'name' => 'Expenses',                    'type' => 'expense',   'normal_balance' => 'debit',  'subtype' => null,                'parent_code' => null],
             ['code' => '5010', 'name' => 'Maintenance & Repairs',       'type' => 'expense',   'normal_balance' => 'debit',  'subtype' => null,                'parent_code' => '5000'],
