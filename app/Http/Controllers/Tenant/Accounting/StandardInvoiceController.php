@@ -163,7 +163,7 @@ class StandardInvoiceController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        return back()->with('success', 'Payment recorded.');
+        return back()->with('success', 'Receipt recorded.');
     }
 
     public function pdf(string $slug, StandardInvoice $invoice)

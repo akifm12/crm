@@ -370,7 +370,7 @@ class InvoiceController extends Controller
         ]);
 
         return back()
-            ->with('success', $invoice->status === 'pending_fix' ? 'Deposit recorded.' : 'Payment recorded.')
+            ->with('success', $invoice->status === 'pending_fix' ? 'Deposit recorded.' : ($invoice->invoice_type === 'sale' ? 'Receipt recorded.' : 'Payment recorded.'))
             ->with('receipt_payment_id', $payment->id);
     }
 }

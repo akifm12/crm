@@ -198,7 +198,7 @@
                 <td class="py-2 text-right font-mono">{{ number_format($payment->amount, 2) }}</td>
                 <td class="py-2 text-right">
                     <a href="{{ route('tenant.accounting.payments.receipt', [$tenant->slug, $payment->id]) }}" target="_blank"
-                       class="text-xs text-blue-600 hover:underline whitespace-nowrap">Print receipt</a>
+                       class="text-xs text-blue-600 hover:underline whitespace-nowrap">{{ $invoice->invoice_type === 'sale' ? 'Print receipt' : 'Print voucher' }}</a>
                 </td>
             </tr>
             @empty

@@ -203,10 +203,10 @@
     {{-- Payments --}}
     @if($invoice->status === 'posted')
     <div class="bg-white rounded-xl border border-gray-200 p-5 mb-5">
-        <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-4">Payments Received</h2>
+        <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-4">Receipts</h2>
 
         @if($invoice->payments->isEmpty())
-            <p class="text-sm text-gray-400">No payments recorded yet.</p>
+            <p class="text-sm text-gray-400">No receipts recorded yet.</p>
         @else
             <table class="w-full text-sm mb-4">
                 <thead>
@@ -232,7 +232,7 @@
 
         @if(!$invoice->isFullyPaid())
         <div class="border-t border-gray-100 pt-4">
-            <h3 class="text-sm font-medium text-gray-700 mb-3">Record Payment</h3>
+            <h3 class="text-sm font-medium text-gray-700 mb-3">Record Receipt</h3>
             <form method="POST" action="{{ route($rp . 'payments.store', [$slug, $invoice->id]) }}"
                   class="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 @csrf

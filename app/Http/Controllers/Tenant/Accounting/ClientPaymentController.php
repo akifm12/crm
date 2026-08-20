@@ -57,7 +57,7 @@ class ClientPaymentController extends Controller
         }
 
         return redirect()->route('tenant.accounting.reports.client-statement', [$tenant->slug, 'client_id' => $client->id])
-            ->with('success', 'Payment recorded.')
+            ->with('success', ($payment->direction === 'in') ? 'Receipt recorded.' : 'Payment recorded.')
             ->with('receipt_payment_id', $payment->id);
     }
 
