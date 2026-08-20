@@ -89,14 +89,14 @@
                 <label class="block text-xs font-medium text-gray-600 mb-1">Premium (USD / oz)</label>
                 <input type="number" step="0.01" min="0" x-model.number="premiumUsdPerOz"
                        class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg">
-                <p class="text-xs text-gray-400 mt-0.5" x-show="premiumAed > 0">≈ AED <span x-text="premiumAed.toFixed(2)"></span></p>
+                <p class="text-xs text-gray-400 mt-0.5" x-show="premiumAed > 0">≈ AED <span x-text="fmt(premiumAed)"></span></p>
                 <input type="hidden" name="premium_amount" :value="premiumAed.toFixed(2)">
             </div>
             <div>
                 <label class="block text-xs font-medium text-gray-600 mb-1">Discount (USD / oz)</label>
                 <input type="number" step="0.01" min="0" x-model.number="discountUsdPerOz"
                        class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg">
-                <p class="text-xs text-gray-400 mt-0.5" x-show="discountAed > 0">≈ AED <span x-text="discountAed.toFixed(2)"></span></p>
+                <p class="text-xs text-gray-400 mt-0.5" x-show="discountAed > 0">≈ AED <span x-text="fmt(discountAed)"></span></p>
                 <input type="hidden" name="discount_amount" :value="discountAed.toFixed(2)">
             </div>
         </div>
@@ -116,7 +116,7 @@
                 <div class="flex items-center justify-between mb-2">
                     <span class="text-xs font-semibold text-gray-400">Line <span x-text="i + 1"></span></span>
                     <div class="flex items-center gap-3">
-                        <span class="text-xs text-gray-500">Total: <span class="font-mono font-semibold text-gray-800" x-text="lineTotal(line).toFixed(2)"></span></span>
+                        <span class="text-xs text-gray-500">Total: <span class="font-mono font-semibold text-gray-800" x-text="fmt(lineTotal(line))"></span></span>
                         <button type="button" @click="removeLine(i)" x-show="lines.length > 1" class="text-red-400 hover:text-red-600 text-xs">Remove</button>
                     </div>
                 </div>
@@ -272,11 +272,11 @@
 
         <div class="flex justify-end mt-4 pt-4 border-t border-gray-100">
             <div class="w-56 text-sm space-y-1">
-                <div class="flex justify-between"><span class="text-gray-500">Subtotal</span><span class="font-mono" x-text="subtotal.toFixed(2)"></span></div>
-                <div class="flex justify-between"><span class="text-gray-500">VAT</span><span class="font-mono" x-text="vatTotal.toFixed(2)"></span></div>
-                <div class="flex justify-between text-green-700" x-show="premiumAed > 0"><span>Premium</span><span class="font-mono" x-text="'+' + premiumAed.toFixed(2)"></span></div>
-                <div class="flex justify-between text-red-600" x-show="discountAed > 0"><span>Discount</span><span class="font-mono" x-text="'-' + discountAed.toFixed(2)"></span></div>
-                <div class="flex justify-between font-semibold text-gray-800"><span>Total</span><span class="font-mono" x-text="total.toFixed(2)"></span></div>
+                <div class="flex justify-between"><span class="text-gray-500">Subtotal</span><span class="font-mono" x-text="fmt(subtotal)"></span></div>
+                <div class="flex justify-between"><span class="text-gray-500">VAT</span><span class="font-mono" x-text="fmt(vatTotal)"></span></div>
+                <div class="flex justify-between text-green-700" x-show="premiumAed > 0"><span>Premium</span><span class="font-mono" x-text="'+' + fmt(premiumAed)"></span></div>
+                <div class="flex justify-between text-red-600" x-show="discountAed > 0"><span>Discount</span><span class="font-mono" x-text="'-' + fmt(discountAed)"></span></div>
+                <div class="flex justify-between font-semibold text-gray-800"><span>Total</span><span class="font-mono" x-text="fmt(total)"></span></div>
             </div>
         </div>
     </div>
@@ -472,6 +472,7 @@ function invoiceForm() {
             }, 0);
         },
         get total() { return this.subtotal + this.vatTotal + this.premiumAed - this.discountAed; },
+        fmt(n) { return Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); },
     };
 }
 </script>
