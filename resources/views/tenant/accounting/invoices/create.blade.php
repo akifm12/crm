@@ -171,7 +171,7 @@
                         </div>
                         <div>
                             <label class="block text-xs text-gray-400 mb-0.5">Purity <span class="text-red-400">*</span></label>
-                            <input type="number" step="0.001" min="0" max="999.999" :name="'lines['+i+'][purity]'" x-model.number="line.purity" @input="syncFromGross(line)"
+                            <input type="number" step="0.001" min="0" max="1000" :name="'lines['+i+'][purity]'" x-model.number="line.purity" @input="syncFromGross(line)"
                                    class="w-full px-2 py-1.5 text-sm border border-gray-200 rounded-lg text-right">
                         </div>
                         <div>
