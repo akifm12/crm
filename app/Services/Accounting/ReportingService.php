@@ -294,7 +294,7 @@ class ReportingService
 
             $description = match (true) {
                 $entry->source_type === 'invoice' => ($invoice->invoice_number ?? $entry->reference).' ('.ucfirst($invoice->invoice_type ?? '').')',
-                $entry->source_type === 'invoice_payment' && $invoice => 'Payment — '.$invoice->invoice_number,
+                $entry->source_type === 'invoice_payment' && $invoice => ($invoice->invoice_type === 'sale' ? 'Receipt' : 'Payment').' — '.$invoice->invoice_number,
                 $entry->source_type === 'invoice_payment' => 'Deposit / margin payment',
                 default => $entry->reference ?? ucfirst(str_replace('_', ' ', $entry->source_type)),
             };
