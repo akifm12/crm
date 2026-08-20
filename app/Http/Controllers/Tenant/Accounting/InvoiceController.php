@@ -100,7 +100,7 @@ class InvoiceController extends Controller
         }
 
         $request->validate([
-            'lines.*.purity' => 'nullable|numeric|min:0|max:999.999',
+            'lines.*.purity' => 'nullable|numeric|min:0|max:1000',
             'lines.*.quantity_grams' => 'nullable|numeric|min:0',
             'lines.*.gross_weight_grams' => 'nullable|numeric|min:0',
             'lines.*.pcs' => 'nullable|integer|min:0',
