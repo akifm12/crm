@@ -4,6 +4,7 @@
 
 namespace App\Services\Accounting;
 
+use App\Models\Bill;
 use App\Models\BullionClient;
 use App\Models\ChartOfAccount;
 use App\Models\Invoice;
@@ -12,6 +13,7 @@ use App\Models\InvoicePayment;
 use App\Models\InventoryBalance;
 use App\Models\JournalEntry;
 use App\Models\JournalEntryLine;
+use App\Models\StandardInvoice;
 use App\Models\Tenant;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -506,6 +508,75 @@ class ReportingService
                 'balance' => round($individualsBalance, 2),
                 'sales_revenue' => round($individualsSales, 2),
             ],
+        ];
+    }
+
+    public function arAging(Tenant $tenant): array
+    {
+        $today = Carbon::today();
+
+        $rows = StandardInvoice::where('tenant_id', $tenant->id)
+            ->where('status', 'posted')
+            ->whereRaw('ROUND(total - amount_paid, 2) > 0')
+            ->orderBy('due_date')
+            ->get()
+            ->map(function ($inv) use ($today) {
+                $balance    = round((float) $inv->total - (float) $inv->amount_paid, 2);
+                $daysOver   = $inv->due_date ? (int) $inv->due_date->diffInDays($today, false) : null;
+                return [
+                    'invoice'    => $inv,
+                    'balance'    => $balance,
+                    'days_over'  => $daysOver,
+                    'bucket'     => $this->agingBucket($daysOver),
+                ];
+            });
+
+        return $this->agingTotals($rows);
+    }
+
+    public function apAging(Tenant $tenant): array
+    {
+        $today = Carbon::today();
+
+        $rows = Bill::where('tenant_id', $tenant->id)
+            ->where('status', 'posted')
+            ->whereRaw('ROUND(total - amount_paid, 2) > 0')
+            ->orderBy('due_date')
+            ->get()
+            ->map(function ($bill) use ($today) {
+                $balance  = round((float) $bill->total - (float) $bill->amount_paid, 2);
+                $daysOver = $bill->due_date ? (int) $bill->due_date->diffInDays($today, false) : null;
+                return [
+                    'bill'      => $bill,
+                    'balance'   => $balance,
+                    'days_over' => $daysOver,
+                    'bucket'    => $this->agingBucket($daysOver),
+                ];
+            });
+
+        return $this->agingTotals($rows);
+    }
+
+    private function agingBucket(?int $daysOver): string
+    {
+        if ($daysOver === null || $daysOver <= 0) return 'current';
+        if ($daysOver <= 30)  return '1_30';
+        if ($daysOver <= 60)  return '31_60';
+        if ($daysOver <= 90)  return '61_90';
+        return '90_plus';
+    }
+
+    private function agingTotals(Collection $rows): array
+    {
+        $keys = ['current', '1_30', '31_60', '61_90', '90_plus'];
+        $totals = array_fill_keys($keys, 0.0);
+        foreach ($rows as $row) {
+            $totals[$row['bucket']] = round($totals[$row['bucket']] + $row['balance'], 2);
+        }
+        return [
+            'rows'       => $rows,
+            'totals'     => $totals,
+            'grandTotal' => round($rows->sum('balance'), 2),
         ];
     }
 }

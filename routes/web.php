@@ -439,6 +439,12 @@ Route::prefix('{slug}')
                 Route::get('/reports/vat-summary/pdf',      [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'vatSummaryPdf'])->name('reports.vat-summary.pdf');
                 Route::get('/reports/vat-summary/csv',      [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'vatSummaryCsv'])->name('reports.vat-summary.csv');
                 Route::get('/reports/vat-return',           [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'vatReturn'])->name('reports.vat-return');
+                Route::get('/reports/ar-aging',             [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'arAging'])->name('reports.ar-aging');
+                Route::get('/reports/ar-aging/pdf',         [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'arAgingPdf'])->name('reports.ar-aging.pdf');
+                Route::get('/reports/ar-aging/csv',         [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'arAgingCsv'])->name('reports.ar-aging.csv');
+                Route::get('/reports/ap-aging',             [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'apAging'])->name('reports.ap-aging');
+                Route::get('/reports/ap-aging/pdf',         [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'apAgingPdf'])->name('reports.ap-aging.pdf');
+                Route::get('/reports/ap-aging/csv',         [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'apAgingCsv'])->name('reports.ap-aging.csv');
             });
         });
     });

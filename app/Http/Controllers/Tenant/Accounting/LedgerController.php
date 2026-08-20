@@ -417,6 +417,76 @@ class LedgerController extends Controller
         );
     }
 
+    public function arAging(Request $request, ReportingService $reporting)
+    {
+        $tenant = app('tenant');
+        $data   = $reporting->arAging($tenant);
+        return view('tenant.accounting.reports.ar_aging', array_merge(compact('tenant'), $data));
+    }
+
+    public function arAgingPdf(Request $request, ReportingService $reporting)
+    {
+        $tenant = app('tenant');
+        $data   = $reporting->arAging($tenant);
+        $pdf    = Pdf::loadView('tenant.accounting.reports.pdf.ar_aging', array_merge(compact('tenant'), $data));
+        return $pdf->stream('ar-aging-'.now()->toDateString().'.pdf');
+    }
+
+    public function arAgingCsv(Request $request, ReportingService $reporting)
+    {
+        $tenant = app('tenant');
+        $data   = $reporting->arAging($tenant);
+        $rows   = $data['rows']->map(fn ($r) => [
+            $r['invoice']->invoice_number,
+            $r['invoice']->client_name,
+            $r['invoice']->invoice_date->format('d M Y'),
+            $r['invoice']->due_date?->format('d M Y') ?? '—',
+            number_format($r['invoice']->total, 2),
+            number_format($r['invoice']->amount_paid, 2),
+            number_format($r['balance'], 2),
+            $r['days_over'] !== null && $r['days_over'] > 0 ? $r['days_over'] . ' days' : 'Current',
+        ])->all();
+        $rows[] = ['', '', '', 'Grand Total', '', '', number_format($data['grandTotal'], 2), ''];
+        return CsvExport::download('ar-aging-'.now()->toDateString().'.csv',
+            ['Invoice #', 'Client', 'Invoice Date', 'Due Date', 'Total', 'Paid', 'Balance', 'Status'],
+            $rows);
+    }
+
+    public function apAging(Request $request, ReportingService $reporting)
+    {
+        $tenant = app('tenant');
+        $data   = $reporting->apAging($tenant);
+        return view('tenant.accounting.reports.ap_aging', array_merge(compact('tenant'), $data));
+    }
+
+    public function apAgingPdf(Request $request, ReportingService $reporting)
+    {
+        $tenant = app('tenant');
+        $data   = $reporting->apAging($tenant);
+        $pdf    = Pdf::loadView('tenant.accounting.reports.pdf.ap_aging', array_merge(compact('tenant'), $data));
+        return $pdf->stream('ap-aging-'.now()->toDateString().'.pdf');
+    }
+
+    public function apAgingCsv(Request $request, ReportingService $reporting)
+    {
+        $tenant = app('tenant');
+        $data   = $reporting->apAging($tenant);
+        $rows   = $data['rows']->map(fn ($r) => [
+            $r['bill']->bill_number,
+            $r['bill']->supplier_name,
+            $r['bill']->bill_date->format('d M Y'),
+            $r['bill']->due_date?->format('d M Y') ?? '—',
+            number_format($r['bill']->total, 2),
+            number_format($r['bill']->amount_paid, 2),
+            number_format($r['balance'], 2),
+            $r['days_over'] !== null && $r['days_over'] > 0 ? $r['days_over'] . ' days' : 'Current',
+        ])->all();
+        $rows[] = ['', '', '', 'Grand Total', '', '', number_format($data['grandTotal'], 2), ''];
+        return CsvExport::download('ap-aging-'.now()->toDateString().'.csv',
+            ['Bill #', 'Supplier', 'Bill Date', 'Due Date', 'Total', 'Paid', 'Balance', 'Status'],
+            $rows);
+    }
+
     public function clientBalances(Request $request, ReportingService $reporting)
     {
         $tenant = app('tenant');
