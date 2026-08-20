@@ -162,28 +162,28 @@
                 </div>
 
                 <div x-show="['metal_in','metal_out'].includes(line.line_type)">
-                    {{-- Row 1: Qty fields — Pcs first as that's what the user enters --}}
+                    {{-- Row 1: Gross weight + purity are the primary inputs; pure weight auto-calculates --}}
                     <div class="grid grid-cols-4 gap-2 mb-2">
                         <div>
-                            <label class="block text-xs text-gray-400 mb-0.5">Pcs</label>
-                            <input type="number" step="1" min="0" :name="'lines['+i+'][pcs]'" x-model.number="line.pcs" @input="syncFromPcs(line)"
-                                   class="w-full px-2 py-1.5 text-sm border border-gray-200 rounded-lg text-right">
-                            <p class="text-xs text-gray-400 mt-0.5" x-show="line.nominal_weight_grams" x-text="line.nominal_weight_grams + 'g each'"></p>
-                        </div>
-                        <div>
-                            <label class="block text-xs text-gray-400 mb-0.5">Gross (g)</label>
+                            <label class="block text-xs text-gray-400 mb-0.5">Gross (g) <span class="text-red-400">*</span></label>
                             <input type="number" step="0.001" min="0" :name="'lines['+i+'][gross_weight_grams]'" x-model.number="line.gross_weight_grams" @input="syncFromGross(line)"
                                    class="w-full px-2 py-1.5 text-sm border border-gray-200 rounded-lg text-right">
                         </div>
                         <div>
-                            <label class="block text-xs text-gray-400 mb-0.5">Pure (g)</label>
-                            <input type="number" step="0.001" min="0" :name="'lines['+i+'][quantity_grams]'" x-model.number="line.quantity_grams"
+                            <label class="block text-xs text-gray-400 mb-0.5">Purity <span class="text-red-400">*</span></label>
+                            <input type="number" step="0.001" min="0" max="999.999" :name="'lines['+i+'][purity]'" x-model.number="line.purity" @input="syncFromGross(line)"
                                    class="w-full px-2 py-1.5 text-sm border border-gray-200 rounded-lg text-right">
                         </div>
                         <div>
-                            <label class="block text-xs text-gray-400 mb-0.5">Purity</label>
-                            <input type="number" step="0.001" min="0" max="999.999" :name="'lines['+i+'][purity]'" x-model.number="line.purity" @input="syncFromGross(line)"
+                            <label class="block text-xs text-gray-400 mb-0.5">Pure (g) <span class="text-gray-300 text-xs font-normal">auto</span></label>
+                            <input type="number" step="0.001" min="0" :name="'lines['+i+'][quantity_grams]'" x-model.number="line.quantity_grams" readonly
+                                   class="w-full px-2 py-1.5 text-sm border border-gray-200 rounded-lg text-right bg-gray-50 text-gray-600">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-0.5">Pcs <span class="text-gray-400 text-xs font-normal">(optional)</span></label>
+                            <input type="number" step="1" min="0" :name="'lines['+i+'][pcs]'" x-model.number="line.pcs" @input="syncFromPcs(line)"
                                    class="w-full px-2 py-1.5 text-sm border border-gray-200 rounded-lg text-right">
+                            <p class="text-xs text-gray-400 mt-0.5" x-show="line.nominal_weight_grams" x-text="line.nominal_weight_grams + 'g each'"></p>
                         </div>
                     </div>
                     {{-- Row 2: Inline metal rate — appears as soon as an item with a metal type is picked --}}
