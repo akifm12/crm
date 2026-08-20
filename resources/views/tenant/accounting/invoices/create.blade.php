@@ -147,7 +147,7 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-4 gap-2 mb-2" x-show="line.line_type === 'metal_in' && !line.inventory_item_id">
+                <div class="grid grid-cols-4 gap-2 mb-2" x-show="['metal_in','metal_out'].includes(line.line_type) && !line.inventory_item_id">
                     <div>
                         <label class="block text-xs text-gray-400 mb-0.5">Metal type <span class="text-red-400">*</span></label>
                         <select x-model="line.metal_type" @change="ensureMetalRate(line.metal_type)" class="w-full px-2 py-1.5 text-sm border border-gray-200 rounded-lg bg-white">
@@ -158,7 +158,7 @@
                             <option value="palladium">Palladium</option>
                         </select>
                     </div>
-                    <p class="col-span-3 text-xs text-amber-600 self-end pb-2">No matching inventory item — select the metal type so this purchase is posted to the correct account.</p>
+                    <p class="col-span-3 text-xs text-amber-600 self-end pb-2">No matching inventory item — select the metal type so the correct account and rate are used.</p>
                 </div>
 
                 <div x-show="['metal_in','metal_out'].includes(line.line_type)">
