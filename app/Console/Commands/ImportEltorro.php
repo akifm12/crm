@@ -417,19 +417,9 @@ class ImportEltorro extends Command
 
         $srcIdToNewId = [];
 
-        // First pass: insert (skip duplicates by code)
+        // First pass: insert (skip duplicates by code using insertOrIgnore)
         foreach ($srcAccounts as $acct) {
-            $existing = DB::table('chart_of_accounts')
-                ->where('tenant_id', $tenantId)
-                ->where('code', $acct['code'])
-                ->value('id');
-
-            if ($existing) {
-                $srcIdToNewId[$acct['id']] = $existing;
-                continue; // already exists — don't overwrite
-            }
-
-            $newId = DB::table('chart_of_accounts')->insertGetId([
+            DB::table('chart_of_accounts')->insertOrIgnore([
                 'tenant_id'      => $tenantId,
                 'parent_id'      => null,
                 'code'           => $acct['code'],
@@ -443,7 +433,12 @@ class ImportEltorro extends Command
                 'created_at'     => $now,
                 'updated_at'     => $now,
             ]);
-            $srcIdToNewId[$acct['id']] = $newId;
+
+            // Always re-fetch the id (whether just inserted or already existing)
+            $srcIdToNewId[$acct['id']] = DB::table('chart_of_accounts')
+                ->where('tenant_id', $tenantId)
+                ->where('code', $acct['code'])
+                ->value('id');
         }
 
         // Second pass: wire up parent_ids for newly inserted rows
@@ -456,8 +451,7 @@ class ImportEltorro extends Command
             }
         }
 
-        $inserted = count(array_filter(array_keys($srcIdToNewId)));
-        $this->info('  ✓ ' . count($srcAccounts) . ' accounts processed (' . $inserted . ' new, ' . (count($srcAccounts) - $inserted) . ' skipped — already existed)');
+        $this->info('  ✓ ' . count($srcAccounts) . ' accounts processed (existing codes were skipped)');
 
         return $srcIdToNewId;
     }
