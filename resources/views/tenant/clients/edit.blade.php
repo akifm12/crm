@@ -150,22 +150,44 @@ $typeLabels  = ['corporate_local'=>'Corporate — Local','corporate_import'=>'Co
     {{-- ── SHAREHOLDERS & UBOs ───────────────────────────────────────────── --}}
     <div x-show="tab==='shareholders'" x-cloak
          x-data="{
-            shareholders: {{ json_encode($client->shareholders->map(fn($s) => ['shareholder_type'=>$s->shareholder_type,'name'=>$s->name,'nationality'=>$s->nationality,'dob'=>$s->dob?->format('Y-m-d'),'ownership_percentage'=>$s->ownership_percentage,'passport_number'=>$s->passport_number,'passport_expiry'=>$s->passport_expiry?->format('Y-m-d'),'is_ubo'=>(bool)$s->is_ubo,'is_resident'=>(bool)$s->is_resident,'eid_number'=>$s->eid_number,'eid_expiry'=>$s->eid_expiry?->format('Y-m-d')])->toArray()) }},
-            ubos: {{ json_encode($client->ubos->map(fn($u) => ['full_name'=>$u->full_name,'nationality'=>$u->nationality,'dob'=>$u->dob?->format('Y-m-d'),'passport_number'=>$u->passport_number,'ownership_percentage'=>$u->ownership_percentage,'country_of_residence'=>$u->country_of_residence,'pep_status'=>(bool)$u->pep_status])->toArray()) }}
+            shUidSeq: {{ $client->shareholders->count() }},
+            shareholders: {{ json_encode($client->shareholders->values()->map(fn($s, $i) => ['_uid'=>'sh'.$i,'shareholder_type'=>$s->shareholder_type,'name'=>$s->name,'nationality'=>$s->nationality,'dob'=>$s->dob?->format('Y-m-d'),'ownership_percentage'=>$s->ownership_percentage,'passport_number'=>$s->passport_number,'passport_expiry'=>$s->passport_expiry?->format('Y-m-d'),'is_ubo'=>(bool)$s->is_ubo,'is_resident'=>(bool)$s->is_resident,'eid_number'=>$s->eid_number,'eid_expiry'=>$s->eid_expiry?->format('Y-m-d')])->toArray()) }},
+            ubos: {{ json_encode($client->ubos->map(fn($u) => ['full_name'=>$u->full_name,'nationality'=>$u->nationality,'dob'=>$u->dob?->format('Y-m-d'),'passport_number'=>$u->passport_number,'ownership_percentage'=>$u->ownership_percentage,'country_of_residence'=>$u->country_of_residence,'pep_status'=>(bool)$u->pep_status])->toArray()) }},
+            syncUboFromSh(i) {
+                const sh = this.shareholders[i];
+                if (!sh._uid) sh._uid = 'sh'+(++this.shUidSeq);
+                if (sh.is_ubo) {
+                    const uboData = {
+                        full_name: sh.name, nationality: sh.nationality, dob: sh.dob || '',
+                        passport_number: sh.passport_number, ownership_percentage: sh.ownership_percentage,
+                        country_of_residence: '', pep_status: false, _linkedSh: sh._uid,
+                    };
+                    const idx = this.ubos.findIndex(u => u._linkedSh === sh._uid);
+                    if (idx === -1) {
+                        const blankIdx = this.ubos.findIndex(u => !u.full_name && !u._linkedSh);
+                        if (blankIdx !== -1) this.ubos.splice(blankIdx, 1, uboData);
+                        else this.ubos.push(uboData);
+                    } else {
+                        Object.assign(this.ubos[idx], uboData);
+                    }
+                } else {
+                    this.ubos = this.ubos.filter(u => u._linkedSh !== sh._uid);
+                }
+            }
          }">
         <div class="space-y-5">
             {{-- Shareholders --}}
             <div class="bg-white rounded-xl border border-gray-200 p-5">
                 <div class="flex items-center justify-between mb-4 pb-2 border-b border-gray-100">
                     <h3 class="text-sm font-semibold text-gray-700">Shareholders</h3>
-                    <button type="button" @click="shareholders.push({shareholder_type:'individual',name:'',nationality:'',dob:'',ownership_percentage:'',passport_number:'',passport_expiry:'',is_ubo:false,is_resident:false,eid_number:'',eid_expiry:''})"
+                    <button type="button" @click="shareholders.push({_uid:'sh'+(++shUidSeq),shareholder_type:'individual',name:'',nationality:'',dob:'',ownership_percentage:'',passport_number:'',passport_expiry:'',is_ubo:false,is_resident:false,eid_number:'',eid_expiry:''})"
                             class="px-3 py-1.5 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700">+ Add shareholder</button>
                 </div>
                 <template x-for="(sh, i) in shareholders" :key="i">
                     <div class="border border-gray-200 rounded-xl p-4 mb-3">
                         <div class="flex items-center justify-between mb-3">
                             <p class="text-sm font-medium text-gray-700" x-text="'Shareholder ' + (i+1)"></p>
-                            <button type="button" @click="shareholders.splice(i,1)" class="text-xs text-red-500 hover:text-red-700">Remove</button>
+                            <button type="button" @click="const uid=sh._uid; shareholders.splice(i,1); if(uid) ubos = ubos.filter(u => u._linkedSh !== uid)" class="text-xs text-red-500 hover:text-red-700">Remove</button>
                         </div>
                         <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
                             <div><label class="block text-xs font-medium text-gray-600 mb-1">Type</label>
@@ -198,7 +220,7 @@ $typeLabels  = ['corporate_local'=>'Corporate — Local','corporate_import'=>'Co
                                 <input type="date" :name="'shareholders['+i+'][passport_expiry]'" x-model="sh.passport_expiry"
                                        class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
                             <div class="flex items-center gap-2 mt-4">
-                                <input type="checkbox" :name="'shareholders['+i+'][is_ubo]'" value="1" x-model="sh.is_ubo"
+                                <input type="checkbox" :name="'shareholders['+i+'][is_ubo]'" value="1" x-model="sh.is_ubo" @change="syncUboFromSh(i)"
                                        class="rounded border-gray-300 text-blue-600">
                                 <label class="text-xs text-gray-600">Is UBO</label>
                             </div>

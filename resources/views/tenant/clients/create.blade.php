@@ -361,7 +361,7 @@
                     <div><label class="block text-xs font-medium text-gray-600 mb-1" x-text="sh.type === 'corporate' ? 'Trade Licence Expiry' : 'Passport expiry'">Passport expiry</label>
                         <input type="date" :name="'shareholders['+i+'][passport_expiry]'" x-model="sh.passport_expiry" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
                     <div class="flex items-center gap-2 pt-4">
-                        <input type="checkbox" :name="'shareholders['+i+'][is_ubo]'" value="1" x-model="sh.is_ubo" :id="'sh_ubo_'+i" class="rounded border-gray-300 text-blue-600">
+                        <input type="checkbox" :name="'shareholders['+i+'][is_ubo]'" value="1" x-model="sh.is_ubo" @change="syncUboFromSh(i)" :id="'sh_ubo_'+i" class="rounded border-gray-300 text-blue-600">
                         <label :for="'sh_ubo_'+i" class="text-xs text-gray-600">Also a UBO (25%+)</label>
                     </div>
                 </div>
@@ -1047,7 +1047,8 @@ function clientForm() {
         },
 
         signatories:  [{ full_name:'', position:'', nationality:'', dob:'', passport_number:'', passport_expiry:'', eid_number:'' }],
-        shareholders: [{ shareholder_type:'individual', name:'', nationality:'', dob:'', ownership_percentage:'', passport_number:'', passport_expiry:'', is_ubo:false, is_resident:false, eid_number:'', eid_expiry:'' }],
+        shUidSeq: 0,
+        shareholders: [{ _uid:'sh0', shareholder_type:'individual', name:'', nationality:'', dob:'', ownership_percentage:'', passport_number:'', passport_expiry:'', is_ubo:false, is_resident:false, eid_number:'', eid_expiry:'' }],
         ubos:         [{ full_name:'', nationality:'', dob:'', passport_number:'', ownership_percentage:'', country_of_residence:'', pep_status:false }],
         setType(t) {
             this.clientType=t; this.step=1; this.indStep=1;
@@ -1067,10 +1068,41 @@ function clientForm() {
         },
         addSig()    { this.signatories.push({full_name:'',position:'',nationality:'',dob:'',passport_number:'',passport_expiry:'',eid_number:''}); },
         removeSig(i){ this.signatories.splice(i,1); },
-        addSh()     { this.shareholders.push({shareholder_type:'individual',name:'',nationality:'',dob:'',ownership_percentage:'',passport_number:'',passport_expiry:'',is_ubo:false,is_resident:false,eid_number:'',eid_expiry:''}); },
-        removeSh(i) { this.shareholders.splice(i,1); },
+        addSh()     { this.shareholders.push({_uid:'sh'+(++this.shUidSeq),shareholder_type:'individual',name:'',nationality:'',dob:'',ownership_percentage:'',passport_number:'',passport_expiry:'',is_ubo:false,is_resident:false,eid_number:'',eid_expiry:''}); },
+        removeSh(i) {
+            const uid = this.shareholders[i]._uid;
+            this.shareholders.splice(i,1);
+            if (uid) this.ubos = this.ubos.filter(u => u._linkedSh !== uid);
+        },
         addUbo()    { this.ubos.push({full_name:'',nationality:'',dob:'',passport_number:'',ownership_percentage:'',country_of_residence:'',pep_status:false}); },
         removeUbo(i){ this.ubos.splice(i,1); },
+        // Auto-copy a shareholder into the UBO list when "Also a UBO" is checked, and
+        // remove the copy again if unchecked — keyed by a stable uid so re-indexing
+        // (adding/removing other rows) can't desync the link.
+        syncUboFromSh(i) {
+            const sh = this.shareholders[i];
+            if (!sh._uid) sh._uid = 'sh'+(++this.shUidSeq);
+
+            if (sh.is_ubo) {
+                const uboData = {
+                    full_name: sh.name, nationality: sh.nationality, dob: sh.dob || '',
+                    passport_number: sh.passport_number, ownership_percentage: sh.ownership_percentage,
+                    country_of_residence: '', pep_status: false, _linkedSh: sh._uid,
+                };
+                const idx = this.ubos.findIndex(u => u._linkedSh === sh._uid);
+                if (idx === -1) {
+                    // Replace a still-blank placeholder row rather than stacking an extra one.
+                    const blankIdx = this.ubos.findIndex(u => !u.full_name && !u._linkedSh);
+                    if (blankIdx !== -1) this.ubos.splice(blankIdx, 1, uboData);
+                    else this.ubos.push(uboData);
+                } else {
+                    Object.assign(this.ubos[idx], uboData);
+                }
+            } else {
+                this.ubos = this.ubos.filter(u => u._linkedSh !== sh._uid);
+                if (this.ubos.length === 0) this.addUbo();
+            }
+        },
         validateAndSubmit() {
             const isInd    = this.clientType === 'individual';
             const total    = isInd ? 6 : 9;
