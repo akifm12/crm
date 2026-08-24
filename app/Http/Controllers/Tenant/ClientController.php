@@ -787,6 +787,11 @@ PROMPT;
     {
         $tenant = app('tenant');
         abort_if($document->tenant_id !== $tenant->id, 404);
+
+        if (! Storage::disk('local')->exists($document->file_path)) {
+            abort(404, 'File not found.');
+        }
+
         return Storage::disk('local')->download($document->file_path, $document->file_name);
     }
 
