@@ -14,9 +14,10 @@ class ImportClientDocuments extends Command
     protected $signature = 'clients:import-documents
         {tenant : Tenant slug}
         {path : Absolute path to the folder containing per-client subfolders}
+        {--folder= : Name of the single client subfolder to import (skips the interactive picker)}
         {--dry-run : Preview matches and files without writing anything}';
 
-    protected $description = 'Bulk-import trade licence / MOA / passport / EID / ejari / visa files from client-named folders into the matching client profile';
+    protected $description = 'Import trade licence / MOA / passport / EID / ejari / visa files for one client folder at a time into the matching client profile';
 
     // Junk files/dirs Google Drive / macOS / Windows leave behind — always skipped.
     private const IGNORE_NAMES = ['.ds_store', 'thumbs.db', 'desktop.ini', '.gitkeep'];
@@ -60,121 +61,146 @@ class ImportClientDocuments extends Command
             return self::FAILURE;
         }
 
-        $this->info(($dryRun ? '[DRY RUN] ' : '') . "Importing into tenant: {$tenant->name} ({$clients->count()} clients on file)");
+        $this->info("Tenant: {$tenant->name} ({$clients->count()} clients on file)");
         $this->line("Source: {$root}\n");
 
         $folders = collect(scandir($root))
             ->reject(fn ($f) => in_array($f, ['.', '..']))
             ->filter(fn ($f) => is_dir($root . DIRECTORY_SEPARATOR . $f))
+            ->sort()
             ->values();
 
-        $matched = 0; $unmatched = 0; $imported = 0; $overwritten = 0; $skippedFiles = 0;
-        $unmatchedList = [];
+        if ($folders->isEmpty()) {
+            $this->error('No subfolders found under that path.');
+            return self::FAILURE;
+        }
 
-        foreach ($folders as $folderName) {
-            $client = $this->matchClient($folderName, $clients);
+        // ── Pick exactly one client folder ──────────────────────────────────
+        $folderName = $this->option('folder');
+        if ($folderName) {
+            if (! $folders->contains($folderName)) {
+                $this->error("Folder not found under source path: \"{$folderName}\"");
+                return self::FAILURE;
+            }
+        } else {
+            $folderName = $this->choice(
+                'Which client folder do you want to import?',
+                $folders->all(),
+            );
+        }
 
-            if (! $client) {
-                $unmatched++;
-                $unmatchedList[] = $folderName;
-                $this->warn("✗ No match: \"{$folderName}\"");
+        $client = $this->matchClient($folderName, $clients);
+        if (! $client) {
+            $this->error("No client record matches \"{$folderName}\" in this tenant.");
+            $this->line('Check the spelling, or create the client first, then re-run.');
+            return self::FAILURE;
+        }
+
+        $label = $client->company_name ?: $client->full_name;
+        $this->info("✓ \"{$folderName}\" → {$label} (client #{$client->id})");
+        $this->newLine();
+
+        // ── Build the list of files this run would touch ───────────────────
+        $folderPath = $root . DIRECTORY_SEPARATOR . $folderName;
+        $finder = Finder::create()->files()->in($folderPath)->ignoreDotFiles(true)->ignoreVCS(true);
+
+        $plan = [];
+        $skippedFiles = 0;
+
+        foreach ($finder as $file) {
+            $filename = $file->getFilename();
+
+            if (in_array(strtolower($filename), self::IGNORE_NAMES)) {
                 continue;
             }
 
-            $matched++;
-            $label = $client->company_name ?: $client->full_name;
-            $this->info("✓ \"{$folderName}\" → {$label} (client #{$client->id})");
+            $rule = $this->classify($filename);
+            if (! $rule) {
+                $skippedFiles++;
+                continue;
+            }
 
-            $folderPath = $root . DIRECTORY_SEPARATOR . $folderName;
-            $finder = Finder::create()->files()->in($folderPath)->ignoreDotFiles(true)->ignoreVCS(true);
+            $ext = strtolower($file->getExtension());
+            if (! in_array($ext, ['pdf', 'jpg', 'jpeg', 'png', 'docx', 'xlsx'])) {
+                $skippedFiles++;
+                continue;
+            }
 
-            foreach ($finder as $file) {
-                $filename = $file->getFilename();
+            // Dedupe: singular types overwrite by (client, type); multi types by (client, type, filename).
+            $existingQuery = ClientDocument::where('bullion_client_id', $client->id)
+                ->where('document_type', $rule['type']);
+            if (! $rule['singular']) {
+                $existingQuery->where('file_name', $filename);
+            }
 
-                if (in_array(strtolower($filename), self::IGNORE_NAMES)) {
-                    continue;
-                }
+            $plan[] = ['file' => $file, 'rule' => $rule, 'existing' => $existingQuery->first(), 'filename' => $filename];
+        }
 
-                $rule = $this->classify($filename);
-                if (! $rule) {
-                    $skippedFiles++;
-                    continue;
-                }
+        if (empty($plan)) {
+            $this->warn('No matching document files (trade licence / ejari / MOA / passport / EID / visa) found in this folder.');
+            $this->line("Files skipped (not a target type): {$skippedFiles}");
+            return self::SUCCESS;
+        }
 
-                $ext = strtolower($file->getExtension());
-                if (! in_array($ext, ['pdf', 'jpg', 'jpeg', 'png', 'docx', 'xlsx'])) {
-                    $skippedFiles++;
-                    continue;
-                }
+        $this->line('Files to import:');
+        foreach ($plan as $p) {
+            $this->line("    [{$p['rule']['label']}] {$p['filename']}" . ($p['existing'] ? ' (will overwrite existing)' : ' (new)'));
+        }
+        $this->line("Other files in folder skipped (not a target type): {$skippedFiles}");
+        $this->newLine();
 
-                // Dedupe: singular types overwrite by (client, type); multi types by (client, type, filename).
-                $existingQuery = ClientDocument::where('bullion_client_id', $client->id)
-                    ->where('document_type', $rule['type']);
-                if (! $rule['singular']) {
-                    $existingQuery->where('file_name', $filename);
-                }
-                $existing = $existingQuery->first();
+        if ($dryRun) {
+            $this->comment('Dry run only — nothing was written.');
+            return self::SUCCESS;
+        }
 
-                $this->line("    [{$rule['label']}] {$filename}" . ($existing ? ' (overwriting existing)' : ''));
+        if (! $this->confirm("Import these " . count($plan) . " file(s) for {$label}?", true)) {
+            $this->comment('Cancelled — nothing was written.');
+            return self::SUCCESS;
+        }
 
-                if ($dryRun) {
-                    $existing ? $overwritten++ : $imported++;
-                    continue;
-                }
+        $imported = 0; $overwritten = 0;
 
-                $mime = mime_content_type($file->getRealPath()) ?: 'application/octet-stream';
-                $storedPath = Storage::disk('local')->putFile(
-                    "tenants/{$tenant->id}/clients/{$client->id}",
-                    $file->getRealPath()
-                );
+        foreach ($plan as $p) {
+            $file = $p['file'];
+            $rule = $p['rule'];
+            $existing = $p['existing'];
+            $filename = $p['filename'];
 
-                if ($existing) {
-                    Storage::disk('local')->delete($existing->file_path);
-                    $existing->update([
-                        'document_label' => $rule['label'],
-                        'file_path'      => $storedPath,
-                        'file_name'      => $filename,
-                        'mime_type'      => $mime,
-                        'file_size'      => $file->getSize(),
-                    ]);
-                    $overwritten++;
-                } else {
-                    ClientDocument::create([
-                        'bullion_client_id' => $client->id,
-                        'tenant_id'         => $tenant->id,
-                        'document_type'     => $rule['type'],
-                        'document_label'    => $rule['label'],
-                        'file_path'         => $storedPath,
-                        'file_name'         => $filename,
-                        'mime_type'         => $mime,
-                        'file_size'         => $file->getSize(),
-                        'is_required'       => false,
-                    ]);
-                    $imported++;
-                }
+            $mime = mime_content_type($file->getRealPath()) ?: 'application/octet-stream';
+            $storedPath = Storage::disk('local')->putFile(
+                "tenants/{$tenant->id}/clients/{$client->id}",
+                $file->getRealPath()
+            );
+
+            if ($existing) {
+                Storage::disk('local')->delete($existing->file_path);
+                $existing->update([
+                    'document_label' => $rule['label'],
+                    'file_path'      => $storedPath,
+                    'file_name'      => $filename,
+                    'mime_type'      => $mime,
+                    'file_size'      => $file->getSize(),
+                ]);
+                $overwritten++;
+            } else {
+                ClientDocument::create([
+                    'bullion_client_id' => $client->id,
+                    'tenant_id'         => $tenant->id,
+                    'document_type'     => $rule['type'],
+                    'document_label'    => $rule['label'],
+                    'file_path'         => $storedPath,
+                    'file_name'         => $filename,
+                    'mime_type'         => $mime,
+                    'file_size'         => $file->getSize(),
+                    'is_required'       => false,
+                ]);
+                $imported++;
             }
         }
 
         $this->newLine();
-        $this->info('── Summary ──────────────────────────');
-        $this->line("Folders matched:    {$matched}");
-        $this->line("Folders unmatched:  {$unmatched}");
-        $this->line(($dryRun ? 'Would import:  ' : 'Imported:      ') . $imported . ' new');
-        $this->line(($dryRun ? 'Would overwrite: ' : 'Overwritten:   ') . $overwritten . ' existing');
-        $this->line("Files skipped (not a target type): {$skippedFiles}");
-
-        if ($unmatched > 0) {
-            $this->newLine();
-            $this->warn('Unmatched folders (no client record found — review manually):');
-            foreach ($unmatchedList as $u) {
-                $this->line("  - {$u}");
-            }
-        }
-
-        if ($dryRun) {
-            $this->newLine();
-            $this->comment('Dry run only — nothing was written. Re-run without --dry-run to commit.');
-        }
+        $this->info("Done — {$imported} new, {$overwritten} overwritten for {$label}.");
 
         return self::SUCCESS;
     }
