@@ -47,11 +47,10 @@ class ExpiryController extends Controller
                 ->get(),
 
             'eid' => ClientShareholder::whereIn('bullion_client_id', $activeIds)
-                ->where('is_resident', true)
-                ->where(fn($q) => $q->whereNull('eid_expiry')
-                    ->orWhere('eid_expiry', '<=', now()->addDays($window)))
+                ->whereNotNull('eid_expiry')
+                ->where('eid_expiry', '<=', now()->addDays($window))
                 ->with('client')
-                ->orderByRaw('CASE WHEN eid_expiry IS NULL THEN 1 WHEN eid_expiry < NOW() THEN 0 ELSE 2 END')
+                ->orderByRaw('CASE WHEN eid_expiry < NOW() THEN 0 ELSE 1 END')
                 ->orderBy('eid_expiry')
                 ->get(),
 
@@ -80,8 +79,8 @@ class ExpiryController extends Controller
                 ->where(fn($q) => $q->whereNull('trade_license_expiry')->orWhere('trade_license_expiry', '<=', now()->addDays($window)))->count(),
             'ejari'    => BullionClient::where('tenant_id', $tid)->whereIn('status', ['active','pending'])->where('client_type','!=','individual')
                 ->where(fn($q) => $q->whereNull('ejari_expiry')->orWhere('ejari_expiry', '<=', now()->addDays($window)))->count(),
-            'eid'      => ClientShareholder::whereIn('bullion_client_id', $activeIds)->where('is_resident',true)
-                ->where(fn($q) => $q->whereNull('eid_expiry')->orWhere('eid_expiry', '<=', now()->addDays($window)))->count(),
+            'eid'      => ClientShareholder::whereIn('bullion_client_id', $activeIds)->whereNotNull('eid_expiry')
+                ->where('eid_expiry', '<=', now()->addDays($window))->count(),
             'passport' => ClientShareholder::whereIn('bullion_client_id', $activeIds)->whereNotNull('passport_expiry')
                 ->where('passport_expiry', '<=', now()->addDays($window))->count(),
             'docs'     => ClientDocument::where('tenant_id', $tid)->whereNotNull('expiry_date')

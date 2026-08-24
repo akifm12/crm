@@ -55,11 +55,13 @@ class DashboardController extends Controller
         $docsExpiring = ClientDocument::where('tenant_id', $tid)->whereBetween('expiry_date', [now(), now()->addDays(30)])->count();
 
         // ── Shareholder EID alerts ─────────────────────────────────────────────
+        // Keyed off eid_expiry being on file, not the is_resident flag — EID is an
+        // optional alternative to passport and can be entered without that box checked.
         $eidExpired  = ClientShareholder::whereIn('bullion_client_id', $clientIds)
-            ->where('is_resident', true)->whereNotNull('eid_expiry')
+            ->whereNotNull('eid_expiry')
             ->where('eid_expiry', '<', now())->count();
         $eidExpiring = ClientShareholder::whereIn('bullion_client_id', $clientIds)
-            ->where('is_resident', true)->whereNotNull('eid_expiry')
+            ->whereNotNull('eid_expiry')
             ->whereBetween('eid_expiry', [now(), now()->addDays(30)])->count();
 
         // ── Shareholder passport alerts ────────────────────────────────────────
@@ -114,7 +116,7 @@ class DashboardController extends Controller
             ->take(10)->get();
 
         $eid_alerts = ClientShareholder::whereIn('bullion_client_id', $clientIds)
-            ->where('is_resident', true)->whereNotNull('eid_expiry')
+            ->whereNotNull('eid_expiry')
             ->where('eid_expiry', '<=', now()->addDays(60))
             ->with('client')->orderBy('eid_expiry')->take(8)->get();
 
