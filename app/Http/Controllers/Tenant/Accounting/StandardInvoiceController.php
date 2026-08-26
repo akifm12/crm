@@ -45,9 +45,14 @@ class StandardInvoiceController extends Controller
         $moduleType = $this->moduleType();
         $request->validate($this->lineRules());
 
+        if ($request->filled('bullion_client_id')) {
+            $client = BullionClient::findOrFail($request->bullion_client_id);
+            abort_if($client->tenant_id !== $tenant->id, 404);
+        }
+
         try {
             $invoice = $svc->createDraft($tenant, $moduleType, $request->only(
-                'client_name', 'client_vat_number', 'reference', 'invoice_date', 'due_date', 'notes', 'lines'
+                'client_name', 'bullion_client_id', 'client_vat_number', 'reference', 'invoice_date', 'due_date', 'notes', 'lines'
             ));
         } catch (\RuntimeException $e) {
             return back()->with('error', $e->getMessage())->withInput();
@@ -86,9 +91,14 @@ class StandardInvoiceController extends Controller
         abort_if($invoice->tenant_id !== $tenant->id, 404);
         $request->validate($this->lineRules());
 
+        if ($request->filled('bullion_client_id')) {
+            $client = BullionClient::findOrFail($request->bullion_client_id);
+            abort_if($client->tenant_id !== $tenant->id, 404);
+        }
+
         try {
             $svc->updateDraft($invoice, $request->only(
-                'client_name', 'client_vat_number', 'reference', 'invoice_date', 'due_date', 'notes', 'lines'
+                'client_name', 'bullion_client_id', 'client_vat_number', 'reference', 'invoice_date', 'due_date', 'notes', 'lines'
             ));
         } catch (\RuntimeException $e) {
             return back()->with('error', $e->getMessage())->withInput();
@@ -210,6 +220,7 @@ class StandardInvoiceController extends Controller
     {
         return [
             'client_name'           => 'required|string|max:255',
+            'bullion_client_id'     => 'nullable|exists:bullion_clients,id',
             'client_vat_number'     => 'nullable|string|max:50',
             'reference'             => 'nullable|string|max:255',
             'invoice_date'          => 'required|date',

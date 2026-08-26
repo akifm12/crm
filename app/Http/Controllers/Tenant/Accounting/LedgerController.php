@@ -293,6 +293,7 @@ class LedgerController extends Controller
     public function clientStatement(Request $request, ReportingService $reporting)
     {
         $tenant = app('tenant');
+        $isBullion = $tenant->hasModule('bullion_accounting');
 
         $clients = BullionClient::where('tenant_id', $tenant->id)->orderBy('company_name')->orderBy('full_name')->get();
 
@@ -308,35 +309,56 @@ class LedgerController extends Controller
         if ($request->filled('client_id')) {
             $client = BullionClient::findOrFail($request->input('client_id'));
             abort_if($client->tenant_id !== $tenant->id, 404);
-            $statement = $reporting->clientStatement($tenant, $client, $asOf, $from);
-            $metalStatement = $reporting->clientMetalStatement($tenant, $client, $asOf, $from);
-            $clientInvoices = Invoice::where('tenant_id', $tenant->id)
-                ->where('bullion_client_id', $client->id)
-                ->where('status', '!=', 'void')
-                ->orderByDesc('invoice_date')
-                ->get();
-            $unlinkedDeposits = InvoicePayment::where('tenant_id', $tenant->id)
-                ->where('bullion_client_id', $client->id)
-                ->whereNull('invoice_id')
-                ->orderByDesc('payment_date')
-                ->get();
+
+            if ($isBullion) {
+                $statement = $reporting->clientStatement($tenant, $client, $asOf, $from);
+                $metalStatement = $reporting->clientMetalStatement($tenant, $client, $asOf, $from);
+                $clientInvoices = Invoice::where('tenant_id', $tenant->id)
+                    ->where('bullion_client_id', $client->id)
+                    ->where('status', '!=', 'void')
+                    ->orderByDesc('invoice_date')
+                    ->get();
+                $unlinkedDeposits = InvoicePayment::where('tenant_id', $tenant->id)
+                    ->where('bullion_client_id', $client->id)
+                    ->whereNull('invoice_id')
+                    ->orderByDesc('payment_date')
+                    ->get();
+            } else {
+                $statement = $reporting->standardClientStatement($tenant, $client, $asOf, $from);
+                $clientInvoices = \App\Models\StandardInvoice::where('tenant_id', $tenant->id)
+                    ->where('bullion_client_id', $client->id)
+                    ->where('status', '!=', 'void')
+                    ->orderByDesc('invoice_date')
+                    ->get();
+            }
         }
 
-        return view('tenant.accounting.reports.client_statement', compact('tenant', 'clients', 'client', 'statement', 'metalStatement', 'asOf', 'from', 'clientInvoices', 'unlinkedDeposits'));
+        $view = $isBullion ? 'tenant.accounting.reports.client_statement' : 'tenant.accounting.reports.standard_client_statement';
+
+        return view($view, compact('tenant', 'clients', 'client', 'statement', 'metalStatement', 'asOf', 'from', 'clientInvoices', 'unlinkedDeposits'));
     }
 
     public function clientStatementPdf(Request $request, ReportingService $reporting)
     {
         $tenant = app('tenant');
+        $isBullion = $tenant->hasModule('bullion_accounting');
         $client = BullionClient::findOrFail($request->input('client_id'));
         abort_if($client->tenant_id !== $tenant->id, 404);
 
         $asOf = $request->filled('as_of') ? Carbon::parse($request->input('as_of')) : Carbon::today();
         $from = $request->filled('from') ? Carbon::parse($request->input('from')) : null;
-        $statement = $reporting->clientStatement($tenant, $client, $asOf, $from);
-        $metalStatement = $reporting->clientMetalStatement($tenant, $client, $asOf, $from);
 
-        $pdf = Pdf::loadView('tenant.accounting.reports.pdf.client_statement', compact('tenant', 'client', 'statement', 'metalStatement', 'asOf', 'from'));
+        $metalStatement = null;
+        if ($isBullion) {
+            $statement = $reporting->clientStatement($tenant, $client, $asOf, $from);
+            $metalStatement = $reporting->clientMetalStatement($tenant, $client, $asOf, $from);
+            $view = 'tenant.accounting.reports.pdf.client_statement';
+        } else {
+            $statement = $reporting->standardClientStatement($tenant, $client, $asOf, $from);
+            $view = 'tenant.accounting.reports.pdf.standard_client_statement';
+        }
+
+        $pdf = Pdf::loadView($view, compact('tenant', 'client', 'statement', 'metalStatement', 'asOf', 'from'));
 
         return $pdf->stream('statement-'.str($client->displayName())->slug().'-'.$asOf->toDateString().'.pdf');
     }
@@ -344,13 +366,16 @@ class LedgerController extends Controller
     public function clientStatementCsv(Request $request, ReportingService $reporting)
     {
         $tenant = app('tenant');
+        $isBullion = $tenant->hasModule('bullion_accounting');
         $client = BullionClient::findOrFail($request->input('client_id'));
         abort_if($client->tenant_id !== $tenant->id, 404);
 
         $asOf = $request->filled('as_of') ? Carbon::parse($request->input('as_of')) : Carbon::today();
         $from = $request->filled('from') ? Carbon::parse($request->input('from')) : null;
-        $statement = $reporting->clientStatement($tenant, $client, $asOf, $from);
-        $metalStatement = $reporting->clientMetalStatement($tenant, $client, $asOf, $from);
+        $statement = $isBullion
+            ? $reporting->clientStatement($tenant, $client, $asOf, $from)
+            : $reporting->standardClientStatement($tenant, $client, $asOf, $from);
+        $metalStatement = $isBullion ? $reporting->clientMetalStatement($tenant, $client, $asOf, $from) : null;
 
         // Build preamble: company identity + client details header block
         $preamble = [[$tenant->name]];
@@ -385,7 +410,7 @@ class LedgerController extends Controller
         ])->all();
 
         // Append metal movement section if present
-        if ($metalStatement['rows']->isNotEmpty()) {
+        if ($metalStatement && $metalStatement['rows']->isNotEmpty()) {
             $rows[] = [];
             $rows[] = ['METAL MOVEMENT LEDGER'];
             $rows[] = ['Date', 'Invoice', 'Description', 'Metal', 'Purity', 'In (g)', 'Out (g)', 'Balance (g)'];

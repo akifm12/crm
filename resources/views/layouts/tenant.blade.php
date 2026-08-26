@@ -227,6 +227,8 @@
                    class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.reports.ar-aging*') ? 'active' : '' }}">AR Aging</a>
                 <a href="{{ route('tenant.accounting.reports.ap-aging', $slug) }}"
                    class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.reports.ap-aging*') ? 'active' : '' }}">AP Aging</a>
+                <a href="{{ route('tenant.accounting.reports.client-statement', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.reports.client-statement*') ? 'active' : '' }}">Client Statement</a>
                 <a href="{{ route('tenant.accounting.reports.vat-return', $slug) }}"
                    class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.reports.vat-return') ? 'active' : '' }}">VAT Return</a>
             </div>
@@ -267,6 +269,8 @@
                    class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.reports.ar-aging*') ? 'active' : '' }}">AR Aging</a>
                 <a href="{{ route('tenant.accounting.reports.ap-aging', $slug) }}"
                    class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.reports.ap-aging*') ? 'active' : '' }}">AP Aging</a>
+                <a href="{{ route('tenant.accounting.reports.client-statement', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.reports.client-statement*') ? 'active' : '' }}">Client Statement</a>
                 <a href="{{ route('tenant.accounting.reports.vat-return', $slug) }}"
                    class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.reports.vat-return') ? 'active' : '' }}">VAT Return</a>
             </div>

@@ -37,11 +37,14 @@
             // client picker
             clientName: @json(old('client_name', '')),
             clientVat:  @json(old('client_vat_number', '')),
+            clientId:   @json(old('bullion_client_id', '')),
             pickClient(id) {
-                if (!id) return;
+                if (!id) { this.clientId = ''; return; }
                 const c = clients.find(x => x.id == id);
-                if (c) { this.clientName = c.name; this.clientVat = c.trn; }
+                if (c) { this.clientName = c.name; this.clientVat = c.trn; this.clientId = c.id; }
             },
+            // Any manual edit after a pick invalidates the link — back to free-text mode.
+            clearPickedClient() { this.clientId = ''; },
 
             // line items
             lines: @json($defaultLines),
@@ -90,7 +93,7 @@
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Client Name <span class="text-red-500">*</span></label>
-                    <input type="text" name="client_name" x-model="clientName" required
+                    <input type="text" name="client_name" x-model="clientName" @input="clearPickedClient()" required
                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
                 <div>
@@ -99,6 +102,11 @@
                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
             </div>
+            <input type="hidden" name="bullion_client_id" x-model="clientId">
+            <p class="text-xs mt-2" :class="clientId ? 'text-green-600' : 'text-gray-400'">
+                <span x-show="clientId">✓ Linked to client record — this invoice will appear on their statement.</span>
+                <span x-show="!clientId">Not linked to a client record — pick from the list above to enable statements for this invoice.</span>
+            </p>
         </div>
 
         {{-- Invoice details --}}

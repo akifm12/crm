@@ -353,9 +353,6 @@ Route::prefix('{slug}')
                 Route::post('/invoices/{invoice}/payments', [\App\Http\Controllers\Tenant\Accounting\InvoiceController::class, 'storePayment'])->name('invoices.payments.store');
 
                 // Bullion client-side reports
-                Route::get('/reports/client-statement',     [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'clientStatement'])->name('reports.client-statement');
-                Route::get('/reports/client-statement/pdf', [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'clientStatementPdf'])->name('reports.client-statement.pdf');
-                Route::get('/reports/client-statement/csv', [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'clientStatementCsv'])->name('reports.client-statement.csv');
                 Route::get('/reports/client-balances',      [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'clientBalances'])->name('reports.client-balances');
                 Route::get('/reports/client-balances/pdf',  [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'clientBalancesPdf'])->name('reports.client-balances.pdf');
                 Route::get('/reports/client-balances/csv',  [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'clientBalancesCsv'])->name('reports.client-balances.csv');
@@ -398,6 +395,10 @@ Route::prefix('{slug}')
 
             // Shared features — gated by ANY accounting module ─────────────────
             Route::middleware('any.accounting')->group(function () {
+                Route::get('/reports/client-statement',     [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'clientStatement'])->name('reports.client-statement');
+                Route::get('/reports/client-statement/pdf', [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'clientStatementPdf'])->name('reports.client-statement.pdf');
+                Route::get('/reports/client-statement/csv', [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'clientStatementCsv'])->name('reports.client-statement.csv');
+
                 Route::get('/chart-of-accounts',            [\App\Http\Controllers\Tenant\Accounting\ChartOfAccountController::class, 'index'])->name('coa.index');
                 Route::post('/chart-of-accounts',           [\App\Http\Controllers\Tenant\Accounting\ChartOfAccountController::class, 'store'])->name('coa.store');
                 Route::delete('/chart-of-accounts/{account}', [\App\Http\Controllers\Tenant\Accounting\ChartOfAccountController::class, 'destroy'])->name('coa.destroy');

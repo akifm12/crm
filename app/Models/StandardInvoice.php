@@ -11,7 +11,7 @@ class StandardInvoice extends Model
     const VAT_TREATMENTS = ['standard', 'zero_rated', 'reverse_charge', 'exempt'];
 
     protected $fillable = [
-        'tenant_id', 'module_type', 'invoice_number', 'client_name', 'client_vat_number',
+        'tenant_id', 'module_type', 'invoice_number', 'client_name', 'bullion_client_id', 'client_vat_number',
         'reference', 'invoice_date', 'due_date', 'status',
         'subtotal', 'vat_total', 'total', 'amount_paid',
         'notes', 'journal_entry_id', 'created_by', 'posted_at', 'voided_at',
@@ -25,6 +25,7 @@ class StandardInvoice extends Model
     ];
 
     public function tenant(): BelongsTo   { return $this->belongsTo(Tenant::class); }
+    public function client(): BelongsTo   { return $this->belongsTo(BullionClient::class, 'bullion_client_id'); }
     public function lines(): HasMany      { return $this->hasMany(StandardInvoiceLine::class)->orderBy('line_order'); }
     public function payments(): HasMany   { return $this->hasMany(StandardInvoicePayment::class)->orderBy('payment_date'); }
     public function journalEntry(): BelongsTo { return $this->belongsTo(JournalEntry::class); }

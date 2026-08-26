@@ -26,6 +26,7 @@ class StandardInvoicingService
                 'module_type'        => $moduleType,
                 'invoice_number'     => $this->nextNumber($tenant, $moduleType),
                 'client_name'        => $data['client_name'],
+                'bullion_client_id'  => $data['bullion_client_id'] ?? null,
                 'client_vat_number'  => $data['client_vat_number'] ?? null,
                 'reference'          => $data['reference'] ?? null,
                 'invoice_date'       => $data['invoice_date'],
@@ -58,6 +59,7 @@ class StandardInvoicingService
 
             $invoice->update([
                 'client_name'       => $data['client_name'],
+                'bullion_client_id' => $data['bullion_client_id'] ?? null,
                 'client_vat_number' => $data['client_vat_number'] ?? null,
                 'reference'         => $data['reference'] ?? null,
                 'invoice_date'      => $data['invoice_date'],
@@ -116,11 +118,12 @@ class StandardInvoicingService
             }
 
             $entry = $this->ledger->post($tenant, [
-                'entry_date'  => $invoice->invoice_date->toDateString(),
-                'reference'   => $invoice->invoice_number,
-                'source_type' => 'standard_invoice',
-                'source_id'   => $invoice->id,
-                'created_by'  => auth()->id(),
+                'entry_date'         => $invoice->invoice_date->toDateString(),
+                'reference'          => $invoice->invoice_number,
+                'source_type'        => 'standard_invoice',
+                'source_id'          => $invoice->id,
+                'bullion_client_id'  => $invoice->bullion_client_id,
+                'created_by'         => auth()->id(),
             ], $lines);
 
             $invoice->update([
@@ -145,11 +148,12 @@ class StandardInvoicingService
             $cash = $this->requireAccount($tenant, $data['account'] ?? 'bank');
 
             $entry = $this->ledger->post($tenant, [
-                'entry_date'  => $data['payment_date'],
-                'reference'   => $invoice->invoice_number,
-                'source_type' => 'standard_invoice_payment',
-                'source_id'   => $invoice->id,
-                'created_by'  => auth()->id(),
+                'entry_date'         => $data['payment_date'],
+                'reference'          => $invoice->invoice_number,
+                'source_type'        => 'standard_invoice_payment',
+                'source_id'          => $invoice->id,
+                'bullion_client_id'  => $invoice->bullion_client_id,
+                'created_by'         => auth()->id(),
             ], [
                 ['chart_of_account_id' => $cash->id, 'debit' => $amount, 'credit' => 0,      'description' => 'Receipt — ' . $invoice->client_name],
                 ['chart_of_account_id' => $ar->id,   'debit' => 0,       'credit' => $amount, 'description' => 'Receipt — ' . $invoice->client_name],

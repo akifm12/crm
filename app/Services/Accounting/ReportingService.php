@@ -312,6 +312,88 @@ class ReportingService
     }
 
     /**
+     * Statement of accounts for a client under the standard (real estate / general) invoicing
+     * flow — the AR-only counterpart to clientStatement() above, which is bullion-specific.
+     * Only invoices/payments explicitly linked to this client (bullion_client_id) are included;
+     * standard invoices are otherwise free-text and have no client relationship to draw from.
+     */
+    public function standardClientStatement(Tenant $tenant, BullionClient $client, ?Carbon $asOf = null, ?Carbon $from = null): array
+    {
+        $arAccount = ChartOfAccount::where('tenant_id', $tenant->id)->where('subtype', 'ar')->first();
+        if (! $arAccount) {
+            return ['rows' => collect(), 'balance' => 0.0, 'opening_balance' => 0.0];
+        }
+
+        $invoiceIds = StandardInvoice::where('tenant_id', $tenant->id)
+            ->where('bullion_client_id', $client->id)
+            ->pluck('id');
+
+        if ($invoiceIds->isEmpty()) {
+            return ['rows' => collect(), 'balance' => 0.0, 'opening_balance' => 0.0];
+        }
+
+        $invoicesById = StandardInvoice::whereIn('id', $invoiceIds)->get()->keyBy('id');
+
+        $buildQuery = fn () => JournalEntry::where('tenant_id', $tenant->id)
+            ->where('bullion_client_id', $client->id)
+            ->whereIn('source_type', ['standard_invoice', 'standard_invoice_payment'])
+            ->with(['lines' => fn ($q) => $q->where('chart_of_account_id', $arAccount->id)]);
+
+        $netOf = fn (JournalEntry $entry): float => round(
+            (float) $entry->lines->sum('base_debit') - (float) $entry->lines->sum('base_credit'),
+            2
+        );
+
+        $openingBalance = 0.0;
+        if ($from) {
+            $buildQuery()
+                ->where('entry_date', '<', $from->toDateString())
+                ->orderBy('entry_date')->orderBy('id')
+                ->get()
+                ->each(function ($entry) use ($netOf, &$openingBalance) {
+                    $openingBalance = round($openingBalance + $netOf($entry), 2);
+                });
+        }
+
+        $entries = $buildQuery()
+            ->when($asOf, fn ($q) => $q->where('entry_date', '<=', $asOf->toDateString()))
+            ->when($from,  fn ($q) => $q->where('entry_date', '>=', $from->toDateString()))
+            ->orderBy('entry_date')
+            ->orderBy('id')
+            ->get();
+
+        $rows = collect();
+        $running = $openingBalance;
+
+        foreach ($entries as $entry) {
+            $net = $netOf($entry);
+
+            if (abs($net) < 0.001) {
+                continue;
+            }
+
+            $running = round($running + $net, 2);
+            $invoice = $invoicesById->get($entry->source_id);
+
+            $description = match (true) {
+                $entry->source_type === 'standard_invoice' => $invoice->invoice_number ?? $entry->reference,
+                $entry->source_type === 'standard_invoice_payment' => 'Receipt — ' . ($invoice->invoice_number ?? $entry->reference),
+                default => $entry->reference ?? ucfirst(str_replace('_', ' ', $entry->source_type)),
+            };
+
+            $rows->push([
+                'date' => $entry->entry_date,
+                'description' => $description,
+                'invoice' => $invoice,
+                'amount' => $net,
+                'balance' => $running,
+            ]);
+        }
+
+        return ['rows' => $rows, 'balance' => $running, 'opening_balance' => $openingBalance];
+    }
+
+    /**
      * Metal movement ledger for a single client: one row per invoice line that moved metal,
      * showing grams in / grams out and a running gram balance per metal type.
      *

@@ -437,6 +437,12 @@ $countryName = fn($code) => $code ? (\App\Models\Country::find($code)?->country_
                     </p>
                     @endif
                 </div>
+                @if($tenant->hasModule('bullion_accounting') || $tenant->hasModule('general_accounting') || $tenant->hasModule('real_estate_accounting'))
+                <a href="{{ route('tenant.accounting.reports.client-statement', $tenant->slug) }}?client_id={{ $client->id }}"
+                   class="px-4 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 whitespace-nowrap">
+                    View statement
+                </a>
+                @endif
                 @if($tenant->hasModule('bullion_accounting'))
                 <a href="{{ route('tenant.accounting.invoices.create', $tenant->slug) }}?client_id={{ $client->id }}"
                    class="px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 whitespace-nowrap">
