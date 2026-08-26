@@ -2,7 +2,7 @@
 
 @php
 $isCorporate = $client->client_type !== 'individual';
-$typeLabels  = ['corporate_local'=>'Corporate — Local','corporate_import'=>'Corporate — Import','corporate_export'=>'Corporate — Export','individual'=>'Individual'];
+$typeLabels  = $sector['client_types'] ?? ['corporate_local'=>'Corporate — Local','corporate_import'=>'Corporate — Import','corporate_export'=>'Corporate — Export','individual'=>'Individual'];
 @endphp
 
 @section('title', 'Edit ' . $client->displayName())
