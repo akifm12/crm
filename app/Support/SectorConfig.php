@@ -43,6 +43,12 @@ class SectorConfig
                 'corporate_export' => 'Corporate — Export',
                 'individual'       => 'Individual',
             ],
+            'transaction_types' => [
+                'buy'      => 'Buy',
+                'sell'     => 'Sell',
+                'exchange' => 'Exchange',
+                'other'    => 'Other',
+            ],
             'show_supply_chain'   => true,
             'show_cahra'          => true,
             'show_expected_volume'=> true,
@@ -98,6 +104,13 @@ class SectorConfig
             'client_types' => [
                 'corporate' => 'Corporate',
                 'individual' => 'Individual',
+            ],
+            'transaction_types' => [
+                'sale'       => 'Sale',
+                'purchase'   => 'Purchase',
+                'commission' => 'Commission',
+                'rent'       => 'Rent',
+                'other'      => 'Other',
             ],
             'show_ejari'          => false,
             'show_supply_chain'   => false,
@@ -168,6 +181,12 @@ class SectorConfig
                 'corporate_foreign'=> 'Corporate — Foreign',
                 'individual'       => 'Individual',
             ],
+            'transaction_types' => [
+                'service_fee' => 'Service fee',
+                'payment'     => 'Payment',
+                'receipt'     => 'Receipt',
+                'other'       => 'Other',
+            ],
             'show_ejari'          => false,
             'show_supply_chain'   => false,
             'show_cahra'          => false,
@@ -228,6 +247,12 @@ class SectorConfig
             'client_types' => [
                 'corporate' => 'Corporate',
                 'individual' => 'Individual',
+            ],
+            'transaction_types' => [
+                'professional_fee' => 'Professional fee',
+                'payment'          => 'Payment',
+                'receipt'          => 'Receipt',
+                'other'            => 'Other',
             ],
             'show_ejari'          => false,
             'show_supply_chain'   => false,
@@ -290,6 +315,11 @@ class SectorConfig
             'client_types' => [
                 'corporate' => 'Corporate',
                 'individual' => 'Individual',
+            ],
+            'transaction_types' => [
+                'payment' => 'Payment',
+                'receipt' => 'Receipt',
+                'other'   => 'Other',
             ],
             'show_ejari'          => false,
             'show_supply_chain'   => false,

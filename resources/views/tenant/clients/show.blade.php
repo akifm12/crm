@@ -474,10 +474,9 @@ $countryName = fn($code) => $code ? (\App\Models\Country::find($code)?->country_
                         <select name="transaction_type"
                                 class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
                             <option value="">— Select —</option>
-                            <option value="buy">Buy</option>
-                            <option value="sell">Sell</option>
-                            <option value="exchange">Exchange</option>
-                            <option value="other">Other</option>
+                            @foreach($sector['transaction_types'] ?? ['buy'=>'Buy','sell'=>'Sell','exchange'=>'Exchange','other'=>'Other'] as $ttKey => $ttLabel)
+                            <option value="{{ $ttKey }}">{{ $ttLabel }}</option>
+                            @endforeach
                         </select>
                     </div>
                     <div>
