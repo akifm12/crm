@@ -2,7 +2,7 @@
 
 @php
     $isRE  = $moduleType === 'real_estate';
-    $label = $isRE ? 'Rent Invoice' : 'Invoice';
+    $label = 'Invoice';
     $rp    = $isRE ? 'tenant.accounting.re.invoices.' : 'tenant.accounting.general.invoices.';
 @endphp
 

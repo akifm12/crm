@@ -2,7 +2,7 @@
 
 @php
     $isRE        = $moduleType === 'real_estate';
-    $label       = $isRE ? 'Rent Invoices' : 'Invoices';
+    $label       = 'Invoices';
     $prefix      = $isRE ? 'RENT' : 'INV';
     $rp          = $isRE ? 'tenant.accounting.re.invoices.' : 'tenant.accounting.general.invoices.';
     $createRoute = route($rp . 'create', $slug);

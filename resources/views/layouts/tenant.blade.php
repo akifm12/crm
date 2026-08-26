@@ -250,7 +250,7 @@
                 <a href="{{ route('tenant.accounting.re.dashboard', $slug) }}"
                    class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.re.dashboard') ? 'active' : '' }}">Dashboard</a>
                 <a href="{{ route('tenant.accounting.re.invoices.index', $slug) }}"
-                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.re.invoices*') ? 'active' : '' }}">Rent Invoices</a>
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.re.invoices*') ? 'active' : '' }}">Invoices</a>
                 <a href="{{ route('tenant.accounting.bills.index', $slug) }}"
                    class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.bills*') ? 'active' : '' }}">Bills / Expenses</a>
                 <a href="{{ route('tenant.accounting.suppliers.index', $slug) }}"
