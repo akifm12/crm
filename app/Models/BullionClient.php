@@ -13,7 +13,7 @@ class BullionClient extends Model
 {
     use SoftDeletes;
     protected $fillable = [
-        'tenant_id', 'client_type', 'company_name', 'trade_license_no',
+        'tenant_id', 'client_type', 'company_name', 'invoice_code', 'trade_license_no',
         'trade_license_issue', 'trade_license_expiry', 'trn_number', 'ejari_number', 'ejari_expiry',
         'legal_form', 'country_of_incorporation', 'business_activity', 'nature_of_business',
         'registered_address', 'operating_address', 'phone', 'email', 'website',

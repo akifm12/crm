@@ -260,6 +260,7 @@
             @include('tenant.clients._field', ['name'=>'trade_license_issue','label'=>'Licence issue date','type'=>'date'])
             @include('tenant.clients._field', ['name'=>'trade_license_expiry','label'=>'Licence expiry date','required'=>true,'type'=>'date'])
             @include('tenant.clients._field', ['name'=>'trn_number','label'=>'TRN number'])
+            @include('tenant.clients._field', ['name'=>'invoice_code','label'=>'Invoice code (optional — e.g. "GGS")'])
         </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             @include('tenant.clients._select', ['name'=>'legal_form','label'=>'Legal form','options'=>['LLC'=>'LLC','Sole Establishment'=>'Sole Establishment','Free Zone LLC'=>'Free Zone LLC','Free Zone Establishment'=>'Free Zone Establishment','Public Joint Stock'=>'Public Joint Stock','Branch'=>'Branch of Foreign Company','Other'=>'Other']])

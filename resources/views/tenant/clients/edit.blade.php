@@ -61,6 +61,7 @@ $typeLabels  = $sector['client_types'] ?? ['corporate_local'=>'Corporate — Loc
                 @include('tenant.clients._field', ['name'=>'trade_license_issue','label'=>'Licence issue date','type'=>'date','value'=>$client->trade_license_issue?->format('Y-m-d')])
                 @include('tenant.clients._field', ['name'=>'trade_license_expiry','label'=>'Licence expiry date','type'=>'date','value'=>$client->trade_license_expiry?->format('Y-m-d')])
                 @include('tenant.clients._field', ['name'=>'trn_number','label'=>'TRN number','value'=>$client->trn_number])
+                @include('tenant.clients._field', ['name'=>'invoice_code','label'=>'Invoice code (optional — e.g. "GGS")','value'=>$client->invoice_code])
                 @include('tenant.clients._field', ['name'=>'ejari_number','label'=>'Ejari number','value'=>$client->ejari_number])
                 @include('tenant.clients._field', ['name'=>'ejari_expiry','label'=>'Ejari expiry date','type'=>'date','value'=>$client->ejari_expiry?->format('Y-m-d')])
                 @include('tenant.clients._select', ['name'=>'legal_form','label'=>'Legal form','value'=>$client->legal_form,'options'=>['LLC'=>'LLC','FZE'=>'FZE','FZCO'=>'FZCO','Sole Establishment'=>'Sole Establishment','Civil Company'=>'Civil Company','Branch'=>'Branch (Foreign)','Other'=>'Other']])

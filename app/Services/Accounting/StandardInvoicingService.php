@@ -2,6 +2,7 @@
 
 namespace App\Services\Accounting;
 
+use App\Models\BullionClient;
 use App\Models\ChartOfAccount;
 use App\Models\StandardInvoice;
 use App\Models\StandardInvoiceLine;
@@ -24,7 +25,7 @@ class StandardInvoicingService
             $invoice = StandardInvoice::create([
                 'tenant_id'          => $tenant->id,
                 'module_type'        => $moduleType,
-                'invoice_number'     => $this->nextNumber($tenant, $moduleType),
+                'invoice_number'     => $this->nextNumber($tenant, $moduleType, $data['bullion_client_id'] ?? null),
                 'client_name'        => $data['client_name'],
                 'bullion_client_id'  => $data['bullion_client_id'] ?? null,
                 'client_vat_number'  => $data['client_vat_number'] ?? null,
@@ -221,13 +222,36 @@ class StandardInvoicingService
           ->values()->all();
     }
 
-    private function nextNumber(Tenant $tenant, string $moduleType): string
+    // When the invoice is linked to a client with an "Invoice code" set, numbering runs
+    // INV-{CODE}-{seq} with the sequence counted per client (e.g. INV-GGS-001, INV-GGS-002).
+    // Otherwise falls back to the generic tenant-wide INV-0001 scheme — invoices are never
+    // rent-specific, regardless of module.
+    private function nextNumber(Tenant $tenant, string $moduleType, ?int $bullionClientId = null): string
     {
-        $prefix = $moduleType === 'real_estate' ? 'RENT' : 'INV';
+        $client = $bullionClientId ? BullionClient::find($bullionClientId) : null;
+        $code   = $client ? strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $client->invoice_code ?? '')) : '';
 
+        if ($code !== '') {
+            $prefix = 'INV-' . $code;
+
+            $last = StandardInvoice::where('tenant_id', $tenant->id)
+                ->where('bullion_client_id', $bullionClientId)
+                ->where('invoice_number', 'like', $prefix . '-%')
+                ->orderByRaw('CAST(SUBSTRING(invoice_number, ' . (strlen($prefix) + 2) . ') AS UNSIGNED) DESC')
+                ->value('invoice_number');
+
+            $next = $last ? ((int) substr($last, strlen($prefix) + 1)) + 1 : 1;
+
+            return $prefix . '-' . str_pad($next, 3, '0', STR_PAD_LEFT);
+        }
+
+        $prefix = 'INV';
+
+        // Strict numeric-only match (INV-0001) so a per-client number (INV-GGS-001) never
+        // gets picked up here — they use a different sequence entirely (see above).
         $last = StandardInvoice::where('tenant_id', $tenant->id)
             ->where('module_type', $moduleType)
-            ->where('invoice_number', 'like', $prefix . '-%')
+            ->whereRaw("invoice_number REGEXP '^INV-[0-9]+$'")
             ->orderByRaw('CAST(SUBSTRING(invoice_number, ' . (strlen($prefix) + 2) . ') AS UNSIGNED) DESC')
             ->value('invoice_number');
 
