@@ -278,11 +278,11 @@ class SentinelService
     {
         $hits = $data['results'] ?? [];
 
-        // Only exact/close name matches (score ≥ 80 — see calcScore()) count as a genuine
-        // hit that flags the client. Weaker "fuzzy" matches (partial / common-word overlap,
-        // e.g. a single shared first name) are still surfaced in the results list for
-        // audit visibility, but don't by themselves misclassify a client as a sanctions match.
-        $strongHits = array_values(array_filter($hits, fn ($h) => ($h['matchScore'] ?? 0) >= 80));
+        // Only near-exact name matches (score >= 90 — see calcScore()) count as a genuine
+        // hit that flags the client. Weaker matches (partial / common-word overlap, e.g. a
+        // single shared first name) are still surfaced in the results list for audit
+        // visibility, but don't by themselves misclassify a client as a sanctions match.
+        $strongHits = array_values(array_filter($hits, fn ($h) => ($h['matchScore'] ?? 0) > 90));
         $status     = count($strongHits) > 0 ? 'match' : 'clear';
 
         return [
