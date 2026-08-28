@@ -359,7 +359,6 @@ class ScreeningController extends Controller
             'reviewed_at'      => now()->toIso8601String(),
         ];
 
-        $allReviewed = $log->isFullyReviewed();
         // Temporarily set reviews to check with new entry
         $log->reviews = $reviews;
         $fullyDone    = $log->isFullyReviewed();
@@ -369,11 +368,48 @@ class ScreeningController extends Controller
             'reviewed_at' => $fullyDone ? now() : null,
         ]);
 
+        if ($fullyDone && $log->bullion_client_id) {
+            $this->syncClientScreeningStatus($log->bullion_client_id);
+        }
+
         return response()->json([
             'success'      => true,
             'fully_done'   => $fullyDone,
             'reviewed'     => count($reviews),
             'total'        => count($log->hitsNeedingReview()),
         ]);
+    }
+
+    // ── Recompute a client's overall screening_status from all its screening
+    //    logs, so an MLRO clearing a false positive is reflected on the client's
+    //    profile badge, the clients list, and the compliance dashboard — not just
+    //    on the individual screening log report, which already used eddStatus().
+    private function syncClientScreeningStatus(int $clientId): void
+    {
+        $client = BullionClient::find($clientId);
+        if (! $client || ! $client->screening_reference) {
+            return;
+        }
+
+        // Every subject (company + shareholders) screened in the client's current
+        // screening batch shares one reference. The client stays flagged 'match'
+        // if ANY of them is still an unreviewed match or a confirmed true positive.
+        $siblingLogs = ScreeningLog::where('tenant_id', $client->tenant_id)
+            ->where('bullion_client_id', $clientId)
+            ->where('reference', $client->screening_reference)
+            ->get();
+
+        if ($siblingLogs->isEmpty()) {
+            return;
+        }
+
+        $stillFlagged = $siblingLogs->contains(function (ScreeningLog $log) {
+            if ($log->status !== 'match') {
+                return false;
+            }
+            return $log->eddStatus() !== 'edd_clear';
+        });
+
+        $client->update(['screening_status' => $stillFlagged ? 'match' : 'clear']);
     }
 }

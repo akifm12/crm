@@ -276,13 +276,18 @@ class SentinelService
 
     public static function summarise(array $data): array
     {
-        $hits   = $data['results'] ?? [];
-        $total  = count($hits);
-        $status = $total > 0 ? 'match' : 'clear';
+        $hits = $data['results'] ?? [];
+
+        // Only exact/close name matches (score ≥ 80 — see calcScore()) count as a genuine
+        // hit that flags the client. Weaker "fuzzy" matches (partial / common-word overlap,
+        // e.g. a single shared first name) are still surfaced in the results list for
+        // audit visibility, but don't by themselves misclassify a client as a sanctions match.
+        $strongHits = array_values(array_filter($hits, fn ($h) => ($h['matchScore'] ?? 0) >= 80));
+        $status     = count($strongHits) > 0 ? 'match' : 'clear';
 
         return [
             'status'     => $status,
-            'total_hits' => $total,
+            'total_hits' => count($strongHits),
             'hits'       => array_slice($hits, 0, 10),
             'session_id' => $data['sessionId'] ?? null,
             'raw'        => $data,
