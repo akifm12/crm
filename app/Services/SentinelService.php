@@ -71,10 +71,10 @@ class SentinelService
 
         $multiTokenQuery = count($qt) >= 2;
 
-        // "contains" only scores high when the contained part has 2+ tokens,
-        // preventing single-word sanctions entries from matching a full name query
-        if (str_contains($n, $q)) return 88;
-        if (str_contains($q, $n) && (!$multiTokenQuery || count($nt) >= 2)) return 88;
+        // Deliberately no "one name contains the other" shortcut here — a 2-word
+        // sanctions entry like "Abdul Razzaq" being a contiguous substring of a
+        // 3-word query like "Shahzad Abdul Razzaq" is just a shared surname combo,
+        // not the same person. Full-name coverage is required (below) instead.
 
         $exactHits = array_filter($qt, fn($t) => in_array($t, $nt, true));
         $hitCount  = count($exactHits);
