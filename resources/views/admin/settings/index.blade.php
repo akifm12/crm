@@ -16,6 +16,7 @@
             ['superadmins',  'Super Admins'],
             ['staff',        'Staff Users'],
             ['certificate',  'Certificate'],
+            ['screening',    'Screening'],
         ] as [$key, $label])
         <button @click="tab='{{ $key }}'"
                 :class="tab==='{{ $key }}' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'"
@@ -485,6 +486,41 @@
                 </form>
             </div>
 
+        </div>
+    </div>
+
+    {{-- ── SCREENING ─────────────────────────────────────────────────────── --}}
+    <div x-show="tab==='screening'">
+        <div class="bg-white rounded-xl border border-gray-200 p-5 max-w-lg">
+            <h2 class="text-sm font-semibold text-gray-700 mb-1">Sanctions / PEP screening</h2>
+            <p class="text-xs text-gray-400 mb-4">
+                Controls how strict a name match must be before a screening result is classified as a
+                "Match" across every tenant portal. Weaker matches are still shown in the results list
+                for audit visibility — they just won't flag the client automatically.
+            </p>
+
+            <form method="POST" action="{{ route('settings.screening.update') }}">
+                @csrf
+                <label class="block text-xs font-medium text-gray-600 mb-1">Match threshold (0–100)</label>
+                <div class="flex items-center gap-3">
+                    <input type="range" name="screening_match_threshold_range" min="0" max="100" value="{{ $screeningThreshold }}"
+                           oninput="document.getElementById('screening_threshold_num').value = this.value"
+                           class="flex-1">
+                    <input type="number" id="screening_threshold_num" name="screening_match_threshold" min="0" max="100"
+                           value="{{ $screeningThreshold }}"
+                           oninput="this.previousElementSibling.value = this.value"
+                           class="w-20 border border-gray-300 rounded-lg px-2 py-1.5 text-sm text-center">
+                </div>
+                <p class="text-xs text-gray-400 mt-2">
+                    A hit only flags the client when its name-match score is <strong>above</strong> this
+                    number. Higher = stricter (fewer false hits, but a slightly greater chance of missing
+                    a genuine near-match). 90+ requires the full name (or all name tokens) to line up;
+                    below 80 starts allowing partial / common-word overlaps through.
+                </p>
+                <button type="submit" class="mt-4 px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition">
+                    Save threshold
+                </button>
+            </form>
         </div>
     </div>
 

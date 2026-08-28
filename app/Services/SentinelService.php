@@ -57,10 +57,17 @@ class SentinelService
         $n = $this->normalise($name);
 
         if ($q === $n) return 100;
-        if (str_starts_with($n, $q) || str_starts_with($q, $n)) return 95;
 
         $qt = array_values(array_filter(explode(' ', $q)));
         $nt = array_values(array_filter(explode(' ', $n)));
+
+        // "Starts with" is only a strong signal when the shorter side is itself a real
+        // multi-word name — otherwise a single-word list entry (e.g. "Shahzad") would
+        // falsely score 95 against any longer name that happens to start with it
+        // (e.g. "Shahzad Abdul Razzaq"), which is really just a shared first name.
+        if ((str_starts_with($n, $q) || str_starts_with($q, $n)) && min(count($qt), count($nt)) >= 2) {
+            return 95;
+        }
 
         $multiTokenQuery = count($qt) >= 2;
 
@@ -278,11 +285,13 @@ class SentinelService
     {
         $hits = $data['results'] ?? [];
 
-        // Only near-exact name matches (score >= 90 — see calcScore()) count as a genuine
-        // hit that flags the client. Weaker matches (partial / common-word overlap, e.g. a
-        // single shared first name) are still surfaced in the results list for audit
-        // visibility, but don't by themselves misclassify a client as a sanctions match.
-        $strongHits = array_values(array_filter($hits, fn ($h) => ($h['matchScore'] ?? 0) > 90));
+        // Only near-exact name matches count as a genuine hit that flags the client.
+        // Weaker matches (partial / common-word overlap, e.g. a single shared first name)
+        // are still surfaced in the results list for audit visibility, but don't by
+        // themselves misclassify a client as a sanctions match. Threshold is adjustable
+        // from Admin → Settings → Screening (defaults to 90 if never set).
+        $threshold  = (int) \App\Models\AppSetting::get('screening_match_threshold', 90);
+        $strongHits = array_values(array_filter($hits, fn ($h) => ($h['matchScore'] ?? 0) > $threshold));
         $status     = count($strongHits) > 0 ? 'match' : 'clear';
 
         return [

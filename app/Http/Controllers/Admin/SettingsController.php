@@ -4,6 +4,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\AppSetting;
 use App\Models\SlaTemplate;
 use App\Models\QuotationTemplate;
 use App\Models\User;
@@ -19,7 +20,21 @@ class SettingsController extends Controller
         $qtTemplates  = QuotationTemplate::latest()->get();
         $superAdmins  = User::where('role', 'super_admin')->orderBy('name')->get();
         $staff        = User::where('role', '!=', 'super_admin')->orderBy('name')->get();
-        return view('admin.settings.index', compact('slaTemplates', 'qtTemplates', 'superAdmins', 'staff'));
+        $screeningThreshold = (int) AppSetting::get('screening_match_threshold', 90);
+        return view('admin.settings.index', compact('slaTemplates', 'qtTemplates', 'superAdmins', 'staff', 'screeningThreshold'));
+    }
+
+    // ── Screening ─────────────────────────────────────────────────────────
+
+    public function updateScreeningSettings(Request $request)
+    {
+        $request->validate([
+            'screening_match_threshold' => 'required|integer|min:0|max:100',
+        ]);
+
+        AppSetting::set('screening_match_threshold', $request->screening_match_threshold);
+
+        return back()->with('success', 'Screening match threshold updated.')->with('tab', 'screening');
     }
 
     // ── SLA Templates ──────────────────────────────────────────────────────

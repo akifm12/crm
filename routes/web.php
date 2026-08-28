@@ -151,6 +151,7 @@ Route::middleware(['auth', \App\Http\Middleware\EnsureAdminUser::class])->group(
     Route::delete('/settings/staff/{user}',         [SettingsController::class, 'destroyStaff'])->name('settings.staff.destroy');
     Route::patch('/settings/staff/{user}/toggle',   [SettingsController::class, 'toggleStaff'])->name('settings.staff.toggle');
     Route::post('/settings/certificate/upload',     [SettingsController::class, 'uploadCertificateAsset'])->name('settings.certificate.upload');
+    Route::post('/settings/screening',              [SettingsController::class, 'updateScreeningSettings'])->name('settings.screening.update');
 
     // ── Other admin stubs ─────────────────────────────────────────────────
     Route::get('/marketing', fn() => view('admin.marketing.index'))->name('marketing.index');
