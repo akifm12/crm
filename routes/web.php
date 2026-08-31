@@ -300,6 +300,7 @@ Route::prefix('{slug}')
         Route::get('/settings',                    [TenantSettingsController::class, 'index'])->name('settings');
         Route::get('/clients/{client}/kyc-pdf',        [ReportController::class, 'kycPdf'])->name('clients.kyc.pdf');
         Route::get('/clients/{client}/kyc-docx',       [ReportController::class, 'kycDocx'])->name('clients.kyc.docx');
+        Route::get('/kyc-blank-template',              [ReportController::class, 'kycBlankDocx'])->name('kyc.blank');
         Route::get('/clients/{client}/screening-pdf',  [ReportController::class, 'screeningPdf'])->name('clients.screening.pdf');
         Route::get('/screening/log/{log}/pdf',         [ReportController::class, 'screeningLogPdf'])->name('screening.log.pdf');
         Route::get('/screening/log/{log}/review',      [TenantScreeningController::class, 'showReview'])->name('screening.log.review');

@@ -116,6 +116,23 @@ $currentType = request('type', '');
             </div>
         </div>
 
+        {{-- Blank KYC template (Word) --}}
+        <div x-data="{ open: false }" class="relative">
+            <button @click="open=!open"
+                    class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                Blank KYC (Word)
+            </button>
+            <div x-show="open" x-cloak @click.away="open=false"
+                 class="absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded-xl shadow-lg p-3 z-10">
+                <p class="text-xs text-gray-400 px-1 pb-2">Empty template to send to a client — fillable fields highlighted yellow.</p>
+                <a href="{{ route('tenant.kyc.blank', $tenant->slug) }}?type=corporate"
+                   class="block px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50">Corporate template</a>
+                <a href="{{ route('tenant.kyc.blank', $tenant->slug) }}?type=individual"
+                   class="block px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50">Individual template</a>
+            </div>
+        </div>
+
         <a href="{{ route('tenant.clients.create', $tenant->slug) }}{{ $currentType ? '?type='.$currentType : '' }}"
            class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

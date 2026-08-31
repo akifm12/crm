@@ -16,6 +16,13 @@ if (!dataFile || !outFile) { console.error('Usage: generate-kyc.cjs <data.json> 
 const d   = JSON.parse(fs.readFileSync(dataFile, 'utf8'));
 const val = v => (v !== null && v !== undefined && String(v).trim()) ? String(v).trim() : '—';
 
+// When true, this is a blank/generic KYC template (no real client data) — every
+// data-entry field is replaced with a bracketed, yellow-highlighted placeholder so
+// the recipient knows exactly what to fill in. Internal-only sections (staff risk
+// rating, screening result) are omitted entirely since they don't apply pre-intake.
+const BLANK = !!d.blank;
+const PLACEHOLDER_RE = /^\[.+\]$/;
+
 // ── Units ─────────────────────────────────────────────────────────────────────
 const FULL = 9026;   // A4 text width: 11906 DXA − 2×1440 DXA (1-inch margins)
 const pt   = n => n * 20;
@@ -30,6 +37,13 @@ const allBorders = (b) => ({ top: b, bottom: b, left: b, right: b });
 // ── Typography ────────────────────────────────────────────────────────────────
 const run = (text, opts = {}) =>
     new TextRun({ text: String(text ?? ''), size: hp(10.5), font: 'Calibri', ...opts });
+
+// Same as run(), but auto-highlights bracketed placeholder text yellow — e.g.
+// "[COMPANY NAME]" — used throughout the blank template so fillable fields stand out.
+const valRun = (text, opts = {}) => {
+    const s = String(text ?? '');
+    return PLACEHOLDER_RE.test(s) ? run(s, { ...opts, highlight: 'yellow' }) : run(s, opts);
+};
 
 const para = (children, opts = {}) =>
     new Paragraph({
@@ -79,22 +93,27 @@ const subHeading = (text) => [
 const LW = 2700;
 const VW = FULL - LW;
 
-const infoRow = (label, value, shade) => new TableRow({ children: [
-    new TableCell({
-        width: { size: LW, type: WidthType.DXA },
-        shading: { fill: shade ? 'F2F4F8' : 'FFFFFF', type: ShadingType.CLEAR },
-        borders: { top: LIGHT, bottom: LIGHT, left: NONE, right: LIGHT },
-        margins: { top: pt(2.5), bottom: pt(2.5), left: pt(7), right: pt(7) },
-        children: [para(run(label, { bold: true, size: hp(10), color: '374151' }), { spacing: { after: 0 } })],
-    }),
-    new TableCell({
-        width: { size: VW, type: WidthType.DXA },
-        shading: { fill: shade ? 'F2F4F8' : 'FFFFFF', type: ShadingType.CLEAR },
-        borders: { top: LIGHT, bottom: LIGHT, left: NONE, right: NONE },
-        margins: { top: pt(2.5), bottom: pt(2.5), left: pt(7), right: pt(7) },
-        children: [para(run(val(value)), { spacing: { after: 0 } })],
-    }),
-]});
+const infoRow = (label, value, shade) => {
+    // In blank-template mode the actual value is irrelevant — every field becomes a
+    // "[LABEL]" placeholder for the recipient to fill in, highlighted yellow.
+    const displayValue = BLANK ? `[${label.toUpperCase()}]` : val(value);
+    return new TableRow({ children: [
+        new TableCell({
+            width: { size: LW, type: WidthType.DXA },
+            shading: { fill: shade ? 'F2F4F8' : 'FFFFFF', type: ShadingType.CLEAR },
+            borders: { top: LIGHT, bottom: LIGHT, left: NONE, right: LIGHT },
+            margins: { top: pt(2.5), bottom: pt(2.5), left: pt(7), right: pt(7) },
+            children: [para(run(label, { bold: true, size: hp(10), color: '374151' }), { spacing: { after: 0 } })],
+        }),
+        new TableCell({
+            width: { size: VW, type: WidthType.DXA },
+            shading: { fill: shade ? 'F2F4F8' : 'FFFFFF', type: ShadingType.CLEAR },
+            borders: { top: LIGHT, bottom: LIGHT, left: NONE, right: NONE },
+            margins: { top: pt(2.5), bottom: pt(2.5), left: pt(7), right: pt(7) },
+            children: [para(valRun(displayValue), { spacing: { after: 0 } })],
+        }),
+    ]});
+};
 
 const infoTable = (rows) => new Table({
     width: { size: FULL, type: WidthType.DXA },
@@ -121,7 +140,7 @@ const gridTable = (headers, widths, rows) => new Table({
             shading: { fill: ri % 2 === 1 ? 'F2F4F8' : 'FFFFFF', type: ShadingType.CLEAR },
             borders: { top: LIGHT, bottom: LIGHT, left: NONE, right: NONE },
             margins: { top: pt(2.5), bottom: pt(2.5), left: pt(7), right: pt(7) },
-            children: [para(run(val(cell), { size: hp(9.5) }), { spacing: { after: 0 } })],
+            children: [para(valRun(val(cell), { size: hp(9.5) }), { spacing: { after: 0 } })],
         })) })),
     ],
 });
@@ -295,18 +314,21 @@ body.push(
     gap(10),
 );
 
-// Client summary strip
-body.push(
-    infoTable([
-        infoRow('Client',          val(d.client_name)),
-        infoRow('Type',            val(d.client_type_label),             true),
-        infoRow('Status',          val(d.status)),
-        infoRow('CDD Level',       (d.cdd_type || 'Standard').toUpperCase(), true),
-        infoRow('Risk Rating',     (d.risk_rating || 'Unrated').toUpperCase()),
-        d.next_review_date ? infoRow('Next Review Date', val(d.next_review_date), true) : null,
-    ]),
-    gap(6),
-);
+// Client summary strip — status/CDD/risk rating are staff-determined, so this is
+// skipped entirely on a blank template (nothing to show before intake happens).
+if (!BLANK) {
+    body.push(
+        infoTable([
+            infoRow('Client',          val(d.client_name)),
+            infoRow('Type',            val(d.client_type_label),             true),
+            infoRow('Status',          val(d.status)),
+            infoRow('CDD Level',       (d.cdd_type || 'Standard').toUpperCase(), true),
+            infoRow('Risk Rating',     (d.risk_rating || 'Unrated').toUpperCase()),
+            d.next_review_date ? infoRow('Next Review Date', val(d.next_review_date), true) : null,
+        ]),
+        gap(6),
+    );
+}
 
 // ════════════════════════════════════════════════════════════════════════════════
 // SECTION 1 — CLIENT IDENTIFICATION
@@ -407,38 +429,42 @@ body.push(
 );
 
 // ════════════════════════════════════════════════════════════════════════════════
-// SECTION 5 — RISK ASSESSMENT
+// SECTION 5 — RISK ASSESSMENT (staff-only — omitted from the blank template)
 // ════════════════════════════════════════════════════════════════════════════════
-body.push(
-    ...sectionHeading('Risk Assessment'),
-    infoTable([
-        infoRow('Risk Rating',   (d.risk_rating || 'Unrated').toUpperCase()),
-        d.risk_assessed_at ? infoRow('Assessed On',  val(d.risk_assessed_at),   true) : null,
-        d.risk_assessed_by ? infoRow('Assessed By',  val(d.risk_assessed_by))         : null,
-        d.next_review_date ? infoRow('Next Review',  val(d.next_review_date),   true) : null,
-        d.risk_notes       ? infoRow('Notes',        val(d.risk_notes))               : null,
-    ]),
-    gap(6),
-);
+if (!BLANK) {
+    body.push(
+        ...sectionHeading('Risk Assessment'),
+        infoTable([
+            infoRow('Risk Rating',   (d.risk_rating || 'Unrated').toUpperCase()),
+            d.risk_assessed_at ? infoRow('Assessed On',  val(d.risk_assessed_at),   true) : null,
+            d.risk_assessed_by ? infoRow('Assessed By',  val(d.risk_assessed_by))         : null,
+            d.next_review_date ? infoRow('Next Review',  val(d.next_review_date),   true) : null,
+            d.risk_notes       ? infoRow('Notes',        val(d.risk_notes))               : null,
+        ]),
+        gap(6),
+    );
+}
 
 // ════════════════════════════════════════════════════════════════════════════════
-// SECTION 6 — SANCTIONS & AML SCREENING
+// SECTION 6 — SANCTIONS & AML SCREENING (staff-only — omitted from the blank template)
 // ════════════════════════════════════════════════════════════════════════════════
-body.push(
-    ...sectionHeading('Sanctions & AML Screening'),
-    infoTable([
-        infoRow('Screening Result',     (d.screening_status || 'Not Screened').toUpperCase()),
-        d.screening_date      ? infoRow('Last Screened',  val(d.screening_date),       true) : null,
-        d.screening_reference ? infoRow('Reference',      val(d.screening_reference))         : null,
-    ]),
-    gap(4),
-    para(run('The following lists and databases were screened:', { bold: true, size: hp(10) }), { spacing: { after: pt(3) } }),
-    ...sanctionsList.map(item =>
-        para([run('•  ', { size: hp(10), color: '2E4A7A' }), run(item, { size: hp(10) })],
-            { spacing: { after: pt(2) }, indent: { left: pt(10) } })
-    ),
-    gap(6),
-);
+if (!BLANK) {
+    body.push(
+        ...sectionHeading('Sanctions & AML Screening'),
+        infoTable([
+            infoRow('Screening Result',     (d.screening_status || 'Not Screened').toUpperCase()),
+            d.screening_date      ? infoRow('Last Screened',  val(d.screening_date),       true) : null,
+            d.screening_reference ? infoRow('Reference',      val(d.screening_reference))         : null,
+        ]),
+        gap(4),
+        para(run('The following lists and databases were screened:', { bold: true, size: hp(10) }), { spacing: { after: pt(3) } }),
+        ...sanctionsList.map(item =>
+            para([run('•  ', { size: hp(10), color: '2E4A7A' }), run(item, { size: hp(10) })],
+                { spacing: { after: pt(2) }, indent: { left: pt(10) } })
+        ),
+        gap(6),
+    );
+}
 
 // ════════════════════════════════════════════════════════════════════════════════
 // SECTION 7 — COMPLIANCE QUESTIONNAIRE (corporate only)

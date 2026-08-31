@@ -115,6 +115,84 @@ class ReportController extends Controller
         ];
     }
 
+    // ── Build a blank/generic KYC template — no real client data, every fillable
+    //    field rendered as a yellow-highlighted "[FIELD LABEL]" placeholder — for
+    //    sending to a prospective client to fill out by hand. Existing filled KYC
+    //    exports (buildKycData above) are untouched by this. ───────────────────────
+
+    private function buildKycBlankData($tenant, string $type = 'corporate'): array
+    {
+        $isCorp = $type !== 'individual';
+
+        $blankSignatory = fn () => [
+            'full_name' => '[FULL NAME]', 'position' => '[POSITION]', 'nationality' => '[NATIONALITY]',
+            'dob' => '[DATE OF BIRTH]', 'passport_number' => '[PASSPORT NO.]',
+            'passport_expiry' => '[EXPIRY]', 'eid_number' => '[EMIRATES ID]',
+        ];
+        $blankShareholder = fn () => [
+            'name' => '[NAME]', 'shareholder_type' => '[INDIVIDUAL / CORPORATE]', 'nationality' => '[NATIONALITY]',
+            'ownership_percentage' => null, 'is_ubo' => false,
+            'passport_number' => '[PASSPORT / ID NO.]', 'eid_number' => '', 'dob' => '[DATE OF BIRTH]',
+        ];
+
+        return [
+            'blank'     => true,
+            'ref'       => 'KYC-TEMPLATE',
+            'generated' => now()->format('d M Y'),
+            'sector'         => $tenant->business_type ?? 'gold',
+            'tenant_name'    => $tenant->name,
+            'tenant_address' => $tenant->address ?? '',
+            'tenant_email'   => $tenant->contact_email ?? '',
+            'dnfbp_reg_no'   => $tenant->dnfbp_reg_no ?? '',
+            'is_corp'        => $isCorp,
+            'client_name'    => $isCorp ? '[COMPANY NAME]' : '[FULL NAME]',
+            // Corporate fields
+            'company_name'             => '[COMPANY NAME]',
+            'legal_form'               => 'x', 'country_of_incorporation' => 'x',
+            'trade_license_no'         => 'x', 'trade_license_validity'   => 'x',
+            'trn_number'               => 'x', 'ejari_number'             => 'x', 'ejari_expiry' => 'x',
+            'business_activity'        => 'x', 'registered_address'       => 'x',
+            'website'                  => 'x',
+            // Individual fields
+            'full_name'      => '[FULL NAME]', 'name_arabic' => 'x', 'nationality' => 'x', 'dob' => 'x',
+            'passport_number'=> 'x', 'passport_expiry' => 'x', 'eid_number' => 'x', 'eid_expiry' => 'x',
+            'occupation'     => 'x', 'employer_name' => 'x', 'pep_status' => false,
+            // Shared contact
+            'email' => 'x', 'phone' => 'x',
+            // AML / CDD self-declared fields
+            'source_of_funds_label'         => 'x',
+            'source_of_wealth_label'        => 'x',
+            'purpose_of_relationship_label' => 'x',
+            'expected_monthly_volume'       => 1,
+            'expected_monthly_frequency'    => 'x',
+            'countries_involved'            => 'x',
+            // Structure — a few blank rows for the client to write into by hand
+            'signatories'  => $isCorp ? [$blankSignatory(), $blankSignatory(), $blankSignatory()] : [],
+            'shareholders' => $isCorp ? [$blankShareholder(), $blankShareholder(), $blankShareholder()] : [],
+            'signatory_name'  => '',
+            'signatory_title' => 'Client / Authorized Signatory',
+            'mlro_name'       => '',
+        ];
+    }
+
+    public function kycBlankDocx(string $slug, Request $request)
+    {
+        $tenant = app('tenant');
+        $type   = $request->input('type', 'corporate') === 'individual' ? 'individual' : 'corporate';
+
+        $baseName = 'KYC-TEMPLATE-' . Str::upper($type) . '-' . uniqid();
+        $filename = 'KYC-Blank-Template-' . Str::ucfirst($type) . '.docx';
+
+        try {
+            $outPath = $this->generateKycDocx($this->buildKycBlankData($tenant, $type), $baseName);
+        } catch (\RuntimeException $e) {
+            Log::error('KYC blank docx failed', ['error' => $e->getMessage()]);
+            return back()->with('error', 'Failed to generate blank KYC template. ' . $e->getMessage());
+        }
+
+        return response()->download($outPath, $filename)->deleteFileAfterSend(true);
+    }
+
     // ── Generate the .docx file and return its path ───────────────────────────
 
     private function generateKycDocx(array $data, string $baseName): string
