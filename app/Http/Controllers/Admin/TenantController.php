@@ -8,6 +8,7 @@ use App\Models\CrmClient;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Accounting\ChartOfAccountSeeder;
+use App\Services\Accounting\OtcChartOfAccountSeeder;
 use App\Support\SectorConfig;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -97,6 +98,11 @@ class TenantController extends Controller
             $settings['enabled_modules'][$mod] = $request->boolean("module_{$mod}");
         }
 
+        // B-Book is a bullion-specific extension — never enable it without Accounting.
+        $bBookWasEnabled = $tenant->hasModule('b_book');
+        $settings['enabled_modules']['b_book'] = $settings['enabled_modules']['bullion_accounting']
+            && $request->boolean('module_b_book');
+
         $tenant->update($request->only([
             'name', 'business_type', 'contact_email',
             'phone', 'address', 'dnfbp_reg_no', 'vat_trn', 'is_active',
@@ -107,6 +113,9 @@ class TenantController extends Controller
             if (! $wasEnabled[$mod] && $request->boolean("module_{$mod}")) {
                 app(ChartOfAccountSeeder::class)->seedForTenant($fresh, ChartOfAccountSeeder::templateForModule($mod));
             }
+        }
+        if (! $bBookWasEnabled && $fresh->hasModule('b_book')) {
+            app(OtcChartOfAccountSeeder::class)->seedForTenant($fresh);
         }
 
         return back()->with('success', 'Tenant updated.');
@@ -121,14 +130,26 @@ class TenantController extends Controller
         ]);
 
         User::create([
-            'name'      => $request->user_name,
-            'email'     => $request->user_email,
-            'password'  => Hash::make($request->user_password),
-            'role'      => 'admin',
-            'tenant_id' => $tenant->id,
+            'name'          => $request->user_name,
+            'email'         => $request->user_email,
+            'password'      => Hash::make($request->user_password),
+            'role'          => 'admin',
+            'tenant_id'     => $tenant->id,
+            'b_book_access' => $request->boolean('b_book_access'),
         ]);
 
         return back()->with('success', "User {$request->user_email} added.");
+    }
+
+    public function toggleBBookAccess(Tenant $tenant, User $user)
+    {
+        abort_if($user->tenant_id !== $tenant->id, 403);
+
+        $user->update(['b_book_access' => ! $user->b_book_access]);
+
+        return back()->with('success', $user->b_book_access
+            ? "B-Book access granted to {$user->email}."
+            : "B-Book access revoked from {$user->email}.");
     }
 
     public function updatePassword(Request $request, Tenant $tenant, User $user)

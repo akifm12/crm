@@ -48,6 +48,13 @@ return [
             'driver' => 'session',
             'provider' => 'public_users',
         ],
+
+        // B-Book — same users table/model as the 'web' guard, but a fully
+        // independent session so logging into one never implies the other.
+        'b_book' => [
+            'driver' => 'session',
+            'provider' => 'users',
+        ],
     ],
 
     /*

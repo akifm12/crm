@@ -102,6 +102,16 @@
                 <p class="text-xs text-gray-400 mt-0.5">Rental income, property expenses, maintenance bills, tenant management</p>
             </div>
         </div>
+        <div class="flex items-start gap-3 p-3 bg-gray-900 rounded-lg" x-data="{ a: {{ $tenant->hasModule('bullion_accounting') ? 'true' : 'false' }} }">
+            <input type="checkbox" name="module_b_book" value="1" id="module_b_book" :disabled="!a"
+                   {{ $tenant->hasModule('b_book') ? 'checked' : '' }}
+                   class="mt-0.5 rounded border-gray-600 text-amber-500 disabled:opacity-40">
+            <div>
+                <label for="module_b_book" class="text-sm font-medium text-amber-400">B-Book</label>
+                <p class="text-xs text-gray-400 mt-0.5">Consolidated ledger + OTC dealings (no VAT, no formal invoicing) — separate login portal, own theme. Requires Bullion Accounting.</p>
+                <p x-show="!a" class="text-xs text-red-400 mt-1">Enable Bullion Accounting first.</p>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -165,6 +175,15 @@
                     <p class="text-xs text-gray-400">{{ $u->email }}</p>
                 </div>
                 <div class="flex items-center gap-2">
+                    @if($tenant->hasModule('b_book'))
+                    <form method="POST" action="{{ route('kyc.tenants.users.bbook', [$tenant->id, $u->id]) }}">
+                        @csrf @method('PATCH')
+                        <button type="submit"
+                                class="px-3 py-1.5 text-xs font-medium rounded-lg {{ $u->b_book_access ? 'bg-amber-100 text-amber-700 hover:bg-amber-200' : 'bg-gray-100 text-gray-500 hover:bg-gray-200' }}">
+                            {{ $u->b_book_access ? '★ B-Book access' : 'Grant B-Book' }}
+                        </button>
+                    </form>
+                    @endif
                     <form method="POST" action="{{ route('kyc.tenants.users.password', [$tenant->id, $u->id]) }}"
                           class="flex items-center gap-2">
                         @csrf @method('PATCH')

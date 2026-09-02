@@ -28,6 +28,9 @@ use App\Http\Controllers\PublicDeadlineController;
 use App\Http\Controllers\CertificateVerifyController;
 use App\Http\Controllers\PublicCertificateController;
 use App\Http\Controllers\Admin\TrainingSessionController;
+use App\Http\Controllers\BBook\BBookAuthController;
+use App\Http\Controllers\BBook\BBookDashboardController;
+use App\Http\Controllers\BBook\OtcDealController;
 use App\Http\Controllers\Tenant\TfsController;
 use App\Models\CrmQuotation;
 
@@ -211,6 +214,7 @@ Route::middleware(['auth', \App\Http\Middleware\EnsureAdminUser::class])->group(
     Route::post('/kyc/tenants/{tenant}/users',                   [TenantController::class, 'addUser'])->name('kyc.tenants.users.add');
     Route::patch('/kyc/tenants/{tenant}/users/{user}/password',  [TenantController::class, 'updatePassword'])->name('kyc.tenants.users.password');
     Route::delete('/kyc/tenants/{tenant}/users/{user}',          [TenantController::class, 'deleteUser'])->name('kyc.tenants.users.delete');
+    Route::patch('/kyc/tenants/{tenant}/users/{user}/bbook',     [TenantController::class, 'toggleBBookAccess'])->name('kyc.tenants.users.bbook');
     Route::patch('/kyc/tenants/{tenant}/clients/{client}/restore', [TenantController::class, 'restoreClient'])->name('kyc.tenants.clients.restore');
     Route::patch('/kyc/submissions/{id}/approve', fn() => back())->name('kyc.approve');
     Route::patch('/kyc/submissions/{id}/reject',  fn() => back())->name('kyc.reject');
@@ -239,6 +243,19 @@ Route::middleware(['auth', \App\Http\Middleware\EnsureAdminUser::class])->group(
 Route::prefix('{slug}')->middleware(['resolve.tenant'])->name('tenant.')->group(function () {
     Route::get('/fill/{token}',         [\App\Http\Controllers\Tenant\ClientFillController::class, 'show'])->name('fill.show');
     Route::post('/fill/{token}/submit', [\App\Http\Controllers\Tenant\ClientFillController::class, 'submit'])->name('fill.submit');
+});
+
+// ── B-Book — separate login/session guard from the main tenant portal ──────
+Route::prefix('{slug}/bbook')->middleware(['resolve.tenant'])->name('bbook.')->group(function () {
+    Route::get('/login',  [BBookAuthController::class, 'create'])->name('login');
+    Route::post('/login', [BBookAuthController::class, 'store'])->name('login.store');
+    Route::post('/logout',[BBookAuthController::class, 'destroy'])->name('logout');
+
+    Route::middleware(['bbook.user'])->group(function () {
+        Route::get('/', [BBookDashboardController::class, 'index'])->name('dashboard');
+
+        Route::get('/deals', [OtcDealController::class, 'index'])->name('deals.index');
+    });
 });
 
 // ── Tenant portal routes  /{slug}/... ──────────────────────────────────────
