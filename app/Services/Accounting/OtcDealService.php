@@ -557,22 +557,28 @@ class OtcDealService
         };
 
         return collect($lines)->map(function (array $line) use ($defaultLineType) {
+            $lineType = $line['line_type'] ?? $defaultLineType;
             $gross = (float) ($line['gross_weight_grams'] ?? 0);
             $purity = (float) ($line['purity'] ?? 0);
-            $qty = $gross > 0 && $purity > 0 ? round($gross * ($purity / 1000), 3) : (float) ($line['quantity_grams'] ?? 0);
+            // cash_topup carries no metal weight — unit_price *is* the amount, so
+            // force qty=1 rather than trust the caller to pass quantity_grams=1.
+            $qty = $lineType === 'cash_topup'
+                ? 1.0
+                : ($gross > 0 && $purity > 0 ? round($gross * ($purity / 1000), 3) : (float) ($line['quantity_grams'] ?? 0));
             $unitPrice = (float) ($line['unit_price'] ?? 0);
             $lineSubtotal = round($qty * $unitPrice, 2);
 
-            $makingRate = isset($line['making_charge_rate']) && $line['making_charge_rate'] !== '' ? (float) $line['making_charge_rate'] : null;
+            $makingRate = $lineType !== 'cash_topup' && isset($line['making_charge_rate']) && $line['making_charge_rate'] !== ''
+                ? (float) $line['making_charge_rate'] : null;
             $makingAmount = $makingRate ? round($qty * $makingRate, 2) : 0.0;
 
             return [
-                'line_type'             => $line['line_type'] ?? $defaultLineType,
+                'line_type'             => $lineType,
                 'inventory_item_id'     => $line['inventory_item_id'] ?? null,
                 'metal_type'            => $line['metal_type'] ?? null,
                 'description'           => $line['description'] ?? '',
-                'purity'                => $purity ?: null,
-                'gross_weight_grams'    => $gross ?: null,
+                'purity'                => $lineType === 'cash_topup' ? null : ($purity ?: null),
+                'gross_weight_grams'    => $lineType === 'cash_topup' ? null : ($gross ?: null),
                 'quantity_grams'        => $qty,
                 'pcs'                   => isset($line['pcs']) && $line['pcs'] !== '' ? (int) $line['pcs'] : null,
                 'unit_price'            => $unitPrice,
