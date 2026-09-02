@@ -11,6 +11,10 @@
     </span>
 
     @if($deal->status === 'draft')
+    <a href="{{ route('bbook.deals.edit', [$tenant->slug, $deal->id]) }}"
+       class="px-4 py-1.5 text-xs font-semibold text-gray-300 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10">
+        Edit draft
+    </a>
     <form method="POST" action="{{ route('bbook.deals.post', [$tenant->slug, $deal->id]) }}"
           onsubmit="return confirm('Post this deal? This moves inventory and posts the B-Book journal entry.')">
         @csrf

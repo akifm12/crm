@@ -60,6 +60,39 @@ class OtcDealController extends Controller
         return view('bbook.deals.show', compact('tenant', 'deal'));
     }
 
+    public function edit(string $slug, OtcDeal $deal)
+    {
+        $tenant = app('tenant');
+        abort_if($deal->tenant_id !== $tenant->id, 404);
+        abort_if($deal->status !== 'draft', 403, 'Only draft deals can be edited.');
+        $deal->load('lines.inventoryItem');
+
+        return view('bbook.deals.edit', [
+            'tenant'  => $tenant,
+            'deal'    => $deal,
+            'items'   => $this->itemsForJs($tenant),
+            'clients' => $this->clientsForJs($tenant),
+        ]);
+    }
+
+    public function update(Request $request, string $slug, OtcDeal $deal)
+    {
+        $tenant = app('tenant');
+        abort_if($deal->tenant_id !== $tenant->id, 404);
+        $request->validate($this->lineRules());
+
+        try {
+            app(OtcDealService::class)->updateDraft($deal, $request->only(
+                'bullion_client_id', 'counterparty_name', 'deal_date', 'notes', 'lines'
+            ));
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage())->withInput();
+        }
+
+        return redirect()->route('bbook.deals.show', [$tenant->slug, $deal->id])
+            ->with('success', 'Deal updated.');
+    }
+
     public function post(string $slug, OtcDeal $deal)
     {
         $tenant = app('tenant');
