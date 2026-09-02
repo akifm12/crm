@@ -29,6 +29,7 @@ use App\Http\Controllers\CertificateVerifyController;
 use App\Http\Controllers\PublicCertificateController;
 use App\Http\Controllers\Admin\TrainingSessionController;
 use App\Http\Controllers\BBook\BBookAuthController;
+use App\Http\Controllers\BBook\BBookClientController;
 use App\Http\Controllers\BBook\BBookDashboardController;
 use App\Http\Controllers\BBook\OtcDealController;
 use App\Http\Controllers\Tenant\TfsController;
@@ -261,6 +262,10 @@ Route::prefix('{slug}/bbook')->middleware(['resolve.tenant'])->name('bbook.')->g
         Route::post('/deals/{deal}/post',       [OtcDealController::class, 'post'])->name('deals.post');
         Route::post('/deals/{deal}/void',       [OtcDealController::class, 'void'])->name('deals.void');
         Route::post('/deals/{deal}/payments',   [OtcDealController::class, 'storePayment'])->name('deals.payments.store');
+
+        Route::get('/clients',              [BBookClientController::class, 'index'])->name('clients.index');
+        Route::get('/clients/otc/{name}',   [BBookClientController::class, 'showCounterparty'])->name('clients.counterparty');
+        Route::get('/clients/{client}',     [BBookClientController::class, 'show'])->name('clients.show');
     });
 });
 
