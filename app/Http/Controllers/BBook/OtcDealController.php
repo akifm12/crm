@@ -43,7 +43,7 @@ class OtcDealController extends Controller
         $request->validate($this->lineRules());
 
         $deal = app(OtcDealService::class)->createDraft($tenant, array_merge(
-            $request->only('bullion_client_id', 'deal_type', 'counterparty_name', 'deal_date', 'notes', 'lines'),
+            $request->only('bullion_client_id', 'deal_type', 'counterparty_name', 'deal_date', 'notes', 'lines', 'metal_rates'),
             ['created_by' => Auth::guard('b_book')->id()]
         ));
 
@@ -83,7 +83,7 @@ class OtcDealController extends Controller
 
         try {
             app(OtcDealService::class)->updateDraft($deal, $request->only(
-                'bullion_client_id', 'counterparty_name', 'deal_date', 'notes', 'lines'
+                'bullion_client_id', 'counterparty_name', 'deal_date', 'notes', 'lines', 'metal_rates'
             ));
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage())->withInput();
@@ -156,6 +156,9 @@ class OtcDealController extends Controller
             'lines'               => 'required|array|min:1',
             'lines.*.description' => 'required|string|max:255',
             'lines.*.unit_price'  => 'required|numeric|min:0',
+            'metal_rates'                    => 'nullable|array',
+            'metal_rates.*.usd_per_oz'       => 'nullable|numeric|min:0',
+            'metal_rates.*.usd_aed_rate'     => 'nullable|numeric|min:0',
         ];
     }
 

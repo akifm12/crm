@@ -86,7 +86,7 @@
                 <div class="grid grid-cols-4 gap-2 mb-2" x-show="!line.inventory_item_id">
                     <div>
                         <label class="block text-xs text-gray-500 mb-0.5">Metal type <span class="text-red-400" x-show="dealType==='buy'">*</span></label>
-                        <select x-model="line.metal_type" :name="'lines['+i+'][metal_type]'" class="w-full px-2 py-1.5 text-sm bg-black/40 border border-white/10 rounded-lg text-gray-200">
+                        <select x-model="line.metal_type" @change="ensureMetalRate(line.metal_type)" :name="'lines['+i+'][metal_type]'" class="w-full px-2 py-1.5 text-sm bg-black/40 border border-white/10 rounded-lg text-gray-200">
                             <option value="">— select —</option>
                             <option value="gold">Gold</option>
                             <option value="silver">Silver</option>
@@ -121,13 +121,38 @@
                                class="w-full px-2 py-1.5 text-sm bg-black/40 border border-white/10 rounded-lg text-gray-200 text-right">
                     </div>
                 </div>
-                <div class="grid grid-cols-4 gap-2 mt-2">
+
+                {{-- Inline metal rate — appears as soon as a metal type is set, same as A-Book --}}
+                <div x-show="line.metal_type" class="grid grid-cols-3 gap-2 mt-2 p-2 bg-amber-950/20 border border-amber-900/30 rounded-lg">
                     <div>
-                        <label class="block text-xs text-gray-500 mb-0.5">Rate (AED/g) <span class="text-red-400">*</span></label>
-                        <input type="number" step="0.0001" min="0" :name="'lines['+i+'][unit_price]'" x-model.number="line.unit_price"
-                               required class="w-full px-2 py-1.5 text-sm bg-black/40 border border-white/10 rounded-lg text-gray-200 text-right">
+                        <label class="block text-xs text-gray-500 mb-0.5">
+                            <span x-text="(line.metal_type||'').charAt(0).toUpperCase()+(line.metal_type||'').slice(1)"></span>
+                            price / oz (USD) <span class="text-red-400">*</span>
+                        </label>
+                        <input type="number" step="0.0001" min="0.0001"
+                               :name="'metal_rates['+line.metal_type+'][usd_per_oz]'"
+                               :value="metalRates[line.metal_type] ? metalRates[line.metal_type].usdPerOz : ''"
+                               @change="ensureMetalRate(line.metal_type); metalRates[line.metal_type].usdPerOz = parseFloat($event.target.value)"
+                               required
+                               class="w-full px-2 py-1.5 text-sm bg-black/40 border border-amber-900/40 rounded-lg text-gray-200">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-0.5">USD → AED rate <span class="text-red-400">*</span></label>
+                        <input type="number" step="0.0001" min="0.0001"
+                               :name="'metal_rates['+line.metal_type+'][usd_aed_rate]'"
+                               :value="metalRates[line.metal_type] ? metalRates[line.metal_type].usdAedRate : ''"
+                               @change="ensureMetalRate(line.metal_type); metalRates[line.metal_type].usdAedRate = parseFloat($event.target.value)"
+                               required
+                               class="w-full px-2 py-1.5 text-sm bg-black/40 border border-amber-900/40 rounded-lg text-gray-200">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-0.5">AED / gram (auto)</label>
+                        <input type="number" step="0.000001" :value="rateFor(line.metal_type).toFixed(6)" readonly
+                               class="w-full px-2 py-1.5 text-sm bg-black/20 border border-white/5 rounded-lg text-gray-500">
                     </div>
                 </div>
+                <p x-show="!line.metal_type" class="text-xs text-amber-600/70 mt-2">Pick an item or metal type above to set the rate.</p>
+                <input type="hidden" :name="'lines['+i+'][unit_price]'" :value="rateFor(line.metal_type).toFixed(4)">
             </div>
         </template>
 
@@ -162,12 +187,13 @@ function otcDealForm() {
         clientId: '',
         itemsByName: {},
         lines: [],
+        metalRates: {},
         init() {
             @json($items).forEach(it => this.itemsByName[it.name] = it);
             this.lines = [this.blankLine()];
         },
         blankLine() {
-            return { description:'', inventory_item_id:'', metal_type:'', purity:null, gross_weight_grams:null, quantity_grams:null, pcs:null, unit_price:null, stockLabel:'' };
+            return { description:'', inventory_item_id:'', metal_type:'', purity:null, gross_weight_grams:null, quantity_grams:null, pcs:null, stockLabel:'' };
         },
         addLine() { this.lines.push(this.blankLine()); },
         removeLine(i) { this.lines.splice(i, 1); },
@@ -184,11 +210,25 @@ function otcDealForm() {
                 line.metal_type = match.metal_type;
                 line.purity = match.purity;
                 line.stockLabel = match.stock_grams > 0 ? match.stock_grams.toFixed(3) + 'g in stock' : 'Out of stock';
+                this.ensureMetalRate(match.metal_type);
                 this.syncFromGross(line);
             } else {
                 line.inventory_item_id = '';
                 line.stockLabel = '';
             }
+        },
+        // (USD/oz ÷ troy-oz-in-grams) × USD→AED rate = AED per gram, for one metal's rate box.
+        ensureMetalRate(metal) {
+            if (metal && !this.metalRates[metal]) {
+                this.metalRates[metal] = { usdPerOz: null, usdAedRate: 3.674 };
+            }
+        },
+        rateFor(metal) {
+            const r = this.metalRates[metal];
+            if (!r) return 0;
+            const oz = parseFloat(r.usdPerOz) || 0;
+            const rate = parseFloat(r.usdAedRate) || 0;
+            return oz > 0 ? (oz / 31.1035) * rate : 0;
         },
         syncFromGross(line) {
             const g = parseFloat(line.gross_weight_grams), p = parseFloat(line.purity);
@@ -199,7 +239,7 @@ function otcDealForm() {
             if (g > 0 && q > 0) line.purity = Math.round(q / g * 1000 * 1000) / 1000;
         },
         lineTotal(line) {
-            return (parseFloat(line.quantity_grams) || 0) * (parseFloat(line.unit_price) || 0);
+            return (parseFloat(line.quantity_grams) || 0) * this.rateFor(line.metal_type);
         },
         get total() { return this.lines.reduce((s, l) => s + this.lineTotal(l), 0); },
         fmt(n) { return Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); },
