@@ -27,7 +27,7 @@
         <div class="grid grid-cols-3 gap-4 mb-4">
             <div>
                 <label class="block text-xs font-medium text-gray-400 mb-1">Deal type</label>
-                <input type="text" value="{{ ucfirst($deal->deal_type) }} — {{ $deal->deal_type === 'buy' ? 'we receive metal' : 'we issue metal' }}" readonly
+                <input type="text" value="{{ ucfirst($deal->deal_type) }}" readonly
                        class="w-full px-3 py-2 text-sm bg-black/20 border border-white/5 rounded-lg text-gray-500">
                 <input type="hidden" name="deal_type" value="{{ $deal->deal_type }}">
             </div>
@@ -46,7 +46,7 @@
                 </select>
             </div>
         </div>
-        <div class="grid grid-cols-2 gap-4">
+        <div class="grid grid-cols-2 gap-4 mb-4">
             <div>
                 <label class="block text-xs font-medium text-gray-400 mb-1">Counterparty name <span class="text-red-400">*</span></label>
                 <input type="text" name="counterparty_name" x-model="counterpartyName" required
@@ -54,10 +54,25 @@
                 <input type="hidden" name="bullion_client_id" x-model="clientId">
             </div>
             <div>
-                <label class="block text-xs font-medium text-gray-400 mb-1">Notes</label>
-                <input type="text" name="notes" value="{{ old('notes', $deal->notes) }}"
+                <label class="block text-xs font-medium text-gray-400 mb-1">Party reference <span class="text-gray-600">(optional)</span></label>
+                <input type="text" name="party_reference" value="{{ old('party_reference', $deal->party_reference) }}" placeholder="Their invoice / order ref"
                        class="w-full px-3 py-2 text-sm bg-black/40 border border-white/10 rounded-lg text-gray-200 focus:outline-none focus:ring-1 focus:ring-amber-500/50">
             </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4" x-show="dealType==='sell'">
+            <div>
+                <label class="block text-xs font-medium text-gray-400 mb-1">Pricing</label>
+                <select name="pricing_type" x-model="pricingType" class="w-full px-3 py-2 text-sm bg-black/40 border border-white/10 rounded-lg text-gray-200 focus:outline-none focus:ring-1 focus:ring-amber-500/50">
+                    <option value="fixed">Fixed now</option>
+                    <option value="unfixed">Unfixed — fix price later</option>
+                </select>
+                <p x-show="pricingType==='unfixed'" class="text-xs text-amber-600/70 mt-1">Metal ships now at today's stock cost; the sale price and revenue post once you fix the price.</p>
+            </div>
+        </div>
+        <div class="mb-2">
+            <label class="block text-xs font-medium text-gray-400 mb-1">Notes</label>
+            <input type="text" name="notes" value="{{ old('notes', $deal->notes) }}"
+                   class="w-full px-3 py-2 text-sm bg-black/40 border border-white/10 rounded-lg text-gray-200 focus:outline-none focus:ring-1 focus:ring-amber-500/50">
         </div>
     </div>
 
@@ -74,85 +89,119 @@
                     </div>
                 </div>
 
-                <div class="mb-2">
-                    <label class="block text-xs text-gray-500 mb-0.5">Item / description</label>
-                    <input type="text" :name="'lines['+i+'][description]'" x-model="line.description" list="otc-items-list"
-                           autocomplete="off" required @input="matchItemByName(line)" placeholder="Pick an existing item or type a description"
-                           class="w-full px-2 py-1.5 text-sm bg-black/40 border border-white/10 rounded-lg text-gray-200">
-                    <p x-show="line.stockLabel" class="text-xs text-gray-500 mt-0.5" x-text="line.stockLabel"></p>
-                    <input type="hidden" :name="'lines['+i+'][inventory_item_id]'" :value="line.inventory_item_id">
+                <div x-show="dealType==='exchange'" class="mb-2">
+                    <label class="block text-xs text-gray-500 mb-0.5">Line type <span class="text-red-400">*</span></label>
+                    <select x-model="line.line_type" :name="'lines['+i+'][line_type]'" class="w-full px-2 py-1.5 text-sm bg-black/40 border border-white/10 rounded-lg text-gray-200">
+                        <option value="metal_in">Metal in — we receive</option>
+                        <option value="metal_out">Metal out — we give</option>
+                        <option value="cash_topup">Cash top-up</option>
+                    </select>
                 </div>
+                <template x-if="dealType!=='exchange'">
+                    <input type="hidden" :name="'lines['+i+'][line_type]'" :value="dealType==='buy' ? 'metal_in' : 'metal_out'">
+                </template>
 
-                <div class="grid grid-cols-4 gap-2 mb-2" x-show="!line.inventory_item_id">
-                    <div>
-                        <label class="block text-xs text-gray-500 mb-0.5">Metal type <span class="text-red-400" x-show="dealType==='buy'">*</span></label>
-                        <select x-model="line.metal_type" @change="ensureMetalRate(line.metal_type)" :name="'lines['+i+'][metal_type]'" class="w-full px-2 py-1.5 text-sm bg-black/40 border border-white/10 rounded-lg text-gray-200">
-                            <option value="">— select —</option>
-                            <option value="gold">Gold</option>
-                            <option value="silver">Silver</option>
-                            <option value="platinum">Platinum</option>
-                            <option value="palladium">Palladium</option>
-                        </select>
+                <template x-if="line.line_type !== 'cash_topup'">
+                <div>
+                    <div class="mb-2">
+                        <label class="block text-xs text-gray-500 mb-0.5">Item / description</label>
+                        <input type="text" :name="'lines['+i+'][description]'" x-model="line.description" list="otc-items-list"
+                               autocomplete="off" required @input="matchItemByName(line)" placeholder="Pick an existing item or type a description"
+                               class="w-full px-2 py-1.5 text-sm bg-black/40 border border-white/10 rounded-lg text-gray-200">
+                        <p x-show="line.stockLabel" class="text-xs text-gray-500 mt-0.5" x-text="line.stockLabel"></p>
+                        <input type="hidden" :name="'lines['+i+'][inventory_item_id]'" :value="line.inventory_item_id">
                     </div>
-                    <p class="col-span-3 text-xs text-amber-600/70 self-end pb-2" x-show="dealType==='sell'">
-                        Sell lines must reference an existing inventory item — pick one from the list above.
-                    </p>
-                </div>
 
-                <div class="grid grid-cols-4 gap-2">
-                    <div>
-                        <label class="block text-xs text-gray-500 mb-0.5">Gross (g) <span class="text-red-400">*</span></label>
-                        <input type="number" step="0.001" min="0" :name="'lines['+i+'][gross_weight_grams]'" x-model.number="line.gross_weight_grams" @input="syncFromGross(line)"
-                               class="w-full px-2 py-1.5 text-sm bg-black/40 border border-white/10 rounded-lg text-gray-200 text-right">
+                    <div class="grid grid-cols-4 gap-2 mb-2" x-show="!line.inventory_item_id">
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-0.5">Metal type <span class="text-red-400" x-show="line.line_type==='metal_in'">*</span></label>
+                            <select x-model="line.metal_type" @change="ensureMetalRate(line.metal_type)" :name="'lines['+i+'][metal_type]'" class="w-full px-2 py-1.5 text-sm bg-black/40 border border-white/10 rounded-lg text-gray-200">
+                                <option value="">— select —</option>
+                                <option value="gold">Gold</option>
+                                <option value="silver">Silver</option>
+                                <option value="platinum">Platinum</option>
+                                <option value="palladium">Palladium</option>
+                            </select>
+                        </div>
+                        <p class="col-span-3 text-xs text-amber-600/70 self-end pb-2" x-show="line.line_type==='metal_out'">
+                            Metal-out lines must reference an existing inventory item — pick one from the list above.
+                        </p>
                     </div>
-                    <div>
-                        <label class="block text-xs text-gray-500 mb-0.5">Purity <span class="text-red-400">*</span></label>
-                        <input type="number" step="0.001" min="0" max="1000" :name="'lines['+i+'][purity]'" x-model.number="line.purity" @input="syncFromGross(line)"
-                               class="w-full px-2 py-1.5 text-sm bg-black/40 border border-white/10 rounded-lg text-gray-200 text-right">
-                    </div>
-                    <div>
-                        <label class="block text-xs text-gray-500 mb-0.5">Pure (g)</label>
-                        <input type="number" step="0.001" min="0" :name="'lines['+i+'][quantity_grams]'" x-model.number="line.quantity_grams" @input="syncFromPure(line)"
-                               class="w-full px-2 py-1.5 text-sm bg-black/40 border border-white/10 rounded-lg text-gray-200 text-right">
-                    </div>
-                    <div>
-                        <label class="block text-xs text-gray-500 mb-0.5">Pcs <span class="text-gray-600">(optional)</span></label>
-                        <input type="number" step="1" min="0" :name="'lines['+i+'][pcs]'" x-model.number="line.pcs"
-                               class="w-full px-2 py-1.5 text-sm bg-black/40 border border-white/10 rounded-lg text-gray-200 text-right">
-                    </div>
-                </div>
 
-                {{-- Inline metal rate — appears as soon as a metal type is set, same as A-Book --}}
-                <div x-show="line.metal_type" class="grid grid-cols-3 gap-2 mt-2 p-2 bg-amber-950/20 border border-amber-900/30 rounded-lg">
-                    <div>
-                        <label class="block text-xs text-gray-500 mb-0.5">
-                            <span x-text="(line.metal_type||'').charAt(0).toUpperCase()+(line.metal_type||'').slice(1)"></span>
-                            price / oz (USD) <span class="text-red-400">*</span>
-                        </label>
-                        <input type="number" step="0.0001" min="0.0001"
-                               :name="'metal_rates['+line.metal_type+'][usd_per_oz]'"
-                               :value="metalRates[line.metal_type] ? metalRates[line.metal_type].usdPerOz : ''"
-                               @change="ensureMetalRate(line.metal_type); metalRates[line.metal_type].usdPerOz = parseFloat($event.target.value)"
-                               required
-                               class="w-full px-2 py-1.5 text-sm bg-black/40 border border-amber-900/40 rounded-lg text-gray-200">
+                    <div class="grid grid-cols-4 gap-2">
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-0.5">Gross (g) <span class="text-red-400">*</span></label>
+                            <input type="number" step="0.001" min="0" :name="'lines['+i+'][gross_weight_grams]'" x-model.number="line.gross_weight_grams" @input="syncFromGross(line)"
+                                   class="w-full px-2 py-1.5 text-sm bg-black/40 border border-white/10 rounded-lg text-gray-200 text-right">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-0.5">Purity <span class="text-red-400">*</span></label>
+                            <input type="number" step="0.001" min="0" max="1000" :name="'lines['+i+'][purity]'" x-model.number="line.purity" @input="syncFromGross(line)"
+                                   class="w-full px-2 py-1.5 text-sm bg-black/40 border border-white/10 rounded-lg text-gray-200 text-right">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-0.5">Pure (g)</label>
+                            <input type="number" step="0.001" min="0" :name="'lines['+i+'][quantity_grams]'" x-model.number="line.quantity_grams" @input="syncFromPure(line)"
+                                   class="w-full px-2 py-1.5 text-sm bg-black/40 border border-white/10 rounded-lg text-gray-200 text-right">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-0.5">Pcs <span class="text-gray-600">(optional)</span></label>
+                            <input type="number" step="1" min="0" :name="'lines['+i+'][pcs]'" x-model.number="line.pcs"
+                                   class="w-full px-2 py-1.5 text-sm bg-black/40 border border-white/10 rounded-lg text-gray-200 text-right">
+                        </div>
                     </div>
-                    <div>
-                        <label class="block text-xs text-gray-500 mb-0.5">USD → AED rate <span class="text-red-400">*</span></label>
-                        <input type="number" step="0.0001" min="0.0001"
-                               :name="'metal_rates['+line.metal_type+'][usd_aed_rate]'"
-                               :value="metalRates[line.metal_type] ? metalRates[line.metal_type].usdAedRate : ''"
-                               @change="ensureMetalRate(line.metal_type); metalRates[line.metal_type].usdAedRate = parseFloat($event.target.value)"
-                               required
-                               class="w-full px-2 py-1.5 text-sm bg-black/40 border border-amber-900/40 rounded-lg text-gray-200">
+
+                    {{-- Inline metal rate — appears as soon as a metal type is set, same as A-Book --}}
+                    <div x-show="line.metal_type" class="grid grid-cols-3 gap-2 mt-2 p-2 bg-amber-950/20 border border-amber-900/30 rounded-lg">
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-0.5">
+                                <span x-text="(line.metal_type||'').charAt(0).toUpperCase()+(line.metal_type||'').slice(1)"></span>
+                                price / oz (USD) <span class="text-red-400">*</span>
+                            </label>
+                            <input type="number" step="0.0001" min="0.0001"
+                                   :name="'metal_rates['+line.metal_type+'][usd_per_oz]'"
+                                   :value="metalRates[line.metal_type] ? metalRates[line.metal_type].usdPerOz : ''"
+                                   @change="ensureMetalRate(line.metal_type); metalRates[line.metal_type].usdPerOz = parseFloat($event.target.value)"
+                                   required
+                                   class="w-full px-2 py-1.5 text-sm bg-black/40 border border-amber-900/40 rounded-lg text-gray-200">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-0.5">USD → AED rate <span class="text-red-400">*</span></label>
+                            <input type="number" step="0.0001" min="0.0001"
+                                   :name="'metal_rates['+line.metal_type+'][usd_aed_rate]'"
+                                   :value="metalRates[line.metal_type] ? metalRates[line.metal_type].usdAedRate : ''"
+                                   @change="ensureMetalRate(line.metal_type); metalRates[line.metal_type].usdAedRate = parseFloat($event.target.value)"
+                                   required
+                                   class="w-full px-2 py-1.5 text-sm bg-black/40 border border-amber-900/40 rounded-lg text-gray-200">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-0.5">AED / gram (auto)</label>
+                            <input type="number" step="0.000001" :value="rateFor(line.metal_type).toFixed(6)" readonly
+                                   class="w-full px-2 py-1.5 text-sm bg-black/20 border border-white/5 rounded-lg text-gray-500">
+                        </div>
                     </div>
-                    <div>
-                        <label class="block text-xs text-gray-500 mb-0.5">AED / gram (auto)</label>
-                        <input type="number" step="0.000001" :value="rateFor(line.metal_type).toFixed(6)" readonly
-                               class="w-full px-2 py-1.5 text-sm bg-black/20 border border-white/5 rounded-lg text-gray-500">
+                    <p x-show="!line.metal_type" class="text-xs text-amber-600/70 mt-2">Pick an item or metal type above to set the rate.</p>
+                    <input type="hidden" :name="'lines['+i+'][unit_price]'" :value="rateFor(line.metal_type).toFixed(4)">
+
+                    <div x-show="line.line_type==='metal_out'" class="mt-2">
+                        <label class="block text-xs text-gray-500 mb-0.5">Making charge (AED/g) <span class="text-gray-600">(optional)</span></label>
+                        <input type="number" step="0.0001" min="0" :name="'lines['+i+'][making_charge_rate]'" x-model.number="line.making_charge_rate"
+                               class="w-40 px-2 py-1.5 text-sm bg-black/40 border border-white/10 rounded-lg text-gray-200 text-right">
                     </div>
                 </div>
-                <p x-show="!line.metal_type" class="text-xs text-amber-600/70 mt-2">Pick an item or metal type above to set the rate.</p>
-                <input type="hidden" :name="'lines['+i+'][unit_price]'" :value="rateFor(line.metal_type).toFixed(4)">
+                </template>
+
+                <template x-if="line.line_type === 'cash_topup'">
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-0.5">Description</label>
+                        <input type="text" :name="'lines['+i+'][description]'" x-model="line.description" required placeholder="e.g. Cash balancing top-up"
+                               class="w-full px-2 py-1.5 text-sm bg-black/40 border border-white/10 rounded-lg text-gray-200 mb-2">
+                        <label class="block text-xs text-gray-500 mb-0.5">Amount (AED) <span class="text-red-400">*</span></label>
+                        <input type="number" step="0.01" min="0" :name="'lines['+i+'][unit_price]'" x-model.number="line.unit_price"
+                               class="w-40 px-2 py-1.5 text-sm bg-black/40 border border-white/10 rounded-lg text-gray-200 text-right">
+                        <input type="hidden" :name="'lines['+i+'][quantity_grams]'" value="1">
+                    </div>
+                </template>
             </div>
         </template>
 
@@ -162,9 +211,19 @@
         </button>
 
         <div class="mt-4 pt-4 border-t border-white/10 flex justify-end">
-            <div class="w-48 flex justify-between text-sm">
-                <span class="text-gray-400">Total</span>
-                <span class="font-mono font-semibold text-amber-400" x-text="fmt(total)"></span>
+            <div class="w-64 space-y-1.5">
+                <div class="flex justify-between text-sm" x-show="dealType==='sell'">
+                    <span class="text-gray-400">Premium <span class="text-gray-600">(AED)</span></span>
+                    <input type="number" step="0.01" name="premium_amount" x-model.number="premiumAmount" class="w-28 px-2 py-1 text-sm bg-black/40 border border-white/10 rounded-lg text-gray-200 text-right">
+                </div>
+                <div class="flex justify-between text-sm" x-show="dealType==='sell'">
+                    <span class="text-gray-400">Discount <span class="text-gray-600">(AED)</span></span>
+                    <input type="number" step="0.01" name="discount_amount" x-model.number="discountAmount" class="w-28 px-2 py-1 text-sm bg-black/40 border border-white/10 rounded-lg text-gray-200 text-right">
+                </div>
+                <div class="flex justify-between text-sm pt-1.5 border-t border-white/10">
+                    <span class="text-gray-400">Total</span>
+                    <span class="font-mono font-semibold text-amber-400" x-text="fmt(total)"></span>
+                </div>
             </div>
         </div>
     </div>
@@ -183,8 +242,11 @@
 function otcDealForm() {
     return {
         dealType: '{{ $deal->deal_type }}',
+        pricingType: '{{ $deal->pricing_type }}',
         counterpartyName: @json(old('counterparty_name', $deal->counterparty_name)),
         clientId: @json(old('bullion_client_id', $deal->bullion_client_id)),
+        premiumAmount: @json(old('premium_amount', (float) $deal->premium_amount)),
+        discountAmount: @json(old('discount_amount', (float) $deal->discount_amount)),
         itemsByName: {},
         lines: [],
         metalRates: (() => {
@@ -198,6 +260,7 @@ function otcDealForm() {
         init() {
             @json($items).forEach(it => this.itemsByName[it.name] = it);
             const existing = @json($deal->lines->map(fn ($l) => [
+                'line_type'           => $l->line_type,
                 'description'        => $l->description,
                 'inventory_item_id'  => $l->inventory_item_id,
                 'metal_type'         => $l->metal_type,
@@ -205,6 +268,8 @@ function otcDealForm() {
                 'gross_weight_grams' => $l->gross_weight_grams,
                 'quantity_grams'     => $l->quantity_grams,
                 'pcs'                => $l->pcs,
+                'unit_price'         => $l->unit_price,
+                'making_charge_rate' => $l->making_charge_rate,
                 'stockLabel'         => $l->inventoryItem && $l->inventoryItem->balance
                     ? ((float) $l->inventoryItem->balance->quantity_grams) . 'g in stock'
                     : '',
@@ -212,7 +277,7 @@ function otcDealForm() {
             this.lines = existing.length ? existing : [this.blankLine()];
         },
         blankLine() {
-            return { description:'', inventory_item_id:'', metal_type:'', purity:null, gross_weight_grams:null, quantity_grams:null, pcs:null, stockLabel:'' };
+            return { line_type: this.dealType === 'buy' ? 'metal_in' : 'metal_out', description:'', inventory_item_id:'', metal_type:'', purity:null, gross_weight_grams:null, quantity_grams:null, pcs:null, unit_price:null, making_charge_rate:null, stockLabel:'' };
         },
         addLine() { this.lines.push(this.blankLine()); },
         removeLine(i) { this.lines.splice(i, 1); },
@@ -257,9 +322,17 @@ function otcDealForm() {
             if (g > 0 && q > 0) line.purity = Math.round(q / g * 1000 * 1000) / 1000;
         },
         lineTotal(line) {
-            return (parseFloat(line.quantity_grams) || 0) * this.rateFor(line.metal_type);
+            if (line.line_type === 'cash_topup') return parseFloat(line.unit_price) || 0;
+            const rate = this.rateFor(line.metal_type);
+            const qty = parseFloat(line.quantity_grams) || 0;
+            const making = (parseFloat(line.making_charge_rate) || 0) * qty;
+            return qty * rate + making;
         },
-        get total() { return this.lines.reduce((s, l) => s + this.lineTotal(l), 0); },
+        get total() {
+            const linesTotal = this.lines.reduce((s, l) => s + this.lineTotal(l), 0);
+            if (this.dealType !== 'sell') return linesTotal;
+            return linesTotal + (parseFloat(this.premiumAmount) || 0) - (parseFloat(this.discountAmount) || 0);
+        },
         fmt(n) { return Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); },
     };
 }

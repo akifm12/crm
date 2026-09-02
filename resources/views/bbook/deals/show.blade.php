@@ -6,8 +6,8 @@
 @section('content')
 
 <div class="flex items-center gap-2 mb-5">
-    <span class="text-xs font-medium px-2.5 py-1 rounded-full {{ $deal->status === 'posted' ? 'bg-emerald-950/60 text-emerald-400' : ($deal->status === 'void' ? 'bg-red-950/60 text-red-400' : 'bg-gray-800 text-gray-400') }}">
-        {{ ucfirst($deal->status) }}
+    <span class="text-xs font-medium px-2.5 py-1 rounded-full {{ $deal->status === 'posted' ? 'bg-emerald-950/60 text-emerald-400' : ($deal->status === 'void' ? 'bg-red-950/60 text-red-400' : ($deal->status === 'pending_fix' ? 'bg-amber-950/60 text-amber-400' : 'bg-gray-800 text-gray-400')) }}">
+        {{ $deal->status === 'pending_fix' ? 'Awaiting price fix' : ucfirst($deal->status) }}
     </span>
 
     @if($deal->status === 'draft')
@@ -24,7 +24,14 @@
     </form>
     @endif
 
-    @if(in_array($deal->status, ['draft', 'posted']))
+    @if($deal->status === 'pending_fix')
+    <a href="{{ route('bbook.deals.fix-price.form', [$tenant->slug, $deal->id]) }}"
+       class="px-4 py-1.5 text-xs font-semibold text-black bg-gradient-to-r from-amber-400 to-yellow-600 rounded-lg hover:from-amber-300 hover:to-yellow-500">
+        Fix price
+    </a>
+    @endif
+
+    @if(in_array($deal->status, ['draft', 'posted', 'pending_fix']))
     <form method="POST" action="{{ route('bbook.deals.void', [$tenant->slug, $deal->id]) }}"
           onsubmit="return confirm('Void this deal? This cannot be undone.')" class="inline-flex items-center gap-1">
         @csrf
@@ -39,20 +46,27 @@
 <div class="card p-5 mb-5 max-w-3xl">
     <div class="grid grid-cols-4 gap-4 text-sm mb-4">
         <div><p class="text-xs text-gray-500 mb-0.5">Date</p><p class="text-gray-300">{{ $deal->deal_date->format('d M Y') }}</p></div>
-        <div><p class="text-xs text-gray-500 mb-0.5">Type</p><p class="text-gray-300 capitalize">{{ $deal->deal_type }}</p></div>
+        <div><p class="text-xs text-gray-500 mb-0.5">Type</p><p class="text-gray-300 capitalize">{{ $deal->deal_type }}{{ $deal->pricing_type === 'unfixed' ? ' · unfixed' : '' }}</p></div>
         <div><p class="text-xs text-gray-500 mb-0.5">Amount paid</p><p class="text-gray-300">{{ number_format($deal->amount_paid, 2) }}</p></div>
-        <div><p class="text-xs text-gray-500 mb-0.5">Outstanding</p><p class="text-gray-300">{{ number_format($deal->outstandingBalance(), 2) }}</p></div>
+        <div><p class="text-xs text-gray-500 mb-0.5">Outstanding</p><p class="text-gray-300">{{ $deal->status === 'pending_fix' ? '—' : number_format($deal->outstandingBalance(), 2) }}</p></div>
     </div>
-    @if($deal->client)
-    <div class="text-sm mb-4"><p class="text-xs text-gray-500 mb-0.5">Linked client</p><p class="text-gray-300">{{ $deal->client->displayName() }}</p></div>
-    @endif
+    <div class="grid grid-cols-4 gap-4 text-sm mb-4">
+        @if($deal->client)
+        <div><p class="text-xs text-gray-500 mb-0.5">Linked client</p><p class="text-gray-300">{{ $deal->client->displayName() }}</p></div>
+        @endif
+        @if($deal->party_reference)
+        <div><p class="text-xs text-gray-500 mb-0.5">Party reference</p><p class="text-gray-300">{{ $deal->party_reference }}</p></div>
+        @endif
+    </div>
 
     <table class="w-full text-sm mb-3">
         <thead>
             <tr class="text-left text-xs font-semibold text-gray-500 uppercase border-b border-white/10">
                 <th class="py-2">Description</th>
+                @if($deal->deal_type === 'exchange')<th class="py-2">Leg</th>@endif
                 <th class="py-2 text-right">Pure (g)</th>
                 <th class="py-2 text-right">Rate</th>
+                <th class="py-2 text-right">Making</th>
                 <th class="py-2 text-right">Total</th>
             </tr>
         </thead>
@@ -60,16 +74,30 @@
             @foreach($deal->lines as $line)
             <tr>
                 <td class="py-2 text-gray-300">{{ $line->description }}</td>
-                <td class="py-2 text-right font-mono text-gray-400">{{ $line->quantity_grams ? number_format($line->quantity_grams, 3) : '—' }}</td>
+                @if($deal->deal_type === 'exchange')<td class="py-2 text-gray-500 text-xs">{{ str_replace('_', ' ', $line->line_type) }}</td>@endif
+                <td class="py-2 text-right font-mono text-gray-400">{{ $line->quantity_grams && $line->line_type !== 'cash_topup' ? number_format($line->quantity_grams, 3) : '—' }}</td>
                 <td class="py-2 text-right font-mono text-gray-400">{{ $line->unit_price ? number_format($line->unit_price, 4) : '—' }}</td>
-                <td class="py-2 text-right font-mono text-gray-300">{{ number_format($line->line_subtotal, 2) }}</td>
+                <td class="py-2 text-right font-mono text-gray-400">{{ $line->making_charge_amount > 0 ? number_format($line->making_charge_amount, 2) : '—' }}</td>
+                <td class="py-2 text-right font-mono text-gray-300">{{ number_format($line->line_total, 2) }}</td>
             </tr>
             @endforeach
         </tbody>
         <tfoot>
+            @if((float) $deal->premium_amount > 0)
+            <tr class="text-xs">
+                <td colspan="{{ $deal->deal_type === 'exchange' ? 5 : 4 }}" class="pt-2 text-right text-gray-500 pr-2">Premium</td>
+                <td class="pt-2 text-right font-mono text-gray-400">{{ number_format($deal->premium_amount, 2) }}</td>
+            </tr>
+            @endif
+            @if((float) $deal->discount_amount > 0)
+            <tr class="text-xs">
+                <td colspan="{{ $deal->deal_type === 'exchange' ? 5 : 4 }}" class="pt-1 text-right text-gray-500 pr-2">Discount</td>
+                <td class="pt-1 text-right font-mono text-gray-400">-{{ number_format($deal->discount_amount, 2) }}</td>
+            </tr>
+            @endif
             <tr class="border-t border-white/10 text-sm font-semibold">
-                <td colspan="3" class="pt-2 text-right text-gray-400 pr-2">Total</td>
-                <td class="pt-2 text-right font-mono text-amber-400">{{ number_format($deal->total, 2) }}</td>
+                <td colspan="{{ $deal->deal_type === 'exchange' ? 5 : 4 }}" class="pt-2 text-right text-gray-400 pr-2">Total</td>
+                <td class="pt-2 text-right font-mono text-amber-400">{{ $deal->status === 'pending_fix' ? '— pending —' : number_format($deal->total, 2) }}</td>
             </tr>
         </tfoot>
     </table>
@@ -79,9 +107,12 @@
     @endif
 </div>
 
-@if($deal->status === 'posted')
+@if(in_array($deal->status, ['posted', 'pending_fix']))
 <div class="card p-5 max-w-3xl">
-    <h3 class="text-sm font-semibold text-gray-300 mb-3">Payments</h3>
+    <h3 class="text-sm font-semibold text-gray-300 mb-3">{{ $deal->status === 'pending_fix' ? 'Deposits' : 'Payments' }}</h3>
+    @if($deal->status === 'pending_fix')
+    <p class="text-xs text-amber-600/70 mb-3">Booked as a deposit until the price is fixed, then applied against the invoice.</p>
+    @endif
     <table class="w-full text-sm mb-4">
         <tbody class="divide-y divide-white/5">
             @forelse($deal->payments as $payment)

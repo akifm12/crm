@@ -11,11 +11,13 @@ class OtcDeal extends Model
 {
     public const TYPES = ['buy', 'sell', 'exchange'];
 
+    public const PRICING_TYPES = ['fixed', 'unfixed'];
+
     protected $fillable = [
-        'tenant_id', 'bullion_client_id', 'deal_number', 'deal_type', 'counterparty_name',
-        'deal_date', 'status', 'currency_code', 'exchange_rate', 'metal_rates',
-        'subtotal', 'total', 'amount_paid', 'notes',
-        'otc_journal_entry_id', 'created_by', 'posted_at', 'voided_at',
+        'tenant_id', 'bullion_client_id', 'deal_number', 'deal_type', 'pricing_type', 'counterparty_name',
+        'deal_date', 'party_reference', 'status', 'currency_code', 'exchange_rate', 'metal_rates',
+        'subtotal', 'premium_amount', 'discount_amount', 'total', 'amount_paid', 'notes',
+        'otc_journal_entry_id', 'created_by', 'posted_at', 'voided_at', 'fixed_at', 'fixed_by',
     ];
 
     protected $casts = [
@@ -23,6 +25,7 @@ class OtcDeal extends Model
         'metal_rates'  => 'array',
         'posted_at'    => 'datetime',
         'voided_at'    => 'datetime',
+        'fixed_at'     => 'datetime',
     ];
 
     public function tenant(): BelongsTo    { return $this->belongsTo(Tenant::class); }
@@ -31,6 +34,7 @@ class OtcDeal extends Model
     public function payments(): HasMany    { return $this->hasMany(OtcDealPayment::class)->orderBy('payment_date'); }
     public function journalEntry(): BelongsTo { return $this->belongsTo(OtcJournalEntry::class, 'otc_journal_entry_id'); }
     public function creator(): BelongsTo   { return $this->belongsTo(User::class, 'created_by'); }
+    public function fixer(): BelongsTo     { return $this->belongsTo(User::class, 'fixed_by'); }
 
     public function isFullyPaid(): bool
     {

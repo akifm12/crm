@@ -43,7 +43,10 @@ class OtcDealController extends Controller
         $request->validate($this->lineRules());
 
         $deal = app(OtcDealService::class)->createDraft($tenant, array_merge(
-            $request->only('bullion_client_id', 'deal_type', 'counterparty_name', 'deal_date', 'notes', 'lines', 'metal_rates'),
+            $request->only(
+                'bullion_client_id', 'deal_type', 'pricing_type', 'counterparty_name', 'deal_date',
+                'party_reference', 'notes', 'lines', 'metal_rates', 'premium_amount', 'discount_amount'
+            ),
             ['created_by' => Auth::guard('b_book')->id()]
         ));
 
@@ -83,7 +86,8 @@ class OtcDealController extends Controller
 
         try {
             app(OtcDealService::class)->updateDraft($deal, $request->only(
-                'bullion_client_id', 'counterparty_name', 'deal_date', 'notes', 'lines', 'metal_rates'
+                'bullion_client_id', 'pricing_type', 'counterparty_name', 'deal_date', 'party_reference',
+                'notes', 'lines', 'metal_rates', 'premium_amount', 'discount_amount'
             ));
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage())->withInput();
@@ -121,6 +125,37 @@ class OtcDealController extends Controller
         return back()->with('success', 'Deal voided.');
     }
 
+    public function fixPriceForm(string $slug, OtcDeal $deal)
+    {
+        $tenant = app('tenant');
+        abort_if($deal->tenant_id !== $tenant->id, 404);
+        abort_if($deal->status !== 'pending_fix', 403, 'This deal is not awaiting a price fix.');
+        $deal->load('lines.inventoryItem');
+
+        return view('bbook.deals.fix-price', compact('tenant', 'deal'));
+    }
+
+    public function fixPrice(Request $request, string $slug, OtcDeal $deal)
+    {
+        $tenant = app('tenant');
+        abort_if($deal->tenant_id !== $tenant->id, 404);
+
+        $request->validate([
+            'lines'                      => 'required|array|min:1',
+            'lines.*.unit_price'         => 'required|numeric|min:0',
+            'lines.*.making_charge_rate' => 'nullable|numeric|min:0',
+        ]);
+
+        try {
+            app(OtcDealService::class)->fixPrice($deal, $request->input('lines'), Auth::guard('b_book')->id());
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage())->withInput();
+        }
+
+        return redirect()->route('bbook.deals.show', [$tenant->slug, $deal->id])
+            ->with('success', 'Price fixed and deal posted.');
+    }
+
     public function storePayment(Request $request, string $slug, OtcDeal $deal)
     {
         $tenant = app('tenant');
@@ -149,13 +184,19 @@ class OtcDealController extends Controller
     {
         return [
             'bullion_client_id'   => 'nullable|exists:bullion_clients,id',
-            'deal_type'           => ['required', Rule::in(['buy', 'sell'])],
+            'deal_type'           => ['required', Rule::in(['buy', 'sell', 'exchange'])],
+            'pricing_type'        => ['nullable', Rule::in(['fixed', 'unfixed'])],
             'counterparty_name'   => 'required|string|max:255',
             'deal_date'           => 'required|date',
+            'party_reference'     => 'nullable|string|max:255',
             'notes'               => 'nullable|string',
+            'premium_amount'      => 'nullable|numeric',
+            'discount_amount'     => 'nullable|numeric',
             'lines'               => 'required|array|min:1',
+            'lines.*.line_type'             => ['nullable', Rule::in(['metal_in', 'metal_out', 'cash_topup', 'other'])],
             'lines.*.description' => 'required|string|max:255',
             'lines.*.unit_price'  => 'required|numeric|min:0',
+            'lines.*.making_charge_rate'    => 'nullable|numeric|min:0',
             'metal_rates'                    => 'nullable|array',
             'metal_rates.*.usd_per_oz'       => 'nullable|numeric|min:0',
             'metal_rates.*.usd_aed_rate'     => 'nullable|numeric|min:0',
