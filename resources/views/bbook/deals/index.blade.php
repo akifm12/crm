@@ -5,6 +5,14 @@
 
 @section('content')
 
+<div class="flex justify-end mb-4">
+    <a href="{{ route('bbook.deals.create', $tenant->slug) }}"
+       class="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-black bg-gradient-to-r from-amber-400 to-yellow-600 rounded-lg hover:from-amber-300 hover:to-yellow-500 transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        New OTC deal
+    </a>
+</div>
+
 <div class="card overflow-hidden">
     <table class="w-full text-sm">
         <thead>
@@ -20,8 +28,8 @@
         </thead>
         <tbody class="divide-y divide-white/5">
             @forelse($deals as $deal)
-            <tr class="hover:bg-white/[0.02]">
-                <td class="px-5 py-3 text-gray-300">{{ $deal->deal_number }}</td>
+            <tr class="hover:bg-white/[0.02] cursor-pointer" onclick="location.href='{{ route('bbook.deals.show', [$tenant->slug, $deal->id]) }}'">
+                <td class="px-5 py-3 text-amber-500">{{ $deal->deal_number }}</td>
                 <td class="px-5 py-3 text-gray-500">{{ $deal->deal_date->format('d M Y') }}</td>
                 <td class="px-5 py-3 text-gray-400 capitalize">{{ $deal->deal_type }}</td>
                 <td class="px-5 py-3 text-gray-300">{{ $deal->counterparty_name }}</td>

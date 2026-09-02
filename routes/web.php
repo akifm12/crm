@@ -254,7 +254,13 @@ Route::prefix('{slug}/bbook')->middleware(['resolve.tenant'])->name('bbook.')->g
     Route::middleware(['bbook.user'])->group(function () {
         Route::get('/', [BBookDashboardController::class, 'index'])->name('dashboard');
 
-        Route::get('/deals', [OtcDealController::class, 'index'])->name('deals.index');
+        Route::get('/deals',                    [OtcDealController::class, 'index'])->name('deals.index');
+        Route::get('/deals/new',                [OtcDealController::class, 'create'])->name('deals.create');
+        Route::post('/deals',                   [OtcDealController::class, 'store'])->name('deals.store');
+        Route::get('/deals/{deal}',             [OtcDealController::class, 'show'])->name('deals.show');
+        Route::post('/deals/{deal}/post',       [OtcDealController::class, 'post'])->name('deals.post');
+        Route::post('/deals/{deal}/void',       [OtcDealController::class, 'void'])->name('deals.void');
+        Route::post('/deals/{deal}/payments',   [OtcDealController::class, 'storePayment'])->name('deals.payments.store');
     });
 });
 

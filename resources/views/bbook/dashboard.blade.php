@@ -44,8 +44,8 @@
         </thead>
         <tbody class="divide-y divide-white/5">
             @forelse($recentDeals as $deal)
-            <tr class="hover:bg-white/[0.02]">
-                <td class="px-5 py-3 text-gray-300">{{ $deal->deal_number }}</td>
+            <tr class="hover:bg-white/[0.02] cursor-pointer" onclick="location.href='{{ route('bbook.deals.show', [$tenant->slug, $deal->id]) }}'">
+                <td class="px-5 py-3 text-amber-500">{{ $deal->deal_number }}</td>
                 <td class="px-5 py-3 text-gray-500">{{ $deal->deal_date->format('d M Y') }}</td>
                 <td class="px-5 py-3 text-gray-400 capitalize">{{ $deal->deal_type }}</td>
                 <td class="px-5 py-3 text-gray-300">{{ $deal->counterparty_name }}</td>
