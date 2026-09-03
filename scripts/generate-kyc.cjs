@@ -24,7 +24,9 @@ const BLANK = !!d.blank;
 const PLACEHOLDER_RE = /^\[.+\]$/;
 
 // ── Units ─────────────────────────────────────────────────────────────────────
-const FULL = 9026;   // A4 text width: 11906 DXA − 2×1440 DXA (1-inch margins)
+const MARGIN_SIDE     = 850;    // 1.5cm side margins, in DXA (566.93 DXA/cm × 1.5, rounded)
+const MARGIN_TOPBOTTOM = 1440;  // 2.5cm top/bottom margins, unchanged (1440 DXA = 1in ≈ 2.54cm)
+const FULL = 11906 - 2 * MARGIN_SIDE;   // A4 text width: 11906 DXA page width − side margins
 const pt   = n => n * 20;
 const hp   = n => n * 2;   // half-points for font size
 
@@ -379,7 +381,7 @@ if (isCorp) {
 // SECTION 2 — AUTHORIZED SIGNATORIES (corporate only)
 // ════════════════════════════════════════════════════════════════════════════════
 if (isCorp && d.signatories && d.signatories.length) {
-    const sw = [1950, 1400, 1250, 1100, 1050, 1076, 1200]; // sums to 9026
+    const sw = [2205, 1583, 1413, 1244, 1187, 1217, 1357]; // sums to FULL (10206)
     body.push(
         ...sectionHeading('Authorized Signatories'),
         gridTable(
@@ -395,7 +397,7 @@ if (isCorp && d.signatories && d.signatories.length) {
 // SECTION 3 — SHAREHOLDERS & UBOs (corporate only)
 // ════════════════════════════════════════════════════════════════════════════════
 if (isCorp && d.shareholders && d.shareholders.length) {
-    const shw = [2250, 1000, 1200, 900, 650, 1626, 1400]; // sums to 9026
+    const shw = [2544, 1131, 1357, 1018, 735, 1839, 1582]; // sums to FULL (10206)
     body.push(
         ...sectionHeading('Shareholders & Ultimate Beneficial Owners'),
         gridTable(
@@ -634,7 +636,7 @@ body.push(
 const doc = new Document({
     sections: [{
         properties: {
-            page: { margin: { top: pt(72), bottom: pt(72), left: pt(72), right: pt(72) } },
+            page: { margin: { top: MARGIN_TOPBOTTOM, bottom: MARGIN_TOPBOTTOM, left: MARGIN_SIDE, right: MARGIN_SIDE } },
         },
         headers: {
             default: new Header({ children: [
