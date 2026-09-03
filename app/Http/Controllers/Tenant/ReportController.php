@@ -14,6 +14,27 @@ use Illuminate\Support\Str;
 
 class ReportController extends Controller
 {
+    // ── Tenant logo, resolved to an absolute filesystem path for generate-kyc.cjs
+    //    to read directly (same file the portal sidebar displays via logo_url).
+    //    Only raster types are embeddable in the docx without a fallback image —
+    //    an SVG logo just won't appear in the generated pack. ────────────────────
+    private function logoDataFor($tenant): array
+    {
+        if (!$tenant->logo_url || !Storage::disk('public')->exists($tenant->logo_url)) {
+            return ['logo_path' => null, 'logo_ext' => null];
+        }
+
+        $ext = strtolower(pathinfo($tenant->logo_url, PATHINFO_EXTENSION));
+        if (!in_array($ext, ['png', 'jpg', 'jpeg', 'gif', 'bmp'])) {
+            return ['logo_path' => null, 'logo_ext' => null];
+        }
+
+        return [
+            'logo_path' => Storage::disk('public')->path($tenant->logo_url),
+            'logo_ext'  => $ext,
+        ];
+    }
+
     // ── Build KYC data array (shared between Word and PDF) ────────────────────
 
     private function buildKycData(BullionClient $client, $tenant): array
@@ -40,6 +61,7 @@ class ReportController extends Controller
         return [
             'ref'       => 'KYC-' . str_pad($client->id, 5, '0', STR_PAD_LEFT),
             'generated' => now()->format('d M Y, H:i'),
+            ...$this->logoDataFor($tenant),
             'sector'         => $tenant->business_type ?? 'gold',
             'tenant_name'    => $tenant->name,
             'tenant_address' => $tenant->address ?? '',
@@ -139,6 +161,7 @@ class ReportController extends Controller
             'blank'     => true,
             'ref'       => 'KYC-TEMPLATE',
             'generated' => now()->format('d M Y'),
+            ...$this->logoDataFor($tenant),
             'sector'         => $tenant->business_type ?? 'gold',
             'tenant_name'    => $tenant->name,
             'tenant_address' => $tenant->address ?? '',

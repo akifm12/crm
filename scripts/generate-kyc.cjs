@@ -5,8 +5,8 @@
 const fs = require('fs');
 const {
     Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
-    AlignmentType, BorderStyle, WidthType, ShadingType,
-    Header, Footer, PageNumber, PageBreak,
+    AlignmentType, BorderStyle, WidthType, ShadingType, VerticalAlignTable,
+    Header, Footer, PageNumber, PageBreak, ImageRun,
 } = require('docx');
 
 const dataFile = process.argv[2];
@@ -22,6 +22,59 @@ const val = v => (v !== null && v !== undefined && String(v).trim()) ? String(v)
 // rating, screening result) are omitted entirely since they don't apply pre-intake.
 const BLANK = !!d.blank;
 const PLACEHOLDER_RE = /^\[.+\]$/;
+
+// ── Tenant logo (title block) ──────────────────────────────────────────────────
+// d.logo_path/d.logo_ext are set by ReportController from the tenant's uploaded
+// logo (same file the portal sidebar uses). Only raster types are embeddable
+// without a fallback image, so SVG logos are skipped here — they still work fine
+// on the web sidebar, just don't appear in the generated Word/PDF pack.
+const RASTER_TYPES = { png: 'png', jpg: 'jpg', jpeg: 'jpg', gif: 'gif', bmp: 'bmp' };
+
+// Minimal, dependency-free pixel-dimension readers — avoids pulling in an
+// image-processing package just to size a logo inside its title-block cell.
+function readImageDimensions(buf, type) {
+    if (type === 'png') {
+        return { width: buf.readUInt32BE(16), height: buf.readUInt32BE(20) };
+    }
+    if (type === 'gif') {
+        return { width: buf.readUInt16LE(6), height: buf.readUInt16LE(8) };
+    }
+    if (type === 'bmp') {
+        return { width: Math.abs(buf.readInt32LE(18)), height: Math.abs(buf.readInt32LE(22)) };
+    }
+    if (type === 'jpg') {
+        let i = 2; // skip SOI marker
+        while (i < buf.length - 8) {
+            if (buf[i] !== 0xFF) { i++; continue; }
+            const marker = buf[i + 1];
+            // SOF0..SOF15 markers (excluding DHT/JPG/DAC) carry the frame dimensions
+            if (marker >= 0xC0 && marker <= 0xCF && marker !== 0xC4 && marker !== 0xC8 && marker !== 0xCC) {
+                return { height: buf.readUInt16BE(i + 5), width: buf.readUInt16BE(i + 7) };
+            }
+            const segmentLength = buf.readUInt16BE(i + 2);
+            i += 2 + segmentLength;
+        }
+    }
+    return null;
+}
+
+let logo = null;
+if (d.logo_path && d.logo_ext && RASTER_TYPES[String(d.logo_ext).toLowerCase()]) {
+    try {
+        const type = RASTER_TYPES[String(d.logo_ext).toLowerCase()];
+        const data = fs.readFileSync(d.logo_path);
+        const dims = readImageDimensions(data, type);
+        if (dims && dims.width > 0 && dims.height > 0) {
+            const MAX_H = 60, MAX_W = 150; // px, at docx's 96dpi assumption
+            let height = MAX_H;
+            let width = Math.round(height * (dims.width / dims.height));
+            if (width > MAX_W) { width = MAX_W; height = Math.round(width * (dims.height / dims.width)); }
+            logo = { type, data, width, height };
+        }
+    } catch (e) {
+        // Missing/unreadable logo file — fall back to the text-only title block.
+    }
+}
 
 // ── Units ─────────────────────────────────────────────────────────────────────
 const MARGIN_SIDE   = 850;    // 1.5cm side margins, in DXA (566.93 DXA/cm × 1.5, rounded)
@@ -298,25 +351,89 @@ const sanctionsList = [
 // ════════════════════════════════════════════════════════════════════════════════
 // TITLE BLOCK
 // ════════════════════════════════════════════════════════════════════════════════
-body.push(
-    new Paragraph({
-        children: [run(d.tenant_name, { bold: true, size: hp(18) })],
-        alignment: AlignmentType.CENTER,
-        spacing: { after: pt(3) },
-    }),
-    new Paragraph({
-        children: [run('Client Due Diligence Pack', { size: hp(14), color: '2E4A7A' })],
-        alignment: AlignmentType.CENTER,
-        spacing: { after: pt(2) },
-    }),
-    new Paragraph({
-        children: [run(`${d.ref}  ·  ${d.generated}`, { size: hp(9), color: '9CA3AF' })],
-        alignment: AlignmentType.CENTER,
-        spacing: { after: pt(3) },
-        border: { bottom: { style: BorderStyle.SINGLE, size: 12, color: '2E4A7A', space: 4 } },
-    }),
-    gap(10),
-);
+if (logo) {
+    // Logo on the left (vertically centered), the name/subtitle/ref stacked on the
+    // right — a single divider row spans both columns underneath.
+    const LOGO_COL = 2300;
+    body.push(
+        new Table({
+            width: { size: FULL, type: WidthType.DXA },
+            columnWidths: [LOGO_COL, FULL - LOGO_COL],
+            borders: { ...allBorders(NONE), insideH: NONE, insideV: NONE },
+            rows: [
+                new TableRow({ children: [
+                    new TableCell({
+                        width: { size: LOGO_COL, type: WidthType.DXA },
+                        verticalAlign: VerticalAlignTable.CENTER,
+                        borders: allBorders(NONE),
+                        margins: { top: 0, bottom: 0, left: 0, right: pt(8) },
+                        children: [new Paragraph({
+                            alignment: AlignmentType.LEFT,
+                            spacing: { after: 0 },
+                            children: [new ImageRun({ type: logo.type, data: logo.data, transformation: { width: logo.width, height: logo.height } })],
+                        })],
+                    }),
+                    new TableCell({
+                        width: { size: FULL - LOGO_COL, type: WidthType.DXA },
+                        verticalAlign: VerticalAlignTable.CENTER,
+                        borders: allBorders(NONE),
+                        children: [
+                            new Paragraph({
+                                children: [run(d.tenant_name, { bold: true, size: hp(18) })],
+                                alignment: AlignmentType.RIGHT,
+                                spacing: { after: pt(3) },
+                            }),
+                            new Paragraph({
+                                children: [run('Client Due Diligence Pack', { size: hp(14), color: '2E4A7A' })],
+                                alignment: AlignmentType.RIGHT,
+                                spacing: { after: pt(2) },
+                            }),
+                            new Paragraph({
+                                children: [run(`${d.ref}  ·  ${d.generated}`, { size: hp(9), color: '9CA3AF' })],
+                                alignment: AlignmentType.RIGHT,
+                                spacing: { after: 0 },
+                            }),
+                        ],
+                    }),
+                ]}),
+                new TableRow({ children: [
+                    new TableCell({
+                        columnSpan: 2,
+                        width: { size: FULL, type: WidthType.DXA },
+                        borders: allBorders(NONE),
+                        margins: { top: 0, bottom: 0, left: 0, right: 0 },
+                        children: [new Paragraph({
+                            children: [run('')],
+                            spacing: { before: pt(4), after: 0 },
+                            border: { top: { style: BorderStyle.SINGLE, size: 12, color: '2E4A7A' } },
+                        })],
+                    }),
+                ]}),
+            ],
+        }),
+        gap(10),
+    );
+} else {
+    body.push(
+        new Paragraph({
+            children: [run(d.tenant_name, { bold: true, size: hp(18) })],
+            alignment: AlignmentType.CENTER,
+            spacing: { after: pt(3) },
+        }),
+        new Paragraph({
+            children: [run('Client Due Diligence Pack', { size: hp(14), color: '2E4A7A' })],
+            alignment: AlignmentType.CENTER,
+            spacing: { after: pt(2) },
+        }),
+        new Paragraph({
+            children: [run(`${d.ref}  ·  ${d.generated}`, { size: hp(9), color: '9CA3AF' })],
+            alignment: AlignmentType.CENTER,
+            spacing: { after: pt(3) },
+            border: { bottom: { style: BorderStyle.SINGLE, size: 12, color: '2E4A7A', space: 4 } },
+        }),
+        gap(10),
+    );
+}
 
 // Client summary strip — status/CDD/risk rating are staff-determined, so this is
 // skipped entirely on a blank template (nothing to show before intake happens).
