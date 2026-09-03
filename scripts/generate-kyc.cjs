@@ -636,7 +636,12 @@ body.push(
 const doc = new Document({
     sections: [{
         properties: {
-            page: { margin: { top: MARGIN_TOPBOTTOM, bottom: MARGIN_TOPBOTTOM, left: MARGIN_SIDE, right: MARGIN_SIDE } },
+            page: {
+                margin: {
+                    top: MARGIN_TOPBOTTOM, bottom: MARGIN_TOPBOTTOM, left: MARGIN_SIDE, right: MARGIN_SIDE,
+                    header: pt(18),   // distance from page top to the header text — was the docx default (~1.25cm), now ~0.65cm
+                },
+            },
         },
         headers: {
             default: new Header({ children: [
@@ -646,8 +651,8 @@ const doc = new Document({
                         run('  •  Client Due Diligence Pack', { size: hp(8.5), color: '9CA3AF' }),
                     ],
                     alignment: AlignmentType.LEFT,
-                    spacing: { after: 0 },
-                    border: { bottom: { style: BorderStyle.SINGLE, size: 4, color: 'D0D0D0' } },
+                    spacing: { after: pt(4) },
+                    border: { bottom: { style: BorderStyle.SINGLE, size: 4, color: 'D0D0D0', space: 4 } },
                 }),
             ]}),
         },
