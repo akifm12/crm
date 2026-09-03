@@ -24,8 +24,10 @@ const BLANK = !!d.blank;
 const PLACEHOLDER_RE = /^\[.+\]$/;
 
 // ── Units ─────────────────────────────────────────────────────────────────────
-const MARGIN_SIDE     = 850;    // 1.5cm side margins, in DXA (566.93 DXA/cm × 1.5, rounded)
-const MARGIN_TOPBOTTOM = 1440;  // 2.5cm top/bottom margins, unchanged (1440 DXA = 1in ≈ 2.54cm)
+const MARGIN_SIDE   = 850;    // 1.5cm side margins, in DXA (566.93 DXA/cm × 1.5, rounded)
+const MARGIN_TOP    = 700;    // ~1.2cm — the running header sits close to the page top now,
+                               // so the body/title no longer needs a full inch of clearance
+const MARGIN_BOTTOM = 1440;   // 2.5cm bottom margin, unchanged
 const FULL = 11906 - 2 * MARGIN_SIDE;   // A4 text width: 11906 DXA page width − side margins
 const pt   = n => n * 20;
 const hp   = n => n * 2;   // half-points for font size
@@ -310,8 +312,8 @@ body.push(
     new Paragraph({
         children: [run(`${d.ref}  ·  ${d.generated}`, { size: hp(9), color: '9CA3AF' })],
         alignment: AlignmentType.CENTER,
-        spacing: { after: 0 },
-        border: { bottom: { style: BorderStyle.SINGLE, size: 12, color: '2E4A7A' } },
+        spacing: { after: pt(3) },
+        border: { bottom: { style: BorderStyle.SINGLE, size: 12, color: '2E4A7A', space: 4 } },
     }),
     gap(10),
 );
@@ -638,7 +640,7 @@ const doc = new Document({
         properties: {
             page: {
                 margin: {
-                    top: MARGIN_TOPBOTTOM, bottom: MARGIN_TOPBOTTOM, left: MARGIN_SIDE, right: MARGIN_SIDE,
+                    top: MARGIN_TOP, bottom: MARGIN_BOTTOM, left: MARGIN_SIDE, right: MARGIN_SIDE,
                     header: pt(18),   // distance from page top to the header text — was the docx default (~1.25cm), now ~0.65cm
                 },
             },
