@@ -398,6 +398,28 @@
                 </div>
             </div>
 
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Signatory Name</label>
+                    <input type="text" name="signatory_name" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Signatory Title</label>
+                    <input type="text" name="signatory_title" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Certificate Template</label>
+                <select name="certificate_template" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                    <option value="1">Classic — Gold &amp; Navy</option>
+                    <option value="2">Modern — Blue &amp; White</option>
+                    <option value="3">Prestige — Dark</option>
+                </select>
+            </div>
+
+            <p class="text-xs text-gray-400">Signatory and certificate template also apply to every imported row.</p>
+
             <div>
                 <label class="block text-xs font-medium text-gray-600 mb-1">File (.xlsx, .xls or .csv) <span class="text-red-500">*</span></label>
                 <input type="file" name="file" accept=".xlsx,.xls,.csv" required

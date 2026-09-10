@@ -228,10 +228,13 @@ class TrainingSessionController extends Controller
     public function importAttendees(Request $request, string $date, string $type)
     {
         $request->validate([
-            'crm_client_id' => 'required|exists:crm_clients,id',
-            'status'        => 'required|in:completed,pending',
-            'expiry_date'   => 'nullable|date',
-            'file'          => 'required|file|mimes:xlsx,xls,csv|max:5120',
+            'crm_client_id'         => 'required|exists:crm_clients,id',
+            'status'                => 'required|in:completed,pending',
+            'expiry_date'           => 'nullable|date',
+            'signatory_name'        => 'nullable|string|max:255',
+            'signatory_title'       => 'nullable|string|max:255',
+            'certificate_template'  => 'nullable|integer|min:1|max:3',
+            'file'                  => 'required|file|mimes:xlsx,xls,csv|max:5120',
         ]);
 
         try {
@@ -247,14 +250,17 @@ class TrainingSessionController extends Controller
 
         foreach ($rows as $row) {
             CrmEmployeeTraining::create([
-                'employee_name'      => $row['name'],
-                'employee_id_number' => $row['id_number'],
-                'employee_role'      => $row['role'],
-                'crm_client_id'      => $request->crm_client_id,
-                'expiry_date'        => $request->expiry_date,
-                'status'             => $request->status,
-                'training_type'      => $type,
-                'training_date'      => $date,
+                'employee_name'        => $row['name'],
+                'employee_id_number'   => $row['id_number'],
+                'employee_role'        => $row['role'],
+                'crm_client_id'        => $request->crm_client_id,
+                'expiry_date'          => $request->expiry_date,
+                'status'               => $request->status,
+                'training_type'        => $type,
+                'training_date'        => $date,
+                'signatory_name'       => $request->signatory_name,
+                'signatory_title'      => $request->signatory_title,
+                'certificate_template' => $request->certificate_template ?? 1,
             ]);
         }
 
