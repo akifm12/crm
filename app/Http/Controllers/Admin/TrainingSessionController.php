@@ -8,9 +8,10 @@ use App\Models\CrmEmployeeTraining;
 use App\Mail\CertificateLinksEmail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
-use Spatie\Browsershot\Browsershot;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class TrainingSessionController extends Controller
 {
@@ -111,6 +112,71 @@ class TrainingSessionController extends Controller
         return back()->with('success', $message);
     }
 
+    // ── Training log data + generator (shared between Word and PDF) — reproduces
+    //    the real BAMC letterhead (logo/address in the header, licensing line in
+    //    the footer, from "BAMC empty Letterhead with WM.docx") via generate-
+    //    training-log.cjs, instead of a blank page the user pastes it onto. ────
+
+    private function buildTrainingLogData($attendees, string $date, string $type): array
+    {
+        $logoPath = resource_path('branding/bamc-logo.jpeg');
+
+        return [
+            'training_type'  => $type,
+            'date_formatted' => \Carbon\Carbon::parse($date)->format('d F Y'),
+            'trainer'        => $attendees->first()->trainer ?? '',
+            'logo_path'      => file_exists($logoPath) ? $logoPath : null,
+            'attendees'      => $attendees->map(fn ($a) => [
+                'employee_name'      => $a->employee_name,
+                'employee_id_number' => $a->employee_id_number,
+                'company_name'       => $a->client->company_name ?? null,
+            ])->values()->all(),
+        ];
+    }
+
+    private function generateTrainingLogDocx(array $data, string $baseName): string
+    {
+        $tmpJson = storage_path('app/tmp/training_' . uniqid() . '.json');
+        $outPath = storage_path('app/tmp/' . $baseName . '.docx');
+
+        if (!file_exists(dirname($tmpJson))) mkdir(dirname($tmpJson), 0755, true);
+
+        file_put_contents($tmpJson, json_encode($data, JSON_UNESCAPED_UNICODE));
+
+        $cmd    = 'node ' . escapeshellarg(base_path('scripts/generate-training-log.cjs')) . ' ' . escapeshellarg($tmpJson) . ' ' . escapeshellarg($outPath) . ' 2>&1';
+        $output = shell_exec($cmd);
+        @unlink($tmpJson);
+
+        if (!file_exists($outPath)) {
+            throw new \RuntimeException('Training log docx generation failed: ' . $output);
+        }
+
+        return $outPath;
+    }
+
+    public function exportLogDocx(string $date, string $type)
+    {
+        $attendees = CrmEmployeeTraining::with('client')
+            ->where('training_type', $type)
+            ->whereDate('training_date', $date)
+            ->orderBy('employee_name')
+            ->get();
+
+        $baseName = 'Training-Log-' . Str::slug($type) . '-' . $date . '-' . uniqid();
+        $filename = 'Training-Log-' . Str::slug($type) . '-' . $date . '.docx';
+
+        try {
+            $outPath = $this->generateTrainingLogDocx($this->buildTrainingLogData($attendees, $date, $type), $baseName);
+        } catch (\RuntimeException $e) {
+            Log::error('Training log docx failed', ['error' => $e->getMessage()]);
+            return back()->with('error', 'Failed to generate the Word document. ' . $e->getMessage());
+        }
+
+        return response()->download($outPath, $filename)->deleteFileAfterSend(true);
+    }
+
+    // ── Training log PDF (converted from the same letterhead docx via LibreOffice,
+    //    mirroring ReportController::kycPdf's docx-to-pdf pattern) ────────────
     public function exportLog(string $date, string $type)
     {
         $attendees = CrmEmployeeTraining::with('client')
@@ -119,30 +185,133 @@ class TrainingSessionController extends Controller
             ->orderBy('employee_name')
             ->get();
 
-        $letterheadPath = storage_path('app/public/certificate/letterhead.png');
-        $letterheadB64  = file_exists($letterheadPath)
-            ? 'data:image/png;base64,' . base64_encode(file_get_contents($letterheadPath))
-            : null;
+        $baseName = 'Training-Log-' . Str::slug($type) . '-' . $date . '-' . uniqid();
+        $filename = 'Training-Log-' . Str::slug($type) . '-' . $date . '.pdf';
 
-        $html = view('admin.training.log_pdf', compact('attendees', 'date', 'type', 'letterheadB64'))->render();
+        try {
+            $docxPath = $this->generateTrainingLogDocx($this->buildTrainingLogData($attendees, $date, $type), $baseName);
+        } catch (\RuntimeException $e) {
+            Log::error('Training log PDF: docx step failed', ['error' => $e->getMessage()]);
+            return back()->with('error', 'Failed to generate the training log. ' . $e->getMessage());
+        }
 
-        $filename = 'Training-Log-' . $date . '-' . Str::slug($type) . '.pdf';
+        $tmpDir  = storage_path('app/tmp');
+        $soffice = env('SOFFICE_PATH', 'soffice');
+        $cmd     = 'HOME=/tmp ' . escapeshellarg($soffice) . ' --headless --convert-to pdf --outdir ' . escapeshellarg($tmpDir) . ' ' . escapeshellarg($docxPath) . ' 2>&1';
+        $output  = shell_exec($cmd);
+        @unlink($docxPath);
 
-        putenv('HOME=/tmp');
+        $pdfPath = $tmpDir . '/' . pathinfo($docxPath, PATHINFO_FILENAME) . '.pdf';
 
-        $pdf = Browsershot::html($html)
-            ->setChromePath('/usr/bin/google-chrome-stable')
-            ->setNodeModulePath('/usr/lib/node_modules')
-            ->addChromiumArguments(['disable-dev-shm-usage', 'disable-gpu', 'no-zygote'])
-            ->format('A4')
-            ->noSandbox()
-            ->showBackground()
-            ->pdf();
+        if (!file_exists($pdfPath)) {
+            Log::error('Training log PDF: soffice conversion failed', ['output' => $output]);
+            return back()->with('error', 'PDF conversion failed. Ensure LibreOffice is installed on the server.');
+        }
 
-        return response($pdf, 200, [
-            'Content-Type'        => 'application/pdf',
-            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+        return response()->download($pdfPath, $filename, [
+            'Content-Type' => 'application/pdf',
+        ])->deleteFileAfterSend(true);
+    }
+
+    // ── Bulk attendee import from an uploaded Excel/CSV file ──────────────────
+
+    public function importTemplate()
+    {
+        $csv = "Name,ID Number,Role\nJohn Doe,784-1990-1234567-1,Compliance Officer\nJane Smith,784-1991-7654321-2,\n";
+
+        return response($csv, 200, [
+            'Content-Type'        => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="attendee-import-template.csv"',
         ]);
+    }
+
+    public function importAttendees(Request $request, string $date, string $type)
+    {
+        $request->validate([
+            'crm_client_id' => 'required|exists:crm_clients,id',
+            'status'        => 'required|in:completed,pending',
+            'expiry_date'   => 'nullable|date',
+            'file'          => 'required|file|mimes:xlsx,xls,csv|max:5120',
+        ]);
+
+        try {
+            $rows = $this->parseAttendeeSpreadsheet($request->file('file'));
+        } catch (\Throwable $e) {
+            Log::error('Attendee import: failed to parse file', ['error' => $e->getMessage()]);
+            return back()->with('error', 'Could not read that file. Make sure it is a valid Excel (.xlsx/.xls) or CSV file.');
+        }
+
+        if (empty($rows)) {
+            return back()->with('error', 'No attendee names were found in the uploaded file.');
+        }
+
+        foreach ($rows as $row) {
+            CrmEmployeeTraining::create([
+                'employee_name'      => $row['name'],
+                'employee_id_number' => $row['id_number'],
+                'employee_role'      => $row['role'],
+                'crm_client_id'      => $request->crm_client_id,
+                'expiry_date'        => $request->expiry_date,
+                'status'             => $request->status,
+                'training_type'      => $type,
+                'training_date'      => $date,
+            ]);
+        }
+
+        return redirect()->route('training-sessions.show', ['date' => $date, 'type' => $type])
+            ->with('success', count($rows) . ' attendee(s) imported from the file.');
+    }
+
+    // Reads Name / ID Number / Role from an uploaded spreadsheet. Recognizes a
+    // flexible set of header aliases (case/spacing-insensitive); if the first
+    // row does not look like a header at all, falls back to treating every row
+    // as data in the fixed order Name, ID Number, Role.
+    private function parseAttendeeSpreadsheet($uploadedFile): array
+    {
+        $spreadsheet = IOFactory::load($uploadedFile->getRealPath());
+        $data        = $spreadsheet->getActiveSheet()->toArray(null, true, true, false);
+
+        if (empty($data)) return [];
+
+        $aliases = [
+            'name'      => ['name', 'employee name', 'full name', 'trainee name', 'attendee name'],
+            'id_number' => ['id number', 'id no', 'idno', 'emirates id', 'eid', 'employee id', 'id'],
+            'role'      => ['role', 'position', 'designation', 'job title'],
+        ];
+        $normalize = fn ($v) => strtolower(trim(preg_replace('/\s+/', ' ', (string) $v)));
+
+        $headerRow = array_map($normalize, $data[0]);
+        $colMap    = [];
+        foreach ($aliases as $field => $names) {
+            foreach ($headerRow as $i => $h) {
+                if (in_array($h, $names, true)) { $colMap[$field] = $i; break; }
+            }
+        }
+
+        if (isset($colMap['name'])) {
+            $startRow = 1;
+        } else {
+            $colMap   = ['name' => 0, 'id_number' => 1, 'role' => 2];
+            $startRow = 0;
+        }
+
+        $rows = [];
+        for ($r = $startRow; $r < count($data); $r++) {
+            $row  = $data[$r];
+            $name = trim((string) ($row[$colMap['name']] ?? ''));
+            if ($name === '') continue;
+
+            $idNumber = isset($colMap['id_number']) ? trim((string) ($row[$colMap['id_number']] ?? '')) : '';
+            $role     = isset($colMap['role'])      ? trim((string) ($row[$colMap['role']] ?? ''))      : '';
+
+            $rows[] = [
+                'name'      => $name,
+                'id_number' => $idNumber !== '' ? $idNumber : null,
+                'role'      => $role !== '' ? $role : null,
+            ];
+        }
+
+        return $rows;
     }
 
     public function store(Request $request)

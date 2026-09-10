@@ -108,10 +108,13 @@ Route::middleware(['auth', \App\Http\Middleware\EnsureAdminUser::class])->group(
     Route::get('/training-sessions',                          [TrainingSessionController::class, 'index'])->name('training-sessions.index');
     Route::get('/training-sessions/create',                   [TrainingSessionController::class, 'create'])->name('training-sessions.create');
     Route::post('/training-sessions',                         [TrainingSessionController::class, 'store'])->name('training-sessions.store');
+    Route::get('/training-sessions/import-template',          [TrainingSessionController::class, 'importTemplate'])->name('training-sessions.import-template');
     Route::get('/training-sessions/{date}/{type}',            [TrainingSessionController::class, 'show'])->name('training-sessions.show');
     Route::post('/training-sessions/{date}/{type}/attendees', [TrainingSessionController::class, 'addAttendee'])->name('training-sessions.add-attendee');
+    Route::post('/training-sessions/{date}/{type}/import',    [TrainingSessionController::class, 'importAttendees'])->name('training-sessions.import');
     Route::post('/training-sessions/{date}/{type}/email',     [TrainingSessionController::class, 'emailClients'])->name('training-sessions.email');
     Route::get('/training-sessions/{date}/{type}/log',        [TrainingSessionController::class, 'exportLog'])->name('training-sessions.log');
+    Route::get('/training-sessions/{date}/{type}/log-docx',   [TrainingSessionController::class, 'exportLogDocx'])->name('training-sessions.log-docx');
 
     Route::post('/crm/{crm}/trainings',            [CrmController::class, 'storeTraining'])->name('crm.trainings.store');
     Route::delete('/crm/trainings/{training}',     [CrmController::class, 'deleteTraining'])->name('crm.trainings.delete');

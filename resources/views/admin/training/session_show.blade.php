@@ -14,13 +14,29 @@
         </div>
 
         <div class="flex items-center gap-2">
+            <a href="{{ route('training-sessions.log-docx', ['date' => $date, 'type' => $type]) }}"
+               class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                Log (Word)
+            </a>
+
             <a href="{{ route('training-sessions.log', ['date' => $date, 'type' => $type]) }}"
                class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                 </svg>
-                Export Log
+                Log (PDF)
             </a>
+
+            <button x-data @click="$dispatch('open-import-attendees')"
+                    class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"/>
+                </svg>
+                Import from Excel
+            </button>
 
             <form method="POST" action="{{ route('training-sessions.email', ['date' => $date, 'type' => $type]) }}"
                   onsubmit="return confirm('Send certificate links to all client companies in this session?')">
@@ -329,6 +345,68 @@
             <div class="flex gap-3 pt-2">
                 <button type="submit" class="flex-1 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition">
                     Save Changes
+                </button>
+                <button type="button" @click="open = false" class="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition">
+                    Cancel
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{{-- Import Attendees Modal --}}
+<div x-data="{ open: false }" @open-import-attendees.window="open = true"
+     x-show="open" x-cloak
+     class="fixed inset-0 z-50 flex items-center justify-center p-4"
+     style="display:none">
+
+    <div class="absolute inset-0 bg-black/40" @click="open = false"></div>
+
+    <div class="relative bg-white rounded-xl shadow-xl w-full max-w-md p-6 z-10">
+        <h2 class="text-base font-bold text-gray-800 mb-1">Import Attendees from Excel</h2>
+        <p class="text-xs text-gray-500 mb-4">
+            Upload a spreadsheet with columns for <strong>Name</strong>, <strong>ID Number</strong> and <strong>Role</strong> (headers optional).
+            <a href="{{ route('training-sessions.import-template') }}" class="text-blue-600 hover:underline">Download a template</a>.
+        </p>
+
+        <form method="POST" action="{{ route('training-sessions.import', ['date' => $date, 'type' => $type]) }}"
+              enctype="multipart/form-data" class="space-y-3">
+            @csrf
+
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Company <span class="text-red-500">*</span></label>
+                <select name="crm_client_id" required class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                    <option value="">Select company…</option>
+                    @foreach($clients as $client)
+                        <option value="{{ $client->id }}">{{ $client->company_name }}</option>
+                    @endforeach
+                </select>
+                <p class="text-xs text-gray-400 mt-1">All imported attendees are linked to this one company.</p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Status</label>
+                    <select name="status" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                        <option value="completed">Completed</option>
+                        <option value="pending">Pending</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Expiry Date</label>
+                    <input type="date" name="expiry_date" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">File (.xlsx, .xls or .csv) <span class="text-red-500">*</span></label>
+                <input type="file" name="file" accept=".xlsx,.xls,.csv" required
+                       class="w-full text-sm text-gray-600 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+            </div>
+
+            <div class="flex gap-3 pt-2">
+                <button type="submit" class="flex-1 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition">
+                    Import
                 </button>
                 <button type="button" @click="open = false" class="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition">
                     Cancel
