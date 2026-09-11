@@ -17,9 +17,23 @@ class ChartOfAccountController extends Controller
             ->orderBy('code')
             ->get();
 
-        $tree = $accounts->whereNull('parent_id')->values();
+        // Flatten the tree depth-first (any number of levels) so the view can render
+        // a single loop instead of hardcoding parent/child — each row carries its
+        // depth for indentation. Same list doubles as the "parent" dropdown options.
+        $flatTree = $this->flattenTree($accounts, null, 0);
 
-        return view('tenant.accounting.coa.index', compact('tenant', 'accounts', 'tree'));
+        return view('tenant.accounting.coa.index', compact('tenant', 'accounts', 'flatTree'));
+    }
+
+    private function flattenTree($accounts, ?int $parentId, int $depth): array
+    {
+        $rows = [];
+        foreach ($accounts->where('parent_id', $parentId) as $account) {
+            $rows[] = ['account' => $account, 'depth' => $depth];
+            $rows = array_merge($rows, $this->flattenTree($accounts, $account->id, $depth + 1));
+        }
+
+        return $rows;
     }
 
     public function store(Request $request)
@@ -56,6 +70,7 @@ class ChartOfAccountController extends Controller
         $tenant = app('tenant');
         abort_if($account->tenant_id !== $tenant->id, 404);
         abort_if($account->is_system, 403, 'System accounts cannot be deleted.');
+        abort_if(ChartOfAccount::where('parent_id', $account->id)->exists(), 422, 'Remove or reassign this account\'s sub-accounts first.');
 
         $account->delete();
 
