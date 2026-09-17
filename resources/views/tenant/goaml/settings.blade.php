@@ -5,6 +5,15 @@
 
 @section('content')
 
+@if($errors->any())
+<div class="max-w-2xl mb-5 p-4 bg-red-50 border border-red-200 rounded-xl">
+    <p class="text-sm font-semibold text-red-700 mb-2">This didn't save — please fix the following:</p>
+    <ul class="text-sm text-red-600 space-y-1 list-disc list-inside">
+        @foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach
+    </ul>
+</div>
+@endif
+
 <div class="max-w-2xl">
     <form method="POST" action="{{ route('tenant.goaml.settings.save', $tenant->slug) }}" class="space-y-5">
         @csrf
@@ -28,7 +37,7 @@
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-1">Country code <span class="text-red-500">*</span></label>
-                        <input type="text" name="entity_country_code" value="{{ old('entity_country_code', $config?->entity_country_code ?? 'ARE') }}"
+                        <input type="text" name="entity_country_code" value="{{ old('entity_country_code', $config?->entity_country_code ?? 'AE') }}"
                                required maxlength="2" placeholder="AE"
                                class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase">
                     </div>
@@ -93,7 +102,7 @@
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-xs font-medium text-gray-600 mb-1">Nationality (3-letter code) <span class="text-red-500">*</span></label>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Nationality (2-letter code) <span class="text-red-500">*</span></label>
                         <input type="text" name="mlro_nationality" value="{{ old('mlro_nationality', $config?->mlro_nationality) }}"
                                required maxlength="2" placeholder="AE / GB / IN"
                                class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase">
