@@ -672,9 +672,10 @@
         </div>
         <div class="bg-white rounded-xl border border-gray-200 p-5">
             <label class="flex items-start gap-3 cursor-pointer">
-                <input type="checkbox" required class="rounded border-gray-300 text-blue-600 mt-0.5 w-5 h-5 flex-shrink-0">
+                <input type="checkbox" x-model="declarationConfirmed" @change="declarationError = false" class="rounded border-gray-300 text-blue-600 mt-0.5 w-5 h-5 flex-shrink-0">
                 <p class="text-sm text-gray-600">I confirm that all information provided in this form is <strong>true, accurate and complete</strong> to the best of my knowledge. I understand that providing false information may result in legal consequences under UAE Federal Decree-Law No. 20 of 2018.</p>
             </label>
+            <p x-show="declarationError" x-cloak class="text-xs text-red-600 mt-2">Please confirm the declaration above before submitting.</p>
         </div>
         <button type="submit"
                 class="w-full py-3.5 text-sm font-bold text-white bg-green-600 rounded-xl hover:bg-green-700 transition">
@@ -720,6 +721,8 @@ function fillForm() {
         signatories:  [{full_name:'',position:'',nationality:'',dob:'',passport_number:'',passport_expiry:'',eid_number:''}],
         shareholders: [{name:'',nationality:'',ownership_percentage:'',passport_number:'',dob:'',is_ubo:false}],
         draftRestored: false,
+        declarationConfirmed: false,
+        declarationError: false,
 
         init() {
             this.restoreProgress();
@@ -839,6 +842,11 @@ function fillForm() {
             // Next/Previous buttons to navigate.
             if (!this.isLastStep()) {
                 event.preventDefault();
+                return;
+            }
+            if (!this.declarationConfirmed) {
+                event.preventDefault();
+                this.declarationError = true;
                 return;
             }
             this.clearDraft();
