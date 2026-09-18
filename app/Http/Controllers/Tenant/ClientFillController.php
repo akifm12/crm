@@ -38,8 +38,11 @@ class ClientFillController extends Controller
         $emailSent = false;
         if ($request->client_email) {
             try {
-                // Set short timeout to prevent blocking
-                config(['mail.mailers.smtp.timeout' => 5]);
+                // A real SMTP transaction (TLS handshake + auth + envelope) routinely
+                // takes longer than a few seconds -- 5s was cutting this off before it
+                // could complete, causing every send to fail with a swallowed timeout.
+                // 20s still bounds the request without being unrealistically tight.
+                config(['mail.mailers.smtp.timeout' => 20]);
                 Mail::send('emails.client_fill', [
                     'tenantName' => $tenant->name,
                     'clientName' => $request->client_name ?? 'Valued Client',
@@ -51,16 +54,17 @@ class ClientFillController extends Controller
                 });
                 $emailSent = true;
             } catch (\Exception $e) {
-                // Email failed silently — link still generated
                 \Log::warning("Client fill email failed: " . $e->getMessage());
                 $emailSent = false;
             }
         }
 
         return back()->with([
-            'fill_link'    => $link,
-            'fill_token'   => $token->token,
-            'email_sent'   => $emailSent ?? false,
+            'fill_link'         => $link,
+            'fill_token'        => $token->token,
+            'email_sent'        => $emailSent ?? false,
+            'email_attempted'   => (bool) $request->client_email,
+            'fill_client_email' => $request->client_email,
         ]);
     }
 

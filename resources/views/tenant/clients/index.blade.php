@@ -150,6 +150,11 @@ $currentType = request('type', '');
         <h3 class="text-sm font-bold text-gray-800 mb-2">KYC link generated ✓</h3>
         @if(session('email_sent'))
         <p class="text-xs text-green-600 mb-3">✓ Email sent to client</p>
+        @elseif(session('email_attempted'))
+        <div class="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3">
+            <p class="font-semibold">✗ Could not email {{ session('fill_client_email') }}</p>
+            <p class="text-red-500 mt-0.5">The link below still works — copy and share it manually.</p>
+        </div>
         @endif
         <p class="text-xs text-gray-500 mb-2">Copy and share this link with your client:</p>
         <div class="flex gap-2 mb-2">
