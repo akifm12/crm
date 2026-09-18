@@ -77,7 +77,7 @@
     </div>
 
     <form method="POST" action="{{ url("/{$tenant->slug}/fill/{$fillToken->token}/submit") }}"
-          enctype="multipart/form-data" novalidate @submit="clearDraft()">
+          enctype="multipart/form-data" novalidate @submit="handleSubmit($event)">
         @csrf
         <input type="hidden" name="client_type" :value="clientType">
 
@@ -821,6 +821,27 @@ function fillForm() {
 
         clearDraft() {
             try { localStorage.removeItem(DRAFT_KEY); } catch(e) {}
+        },
+
+        // Pressing Enter in any field fires the form's submit event, which
+        // otherwise triggers the single type="submit" button on the DOM
+        // regardless of which step is actually visible -- silently posting
+        // a mostly-empty client record and burning the one-time-use link.
+        // Only let it through once the review step is genuinely showing.
+        isLastStep() {
+            return (this.clientType !== 'individual' && this.step === 8)
+                || (this.clientType === 'individual' && this.indStep === 5);
+        },
+        handleSubmit(event) {
+            // Don't auto-advance either -- there's no per-step validation, so silently
+            // skipping ahead on Enter would just move the "empty submit" problem one
+            // step later instead of fixing it. Just block it; the client uses the
+            // Next/Previous buttons to navigate.
+            if (!this.isLastStep()) {
+                event.preventDefault();
+                return;
+            }
+            this.clearDraft();
         },
 
         setType(t) {
