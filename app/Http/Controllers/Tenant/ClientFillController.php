@@ -36,14 +36,10 @@ class ClientFillController extends Controller
 
         // Send email if address provided
         $emailSent = false;
-        $emailError = null;
         if ($request->client_email) {
             try {
-                // A real SMTP transaction (TLS handshake + auth + envelope) routinely
-                // takes longer than a few seconds — 5s was cutting this off before it
-                // could complete, causing every send to fail with a swallowed timeout.
-                // 20s still bounds the request without being unrealistically tight.
-                config(['mail.mailers.smtp.timeout' => 20]);
+                // Set short timeout to prevent blocking
+                config(['mail.mailers.smtp.timeout' => 5]);
                 Mail::send('emails.client_fill', [
                     'tenantName' => $tenant->name,
                     'clientName' => $request->client_name ?? 'Valued Client',
@@ -55,19 +51,16 @@ class ClientFillController extends Controller
                 });
                 $emailSent = true;
             } catch (\Exception $e) {
+                // Email failed silently — link still generated
                 \Log::warning("Client fill email failed: " . $e->getMessage());
                 $emailSent = false;
-                $emailError = $e->getMessage();
             }
         }
 
         return back()->with([
-            'fill_link'          => $link,
-            'fill_token'         => $token->token,
-            'email_sent'         => $emailSent,
-            'email_attempted'    => (bool) $request->client_email,
-            'email_error'        => $emailError,
-            'fill_client_email'  => $request->client_email,
+            'fill_link'    => $link,
+            'fill_token'   => $token->token,
+            'email_sent'   => $emailSent ?? false,
         ]);
     }
 
@@ -107,7 +100,7 @@ class ClientFillController extends Controller
         // Create client record as pending
         $client = BullionClient::create([
             'tenant_id'   => $tenant->id,
-            'client_type' => $fillToken->client_type,
+            'client_type' => $request->client_type ?: $fillToken->client_type,
             'status'      => 'pending',
             'created_by'  => null,
             'company_name'             => $request->company_name,
@@ -200,6 +193,38 @@ class ClientFillController extends Controller
                         'file_size'         => $file->getSize(),
                     ]);
                 }
+            }
+        }
+
+        // Save questionnaire (corporate only)
+        $questionnaireInput = $request->input('questionnaire', []);
+        if (!empty($questionnaireInput)) {
+            $boolKeys = [
+                'eu_no_regulator_action', 'eu_aml_compliant', 'eu_no_pep_directors',
+                'eu_no_litigation', 'eu_no_disciplinary', 'eu_anti_bribery',
+                'eu_code_of_conduct', 'eu_compliance_audits', 'eu_transparency',
+                'eu_human_rights', 'eu_remediation_policy', 'eu_cooperates',
+                'dd_oecd', 'dd_lbma_dmcc', 'dd_subject_to_aml', 'dd_aml_program',
+                'dd_anti_bribery_policy', 'dd_bribery_charges', 'dd_data_protection_policy',
+                'dd_dpo', 'dd_secure_data', 'dd_whistleblowing', 'dd_compliance_officer',
+                'dd_tfs_program', 'dd_risk_assessments', 'dd_customer_risk',
+                'dd_background_checks', 'dd_policy_updates', 'dd_training',
+                'cp_smelting', 'cp_manufacturing', 'cp_jewelry', 'cp_mines',
+                'cp_overseas', 'cp_export_docs', 'cp_services', 'cp_high_value', 'cp_outsourcing',
+            ];
+            $qData = [];
+            foreach ($boolKeys as $key) {
+                if (isset($questionnaireInput[$key])) {
+                    $qData[$key] = $questionnaireInput[$key] === 'yes';
+                }
+            }
+            foreach (['cp_profile', 'cp_locations', 'cp_metals'] as $key) {
+                if (!empty($questionnaireInput[$key])) {
+                    $qData[$key] = $questionnaireInput[$key];
+                }
+            }
+            if (!empty($qData)) {
+                $client->update(['questionnaire' => $qData]);
             }
         }
 

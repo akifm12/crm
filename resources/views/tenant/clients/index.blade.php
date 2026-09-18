@@ -93,8 +93,9 @@ $currentType = request('type', '');
                         <div>
                             <label class="block text-xs font-medium text-gray-600 mb-1">Client type</label>
                             <select name="client_type" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                <option value="individual">Individual</option>
-                                <option value="corporate">Corporate</option>
+                                @foreach($sector['client_types'] ?? ['individual' => 'Individual', 'corporate' => 'Corporate'] as $typeKey => $typeLabel)
+                                <option value="{{ $typeKey }}">{{ $typeLabel }}</option>
+                                @endforeach
                             </select>
                         </div>
                         <div>
@@ -115,7 +116,24 @@ $currentType = request('type', '');
             </div>
         </div>
 
-        <a href="{{ route('tenant.clients.create', $tenant->slug) }}"
+        {{-- Blank KYC template (Word) --}}
+        <div x-data="{ open: false }" class="relative">
+            <button @click="open=!open"
+                    class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                Blank KYC (Word)
+            </button>
+            <div x-show="open" x-cloak @click.away="open=false"
+                 class="absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded-xl shadow-lg p-3 z-10">
+                <p class="text-xs text-gray-400 px-1 pb-2">Empty template to send to a client — fillable fields highlighted yellow.</p>
+                <a href="{{ route('tenant.kyc.blank', $tenant->slug) }}?type=corporate"
+                   class="block px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50">Corporate template</a>
+                <a href="{{ route('tenant.kyc.blank', $tenant->slug) }}?type=individual"
+                   class="block px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50">Individual template</a>
+            </div>
+        </div>
+
+        <a href="{{ route('tenant.clients.create', $tenant->slug) }}{{ $currentType ? '?type='.$currentType : '' }}"
            class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
@@ -132,11 +150,6 @@ $currentType = request('type', '');
         <h3 class="text-sm font-bold text-gray-800 mb-2">KYC link generated ✓</h3>
         @if(session('email_sent'))
         <p class="text-xs text-green-600 mb-3">✓ Email sent to client</p>
-        @elseif(session('email_attempted'))
-        <div class="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3">
-            <p class="font-semibold">✗ Could not email {{ session('fill_client_email') }}</p>
-            <p class="text-red-500 mt-0.5">The link below still works — copy and share it manually.</p>
-        </div>
         @endif
         <p class="text-xs text-gray-500 mb-2">Copy and share this link with your client:</p>
         <div class="flex gap-2 mb-2">
@@ -162,6 +175,7 @@ $currentType = request('type', '');
                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase hidden lg:table-cell">Risk</th>
                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase hidden lg:table-cell">Screening</th>
                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase hidden lg:table-cell">Added</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase hidden lg:table-cell">Docs</th>
                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Status</th>
                 <th class="px-4 py-3"></th>
             </tr>
@@ -214,6 +228,30 @@ $currentType = request('type', '');
                 <td class="px-4 py-3 hidden lg:table-cell text-xs text-gray-400">
                     {{ $client->created_at ? $client->created_at->format('d M Y') : '—' }}
                 </td>
+                <td class="px-4 py-3 hidden lg:table-cell">
+                    @php
+                        $uploaded = $client->documents->pluck('document_type')->unique();
+                        $hasPassport = $uploaded->intersect(['passport','shareholder_passport','signatory_passport','ubo_passport'])->isNotEmpty();
+                        $isIndividual = $client->client_type === 'individual';
+                        $missing = [];
+                        if (!$isIndividual) {
+                            // Accept both spellings — bulk upload stored 'trade_licence', modal stores 'trade_license'
+                            if (!$uploaded->intersect(['trade_license','trade_licence'])->isNotEmpty()) $missing[] = 'TL';
+                            if (!$uploaded->contains('moa')) $missing[] = 'MoA';
+                        }
+                        if (!$hasPassport) $missing[] = 'PP';
+                        if ($isIndividual && !$uploaded->intersect(['eid','emirates_id'])->isNotEmpty()) $missing[] = 'EID';
+                    @endphp
+                    @if(empty($missing))
+                        <span class="text-green-500 text-xs font-semibold">✓</span>
+                    @else
+                        <div class="flex flex-wrap gap-1">
+                            @foreach($missing as $m)
+                            <span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-red-50 text-red-500 border border-red-100">{{ $m }}</span>
+                            @endforeach
+                        </div>
+                    @endif
+                </td>
                 <td class="px-4 py-3">
                     <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold {{ $client->statusBadgeColor() }}">
                         {{ ucfirst($client->status) }}
@@ -226,7 +264,7 @@ $currentType = request('type', '');
             </tr>
             @empty
             <tr>
-                <td colspan="8" class="px-4 py-16 text-center">
+                <td colspan="9" class="px-4 py-16 text-center">
                     <p class="text-gray-400 text-sm mb-3">No clients found.</p>
                     <a href="{{ route('tenant.clients.create', $tenant->slug) }}"
                        class="text-sm text-blue-600 hover:underline">Add your first client</a>
