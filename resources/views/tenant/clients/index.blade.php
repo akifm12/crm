@@ -111,6 +111,9 @@ $currentType = request('type', '');
                         <button type="submit" class="w-full py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition">
                             Generate link
                         </button>
+                        <a href="{{ route('tenant.fill.pending', $tenant->slug) }}" class="block text-center text-xs text-gray-500 hover:text-gray-700 hover:underline mt-1">
+                            View sent links &amp; pending reviews
+                        </a>
                     </div>
                 </form>
             </div>
@@ -143,33 +146,7 @@ $currentType = request('type', '');
     </div>
 </div>
 
-{{-- Generated link modal --}}
-@if(session('fill_link'))
-<div class="fixed inset-0 bg-black/40 flex items-center justify-center z-50" x-data="{ show: true }" x-show="show">
-    <div class="bg-white rounded-2xl p-6 max-w-md w-full mx-4 shadow-xl">
-        <h3 class="text-sm font-bold text-gray-800 mb-2">KYC link generated ✓</h3>
-        @if(session('email_sent'))
-        <p class="text-xs text-green-600 mb-3">✓ Email sent to client</p>
-        @elseif(session('email_attempted'))
-        <div class="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3">
-            <p class="font-semibold">✗ Could not email {{ session('fill_client_email') }}</p>
-            <p class="text-red-500 mt-0.5">The link below still works — copy and share it manually.</p>
-        </div>
-        @endif
-        <p class="text-xs text-gray-500 mb-2">Copy and share this link with your client:</p>
-        <div class="flex gap-2 mb-2">
-            <input type="text" value="{{ session('fill_link') }}" readonly id="fill-link-input"
-                   class="flex-1 px-3 py-2 text-xs border border-gray-200 rounded-lg bg-gray-50 font-mono">
-            <button onclick="navigator.clipboard.writeText(document.getElementById('fill-link-input').value).then(()=>this.textContent='Copied!')"
-                    class="px-3 py-2 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 whitespace-nowrap">
-                Copy
-            </button>
-        </div>
-        <p class="text-xs text-gray-400">Expires in 7 days · One-time use only</p>
-        <button @click="show=false" class="mt-4 w-full py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50">Close</button>
-    </div>
-</div>
-@endif
+@include('tenant.fill._link_modal')
 <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
     <table class="min-w-full divide-y divide-gray-100 text-sm">
         <thead class="bg-gray-50">

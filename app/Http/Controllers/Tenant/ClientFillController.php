@@ -33,39 +33,66 @@ class ClientFillController extends Controller
         );
 
         $link = url("/{$tenant->slug}/fill/{$token->token}");
-
-        // Send email if address provided
-        $emailSent = false;
-        if ($request->client_email) {
-            try {
-                // A real SMTP transaction (TLS handshake + auth + envelope) routinely
-                // takes longer than a few seconds -- 5s was cutting this off before it
-                // could complete, causing every send to fail with a swallowed timeout.
-                // 20s still bounds the request without being unrealistically tight.
-                config(['mail.mailers.smtp.timeout' => 20]);
-                Mail::send('emails.client_fill', [
-                    'tenantName' => $tenant->name,
-                    'clientName' => $request->client_name ?? 'Valued Client',
-                    'link'       => $link,
-                    'expiresAt'  => $token->expires_at->format('d M Y'),
-                ], function ($m) use ($request, $tenant) {
-                    $m->to($request->client_email, $request->client_name)
-                      ->subject("KYC Form — {$tenant->name}");
-                });
-                $emailSent = true;
-            } catch (\Exception $e) {
-                \Log::warning("Client fill email failed: " . $e->getMessage());
-                $emailSent = false;
-            }
-        }
+        $emailSent = $this->sendFillLinkEmail($tenant, $request->client_name, $request->client_email, $link, $token->expires_at);
 
         return back()->with([
             'fill_link'         => $link,
             'fill_token'        => $token->token,
-            'email_sent'        => $emailSent ?? false,
+            'email_sent'        => $emailSent,
             'email_attempted'   => (bool) $request->client_email,
             'fill_client_email' => $request->client_email,
         ]);
+    }
+
+    public function reissue(Request $request, string $slug, string $token)
+    {
+        $tenant = app('tenant');
+        $fillToken = ClientFillToken::where('token', $token)
+            ->where('tenant_id', $tenant->id)
+            ->firstOrFail();
+
+        if (! $fillToken->isUsed()) {
+            $fillToken->update(['expires_at' => now()->addDays(7)]);
+        } else {
+            $fillToken = ClientFillToken::generate(
+                $tenant->id,
+                $fillToken->client_name,
+                $fillToken->client_email,
+                $fillToken->client_type
+            );
+        }
+
+        $link = url("/{$tenant->slug}/fill/{$fillToken->token}");
+        $emailSent = $this->sendFillLinkEmail($tenant, $fillToken->client_name, $fillToken->client_email, $link, $fillToken->expires_at);
+
+        return redirect()->route('tenant.fill.pending', $tenant->slug)->with([
+            'fill_link'         => $link,
+            'fill_token'        => $fillToken->token,
+            'email_sent'        => $emailSent,
+            'email_attempted'   => (bool) $fillToken->client_email,
+            'fill_client_email' => $fillToken->client_email,
+        ]);
+    }
+
+    private function sendFillLinkEmail(Tenant $tenant, ?string $name, ?string $email, string $link, $expiresAt): bool
+    {
+        if (! $email) return false;
+
+        try {
+            config(['mail.mailers.smtp.timeout' => 20]);
+            Mail::send('emails.client_fill', [
+                'tenantName' => $tenant->name,
+                'clientName' => $name ?? 'Valued Client',
+                'link'       => $link,
+                'expiresAt'  => $expiresAt->format('d M Y'),
+            ], function ($m) use ($email, $name, $tenant) {
+                $m->to($email, $name)->subject("KYC Form - {$tenant->name}");
+            });
+            return true;
+        } catch (\Exception $e) {
+            \Log::warning("Client fill email failed: " . $e->getMessage());
+            return false;
+        }
     }
 
     // ── Public form — no auth required ───────────────────────────────────
