@@ -15,7 +15,7 @@
     {{-- Header --}}
     <div class="text-center mb-6">
         @if($tenant->logo_url)
-        <img src="{{ $tenant->logo_url }}" alt="{{ $tenant->name }}" class="h-14 mx-auto mb-3 object-contain">
+        <img src="{{ Storage::url($tenant->logo_url) }}" alt="{{ $tenant->name }}" class="h-14 mx-auto mb-3 object-contain">
         @endif
         <h1 class="text-xl font-bold text-gray-900">{{ $tenant->name }}</h1>
         <p class="text-sm text-gray-500 mt-1">KYC / AML Compliance Form</p>

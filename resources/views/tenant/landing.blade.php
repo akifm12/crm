@@ -21,7 +21,7 @@
     <header class="bg-white border-b border-gray-200">
         <div class="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
             @if($tenant->logo_url)
-                <img src="{{ $tenant->logo_url }}" alt="{{ $tenant->name }}" class="h-10 object-contain">
+                <img src="{{ Storage::url($tenant->logo_url) }}" alt="{{ $tenant->name }}" class="h-10 object-contain">
             @else
                 <span class="text-xl font-bold text-brand">{{ $tenant->name }}</span>
             @endif

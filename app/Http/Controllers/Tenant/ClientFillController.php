@@ -11,6 +11,7 @@ use App\Models\Tenant;
 use App\Support\SectorConfig;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 
 class ClientFillController extends Controller
 {
@@ -80,13 +81,25 @@ class ClientFillController extends Controller
 
         try {
             config(['mail.mailers.smtp.timeout' => 20]);
+            $logoUrl = $tenant->logo_url ? Storage::url($tenant->logo_url) : null;
             Mail::send('emails.client_fill', [
                 'tenantName' => $tenant->name,
                 'clientName' => $name ?? 'Valued Client',
                 'link'       => $link,
                 'expiresAt'  => $expiresAt->format('d M Y'),
+                'logoUrl'    => $logoUrl,
             ], function ($m) use ($email, $name, $tenant) {
-                $m->to($email, $name)->subject("KYC Form - {$tenant->name}");
+                // Display name shows as the tenant's business, not Blue Arrow -- the
+                // sending address/domain stays ours (that's what SPF/DKIM/DMARC
+                // actually authenticate), but inboxes show the display name first,
+                // which is the trust signal clients were reacting to.
+                $m->to($email, $name)
+                  ->from(config('mail.from.address'), $tenant->name)
+                  ->subject("KYC Form - {$tenant->name}");
+
+                if ($tenant->contact_email) {
+                    $m->replyTo($tenant->contact_email, $tenant->name);
+                }
             });
             return true;
         } catch (\Exception $e) {

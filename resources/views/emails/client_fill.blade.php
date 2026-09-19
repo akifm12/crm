@@ -23,6 +23,9 @@
 <body>
 <div class="container">
     <div class="header">
+        @if($logoUrl)
+        <img src="{{ $logoUrl }}" alt="{{ $tenantName }}" style="height:40px;max-width:220px;object-fit:contain;margin-bottom:10px;display:block;margin-left:auto;margin-right:auto;">
+        @endif
         <h1>{{ $tenantName }}</h1>
         <p>KYC / AML Compliance Form</p>
     </div>
@@ -42,6 +45,7 @@
     </div>
     <div class="footer">
         <p>This email was sent as part of our AML/CFT compliance obligations under UAE Federal Decree-Law No. 20 of 2018.</p>
+        <p style="margin-top:8px">{{ $tenantName }} uses Blue Arrow Management Consultants as its authorized compliance service provider to issue and process this form on its behalf.</p>
     </div>
 </div>
 </body>
