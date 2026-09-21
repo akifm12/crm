@@ -270,10 +270,10 @@
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             @include('tenant.clients._field', ['name'=>'business_activity','label'=>'Business activity','required'=>true])
-            @include('tenant.clients._field', ['name'=>'email','label'=>'Company email','type'=>'email'])
+            @include('tenant.clients._field', ['name'=>'email','label'=>'Company email','type'=>'email','disabledWhen'=>"clientType==='individual'"])
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            @include('tenant.clients._field', ['name'=>'phone','label'=>'Phone'])
+            @include('tenant.clients._field', ['name'=>'phone','label'=>'Phone','disabledWhen'=>"clientType==='individual'"])
             @include('tenant.clients._field', ['name'=>'website','label'=>'Website'])
         </div>
         @include('tenant.clients._textarea', ['name'=>'registered_address','label'=>'Registered address'])
@@ -342,6 +342,16 @@
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg> Remove
                     </button>
                 </div>
+                <div class="mb-3" x-show="signatories.some(s => s.full_name)">
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Same person as a signatory?</label>
+                    <select @change="if($event.target.value !== '') { copyFromSignatory(i, parseInt($event.target.value)); $event.target.value=''; }"
+                            class="w-full md:w-72 px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white">
+                        <option value="">— Copy details from a signatory —</option>
+                        <template x-for="(sig, si) in signatories" :key="si">
+                            <option :value="si" x-show="sig.full_name" x-text="sig.full_name"></option>
+                        </template>
+                    </select>
+                </div>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div><label class="block text-xs font-medium text-gray-600 mb-1">Type</label>
                         <select :name="'shareholders['+i+'][shareholder_type]'" x-model="sh.type" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -355,6 +365,8 @@
                         @foreach($countryOpts as $_c)
                         <option value="{{ $_c->country_code }}">{{ $_c->country_name }}</option>
                         @endforeach</select></div>
+                    <div><label class="block text-xs font-medium text-gray-600 mb-1">Date of birth</label>
+                        <input type="date" :name="'shareholders['+i+'][dob]'" x-model="sh.dob" @change="if(sh.is_ubo) syncUboFromSh(i)" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
                     <div><label class="block text-xs font-medium text-gray-600 mb-1">Ownership %</label>
                         <input type="number" step="0.01" :name="'shareholders['+i+'][ownership_percentage]'" x-model="sh.ownership_percentage" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
                     <div><label class="block text-xs font-medium text-gray-600 mb-1" x-text="sh.type === 'corporate' ? 'Trade Licence No.' : 'Passport no.'">Passport no.</label>
@@ -766,7 +778,7 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             @include('tenant.clients._country', ['name'=>'nationality','label'=>'Nationality','required'=>true])
             @include('tenant.clients._field', ['name'=>'dob','label'=>'Date of birth','required'=>true,'type'=>'date'])
-            @include('tenant.clients._field', ['name'=>'email','label'=>'Email address','type'=>'email'])
+            @include('tenant.clients._field', ['name'=>'email','label'=>'Email address','type'=>'email','disabledWhen'=>"clientType!=='individual'"])
         </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             @include('tenant.clients._field', ['name'=>'passport_number','label'=>'Passport number'])
@@ -775,7 +787,8 @@
                 <p class="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">⚠ At least one of Passport or Emirates ID is required for identity verification.</p>
             </div>
             @include('tenant.clients._field', ['name'=>'eid_number','label'=>'Emirates ID number'])
-            @include('tenant.clients._field', ['name'=>'eid_expiry','label'=>'Emirates ID expiry','type'=>'date'])            @include('tenant.clients._field', ['name'=>'phone','label'=>'Phone number'])
+            @include('tenant.clients._field', ['name'=>'eid_expiry','label'=>'Emirates ID expiry','type'=>'date'])
+            @include('tenant.clients._field', ['name'=>'phone','label'=>'Phone number','disabledWhen'=>"clientType!=='individual'"])
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             @include('tenant.clients._field', ['name'=>'occupation','label'=>'Occupation / profession'])
@@ -1077,6 +1090,20 @@ function clientForm() {
         },
         addUbo()    { this.ubos.push({full_name:'',nationality:'',dob:'',passport_number:'',ownership_percentage:'',country_of_residence:'',pep_status:false}); },
         removeUbo(i){ this.ubos.splice(i,1); },
+        // Same person often serves as both a signatory and a shareholder --
+        // avoid re-typing their details. Ownership % isn't copied since a
+        // signatory doesn't carry that figure.
+        copyFromSignatory(shIndex, sigIndex) {
+            const sig = this.signatories[sigIndex];
+            const sh = this.shareholders[shIndex];
+            if (!sig || !sh) return;
+            sh.name = sig.full_name;
+            sh.nationality = sig.nationality;
+            sh.dob = sig.dob;
+            sh.passport_number = sig.passport_number;
+            sh.passport_expiry = sig.passport_expiry;
+            if (sh.is_ubo) this.syncUboFromSh(shIndex);
+        },
         // Auto-copy a shareholder into the UBO list when "Also a UBO" is checked, and
         // remove the copy again if unchecked — keyed by a stable uid so re-indexing
         // (adding/removing other rows) can't desync the link.
