@@ -802,8 +802,8 @@
             @include('tenant.clients._field', ['name'=>'name_arabic','label'=>'Name in Arabic'])
         </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            @include('tenant.clients._country', ['name'=>'nationality','label'=>'Nationality','required'=>true])
-            @include('tenant.clients._field', ['name'=>'dob','label'=>'Date of birth','required'=>true,'type'=>'date'])
+            @include('tenant.clients._country', ['name'=>'nationality','label'=>'Nationality','required'=>true,'requiredUnless'=>'thirdPartyKyc'])
+            @include('tenant.clients._field', ['name'=>'dob','label'=>'Date of birth','required'=>true,'type'=>'date','requiredUnless'=>'thirdPartyKyc'])
             @include('tenant.clients._field', ['name'=>'email','label'=>'Email address','type'=>'email','disabledWhen'=>"clientType!=='individual'"])
         </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">

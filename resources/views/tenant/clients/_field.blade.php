@@ -8,7 +8,8 @@
            id="{{ $name }}"
            name="{{ $name }}"
            value="{{ old($name, $value ?? '') }}"
-           {{ !empty($required) ? 'required' : '' }}
+           {{ !empty($required) && empty($requiredUnless) ? 'required' : '' }}
+           @if(!empty($requiredUnless)) :required="!({{ $requiredUnless }})" @endif
            @if(!empty($disabledWhen)) :disabled="{{ $disabledWhen }}" @endif
            class="w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white {{ $errors->has($name) ? 'border-red-400 bg-red-50' : 'border-gray-200' }}">
     @if(!empty($hint))
