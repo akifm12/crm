@@ -22,7 +22,8 @@ class BullionClient extends Model
         'source_of_funds', 'source_of_funds_other', 'source_of_wealth', 'source_of_wealth_other',
         'purpose_of_relationship', 'expected_monthly_volume', 'expected_monthly_frequency',
         'countries_involved', 'cdd_type', 'risk_rating', 'next_review_date', 'risk_notes',
-        'status', 'screening_status', 'screening_date', 'screening_reference', 'screening_result',
+        'status', 'kyc_source', 'kyc_source_platform', 'kyc_source_reference',
+        'screening_status', 'screening_date', 'screening_reference', 'screening_result',
         'monitoring_enabled', 'monitoring_frequency', 'monitoring_last_screened_at', 'monitoring_next_due_at',
         'extra_data', 'questionnaire',
         'decl_pep', 'decl_supply_chain', 'decl_cahra', 'decl_source_of_funds',
@@ -173,6 +174,11 @@ class BullionClient extends Model
         if (!$this->next_review_date) return false;
         return $this->next_review_date->isPast()
             || now()->diffInDays($this->next_review_date) <= 90;
+    }
+
+    public function isThirdPartyKyc(): bool
+    {
+        return $this->kyc_source === 'third_party';
     }
 
     

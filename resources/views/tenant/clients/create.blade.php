@@ -200,6 +200,32 @@
 </div>
 
 {{-- ── FORM CARD ────────────────────────────────────────────────────────────── --}}
+<div x-show="(clientType!=='individual' && step===1) || (clientType==='individual' && indStep===1)" x-cloak
+     class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-5">
+    <label class="flex items-start gap-2 cursor-pointer">
+        <input type="checkbox" x-model="thirdPartyKyc" class="rounded border-gray-300 text-blue-600 mt-0.5">
+        <span>
+            <span class="text-sm font-medium text-blue-900">Identity verified by a third party</span>
+            <p class="text-xs text-blue-700 mt-0.5">Check this if you only received a name from a platform that performed its own KYC (e.g. a marketplace order) -- passport/Emirates ID won't be required below, but you'll need to name the platform and a reference instead.</p>
+        </span>
+    </label>
+    <div x-show="thirdPartyKyc" x-cloak class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3 ml-6">
+        <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Platform / third party <span class="text-red-500">*</span></label>
+            <input type="text" name="kyc_source_platform" x-model="kycPlatform" placeholder="e.g. Noon.com"
+                   class="w-full px-3 py-2 text-sm border rounded-lg bg-white {{ $errors->has('kyc_source_platform') ? 'border-red-400 bg-red-50' : 'border-gray-200' }}">
+            @error('kyc_source_platform')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Order / reference number <span class="text-red-500">*</span></label>
+            <input type="text" name="kyc_source_reference" x-model="kycReference" placeholder="e.g. Order #12345"
+                   class="w-full px-3 py-2 text-sm border rounded-lg bg-white {{ $errors->has('kyc_source_reference') ? 'border-red-400 bg-red-50' : 'border-gray-200' }}">
+            @error('kyc_source_reference')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+        </div>
+    </div>
+    <input type="hidden" name="kyc_source" :value="thirdPartyKyc ? 'third_party' : 'direct'">
+</div>
+
 <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
 
 {{-- ══ CORP 1 — Company Profile ══════════════════════════════════════════════ --}}
@@ -783,8 +809,11 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             @include('tenant.clients._field', ['name'=>'passport_number','label'=>'Passport number'])
             @include('tenant.clients._field', ['name'=>'passport_expiry','label'=>'Passport expiry','type'=>'date'])
-            <div class="md:col-span-3">
+            <div class="md:col-span-3" x-show="!thirdPartyKyc">
                 <p class="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">⚠ At least one of Passport or Emirates ID is required for identity verification.</p>
+            </div>
+            <div class="md:col-span-3" x-show="thirdPartyKyc" x-cloak>
+                <p class="text-xs text-blue-600 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">Passport/Emirates ID waived — identity verified by the third party named above.</p>
             </div>
             @include('tenant.clients._field', ['name'=>'eid_number','label'=>'Emirates ID number'])
             @include('tenant.clients._field', ['name'=>'eid_expiry','label'=>'Emirates ID expiry','type'=>'date'])
@@ -1055,6 +1084,9 @@ function clientForm() {
         indStep: 1,
         stepErrors:    {1:false,2:false,3:false,4:false,5:false,6:false,7:false,8:false,9:false},
         indStepErrors: {1:false,2:false,3:false,4:false,5:false,6:false},
+        thirdPartyKyc: {{ old('kyc_source') === 'third_party' ? 'true' : 'false' }},
+        kycPlatform:   @json(old('kyc_source_platform', '')),
+        kycReference:  @json(old('kyc_source_reference', '')),
 
         init() {
             window.addEventListener('set-client-type', (e) => this.setType(e.detail));

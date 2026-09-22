@@ -65,6 +65,12 @@ $countryName = fn($code) => $code ? (\App\Models\Country::find($code)?->country_
             @if($client->cdd_type === 'enhanced')
             <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-purple-100 text-purple-700">EDD</span>
             @endif
+            @if($client->isThirdPartyKyc())
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-blue-100 text-blue-700"
+                  title="Identity verified by {{ $client->kyc_source_platform }} — ref: {{ $client->kyc_source_reference }}">
+                Third-party KYC · {{ $client->kyc_source_platform }}
+            </span>
+            @endif
             @php $screenColors = ['clear'=>'bg-green-100 text-green-700','match'=>'bg-red-100 text-red-700','pending'=>'bg-amber-100 text-amber-700','not_screened'=>'bg-gray-100 text-gray-500']; @endphp
             <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold {{ $screenColors[$client->screening_status] ?? 'bg-gray-100 text-gray-500' }}">
                 {{ ucfirst(str_replace('_', ' ', $client->screening_status)) }}

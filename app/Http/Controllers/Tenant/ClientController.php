@@ -215,8 +215,26 @@ PROMPT;
     {
         $tenant = app('tenant');
 
+        $thirdPartyKyc = $request->input('kyc_source') === 'third_party';
+
+        // A client whose identity was verified by a third party (a marketplace
+        // like Noon.com that owns the buyer relationship and did its own KYC)
+        // genuinely can't supply passport/EID -- the tenant only gets a name
+        // and an order reference. Record who actually verified them instead of
+        // blocking the record entirely.
+        if ($thirdPartyKyc) {
+            $request->validate([
+                'kyc_source_platform'  => 'required|string|max:255',
+                'kyc_source_reference' => 'required|string|max:255',
+            ], [], [
+                'kyc_source_platform'  => 'platform name',
+                'kyc_source_reference' => 'order/reference number',
+            ]);
+        }
+
         // For individual clients — require at least passport OR Emirates ID
-        if ($request->input('client_type') === 'individual') {
+        // (waived for third-party-verified clients, see above)
+        if ($request->input('client_type') === 'individual' && ! $thirdPartyKyc) {
             if (empty($request->passport_number) && empty($request->eid_number)) {
                 return back()
                     ->withInput()
