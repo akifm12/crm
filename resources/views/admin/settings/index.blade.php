@@ -503,10 +503,10 @@
                 @csrf
                 <label class="block text-xs font-medium text-gray-600 mb-1">Match threshold (0–100)</label>
                 <div class="flex items-center gap-3">
-                    <input type="range" name="screening_match_threshold_range" min="0" max="100" value="{{ $screeningThreshold }}"
+                    <input type="range" name="screening_match_threshold_range" min="65" max="100" value="{{ $screeningThreshold }}"
                            oninput="document.getElementById('screening_threshold_num').value = this.value"
                            class="flex-1">
-                    <input type="number" id="screening_threshold_num" name="screening_match_threshold" min="0" max="100"
+                    <input type="number" id="screening_threshold_num" name="screening_match_threshold" min="65" max="100"
                            value="{{ $screeningThreshold }}"
                            oninput="this.previousElementSibling.value = this.value"
                            class="w-20 border border-gray-300 rounded-lg px-2 py-1.5 text-sm text-center">

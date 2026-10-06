@@ -153,8 +153,20 @@
                     </svg>
                 </div>
                 <div>
-                    <p class="font-bold text-red-800">Potential match found</p>
-                    <p class="text-sm text-red-600">{{ $result['total_hits'] }} hit(s) for "{{ $query }}" — review required</p>
+                    @php $flag = $result['flag_reason'] ?? 'sanctions'; @endphp
+                    <p class="font-bold text-red-800">
+                        {{ $flag === 'adverse_media' ? 'Adverse media found' : 'Potential match found' }}
+                    </p>
+                    <p class="text-sm text-red-600">
+                        @if($flag === 'adverse_media')
+                            {{ $result['media_hits'] }} adverse media article(s) for "{{ $query }}" — no sanctions list match
+                        @elseif($flag === 'sanctions_and_media')
+                            {{ $result['total_hits'] }} sanctions hit(s) and {{ $result['media_hits'] }} adverse media article(s) for "{{ $query }}"
+                        @else
+                            {{ $result['total_hits'] }} hit(s) for "{{ $query }}"
+                        @endif
+                        — under review by Blue Arrow compliance
+                    </p>
                     @if($client)
                     <p class="text-xs text-red-500 mt-0.5">Result saved to {{ $client->displayName() }}'s profile</p>
                     @endif
@@ -234,14 +246,10 @@
             </a>
             @elseif(isset($logId))
                 @if($result['status'] === 'match')
-                <a href="{{ route('tenant.screening.log.review', [$tenant->slug, $logId]) }}"
-                   class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-amber-600 rounded-lg hover:bg-amber-700 transition">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
-                    </svg>
-                    Review {{ $result['total_hits'] }} Hit(s) — EDD Required
-                </a>
-                @else
+                <span class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-amber-800 bg-amber-50 border border-amber-200 rounded-lg">
+                    EDD — under review by Blue Arrow compliance
+                </span>
+                @endif
                 <a href="{{ route('tenant.screening.log.pdf', [$tenant->slug, $logId]) }}"
                    target="_blank"
                    class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition">
@@ -250,7 +258,6 @@
                     </svg>
                     Download screening report
                 </a>
-                @endif
             @endif
         </div>
 
@@ -382,11 +389,10 @@
                             {{ $log->screener?->name ?? '—' }}
                         </td>
                         <td class="px-4 py-3 text-right whitespace-nowrap">
-                            @if($log->status === 'match' && !$log->reviewed_at && !$log->bullion_client_id)
-                            <a href="{{ route('tenant.screening.log.review', [$tenant->slug, $log->id]) }}"
-                               class="text-xs text-amber-600 hover:underline font-medium mr-2">Review ↗</a>
+                            @if(($log->result['sentinel_status'] ?? null) === 'MARKED_FOR_EDD')
+                            <span class="text-xs text-amber-600 font-medium mr-2">Under review</span>
                             @endif
-                            @if($log->bullion_client_id)
+                            @if($log->bullion_client_id && empty($log->result['case_id']))
                             <a href="{{ route('tenant.clients.screening.pdf', [$tenant->slug, $log->bullion_client_id]) }}"
                                target="_blank" class="text-xs text-blue-600 hover:underline whitespace-nowrap">PDF ↗</a>
                             @else

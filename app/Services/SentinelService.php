@@ -2,304 +2,214 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Facades\DB;
+use App\Models\Tenant;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
 
+/**
+ * Screening via Sentinel AML (aml.bluearrow.ae).
+ *
+ * Every screening runs on Sentinel's engine — sanctions lists, adverse media,
+ * PEP check and the flag-threshold verdict — and is saved there as a case owned
+ * by the tenant's company, so the portal and Sentinel always show the same
+ * result and the same report. Blue Arrow reviews flagged cases in Sentinel;
+ * syncTenant() brings those decisions back into the portal.
+ *
+ * Authenticates with a service key (SENTINEL_API_KEY), never a user login.
+ */
 class SentinelService
 {
-    private const LIST_META = [
-        'OFAC (USA)'                  => ['id' => 'OFAC_SDN',       'flag' => '🇺🇸', 'color' => '#1a56db'],
-        'UN (Global)'                 => ['id' => 'UN_CONSOLIDATED', 'flag' => '🇺🇳', 'color' => '#0e9f6e'],
-        'UK (FCDO)'                   => ['id' => 'UK_HMT',          'flag' => '🇬🇧', 'color' => '#9061f9'],
-        'EU (Europe)'                 => ['id' => 'EU_CONSOLIDATED', 'flag' => '🇪🇺', 'color' => '#e3a008'],
-        'UAE (Local Terror List)'     => ['id' => 'UAE_CBUAE',       'flag' => '🇦🇪', 'color' => '#e02424'],
-        'Switzerland (SECO)'          => ['id' => 'CH_SECO',         'flag' => '🇨🇭', 'color' => '#ff0000'],
-        'World Bank (Debarred)'       => ['id' => 'WORLD_BANK',      'flag' => '🌍',  'color' => '#ff5a1f'],
-        'Global PEPs (OpenSanctions)' => ['id' => 'GLOBAL_PEPS',     'flag' => '🌐',  'color' => '#6366f1'],
-        'Interpol (Red Notices)'      => ['id' => 'INTERPOL',        'flag' => '🔴',  'color' => '#cc0000'],
-    ];
+    private ?Tenant $tenant = null;
+    private ?string $actor  = null;
+    private string $source  = 'portal';
 
-    private function db()
+    /**
+     * Who the screenings are for, when there is no web request to tell
+     * (batch and monitoring commands): tenant, a label for "screened by", and source.
+     */
+    public function actingFor(?Tenant $tenant, string $actor, string $source = 'batch'): static
     {
-        return DB::connection('sentinel');
+        $this->tenant = $tenant;
+        $this->actor  = $actor;
+        $this->source = $source;
+        return $this;
     }
 
-    private function getMeta(string $source): array
+    private function http()
     {
-        if (isset(self::LIST_META[$source])) return self::LIST_META[$source];
-        foreach (self::LIST_META as $key => $meta) {
-            if (stripos($source, explode(' ', $key)[0]) !== false) return $meta;
-        }
-        return ['id' => 'OTHER', 'flag' => '🌐', 'color' => '#64748b'];
+        return Http::baseUrl(config('sentinel.base_url'))
+            ->withHeaders(['X-API-Key' => config('sentinel.api_key')])
+            ->acceptJson();
     }
 
-    private function deriveRisk(string $source): string
+    private function screen(array $input): array
     {
-        $s = strtoupper($source);
-        if (str_contains($s, 'UAE') || str_contains($s, 'UN ') || str_contains($s, 'INTERPOL')) return 'CRITICAL';
-        if (str_contains($s, 'OFAC') || str_contains($s, 'UK') || str_contains($s, 'EU')) return 'HIGH';
-        if (str_contains($s, 'PEP')) return 'HIGH';
-        return 'MEDIUM';
-    }
+        $tenant = $this->tenant ?? (app()->bound('tenant') ? app('tenant') : null);
+        $user   = auth()->user();
 
-    private function normalise(string $s): string
-    {
-        $s = mb_strtolower($s);
-        $s = str_replace(["\u{2019}", "\u{2018}", '`'], '', $s);
-        $s = str_replace(['-', '_', '.'], ' ', $s);
-        return trim((string) preg_replace('/\s+/', ' ', $s));
-    }
-
-    private function calcScore(string $query, string $name): int
-    {
-        $q = $this->normalise($query);
-        $n = $this->normalise($name);
-
-        if ($q === $n) return 100;
-
-        $qt = array_values(array_filter(explode(' ', $q)));
-        $nt = array_values(array_filter(explode(' ', $n)));
-
-        // "Starts with" is only a strong signal when the shorter side is itself a real
-        // multi-word name — otherwise a single-word list entry (e.g. "Shahzad") would
-        // falsely score 95 against any longer name that happens to start with it
-        // (e.g. "Shahzad Abdul Razzaq"), which is really just a shared first name.
-        if ((str_starts_with($n, $q) || str_starts_with($q, $n)) && min(count($qt), count($nt)) >= 2) {
-            return 95;
-        }
-
-        $multiTokenQuery = count($qt) >= 2;
-
-        // Deliberately no "one name contains the other" shortcut here — a 2-word
-        // sanctions entry like "Abdul Razzaq" being a contiguous substring of a
-        // 3-word query like "Shahzad Abdul Razzaq" is just a shared surname combo,
-        // not the same person. Full-name coverage is required (below) instead.
-
-        $exactHits = array_filter($qt, fn($t) => in_array($t, $nt, true));
-        $hitCount  = count($exactHits);
-
-        if ($hitCount === count($qt)) return 92;
-
-        // For multi-token queries require at least 2 tokens to match
-        $minHits = $multiTokenQuery ? 2 : 1;
-        if ($hitCount >= $minHits) {
-            $score = (int) round($hitCount / max(count($qt), count($nt)) * 85);
-            if ($score >= 60) return $score;
-        }
-
-        $fuzzyHits  = 0.0;
-        $fuzzyCount = 0;
-        foreach ($qt as $qt_) {
-            if (strlen($qt_) < 3) continue;
-            $best = 0.0;
-            foreach ($nt as $nt_) {
-                if (strlen($nt_) < 3) continue;
-                $maxLen = max(strlen($qt_), strlen($nt_));
-                if ($maxLen === 0) continue;
-                $sim = 1 - levenshtein($qt_, $nt_) / $maxLen;
-                if ($sim > $best) $best = $sim;
-            }
-            if ($best >= 0.65) { $fuzzyHits += $best; $fuzzyCount++; }
-        }
-
-        // For multi-token queries require at least 2 tokens to fuzzy-match
-        $relevant = count(array_filter($qt, fn($t) => strlen($t) >= 3));
-        if ($relevant > 0 && $fuzzyCount >= $minHits) {
-            $score = (int) round($fuzzyHits / $relevant * 82);
-            if ($score >= 40) return $score;
-        }
-
-        // Levenshtein fallback: skip if name has far fewer tokens than the query
-        // (prevents "Shahzad" from matching "Shahzad Abdul Razzaq" via edit distance)
-        if ($multiTokenQuery && count($nt) < 2) return 0;
-
-        $maxLen = max(strlen($q), strlen($n));
-        if ($maxLen === 0) return 0;
-        $dist = levenshtein(substr($q, 0, 40), substr($n, 0, 40));
-        return (int) round((1 - $dist / max($maxLen, 1)) * 75);
-    }
-
-    private function applyContextBoost(int $score, object $row, array $ctx): int
-    {
-        $remarks = mb_strtolower($row->remarks ?? '');
-        $uid     = mb_strtolower($row->uid ?? '');
-
-        if (!empty($ctx['country'])) {
-            $c = mb_strtolower($ctx['country']);
-            if (str_contains($remarks, $c) || str_contains($uid, $c)) {
-                $score = min(100, $score + 8);
-            }
-        }
-        if (!empty($ctx['dob'])) {
-            $dobClean = str_replace('-', '', $ctx['dob']);
-            $dobSlash = str_replace('-', '/', $ctx['dob']);
-            if (str_contains($remarks, $ctx['dob']) || str_contains($remarks, $dobClean) || str_contains($remarks, $dobSlash)) {
-                $score = min(100, $score + 10);
-            }
-        }
-        if (!empty($ctx['id_number'])) {
-            $id = strtolower(preg_replace('/\s+/', '', $ctx['id_number']));
-            if (str_contains($uid, $id) || str_contains($remarks, $id)) {
-                $score = min(100, $score + 15);
-            }
-        }
-        return $score;
-    }
-
-    private function screen(string $query, string $entityType, array $ctx = [], int $threshold = 65): array
-    {
         try {
-            $q = trim($query);
-            if (strlen($q) < 2) {
-                return ['success' => false, 'error' => 'Name must be at least 2 characters'];
+            // Sanctions + adverse media run in parallel on Sentinel; allow for slow news APIs
+            $response = $this->http()->timeout(90)->post('/screenings', $input + [
+                'portal' => [
+                    'tenantId'   => $tenant?->id,
+                    'tenantName' => $tenant?->name,
+                    'userName'   => $this->actor ?? $user?->name,
+                    'userEmail'  => $this->actor ? null : $user?->email,
+                    'source'     => $this->source,
+                ],
+            ]);
+
+            if ($response->successful()) {
+                return ['success' => true, 'data' => $response->json()];
             }
-
-            $longTokens = array_values(array_filter(
-                explode(' ', $q),
-                fn($t) => strlen($t) >= 4
-            ));
-
-            // Build bindings: SELECT uses ?, ? then WHERE uses ?, ?, then lev tokens
-            $bindings   = [];
-            $bindings[] = $q;         // SIMILARITY(name, ?)
-            $bindings[] = $q;         // WORD_SIMILARITY(?, name) in SELECT
-            $bindings[] = "%{$q}%";   // name ILIKE ?
-            $bindings[] = $q;         // WORD_SIMILARITY(?, name) in WHERE
-
-            $levClauses = [];
-            foreach ($longTokens as $t) {
-                $maxDist      = strlen($t) <= 5 ? 1 : 2;
-                $levClauses[] = "OR EXISTS (
-                    SELECT 1 FROM regexp_split_to_table(lower(name), '\\s+') AS w
-                    WHERE levenshtein(w, lower(?)) <= {$maxDist} AND length(w) >= 3
-                )";
-                $bindings[] = $t;
-            }
-
-            $typeFilter = match ($entityType) {
-                'individual' => "AND type ILIKE ANY(ARRAY['%individual%','%person%','%sanctioned%'])",
-                'entity'     => "AND type ILIKE ANY(ARRAY['%entity%','%company%','%legal%','%organisation%','%organization%','%position%','-0-','%unknown%'])",
-                default      => '',
-            };
-
-            $levSql = implode("\n", $levClauses);
-
-            $sql = "
-                SELECT DISTINCT id, source, uid, name, type, program, remarks,
-                       GREATEST(SIMILARITY(name, ?), WORD_SIMILARITY(?, name)) AS pg_sim
-                FROM sanctions
-                WHERE (
-                    name ILIKE ?
-                    OR WORD_SIMILARITY(?, name) > 0.25
-                    {$levSql}
-                )
-                {$typeFilter}
-                ORDER BY pg_sim DESC
-                LIMIT 300
-            ";
-
-            $rows = $this->db()->select($sql, $bindings);
-
-            $seen    = [];
-            $results = [];
-
-            foreach ($rows as $row) {
-                if (isset($seen[$row->id])) continue;
-                $seen[$row->id] = true;
-
-                $score = $this->calcScore($q, $row->name);
-                $score = $this->applyContextBoost($score, $row, $ctx);
-
-                if ($score < $threshold) continue;
-
-                $meta      = $this->getMeta($row->source ?? '');
-                $results[] = [
-                    'id'         => $row->id,
-                    'externalId' => $row->uid,
-                    'listId'     => $meta['id'],
-                    'name'       => $row->name,
-                    'type'       => $row->type ?? 'Entity',
-                    'programs'   => array_values(array_filter([$row->program])),
-                    'reason'     => $row->remarks,
-                    'riskLevel'  => $this->deriveRisk($row->source ?? ''),
-                    'matchScore' => $score,
-                    'matchType'  => $score >= 95 ? 'exact' : ($score >= 80 ? 'close' : 'fuzzy'),
-                    'list'       => [
-                        'id'        => $meta['id'],
-                        'name'      => $row->source,
-                        'authority' => $row->source,
-                        'color'     => $meta['color'],
-                        'flag'      => $meta['flag'],
-                    ],
-                ];
-            }
-
-            usort($results, fn($a, $b) => $b['matchScore'] <=> $a['matchScore']);
-
-            return ['success' => true, 'data' => [
-                'sessionId' => (string) Str::uuid(),
-                'query'     => $query,
-                'results'   => array_slice($results, 0, 50),
-                'total'     => count($results),
-            ]];
+            Log::error('Sentinel screening failed', ['status' => $response->status(), 'body' => $response->body(), 'query' => $input['query']]);
+            return ['success' => false, 'error' => $response->json('error') ?? "Sentinel error {$response->status()}"];
 
         } catch (\Exception $e) {
-            Log::error('Sentinel screen failed', [
-                'error' => $e->getMessage(),
-                'query' => $query,
-                'type'  => $entityType,
-            ]);
-            return ['success' => false, 'error' => $e->getMessage()];
+            Log::error('Sentinel screening failed', ['error' => $e->getMessage(), 'query' => $input['query']]);
+            return ['success' => false, 'error' => 'Screening service unavailable — please try again.'];
         }
     }
 
     public function screenEntity(array $params): array
     {
-        return $this->screen(
-            query:      (string) trim($params['query']),
-            entityType: 'entity',
-            ctx:        [
-                'country' => $params['country_of_issue'] ?? $params['country'] ?? '',
-                'dob'     => '',
-            ],
-        );
+        return $this->screen([
+            'query'      => (string) trim($params['query']),
+            'entityType' => 'entity',
+            'country'    => $params['country_of_issue'] ?? $params['country'] ?? '',
+        ]);
     }
 
     public function screenIndividual(array $params): array
     {
-        $country = ($params['nationality'] ?: null) ?? ($params['country'] ?: null) ?? '';
-
-        return $this->screen(
-            query:      (string) trim($params['query']),
-            entityType: 'individual',
-            ctx:        [
-                'country'   => $country,
-                'dob'       => $params['dob'] ?? '',
-                'id_number' => $params['id_number'] ?? '',
-            ],
-        );
+        return $this->screen([
+            'query'      => (string) trim($params['query']),
+            'entityType' => 'individual',
+            'country'    => ($params['nationality'] ?? null) ?: (($params['country'] ?? null) ?: ''),
+            'dob'        => $params['dob'] ?? '',
+            'idNumber'   => $params['id_number'] ?? '',
+        ]);
     }
 
+    /**
+     * Portal summary of a Sentinel screening. 'status' is 'match' whenever Sentinel
+     * flagged the subject for review (a sanctions hit above the flag threshold or
+     * adverse media) and 'clear' otherwise; 'flag_reason' says which.
+     */
     public static function summarise(array $data): array
     {
-        $hits = $data['results'] ?? [];
+        $case      = $data['case'] ?? [];
+        $hits      = $data['results'] ?? [];
+        $media     = $data['media'] ?? null;
+        $threshold = (int) ($case['flag_threshold'] ?? 95);
 
-        // Only near-exact name matches count as a genuine hit that flags the client.
-        // Weaker matches (partial / common-word overlap, e.g. a single shared first name)
-        // are still surfaced in the results list for audit visibility, but don't by
-        // themselves misclassify a client as a sanctions match. Threshold is adjustable
-        // from Admin → Settings → Screening (defaults to 90 if never set).
-        $threshold  = (int) \App\Models\AppSetting::get('screening_match_threshold', 90);
         $strongHits = array_values(array_filter($hits, fn ($h) => ($h['matchScore'] ?? 0) > $threshold));
-        $status     = count($strongHits) > 0 ? 'match' : 'clear';
+        $mediaHits  = (int) ($case['media_hits'] ?? 0);
 
         return [
-            'status'     => $status,
-            'total_hits' => count($strongHits),
-            'hits'       => array_slice($hits, 0, 10),
-            'session_id' => $data['sessionId'] ?? null,
-            'raw'        => $data,
+            'status'          => self::portalStatus($case['status'] ?? null),
+            'total_hits'      => count($strongHits),
+            'hits'            => array_slice($hits, 0, 10),
+            'flag_reason'     => self::flagReason(count($strongHits) > 0, $mediaHits > 0),
+            'media_hits'      => $mediaHits,
+            'media_checked'   => (bool) ($case['media_checked'] ?? false),
+            'pep_detected'    => (bool) ($media['pepDetected'] ?? false),
+            'flag_threshold'  => $threshold,
+            'case_id'         => $case['id'] ?? null,
+            'sentinel_status' => $case['status'] ?? null,
+            'risk_level'      => $case['risk_level'] ?? null,
+            'session_id'      => $case['id'] ?? null,
+            'raw'             => ['results' => $hits],
         ];
+    }
+
+    public static function portalStatus(?string $sentinelStatus): string
+    {
+        return $sentinelStatus === 'MARKED_AS_CLEAR' ? 'clear' : 'match';
+    }
+
+    private static function flagReason(bool $sanctions, bool $media): ?string
+    {
+        return match (true) {
+            $sanctions && $media => 'sanctions_and_media',
+            $sanctions           => 'sanctions',
+            $media               => 'adverse_media',
+            default              => null,
+        };
+    }
+
+    // ── Flag threshold (one setting in Sentinel for both apps) ────────────
+
+    public function flagThreshold(): ?int
+    {
+        $response = $this->http()->timeout(10)->get('/settings/screening');
+        return $response->successful() ? (int) $response->json('flagThreshold') : null;
+    }
+
+    public function setFlagThreshold(int $threshold, string $updatedBy): bool
+    {
+        return $this->http()->timeout(10)
+            ->put('/settings/screening', ['flagThreshold' => $threshold, 'updatedBy' => $updatedBy])
+            ->successful();
+    }
+
+    // ── Cases & reports ───────────────────────────────────────────────────
+
+    /** Sentinel case if it belongs to this tenant (null tenant = BAMC admin screenings). */
+    public function caseFor(string $caseId, ?Tenant $tenant): ?array
+    {
+        $response = $this->http()->timeout(15)->get('/cases/' . rawurlencode($caseId));
+        if (!$response->successful()) return null;
+        $case = $response->json();
+        $owner = $case['portal_tenant_id'] ?? null;
+        return $tenant ? ((string) $owner === (string) $tenant->id ? $case : null)
+                       : ($owner === null ? $case : null);
+    }
+
+    /** The compliance report (HTML) — the same document Sentinel shows. */
+    public function reportHtml(string $caseId, string $viewer): ?string
+    {
+        $response = $this->http()->timeout(20)
+            ->get('/cases/' . rawurlencode($caseId) . '/report', ['viewer' => $viewer]);
+        return $response->successful() ? $response->body() : null;
+    }
+
+    /**
+     * Pull Blue Arrow's review decisions from Sentinel into the tenant's screening
+     * history and client profiles. Returns the number of screening logs updated.
+     */
+    public function syncTenant(Tenant $tenant): int
+    {
+        $response = $this->http()->timeout(20)->get('/cases', ['tenant' => $tenant->id, 'limit' => 1000]);
+        if (!$response->successful()) {
+            Log::warning('Sentinel sync failed', ['tenant' => $tenant->id, 'status' => $response->status()]);
+            return 0;
+        }
+        $statusById = collect($response->json())->pluck('status', 'id');
+
+        $updated = 0;
+        $clients = [];
+        \App\Models\ScreeningLog::where('tenant_id', $tenant->id)
+            ->whereNotNull('result->case_id')
+            ->each(function ($log) use ($statusById, &$updated, &$clients) {
+                $result = $log->result ?? [];
+                $sentinelStatus = $statusById[$result['case_id']] ?? null;
+                if (!$sentinelStatus || $sentinelStatus === ($result['sentinel_status'] ?? null)) return;
+
+                $result['sentinel_status'] = $sentinelStatus;
+                $log->update(['status' => self::portalStatus($sentinelStatus), 'result' => $result]);
+                $updated++;
+                if ($log->bullion_client_id) $clients[$log->bullion_client_id] = $log->reference;
+            });
+
+        // A client's status follows its latest screening run (all subjects share its reference)
+        foreach ($clients as $clientId => $reference) {
+            $client = \App\Models\BullionClient::find($clientId);
+            if (!$client || $client->screening_reference !== $reference) continue;
+            $anyMatch = \App\Models\ScreeningLog::where('bullion_client_id', $clientId)
+                ->where('reference', $reference)->where('status', 'match')->exists();
+            $client->update(['screening_status' => $anyMatch ? 'match' : 'clear']);
+        }
+        return $updated;
     }
 }

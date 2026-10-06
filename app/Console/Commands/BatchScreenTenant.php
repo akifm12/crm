@@ -64,6 +64,8 @@ class BatchScreenTenant extends Command
         }
         $this->newLine();
 
+        $this->sentinel->actingFor($tenant, 'Batch screening', 'batch');
+
         $pass  = 0;
         $fail  = 0;
         $sleep = max(0, (int) $this->option('sleep'));

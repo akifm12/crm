@@ -41,6 +41,7 @@ class RunMonitoringScreenings extends Command
 
     private function screenClient(BullionClient $client, SentinelService $sentinel): void
     {
+        $sentinel->actingFor($client->tenant, 'Ongoing monitoring', 'monitoring');
         $isCorporate = $client->client_type !== 'individual';
         $allResults  = [];
 

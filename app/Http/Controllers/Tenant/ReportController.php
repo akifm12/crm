@@ -325,6 +325,16 @@ class ReportController extends Controller
         $tenant = app('tenant');
         abort_if($log->tenant_id !== $tenant->id, 404);
 
+        // Screenings run through Sentinel: show Sentinel's compliance report for this
+        // subject — the same document Blue Arrow sees in Sentinel
+        if ($caseId = $log->result['case_id'] ?? null) {
+            $sentinel = app(\App\Services\SentinelService::class);
+            abort_unless($sentinel->caseFor($caseId, $tenant), 404);
+            $html = $sentinel->reportHtml($caseId, auth()->user()->name);
+            abort_unless($html, 503, 'The screening report is temporarily unavailable.');
+            return response($html)->header('Content-Type', 'text/html; charset=UTF-8');
+        }
+
         // If the log is tied to a client, use the richer client-based PDF
         if ($log->bullion_client_id) {
             return redirect()->route('tenant.clients.screening.pdf', [$slug, $log->bullion_client_id]);

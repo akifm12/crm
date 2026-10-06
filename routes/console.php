@@ -14,3 +14,6 @@ Schedule::command('content:ai-digest')->dailyAt('07:00');
 
 // ── AML ongoing monitoring ───────────────────────────────────────────────────
 Schedule::command('monitoring:run')->dailyAt('02:00');
+
+// ── Sentinel: Blue Arrow's review decisions → tenants' screening history ─────
+Schedule::command('sentinel:sync')->everyTenMinutes()->withoutOverlapping();

@@ -8,6 +8,7 @@ use App\Models\AppSetting;
 use App\Models\SlaTemplate;
 use App\Models\QuotationTemplate;
 use App\Models\User;
+use App\Services\SentinelService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
@@ -20,7 +21,9 @@ class SettingsController extends Controller
         $qtTemplates  = QuotationTemplate::latest()->get();
         $superAdmins  = User::where('role', 'super_admin')->orderBy('name')->get();
         $staff        = User::where('role', '!=', 'super_admin')->orderBy('name')->get();
-        $screeningThreshold = (int) AppSetting::get('screening_match_threshold', 90);
+        // Lives in Sentinel, shared with aml.bluearrow.ae; the local copy is a fallback if Sentinel is unreachable
+        $screeningThreshold = app(SentinelService::class)->flagThreshold()
+            ?? (int) AppSetting::get('screening_match_threshold', 95);
         return view('admin.settings.index', compact('slaTemplates', 'qtTemplates', 'superAdmins', 'staff', 'screeningThreshold'));
     }
 
@@ -29,12 +32,16 @@ class SettingsController extends Controller
     public function updateScreeningSettings(Request $request)
     {
         $request->validate([
-            'screening_match_threshold' => 'required|integer|min:0|max:100',
+            'screening_match_threshold' => 'required|integer|min:65|max:100',
         ]);
 
-        AppSetting::set('screening_match_threshold', $request->screening_match_threshold);
+        $threshold = (int) $request->screening_match_threshold;
+        if (!app(SentinelService::class)->setFlagThreshold($threshold, auth()->user()->name)) {
+            return back()->with('error', 'Could not reach Sentinel — threshold not changed.')->with('tab', 'screening');
+        }
+        AppSetting::set('screening_match_threshold', $threshold);
 
-        return back()->with('success', 'Screening match threshold updated.')->with('tab', 'screening');
+        return back()->with('success', 'Screening match threshold updated for the portal and Sentinel.')->with('tab', 'screening');
     }
 
     // ── SLA Templates ──────────────────────────────────────────────────────

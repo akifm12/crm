@@ -325,8 +325,11 @@ class ScreeningController extends Controller
 
     // ── Hit review page ───────────────────────────────────────────────────────
 
+    // Hit review now happens in Sentinel by Blue Arrow compliance; decisions sync back via
+    // `sentinel:sync`. The tenant-side review pages are disabled (existing reviews are kept).
     public function showReview(string $slug, ScreeningLog $log)
     {
+        abort(404);
         $tenant = app('tenant');
         abort_if($log->tenant_id !== $tenant->id, 404);
         abort_if($log->status !== 'match', 404);
@@ -336,6 +339,7 @@ class ScreeningController extends Controller
 
     public function saveHitReview(Request $request, string $slug, ScreeningLog $log)
     {
+        abort(404);
         $tenant = app('tenant');
         abort_if($log->tenant_id !== $tenant->id, 403);
 
