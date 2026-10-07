@@ -79,6 +79,16 @@ return [
     // football and weather. Regulator feeds aren't filtered: everything they
     // publish is regulatory.
     'relevance_pattern' => '/money[\s-]*launder|launder|\bAML\b|\bCFT\b|\bsanctioned\b|sanctions[\s-]+(evasion|evade|breach|violat|compliance|screening|list)|\b(impos\w*|slap\w*|hit\w*|target\w*|add\w*|new|fresh|designat\w*|lift\w*|eas\w*|expand\w*|financial)\s+([\w-]+\s+){0,3}sanctions|\b(US|U\.S\.|UK|EU|UN|OFAC|Treasury)\s+sanctions\s+(?-i:[A-Z0-9])|terror\w*\s+financ|financing\s+(of\s+)?terror|proliferation\s+financ|\bFATF\b|financial\s+crime|\bgoAML\b|\bDNFBPs?\b|\bKYC\b|due\s+diligence|beneficial\s+own|\bUBO\b|\bFIU\b|illicit|\bbrib|corruption|embezzl|fraud|(gold|cash|currency)\s+smuggl|smuggl\w*\s+(of\s+)?(gold|cash)|organi[sz]ed\s+crime|asset\s+freez|frozen|gr[ae]y\s*list|black\s*list|dirty\s+money|shell\s+compan|\bscam/i',
+    // News-outlet items are sorted into a category by headline, first match wins (regulator
+    // feeds keep their feed category). 'regulatory' goes first so that a regulator penalising
+    // a bank ("CBUAE imposes financial sanctions on six exchange houses") isn't filed under
+    // sanctions designations. No match: the feed's own category (AML).
+    'category_patterns' => [
+        'regulatory' => '/\b(central bank|CBUAE|DFSA|FSRA|ADGM|SCA|VARA|regulator|ministry|FIU)\b.*\b(sanction|fine|penalt)|\b(rules?|law|legislation|bill|regulat\w*|guidance|guidelines?|circular|consultation|fine[sd]?|penalt\w*|licen[cs]\w*|FATF|gr[ae]y\s*list|black\s*list|national\s+risk\s+assessment|framework|directive|inspection\w*)\b/i',
+        'sanctions'  => '/sanction|\bdesignat\w*|asset\s+freez|\bfrozen\b|\bOFAC\b|terror\w*\s+list|blacklisted/i',
+        'industry'   => '/\b(gold|bullion|precious\s+metals?|jewel\w*|diamonds?|refiner\w*|real\s+estate|propert(y|ies)|developers?|brokers?|brokerage|crypto\w*|virtual\s+assets?|VASPs?|bitcoin|stablecoin|exchange\s+houses?|remittance|accountan\w*|company\s+formation|free\s+zones?|casino)\b/i',
+    ],
+
     // Ignore items older than this many days. Google News has no reliable date filter and will
     // happily return a 2008 article, which our duplicate check would otherwise treat as new.
     'max_age_days' => 60,

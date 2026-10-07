@@ -14,7 +14,9 @@ class NewsController extends Controller
         $category = $request->query('category');
 
         $items = NewsItem::published()
-            ->when($category, fn ($q) => $q->where('category', $category))
+            // The BA-Digest tab means "written by us", whatever topic category the note has
+            ->when($category === 'insight', fn ($q) => $q->where('origin', 'ai_digest'))
+            ->when($category && $category !== 'insight', fn ($q) => $q->where('category', $category))
             ->latest('published_at')
             ->paginate(9)
             ->withQueryString();

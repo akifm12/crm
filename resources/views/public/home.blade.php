@@ -157,7 +157,7 @@
                             @endif
                         </div>
                         <h3 class="font-semibold text-gray-900 leading-snug">{{ $item->title }}</h3>
-                        <p class="mt-2 text-sm text-gray-500 line-clamp-3">{{ $item->summary }}</p>
+                        @if ($item->summary)<p class="mt-2 text-sm text-gray-500 line-clamp-3">{{ $item->summary }}</p>@endif
                         <p class="mt-4 text-xs text-gray-400">📅 {{ $item->published_at->format('d M Y') }} @if($item->source_name) · {{ $item->source_name }} @endif</p>
                     </a>
                 @endforeach

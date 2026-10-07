@@ -65,22 +65,23 @@ class RssFeedService
                     continue;
                 }
 
+                $source   = $entry['source'] ?: $name;
+                $headline = Str::limit(self::headline($title, $source), 250, '');
+
                 // Same story under a new URL (outlets re-publish) counts as a duplicate too
                 $exists = NewsItem::where('source_url_hash', sha1($entry['link']))->exists()
-                    || NewsItem::where('title', Str::limit($title, 250, ''))->where('published_at', '>=', now()->subDays(30))->exists();
+                    || NewsItem::where('title', $headline)->where('published_at', '>=', now()->subDays(30))->exists();
 
                 if ($exists) {
                     continue;
                 }
 
-                $summary = $this->clean($entry['summary'] ?? '') ?: $title;
-
                 NewsItem::create([
-                    'title'        => Str::limit($title, 250, ''),
-                    'summary'      => Str::limit($summary, 500),
-                    'source_name'  => $entry['source'] ?? $name,
+                    'title'        => $headline,
+                    'summary'      => Str::limit(self::summary($this->clean($entry['summary'] ?? ''), $headline, $source), 500),
+                    'source_name'  => $source,
                     'source_url'   => $entry['link'],
-                    'category'     => $category,
+                    'category'     => $filter ? self::classify($headline, $category) : $category,
                     'origin'       => 'rss',
                     'published_at' => $entry['published_at'] ?? now(),
                     'is_published' => true,
@@ -101,6 +102,37 @@ class RssFeedService
     public static function isRelevant(string $title): bool
     {
         return (bool) preg_match(config('content.relevance_pattern'), $title);
+    }
+
+    /** News-outlet category from the headline (config content.category_patterns, first match wins). */
+    public static function classify(string $headline, string $default): string
+    {
+        foreach (config('content.category_patterns', []) as $category => $pattern) {
+            if (preg_match($pattern, $headline)) {
+                return $category;
+            }
+        }
+
+        return $default;
+    }
+
+    /** Google News titles end in " - Source"; the source is shown separately, so drop it. */
+    public static function headline(string $title, ?string $source): string
+    {
+        if ($source && preg_match('/^(.*\S)\s+-\s+' . preg_quote($source, '/') . '$/iu', $title, $m)) {
+            return $m[1];
+        }
+
+        return $title;
+    }
+
+    /** Google News "descriptions" are just the headline and source again; treat that as no summary. */
+    public static function summary(string $summary, string $headline, ?string $source): string
+    {
+        $norm = fn (string $s) => mb_strtolower(preg_replace('/[^\p{L}\p{N}]+/u', '', $s));
+        $rest = $source ? preg_replace('/\s*' . preg_quote($source, '/') . '\s*$/iu', '', $summary) : $summary;
+
+        return $norm($rest) === '' || $norm($rest) === $norm($headline) ? '' : $summary;
     }
 
     /** A site page rather than a news item? (config content.junk_title_pattern; ignores the " - Source" suffix) */

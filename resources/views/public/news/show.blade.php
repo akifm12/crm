@@ -1,7 +1,7 @@
 @extends('layouts.public')
 
 @section('title', $news->title . ' | Blue Arrow Management Consultants')
-@section('meta_description', \Illuminate\Support\Str::limit($news->summary, 155))
+@section('meta_description', \Illuminate\Support\Str::limit($news->summary ?: $news->title, 155))
 
 @section('content')
 
@@ -22,7 +22,7 @@
         @if ($news->source_name) · Source: {{ $news->source_name }} @endif
     </p>
 
-    <p class="mt-8 text-lg text-gray-700 leading-relaxed">{{ $news->summary }}</p>
+    @if ($news->summary)<p class="mt-8 text-lg text-gray-700 leading-relaxed">{{ $news->summary }}</p>@endif
 
     @if ($news->body)
         <div class="mt-6 prose prose-gray max-w-none text-gray-600 leading-relaxed whitespace-pre-line">{{ $news->body }}</div>
