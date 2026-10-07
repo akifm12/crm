@@ -34,6 +34,10 @@
                             </li>
                         @endforeach
                     </ul>
+
+                    @isset($service['link'])
+                        <a href="{{ route($service['link']) }}" class="mt-5 inline-flex text-sm font-semibold text-brand-600 hover:text-brand-700">Learn more &amp; try it free →</a>
+                    @endisset
                 </div>
             </div>
         @endforeach

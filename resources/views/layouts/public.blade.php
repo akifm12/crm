@@ -34,7 +34,7 @@
                     <a href="{{ route('home') }}" class="hover:text-brand-600 {{ request()->routeIs('home') ? 'text-brand-600' : '' }}">Home</a>
 
                     <div x-data="{ open: false }" @click.outside="open = false" class="relative">
-                        <button @click="open = !open" class="flex items-center gap-1 hover:text-brand-600 {{ request()->routeIs('services', 'technology') ? 'text-brand-600' : '' }}">
+                        <button @click="open = !open" class="flex items-center gap-1 hover:text-brand-600 {{ request()->routeIs('services', 'technology', 'sentinel') ? 'text-brand-600' : '' }}">
                             Services
                             <svg class="h-3.5 w-3.5" :class="{'rotate-180': open}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </button>
@@ -46,6 +46,10 @@
                             <a href="{{ route('technology') }}" class="block px-4 py-2.5 text-sm hover:bg-gray-50">
                                 <span class="block font-medium text-gray-900">Technology Services</span>
                                 <span class="block text-xs text-gray-400">KYC portal, accounting software, custom builds</span>
+                            </a>
+                            <a href="{{ route('sentinel') }}" class="block px-4 py-2.5 text-sm hover:bg-gray-50">
+                                <span class="block font-medium text-gray-900">Sentinel AML Screening</span>
+                                <span class="block text-xs text-gray-400">Sanctions, PEP &amp; adverse-media screening</span>
                             </a>
                         </div>
                     </div>
@@ -112,7 +116,7 @@
             <div class="px-4 py-3 space-y-1 text-sm font-medium">
                 <a href="{{ route('home') }}" class="block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-50">Home</a>
 
-                <div x-data="{ open: {{ request()->routeIs('services', 'technology') ? 'true' : 'false' }} }">
+                <div x-data="{ open: {{ request()->routeIs('services', 'technology', 'sentinel') ? 'true' : 'false' }} }">
                     <button @click="open = !open" class="w-full flex items-center justify-between px-3 py-2 rounded-md text-gray-700 hover:bg-gray-50">
                         Services
                         <svg class="h-4 w-4" :class="{'rotate-180': open}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
@@ -120,6 +124,7 @@
                     <div x-show="open" x-cloak class="pl-6 space-y-1">
                         <a href="{{ route('services') }}" class="block px-3 py-2 rounded-md text-gray-600 hover:bg-gray-50">Compliance Services</a>
                         <a href="{{ route('technology') }}" class="block px-3 py-2 rounded-md text-gray-600 hover:bg-gray-50">Technology Services</a>
+                        <a href="{{ route('sentinel') }}" class="block px-3 py-2 rounded-md text-gray-600 hover:bg-gray-50">Sentinel AML Screening</a>
                     </div>
                 </div>
 
@@ -175,6 +180,7 @@
                     <li><a href="{{ route('about') }}" class="hover:text-white">About Us</a></li>
                     <li><a href="{{ route('services') }}" class="hover:text-white">Services</a></li>
                     <li><a href="{{ route('technology') }}" class="hover:text-white">Technology Services</a></li>
+                    <li><a href="{{ route('sentinel') }}" class="hover:text-white">Sentinel AML Screening</a></li>
                     <li><a href="{{ route('contact') }}" class="hover:text-white">Contact</a></li>
                     @auth('public')
                         <li><a href="{{ route('account.dashboard') }}" class="hover:text-white">My Deadlines</a></li>

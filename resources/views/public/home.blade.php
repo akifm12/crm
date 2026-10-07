@@ -81,6 +81,9 @@
                 <div class="text-3xl">{{ $service['icon'] }}</div>
                 <h3 class="mt-4 font-semibold text-gray-900">{{ $service['title'] }}</h3>
                 <p class="mt-2 text-sm text-gray-500 line-clamp-2">{{ $service['summary'] }}</p>
+                @isset($service['link'])
+                    <a href="{{ route($service['link']) }}" class="mt-3 inline-flex text-sm font-semibold text-brand-600 hover:text-brand-700">Learn more →</a>
+                @endisset
             </div>
         @endforeach
     </div>

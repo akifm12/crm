@@ -21,6 +21,7 @@ use App\Http\Controllers\Tenant\ReportController;
 use App\Http\Controllers\PagesController;
 use App\Http\Controllers\ComplianceCalendarController;
 use App\Http\Controllers\ResourceController;
+use App\Http\Controllers\SentinelController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\NewsletterController;
 use App\Http\Controllers\PublicAccountController;
@@ -52,6 +53,9 @@ Route::get('/news',                          [NewsController::class, 'index'])->
 Route::get('/news/{news}',                   [NewsController::class, 'show'])->name('news.show');
 Route::post('/newsletter/subscribe',         [NewsletterController::class, 'subscribe'])->name('newsletter.subscribe');
 Route::get('/technology',                    [PagesController::class, 'technology'])->name('technology');
+Route::get('/sentinel',                      [SentinelController::class, 'show'])->name('sentinel');
+Route::post('/sentinel/trial',               [SentinelController::class, 'trial'])->middleware('throttle:5,10')->name('sentinel.trial');
+Route::post('/sentinel/enquire',             [SentinelController::class, 'enquire'])->middleware('throttle:5,10')->name('sentinel.enquire');
 Route::get('/verify/certificate/{training}',  [CertificateVerifyController::class, 'show'])->name('certificate.verify');
 Route::get('/certificates/{token}',           [PublicCertificateController::class, 'show'])->name('certificate.public.show');
 Route::get('/certificates/{token}/download',  [PublicCertificateController::class, 'download'])->name('certificate.public.download');

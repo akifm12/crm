@@ -69,14 +69,15 @@ class ServiceCatalog
             [
                 'icon' => '🔎', 'badge' => 'Core Product',
                 'title' => 'Blue Arrow Sentinel — AML Screening Software',
-                'summary' => 'Our proprietary sanctions, PEP and adverse-media screening engine — live at aml.bluearrow.ae — powering the screening behind our own KYC portal and available as a standalone tool.',
+                'summary' => 'Our proprietary sanctions, PEP and adverse-media screening engine — powering the screening behind our own KYC portal and available as a standalone tool, with a free trial.',
+                'link' => 'sentinel',
                 'features' => [
-                    'Real-time sanctions & PEP screening against UN, OFAC, EU and UAE local watchlists',
-                    'Adverse media screening for reputational risk signals',
+                    'Sanctions & PEP screening — OFAC, EU, UK, UN, the UAE Local Terrorist List and 100+ other programmes, updated nightly',
+                    'Adverse media checked in the same search',
                     'Fuzzy name-matching to catch transliteration and spelling variants',
                     'Ongoing re-screening of existing clients, not just at onboarding',
-                    'Match review workflow with audit trail for compliance officers',
-                    'Available standalone at aml.bluearrow.ae, or bundled into the KYC Portal',
+                    'Case review workflow with MLRO decisions and case reports',
+                    'Available standalone, or built into the KYC Portal — same results and reports in both',
                 ],
             ],
             [
