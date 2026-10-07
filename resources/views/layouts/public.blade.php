@@ -25,13 +25,13 @@
             <div class="flex justify-between items-center h-18 py-3">
                 <a href="{{ route('home') }}" class="flex items-center gap-2 shrink-0">
                     <img src="{{ asset('images/logo.png') }}" alt="Blue Arrow" class="h-10 w-auto">
-                    <span class="font-bold text-gray-900 leading-tight hidden sm:block">
+                    <span class="font-bold text-gray-900 leading-tight hidden sm:block lg:hidden xl:block">
                         Blue Arrow<span class="block text-[11px] font-medium text-gray-500 tracking-wide">MANAGEMENT CONSULTANTS</span>
                     </span>
                 </a>
 
-                <nav class="hidden lg:flex items-center gap-7 text-sm font-medium text-gray-600">
-                    <a href="{{ route('home') }}" class="hover:text-brand-600 {{ request()->routeIs('home') ? 'text-brand-600' : '' }}">Home</a>
+                <nav class="hidden lg:flex items-center gap-5 xl:gap-7 text-sm font-medium text-gray-600 whitespace-nowrap">
+                    <a href="{{ route('home') }}" class="hidden xl:inline hover:text-brand-600 {{ request()->routeIs('home') ? 'text-brand-600' : '' }}">Home</a>
 
                     <div x-data="{ open: false }" @click.outside="open = false" class="relative">
                         <button @click="open = !open" class="flex items-center gap-1 hover:text-brand-600 {{ request()->routeIs('guide*') ? 'text-brand-600' : '' }}">
@@ -102,9 +102,9 @@
                     <a href="{{ route('contact') }}" class="hover:text-brand-600 {{ request()->routeIs('contact') ? 'text-brand-600' : '' }}">Contact</a>
                 </nav>
 
-                <div class="hidden lg:flex items-center gap-3">
+                <div class="hidden lg:flex items-center gap-3 whitespace-nowrap">
                     <div x-data="{ open: false }" @click.outside="open = false" class="relative">
-                        <button @click="open = !open" class="flex items-center gap-1.5 text-sm font-semibold text-gray-700 hover:text-brand-700">
+                        <button @click="open = !open" title="My Deadlines: free deadline tracker" class="flex items-center gap-1.5 text-sm font-semibold text-gray-700 hover:text-brand-700">
                             <span aria-hidden="true">📅</span> My Deadlines
                             <svg class="h-3.5 w-3.5" :class="{'rotate-180': open}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </button>
