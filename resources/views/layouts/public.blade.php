@@ -34,6 +34,29 @@
                     <a href="{{ route('home') }}" class="hover:text-brand-600 {{ request()->routeIs('home') ? 'text-brand-600' : '' }}">Home</a>
 
                     <div x-data="{ open: false }" @click.outside="open = false" class="relative">
+                        <button @click="open = !open" class="flex items-center gap-1 hover:text-brand-600 {{ request()->routeIs('guide*') ? 'text-brand-600' : '' }}">
+                            Compliance Guide
+                            <svg class="h-3.5 w-3.5" :class="{'rotate-180': open}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </button>
+                        <div x-cloak x-show="open" x-transition class="absolute left-0 top-full mt-2 w-72 rounded-xl border border-gray-100 bg-white shadow-lg py-2">
+                            <a href="{{ route('guide') }}" class="block px-4 py-2.5 text-sm hover:bg-gray-50">
+                                <span class="block font-medium text-brand-700">Start here — the 5 steps</span>
+                                <span class="block text-xs text-gray-400">AML compliance in plain English</span>
+                            </a>
+                            <div class="my-1 border-t border-gray-100"></div>
+                            @foreach (\App\Support\ComplianceGuide::topics() as $slug => $g)
+                                <a href="{{ route('guide.show', $slug) }}" class="flex gap-3 px-4 py-2 text-sm hover:bg-gray-50">
+                                    <span class="text-xs font-bold text-brand-600 w-3 pt-0.5">{{ $g['step'] }}</span>
+                                    <span>
+                                        <span class="block font-medium text-gray-900">{{ $g['title'] }}</span>
+                                        <span class="block text-xs text-gray-400">{{ $g['nav'] }}</span>
+                                    </span>
+                                </a>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    <div x-data="{ open: false }" @click.outside="open = false" class="relative">
                         <button @click="open = !open" class="flex items-center gap-1 hover:text-brand-600 {{ request()->routeIs('services', 'technology', 'sentinel') ? 'text-brand-600' : '' }}">
                             Services
                             <svg class="h-3.5 w-3.5" :class="{'rotate-180': open}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
@@ -81,23 +104,32 @@
 
                 <div class="hidden lg:flex items-center gap-3">
                     <div x-data="{ open: false }" @click.outside="open = false" class="relative">
-                        <button @click="open = !open" class="flex items-center gap-1 text-sm font-semibold text-brand-700 hover:text-brand-800">
-                            Account
+                        <button @click="open = !open" class="flex items-center gap-1.5 text-sm font-semibold text-gray-700 hover:text-brand-700">
+                            <span aria-hidden="true">📅</span> My Deadlines
                             <svg class="h-3.5 w-3.5" :class="{'rotate-180': open}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </button>
-                        <div x-cloak x-show="open" x-transition class="absolute right-0 top-full mt-2 w-56 rounded-xl border border-gray-100 bg-white shadow-lg py-2">
+                        <div x-cloak x-show="open" x-transition class="absolute right-0 top-full mt-2 w-72 rounded-xl border border-gray-100 bg-white shadow-lg py-2">
                             @auth('public')
-                                <a href="{{ route('account.dashboard') }}" class="block px-4 py-2.5 text-sm font-medium text-gray-900 hover:bg-gray-50">My Deadlines</a>
+                                <a href="{{ route('account.dashboard') }}" class="block px-4 py-2.5 text-sm font-medium text-gray-900 hover:bg-gray-50">Open my deadline tracker</a>
                                 <form method="POST" action="{{ route('account.logout') }}">
                                     @csrf
                                     <button type="submit" class="w-full text-left px-4 py-2.5 text-sm text-gray-500 hover:bg-gray-50">Sign out</button>
                                 </form>
                             @else
-                                <a href="{{ route('account.register') }}" class="block px-4 py-2.5 text-sm font-medium text-gray-900 hover:bg-gray-50">Register Free</a>
-                                <a href="{{ route('account.login') }}" class="block px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50">Sign In</a>
+                                <div class="px-4 pt-2 pb-3">
+                                    <p class="text-sm font-semibold text-gray-900">Free deadline tracker</p>
+                                    <p class="mt-1 text-xs text-gray-500 leading-relaxed">Keep your trade licence, Ejari, passport and other renewal dates in one place, next to the key AML deadlines in our compliance calendar.</p>
+                                    <div class="mt-3 flex gap-2">
+                                        <a href="{{ route('account.register') }}" class="flex-1 text-center bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold px-3 py-2 rounded-lg">Create free account</a>
+                                        <a href="{{ route('account.login') }}" class="flex-1 text-center border border-gray-200 hover:border-gray-300 text-gray-700 text-xs font-semibold px-3 py-2 rounded-lg">Sign in</a>
+                                    </div>
+                                </div>
                             @endauth
                             <div class="my-1 border-t border-gray-100"></div>
-                            <a href="{{ route('login') }}" class="block px-4 py-2.5 text-sm text-gray-500 hover:bg-gray-50">Client Portal Login</a>
+                            <a href="{{ route('login') }}" class="block px-4 py-2.5 text-sm hover:bg-gray-50">
+                                <span class="block font-medium text-gray-700">Client Portal login</span>
+                                <span class="block text-xs text-gray-400">For Blue Arrow compliance clients</span>
+                            </a>
                         </div>
                     </div>
                     <a href="{{ route('contact') }}" class="text-sm font-semibold bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-lg shadow-sm transition">Get Consultation</a>
@@ -115,6 +147,19 @@
         <div x-cloak x-show="mobileNav" x-transition class="lg:hidden border-t border-gray-100 bg-white">
             <div class="px-4 py-3 space-y-1 text-sm font-medium">
                 <a href="{{ route('home') }}" class="block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-50">Home</a>
+
+                <div x-data="{ open: {{ request()->routeIs('guide*') ? 'true' : 'false' }} }">
+                    <button @click="open = !open" class="w-full flex items-center justify-between px-3 py-2 rounded-md text-gray-700 hover:bg-gray-50">
+                        Compliance Guide
+                        <svg class="h-4 w-4" :class="{'rotate-180': open}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div x-show="open" x-cloak class="pl-6 space-y-1">
+                        <a href="{{ route('guide') }}" class="block px-3 py-2 rounded-md text-brand-700 hover:bg-gray-50">Start here — the 5 steps</a>
+                        @foreach (\App\Support\ComplianceGuide::topics() as $slug => $g)
+                            <a href="{{ route('guide.show', $slug) }}" class="block px-3 py-2 rounded-md text-gray-600 hover:bg-gray-50">{{ $g['step'] }}. {{ $g['title'] }}</a>
+                        @endforeach
+                    </div>
+                </div>
 
                 <div x-data="{ open: {{ request()->routeIs('services', 'technology', 'sentinel') ? 'true' : 'false' }} }">
                     <button @click="open = !open" class="w-full flex items-center justify-between px-3 py-2 rounded-md text-gray-700 hover:bg-gray-50">
@@ -145,16 +190,22 @@
 
                 <div class="pt-2 mt-2 border-t border-gray-100 flex flex-col gap-1">
                     @auth('public')
-                        <a href="{{ route('account.dashboard') }}" class="text-brand-700 font-semibold px-3 py-2">My Deadlines</a>
+                        <a href="{{ route('account.dashboard') }}" class="text-brand-700 font-semibold px-3 py-2">📅 My deadline tracker</a>
                         <form method="POST" action="{{ route('account.logout') }}">
                             @csrf
                             <button type="submit" class="w-full text-left text-gray-500 px-3 py-2">Sign out</button>
                         </form>
                     @else
-                        <a href="{{ route('account.register') }}" class="text-brand-700 font-semibold px-3 py-2">Register Free</a>
-                        <a href="{{ route('account.login') }}" class="text-gray-600 px-3 py-2">Sign In</a>
+                        <div class="px-3 py-2">
+                            <p class="font-semibold text-gray-900">📅 Free deadline tracker</p>
+                            <p class="text-xs font-normal text-gray-500">Your licence, Ejari and renewal dates in one place.</p>
+                            <div class="mt-2 flex gap-4">
+                                <a href="{{ route('account.register') }}" class="text-brand-700 font-semibold">Create free account</a>
+                                <a href="{{ route('account.login') }}" class="text-gray-600">Sign in</a>
+                            </div>
+                        </div>
                     @endauth
-                    <a href="{{ route('login') }}" class="text-gray-500 px-3 py-2">Client Portal Login</a>
+                    <a href="{{ route('login') }}" class="text-gray-500 px-3 py-2">Client Portal login <span class="text-xs">(Blue Arrow clients)</span></a>
                     <a href="{{ route('contact') }}" class="mt-2 bg-brand-600 text-white text-center font-semibold px-3 py-2 rounded-lg">Get Consultation</a>
                 </div>
             </div>
@@ -177,6 +228,7 @@
                 <h4 class="text-white font-semibold text-sm mb-4">Quick Links</h4>
                 <ul class="space-y-2 text-sm text-gray-400">
                     <li><a href="{{ route('home') }}" class="hover:text-white">Home</a></li>
+                    <li><a href="{{ route('guide') }}" class="hover:text-white">Compliance Guide</a></li>
                     <li><a href="{{ route('about') }}" class="hover:text-white">About Us</a></li>
                     <li><a href="{{ route('services') }}" class="hover:text-white">Services</a></li>
                     <li><a href="{{ route('technology') }}" class="hover:text-white">Technology Services</a></li>

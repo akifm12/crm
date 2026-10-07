@@ -20,6 +20,7 @@ use App\Http\Controllers\Tenant\SettingsController as TenantSettingsController;
 use App\Http\Controllers\Tenant\ReportController;
 use App\Http\Controllers\PagesController;
 use App\Http\Controllers\ComplianceCalendarController;
+use App\Http\Controllers\GuideController;
 use App\Http\Controllers\ResourceController;
 use App\Http\Controllers\SentinelController;
 use App\Http\Controllers\NewsController;
@@ -53,7 +54,10 @@ Route::get('/news',                          [NewsController::class, 'index'])->
 Route::get('/news/{news}',                   [NewsController::class, 'show'])->name('news.show');
 Route::post('/newsletter/subscribe',         [NewsletterController::class, 'subscribe'])->name('newsletter.subscribe');
 Route::get('/technology',                    [PagesController::class, 'technology'])->name('technology');
-Route::get('/sentinel',                      [SentinelController::class, 'show'])->name('sentinel');
+Route::get('/guide',                         [GuideController::class, 'index'])->name('guide');
+Route::get('/guide/{topic}',                 [GuideController::class, 'show'])
+    ->whereIn('topic', array_keys(\App\Support\ComplianceGuide::topics()))->name('guide.show');
+Route::get('/sentinel',                    [SentinelController::class, 'show'])->name('sentinel');
 Route::post('/sentinel/trial',               [SentinelController::class, 'trial'])->middleware('throttle:5,10')->name('sentinel.trial');
 Route::post('/sentinel/enquire',             [SentinelController::class, 'enquire'])->middleware('throttle:5,10')->name('sentinel.enquire');
 Route::get('/verify/certificate/{training}',  [CertificateVerifyController::class, 'show'])->name('certificate.verify');

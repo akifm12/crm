@@ -1,7 +1,7 @@
 @extends('layouts.public')
 
 @section('title', 'Create a Free Account — Blue Arrow Management Consultants')
-@section('meta_description', 'Create a free Blue Arrow account to track your own compliance deadlines and receive regulatory alerts.')
+@section('meta_description', 'Create a free Blue Arrow account to track your licence, Ejari and other renewal dates alongside the UAE AML compliance calendar.')
 
 @section('content')
 
@@ -9,7 +9,7 @@
     <div class="text-center mb-8">
         <span class="text-brand-600 font-semibold text-sm">Free Account</span>
         <h1 class="mt-2 text-3xl font-extrabold text-gray-900">Track Your Own Deadlines</h1>
-        <p class="mt-3 text-gray-600 text-sm">Register free to use the interactive compliance calendar and get compliance alerts by email.</p>
+        <p class="mt-3 text-gray-600 text-sm">Save your trade licence, Ejari, passport and other renewal dates, and see them alongside the key AML deadlines in our compliance calendar. Free — and if you like, we'll email you regulatory updates.</p>
     </div>
 
     <form method="POST" action="{{ route('account.register') }}" class="space-y-5 bg-white rounded-2xl border border-gray-100 p-8 shadow-sm">
