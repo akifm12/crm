@@ -336,7 +336,9 @@
 @if ($trial || $enquiry || $errors->trial->any() || $errors->enquiry->any())
     {{-- Validation redirects drop the #anchor — bring the visitor back to the form they used --}}
     <script>
-        document.getElementById('{{ ($trial || $errors->trial->any()) ? 'try-free' : 'enquire' }}').scrollIntoView();
+        // Smooth scrolling started during parsing gets cut short as the page loads — jump once it has
+        window.addEventListener('load', () => document.getElementById('{{ ($trial || $errors->trial->any()) ? 'try-free' : 'enquire' }}')
+            .scrollIntoView({ behavior: 'instant', block: 'start' }));
     </script>
 @endif
 
