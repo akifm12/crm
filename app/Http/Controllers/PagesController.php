@@ -60,6 +60,6 @@ class PagesController extends Controller
     {
         ContactMessage::create($request->validated());
 
-        return redirect()->route('contact')->with('status', 'Thanks — your message has been received. Our team will get back to you shortly.');
+        return redirect()->route('contact')->with('status', "Thanks, we've got your message. We'll get back to you within one business day.");
     }
 }

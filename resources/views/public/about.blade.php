@@ -1,22 +1,22 @@
 @extends('layouts.public')
 
-@section('title', 'About Us — Blue Arrow Management Consultants')
-@section('meta_description', 'Blue Arrow Management Consultants is a UAE-based AML and regulatory compliance consultancy and technology company — building compliance software, mobile apps and custom business systems.')
+@section('title', 'About Us | Blue Arrow Management Consultants')
+@section('meta_description', 'Blue Arrow Management Consultants is a UAE AML and regulatory compliance consultancy that also builds compliance software, mobile apps and custom business systems.')
 
 @section('content')
 
 <section class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
     <span class="text-brand-600 font-semibold text-sm">About Blue Arrow</span>
-    <h1 class="mt-2 text-4xl font-extrabold text-gray-900">A trusted compliance partner in a complex regulatory landscape</h1>
+    <h1 class="mt-2 text-4xl font-extrabold text-gray-900">We help UAE businesses get AML compliance right</h1>
     <p class="mt-6 text-gray-600 leading-relaxed text-lg">
-        Blue Arrow Management Consultants is a UAE-based AML and regulatory compliance consultancy, helping Designated
-        Non-Financial Businesses and Professions (DNFBPs) — bullion dealers, real estate brokers, company service
-        providers and accounting firms — build and run effective AML/CFT compliance programs.
+        Blue Arrow Management Consultants is a compliance consultancy based in Sharjah. We work with bullion dealers,
+        real estate brokers, company service providers and accounting firms (the businesses the law calls DNFBPs)
+        to set up AML programmes that actually work, and to keep them running.
     </p>
     <p class="mt-4 text-gray-600 leading-relaxed text-lg">
-        We're also a technology company. Blue Arrow designs and builds our own software — including the RegTech
-        platform behind our compliance service — and we take on custom software and mobile app development for
-        clients, whether the need is compliance-related, accounting-related, or in a completely different field.
+        We also write software. We built the platform we use for our own compliance clients, and we take on custom
+        software and mobile app projects too, whether they're about compliance, accounting or something else
+        entirely.
     </p>
 
     <div class="mt-12 grid sm:grid-cols-3 gap-5">
@@ -49,7 +49,7 @@
         <div>
             <h2 class="text-xl font-bold text-gray-900">Technology &amp; Software Development</h2>
             <ul class="mt-4 space-y-3 text-gray-600 text-sm leading-relaxed">
-                <li>• Our own RegTech platform — client onboarding, screening &amp; reporting</li>
+                <li>• Our own compliance platform for onboarding, screening &amp; reporting</li>
                 <li>• Custom accounting &amp; business software</li>
                 <li>• Mobile app development, for compliance, accounting, or any other field</li>
                 <li>• Web portals &amp; internal business tools</li>
@@ -60,12 +60,11 @@
     </div>
 
     <div class="mt-10 rounded-2xl border border-gray-100 bg-white p-6">
-        <h2 class="text-lg font-bold text-gray-900">Certified &amp; regulator-aligned</h2>
+        <h2 class="text-lg font-bold text-gray-900">Qualified, and close to the rules</h2>
         <p class="mt-3 text-gray-600 text-sm leading-relaxed">
-            Our consultants hold recognized regulatory compliance certifications and work directly with UAE
-            DNFBP supervisory requirements — including Ministry of Economy guidance and Financial Intelligence
-            Unit (FIU) goAML reporting obligations — so our clients stay ahead of evolving requirements rather
-            than reacting to them.
+            Our consultants hold recognised compliance certifications and work with UAE supervisory requirements
+            every day, from Ministry of Economy guidance to goAML reporting for the Financial Intelligence Unit.
+            So when the rules change, our clients hear about it from us early, not from an inspector.
         </p>
     </div>
 

@@ -1,7 +1,7 @@
 @extends('layouts.public')
 
-@section('title', 'Compliance Calendar — Blue Arrow Management Consultants')
-@section('meta_description', 'Key recurring AML & DNFBP compliance deadlines for UAE businesses — goAML reporting, license renewals, sanctions re-screening and training obligations.')
+@section('title', 'Compliance Calendar | Blue Arrow Management Consultants')
+@section('meta_description', 'Key recurring AML & DNFBP compliance deadlines for UAE businesses: goAML reporting, license renewals, sanctions re-screening and training obligations.')
 
 @section('content')
 
@@ -9,8 +9,8 @@
     <span class="text-brand-600 font-semibold text-sm">📅 Stay on schedule</span>
     <h1 class="mt-2 text-4xl font-extrabold text-gray-900">Compliance Calendar</h1>
     <p class="mt-4 text-gray-600 max-w-2xl">
-        Recurring AML/CFT obligations UAE DNFBPs commonly need to track. This is general guidance — always confirm
-        specific dates and requirements with your MLRO or Blue Arrow's compliance team.
+        The recurring AML deadlines most UAE businesses need to keep track of. It's general guidance, so check the
+        exact dates and requirements for your business with your compliance officer or with us.
     </p>
 
     @if ($publicUser)
@@ -75,7 +75,7 @@
                         </form>
                     </div>
                 @empty
-                    <p class="text-sm text-brand-700">No personal deadlines yet — add your first one above.</p>
+                    <p class="text-sm text-brand-700">No deadlines yet. Add your first one above.</p>
                 @endforelse
             </div>
         </div>
@@ -135,8 +135,8 @@
     </div>
 
     <div class="mt-12 rounded-2xl bg-gray-50 border border-gray-100 p-6 text-sm text-gray-500">
-        ⚠️ This calendar provides general, indicative guidance only and is not a substitute for tenant-specific legal
-        or regulatory advice. Contact our team to confirm obligations specific to your business.
+        ⚠️ This calendar is general guidance, not legal advice for your business. If you're not sure what applies
+        to you, ask us.
     </div>
 </section>
 

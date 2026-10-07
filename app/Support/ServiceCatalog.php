@@ -16,22 +16,22 @@ class ServiceCatalog
             [
                 'slug' => 'gold', 'icon' => '🪙', 'portal_backed' => true,
                 'title' => 'Bullion & Precious Metals',
-                'summary' => 'Compliance for gold, precious metals & stones dealers — KYC onboarding, goAML DPMSR/STR filing, and sanctions screening for local, import and export trade.',
+                'summary' => 'For gold, precious metals and stones dealers. We handle customer onboarding, goAML DPMSR and STR filing, and sanctions screening, whether you trade locally, import or export.',
             ],
             [
                 'slug' => 'real_estate', 'icon' => '🏢', 'portal_backed' => true,
                 'title' => 'Real Estate',
-                'summary' => 'AML compliance for property brokers and agents — client due diligence, source-of-funds verification, and Ejari-linked transaction monitoring.',
+                'summary' => 'For property brokers and agents. Customer checks, proof of where the money comes from, and monitoring of your deals.',
             ],
             [
                 'slug' => 'company_services', 'icon' => '🏛', 'portal_backed' => true,
                 'title' => 'Company Service Providers',
-                'summary' => 'Corporate structuring, registered agent & nominee services compliance — UBO declarations, CAHRA screening, and trade license verification.',
+                'summary' => 'For company formation, registered agent and nominee services. Ultimate-owner declarations, high-risk-area screening and trade licence checks.',
             ],
             [
                 'slug' => 'accounting', 'icon' => '🧾', 'portal_backed' => true,
                 'title' => 'Accounting & Auditing',
-                'summary' => 'Compliance programs for accountants and auditors — risk assessment, client screening, and regulatory reporting support.',
+                'summary' => 'For accountants and auditors. Risk assessment, client screening and help with your regulatory reports.',
             ],
             [
                 'slug' => 'capital_markets', 'icon' => '📈', 'portal_backed' => false,
@@ -56,10 +56,10 @@ class ServiceCatalog
             [
                 'icon' => '🛡️', 'badge' => 'Core Product',
                 'title' => 'KYC & Client Onboarding Portal',
-                'summary' => 'The platform behind Blue Arrow\'s own compliance service — tokenized self-fill onboarding links, AI-assisted document scanning, and sanctions screening in one place.',
+                'summary' => 'The platform we run our own compliance service on. Customers fill in their own details through a secure link, documents are read automatically, and screening happens in the same place.',
                 'features' => [
-                    'Tokenized, single-use client self-fill onboarding links — no login required for your customers',
-                    'AI-assisted document scanning — auto-extracts names, dates and ID numbers from passports, Emirates IDs and trade licences',
+                    'Secure, single-use onboarding links your customers fill in themselves, with no login needed',
+                    'Document scanning that pulls names, dates and ID numbers out of passports, Emirates IDs and trade licences',
                     'Sector-specific checklists for bullion, real estate, company services and accounting',
                     'Sanctions & PEP screening via Blue Arrow\'s proprietary Sentinel engine',
                     'Risk assessment workflow with periodic review scheduling',
@@ -68,16 +68,16 @@ class ServiceCatalog
             ],
             [
                 'icon' => '🔎', 'badge' => 'Core Product',
-                'title' => 'Blue Arrow Sentinel — AML Screening Software',
-                'summary' => 'Our proprietary sanctions, PEP and adverse-media screening engine — powering the screening behind our own KYC portal and available as a standalone tool, with a free trial.',
+                'title' => 'Blue Arrow Sentinel: AML Screening Software',
+                'summary' => 'Our own sanctions, PEP and adverse-media screening software. It does the screening inside our KYC portal, and you can also use it on its own. There\'s a free trial.',
                 'link' => 'sentinel',
                 'features' => [
-                    'Sanctions & PEP screening — OFAC, EU, UK, UN, the UAE Local Terrorist List and 100+ other programmes, updated nightly',
+                    'Sanctions & PEP screening against OFAC, EU, UK, UN, the UAE Local Terrorist List and 100+ other programmes, updated nightly',
                     'Adverse media checked in the same search',
                     'Fuzzy name-matching to catch transliteration and spelling variants',
                     'Ongoing re-screening of existing clients, not just at onboarding',
                     'Case review workflow with MLRO decisions and case reports',
-                    'Available standalone, or built into the KYC Portal — same results and reports in both',
+                    'Use it on its own or inside the KYC Portal, with the same results and reports in both',
                 ],
             ],
             [
@@ -87,16 +87,16 @@ class ServiceCatalog
                 'features' => [
                     'Hierarchical chart of accounts with system and custom accounts',
                     'Double-entry general ledger with balance validation and reversal support',
-                    'VAT-aware, metal-priced invoicing — fixed and unfixed (price-TBD) deals, making charges, multi-currency',
+                    'VAT-aware, metal-priced invoicing for fixed and unfixed (price-TBD) deals, with making charges and multiple currencies',
                     'Inventory tracking by weight and pieces across gold, silver, platinum and palladium',
                     'Client payments, deposits and margin tracking',
-                    'Trial Balance, Balance Sheet, Income Statement, VAT Summary and Client Statement reports — PDF & CSV export',
+                    'Trial Balance, Balance Sheet, Income Statement, VAT Summary and Client Statement reports, exported as PDF or CSV',
                 ],
             ],
             [
                 'icon' => '💻', 'badge' => 'Advisory',
                 'title' => 'Custom Software & App Development',
-                'summary' => 'Beyond our own products, our team builds bespoke compliance and business software for clients who need something tailored.',
+                'summary' => 'If our own products don\'t fit, we can build something that does, for compliance or any other part of your business.',
                 'features' => [
                     'Custom web portals and internal tools',
                     'Mobile app development',

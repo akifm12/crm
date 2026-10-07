@@ -1,7 +1,7 @@
 @extends('layouts.public')
 
-@section('title', 'Blue Arrow — AML Compliance Made Simple for UAE Businesses')
-@section('meta_description', 'AML compliance made simple for UAE gold dealers, real estate brokers, corporate service providers and accountants — a plain-English guide to screening, due diligence, risk assessment and goAML, plus hands-on support.')
+@section('title', 'AML Compliance Made Simple for UAE Businesses | Blue Arrow')
+@section('meta_description', 'AML compliance made simple for UAE gold dealers, real estate brokers, corporate service providers and accountants. A plain-English guide to screening, due diligence, risk assessment and goAML, plus hands-on support.')
 
 @section('content')
 
@@ -18,8 +18,8 @@
             </h1>
 
             <p class="mt-6 text-lg text-gray-600 leading-relaxed max-w-2xl">
-                We walk gold dealers, real estate brokers, corporate service providers and accountants through every AML obligation —
-                and do the heavy lifting for you.
+                Gold dealers, real estate brokers, company service providers and accountants all have AML duties.
+                We explain what yours are, and then we help you get them done.
             </p>
 
             <div class="mt-8 flex flex-col sm:flex-row gap-3">
@@ -38,7 +38,7 @@
             </div>
         </div>
 
-        {{-- The 5 obligations as a checklist — each links into the guide --}}
+        {{-- The 5 obligations as a checklist; each links into the guide --}}
         <div class="lg:col-span-2 rounded-3xl bg-white border border-gray-100 shadow-xl shadow-brand-600/5 p-6 sm:p-8">
             <p class="text-xs font-bold uppercase tracking-wider text-brand-600">Your AML checklist</p>
             <ol class="mt-5 space-y-3">
@@ -81,9 +81,9 @@
 {{-- ── SERVICES OVERVIEW ──────────────────────────────────────────────── --}}
 <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
     <div class="max-w-2xl mb-12">
-        <span class="text-brand-600 font-semibold text-sm">🏢 Industry Expertise</span>
-        <h2 class="mt-2 text-3xl font-bold text-gray-900">Specialized Compliance Solutions</h2>
-        <p class="mt-3 text-gray-600">Select your industry to discover tailored regulatory services designed for your specific compliance needs.</p>
+        <span class="text-brand-600 font-semibold text-sm">🏢 Who we work with</span>
+        <h2 class="mt-2 text-3xl font-bold text-gray-900">Help that fits your sector</h2>
+        <p class="mt-3 text-gray-600">A gold trader and a property broker face different risks and file different reports. Pick your sector to see how we help.</p>
     </div>
 
     <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -108,8 +108,8 @@
 <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
     <div class="max-w-2xl mb-12">
         <span class="text-brand-600 font-semibold text-sm">💻 Technology Services</span>
-        <h2 class="mt-2 text-3xl font-bold text-gray-900">Software That Powers Compliance</h2>
-        <p class="mt-3 text-gray-600">We build and run the software behind our own compliance service — and make it available to clients.</p>
+        <h2 class="mt-2 text-3xl font-bold text-gray-900">We build the software, too</h2>
+        <p class="mt-3 text-gray-600">We built the tools we use for our own clients. You can use them as well.</p>
     </div>
 
     <div class="grid sm:grid-cols-3 gap-5">
@@ -136,15 +136,15 @@
         <div class="flex items-end justify-between flex-wrap gap-4 mb-10">
             <div>
                 <span class="inline-flex items-center gap-1.5 text-red-600 font-semibold text-sm">🔴 Live Regulatory Feed</span>
-                <h2 class="mt-2 text-3xl font-bold text-gray-900">Stay Ahead of Regulatory Changes</h2>
-                <p class="mt-2 text-gray-600 max-w-xl">Continuously updated AML, sanctions and industry news relevant to UAE DNFBPs.</p>
+                <h2 class="mt-2 text-3xl font-bold text-gray-900">What's changing in UAE compliance</h2>
+                <p class="mt-2 text-gray-600 max-w-xl">AML, sanctions and industry news that matters to UAE businesses, updated through the day.</p>
             </div>
             <a href="{{ route('news') }}" class="text-brand-600 font-semibold text-sm hover:text-brand-700 whitespace-nowrap">📘 Browse All Updates →</a>
         </div>
 
         @if ($news->isEmpty())
             <div class="rounded-2xl border border-dashed border-gray-300 bg-white p-10 text-center text-gray-500">
-                No updates published yet — check back soon.
+                Nothing here yet. Check back soon.
             </div>
         @else
             <div class="grid md:grid-cols-3 gap-5">
@@ -168,10 +168,10 @@
 
 {{-- ── CTA ─────────────────────────────────────────────────────────────── --}}
 <section class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
-    <h2 class="text-3xl font-bold text-gray-900">Ready to Simplify Your Compliance?</h2>
-    <p class="mt-3 text-gray-600">Get started today and ensure your business stays compliant.</p>
+    <h2 class="text-3xl font-bold text-gray-900">Not sure where to start?</h2>
+    <p class="mt-3 text-gray-600">Tell us what your business does and we'll tell you what you need. The first conversation is free.</p>
     <a href="{{ route('contact') }}" class="mt-8 inline-flex items-center justify-center bg-brand-600 hover:bg-brand-700 text-white font-semibold px-8 py-3.5 rounded-xl shadow-sm shadow-brand-600/20 transition">
-        Schedule Consultation
+        Book a free consultation
     </a>
 </section>
 

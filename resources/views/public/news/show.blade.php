@@ -1,6 +1,6 @@
 @extends('layouts.public')
 
-@section('title', $news->title . ' — Blue Arrow Management Consultants')
+@section('title', $news->title . ' | Blue Arrow Management Consultants')
 @section('meta_description', \Illuminate\Support\Str::limit($news->summary, 155))
 
 @section('content')
@@ -36,8 +36,8 @@
 
     @if ($news->isAiGenerated())
         <div class="mt-10 rounded-2xl bg-purple-50 border border-purple-100 p-5 text-sm text-purple-800">
-            ✨ This item is a BA-Digest — AI-assisted compliance commentary drafted by Blue Arrow. Always verify against primary
-            regulatory sources before acting on it.
+            ✨ This is a BA-Digest note, written with AI assistance by Blue Arrow. It's general commentary, so check the
+            official sources before you act on it.
         </div>
     @endif
 

@@ -1,6 +1,6 @@
 @extends('layouts.public')
 
-@section('title', 'My Account — Blue Arrow Management Consultants')
+@section('title', 'My Deadlines | Blue Arrow Management Consultants')
 
 @section('content')
 

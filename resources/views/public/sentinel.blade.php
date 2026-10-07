@@ -1,7 +1,7 @@
 @extends('layouts.public')
 
-@section('title', 'Sentinel AML Screening Software — Blue Arrow')
-@section('meta_description', 'Sentinel screens customers against sanctions, PEP, law-enforcement, debarment and adverse-media sources — ' . $stats['total'] . ' records, updated nightly. Built in the UAE by Blue Arrow for DNFBPs and regulated businesses.')
+@section('title', 'Sentinel AML Screening Software | Blue Arrow')
+@section('meta_description', 'Sentinel screens customers against sanctions, PEP, law-enforcement, debarment and adverse-media sources: ' . $stats['total'] . ' records, updated nightly. Built in the UAE by Blue Arrow for DNFBPs and regulated businesses.')
 
 @php
     $trial   = session('sentinel_trial');
@@ -25,9 +25,9 @@
                 Know exactly who you're<br class="hidden sm:block"> doing business with.
             </h1>
             <p class="mt-5 text-lg text-slate-300 max-w-xl">
-                Sentinel screens individuals, companies, vessels and crypto wallets against sanctions, PEP,
-                law-enforcement, debarment and adverse-media sources in one search — then takes the case
-                through review to a report your auditor can read.
+                One search checks a person, company, ship or crypto wallet against sanctions, PEP, law-enforcement,
+                debarment and adverse-media sources. Then Sentinel takes the case through review and gives you a
+                report your auditor can read.
             </p>
             <div class="mt-8 flex flex-wrap gap-3">
                 <a href="#try-free" class="bg-emerald-500 hover:bg-emerald-600 text-white font-semibold px-6 py-3 rounded-xl shadow-sm">Try 5 free screenings</a>
@@ -65,11 +65,11 @@
             ['🔍', 'Sanctions & PEP screening', 'One search covers sanctions, PEPs, wanted lists, debarment and regulatory warnings. Fuzzy matching catches spelling variants, aliases and transliterations, with a match threshold your admin controls.'],
             ['📰', 'Adverse media in the same search', 'Every screening also checks news coverage for financial crime, fraud, corruption and terrorism-financing signals, so reputational risk shows up alongside the list hits.'],
             ['🗂️', 'Case management & review', 'Each screening becomes a case. Hits above the threshold, or any adverse media, are marked for enhanced due diligence and go to review, where your MLRO records the decision and the reasons.'],
-            ['📄', 'Audit-ready case reports', 'One report per case with the subject, every hit, the decision and the reviewer\'s notes — open it in the browser and save it as a PDF for your file.'],
+            ['📄', 'Audit-ready case reports', 'One report per case with the subject, every hit, the decision and the reviewer\'s notes. Open it in your browser and save it as a PDF for your file.'],
             ['🔁', 'Ongoing monitoring', 'Put existing customers on daily, weekly or monthly re-screening. Sentinel re-runs the check automatically and updates the case if anything changes.'],
             ['📋', 'Batch screening', 'Paste up to 500 names at once to screen an existing customer book or a supplier list in one go.'],
             ['₿', 'Crypto wallet screening', 'Check BTC, ETH, TRX (incl. USDT-TRC20) and XRP addresses against known sanctioned, ransomware and seized wallets.'],
-            ['🚢', 'Vessel screening', 'Screen ships against sanctioned and shadow-fleet vessels, port-state detentions and regulatory warnings — useful for trade and shipping counterparties.'],
+            ['🚢', 'Vessel screening', 'Screen ships against sanctioned and shadow-fleet vessels, port-state detentions and regulatory warnings. Handy if you deal with traders or shipping companies.'],
             ['👥', 'Teams & roles', 'Analyst, MLRO and admin roles, per-user screening quotas, and one active session per login so accounts can\'t be shared.'],
         ] as [$icon, $title, $text])
             <div class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
@@ -97,21 +97,21 @@
             <span class="text-brand-600 font-semibold text-sm">Data coverage</span>
             <h2 class="mt-2 text-3xl font-bold text-gray-900">{{ $stats['total'] }} records, refreshed every night</h2>
             <p class="mt-3 text-gray-600">
-                Lists are downloaded and checked every night before they go live — if a source looks incomplete, the previous day's data stays in place and our team is alerted.
+                Every night we download the lists and check them before they go live. If a source looks incomplete, yesterday's data stays in place and our team gets an alert.
                 Sanctions data comes from the OpenSanctions consolidated collection, with the UN Security Council list taken directly from the UN.
             </p>
         </div>
 
         <div class="mt-10 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             @foreach ([
-                [$stats['sanctions'], 'Sanctions', '100+ national and international programmes — incl. OFAC, EU, UK, UN Security Council and the UAE Local Terrorist List.'],
+                [$stats['sanctions'], 'Sanctions', '100+ national and international programmes, including OFAC, EU, UK, the UN Security Council and the UAE Local Terrorist List.'],
                 [$stats['peps'], 'Politically exposed persons', 'Global PEP data covering current and former officials.'],
                 [$stats['wanted'], 'Wanted & law enforcement', 'Wanted-person lists published by law-enforcement agencies, plus ' . $stats['interpol'] . ' Interpol red notices.'],
                 [$stats['debarment'], 'Debarment', 'Firms and individuals barred by development banks and procurement authorities.'],
                 [$stats['regulatory'], 'Regulatory warnings', 'Warnings and enforcement notices published by financial regulators.'],
                 [$stats['maritime'], 'Vessels', 'Sanctioned and shadow-fleet vessels, port-state detentions and other flagged ships.'],
                 [$stats['crypto'], 'Crypto wallets', 'Addresses linked to sanctions, ransomware and law-enforcement seizures.'],
-                ['Live', 'Adverse media', 'News search run at the moment of screening — not a stored snapshot.'],
+                ['Live', 'Adverse media', 'Searched live every time you screen, not from an old snapshot.'],
             ] as [$num, $title, $text])
                 <div class="rounded-2xl bg-white border border-gray-100 p-5 shadow-sm">
                     <div class="text-xl font-extrabold text-brand-600">{{ $num }}</div>
@@ -132,7 +132,7 @@
     </div>
     <ol class="mt-12 grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
         @foreach ([
-            ['Enter the subject', 'An individual or a company — name plus whatever you have: nationality, date of birth, country, identifiers. Or paste a batch.'],
+            ['Enter the subject', 'A person or a company. Add whatever else you have, like nationality, date of birth or ID numbers. Or paste in a whole list.'],
             ['Sentinel screens', 'Lists and adverse media are searched together and every hit is scored for how closely it matches.'],
             ['Review the case', 'Clear results are recorded as such. Strong matches or adverse media go to EDD for your MLRO to review and decide.'],
             ['Keep the record', 'Save the case report for your file and, if you want, put the customer on ongoing monitoring.'],
@@ -152,12 +152,12 @@
         <div class="max-w-2xl">
             <span class="text-brand-600 font-semibold text-sm">Who it's for</span>
             <h2 class="mt-2 text-3xl font-bold text-gray-900">Businesses with a screening obligation</h2>
-            <p class="mt-3 text-gray-600">Under the UAE's AML/CFT framework, financial institutions and DNFBPs must screen customers and counterparties — at onboarding and on an ongoing basis.</p>
+            <p class="mt-3 text-gray-600">Under the UAE's AML/CFT framework, financial institutions and DNFBPs must screen customers and counterparties when they take them on, and keep screening them after that.</p>
         </div>
         <div class="mt-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             @foreach ([
                 ['💎', 'Dealers in precious metals & stones', 'Screen buyers and suppliers, especially on cash transactions of AED 55,000 and above.'],
-                ['🏠', 'Real estate agents & developers', 'Screen buyers, sellers and investors before the deal — real estate is a high-risk sector in the UAE.'],
+                ['🏠', 'Real estate agents & developers', 'Screen buyers, sellers and investors before the deal. Real estate is a high-risk sector in the UAE.'],
                 ['🏢', 'Corporate service providers', 'Screen shareholders, directors and beneficial owners of the companies you form or administer.'],
                 ['⚖️', 'Accountants, auditors & lawyers', 'Screen clients when you manage their funds or assets, or act for them in transactions.'],
                 ['₿', 'Virtual asset service providers', 'Screen customers and check counterparty wallet addresses.'],
@@ -205,7 +205,7 @@
                         <li class="flex gap-2 text-gray-700"><span class="text-emerald-500">✓</span>{{ $f }}</li>
                     @endforeach
                     <li class="flex gap-2 {{ $featured ? 'text-gray-900 font-semibold' : 'text-gray-400' }}">
-                        <span class="{{ $featured ? 'text-emerald-500' : '' }}">{{ $featured ? '✓' : '—' }}</span>Ongoing monitoring (daily / weekly / monthly)
+                        <span class="{{ $featured ? 'text-emerald-500' : '' }}">{{ $featured ? '✓' : '✕' }}</span>Ongoing monitoring (daily / weekly / monthly)
                     </li>
                 </ul>
                 <a href="#enquire" @click="$dispatch('pick-plan', '{{ $plan }}')"
@@ -227,7 +227,7 @@
         {{-- Free trial --}}
         <div id="try-free" class="scroll-mt-24 rounded-2xl bg-white p-8">
             <h2 class="text-2xl font-bold text-gray-900">Try Sentinel free</h2>
-            <p class="mt-2 text-sm text-gray-600">5 real screenings against the live data. No card, no commitment — your login is emailed straight away.</p>
+            <p class="mt-2 text-sm text-gray-600">5 real screenings against the live data. No card, no commitment. We email your login straight away.</p>
 
             @if ($trial && $trial['status'] === 'ok')
                 <div class="mt-6 rounded-xl bg-emerald-50 border border-emerald-200 p-5 text-sm text-emerald-800">
@@ -334,9 +334,9 @@
 </section>
 
 @if ($trial || $enquiry || $errors->trial->any() || $errors->enquiry->any())
-    {{-- Validation redirects drop the #anchor — bring the visitor back to the form they used --}}
+    {{-- Validation redirects drop the #anchor, so bring the visitor back to the form they used --}}
     <script>
-        // Smooth scrolling started during parsing gets cut short as the page loads — jump once it has
+        // Smooth scrolling started during parsing gets cut short as the page loads, so jump once it has
         window.addEventListener('load', () => document.getElementById('{{ ($trial || $errors->trial->any()) ? 'try-free' : 'enquire' }}')
             .scrollIntoView({ behavior: 'instant', block: 'start' }));
     </script>

@@ -46,7 +46,7 @@ class PublicAccountController extends Controller
         Auth::guard('public')->login($user);
         $request->session()->regenerate();
 
-        return redirect()->route('account.dashboard')->with('status', 'Welcome to Blue Arrow — your free account is ready.');
+        return redirect()->route('account.dashboard')->with('status', 'Welcome! Your free account is ready.');
     }
 
     public function showLogin(): View

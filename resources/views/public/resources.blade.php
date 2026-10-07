@@ -1,6 +1,6 @@
 @extends('layouts.public')
 
-@section('title', 'Resources — Blue Arrow Management Consultants')
+@section('title', 'Free Compliance Downloads | Blue Arrow Management Consultants')
 @section('meta_description', 'Free downloadable AML compliance checklists, guides and reference documents for UAE DNFBPs.')
 
 @section('content')
@@ -9,8 +9,8 @@
     <span class="text-brand-600 font-semibold text-sm">📘 Free downloads</span>
     <h1 class="mt-2 text-4xl font-extrabold text-gray-900">Compliance Resources</h1>
     <p class="mt-4 text-gray-600 max-w-2xl">
-        Practical checklists and reference guides drawn from real UAE DNFBP compliance requirements. Drafts for your
-        team to review and adapt to your own policies.
+        Practical checklists and guides based on real UAE compliance requirements. Use them as a starting point,
+        and adapt them to how your business actually works.
     </p>
 
     <div class="mt-8 flex flex-wrap gap-2">

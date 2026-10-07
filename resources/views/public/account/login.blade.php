@@ -1,6 +1,6 @@
 @extends('layouts.public')
 
-@section('title', 'Sign In — Blue Arrow Management Consultants')
+@section('title', 'Sign In | Blue Arrow Management Consultants')
 
 @section('content')
 
@@ -8,7 +8,7 @@
     <div class="text-center mb-8">
         <span class="text-brand-600 font-semibold text-sm">Free Account</span>
         <h1 class="mt-2 text-3xl font-extrabold text-gray-900">Sign In</h1>
-        <p class="mt-3 text-gray-600 text-sm">Access your deadline tracker and account settings.</p>
+        <p class="mt-3 text-gray-600 text-sm">Sign in to see your deadline tracker.</p>
     </div>
 
     @if ($errors->any())

@@ -51,6 +51,8 @@ class GenerateComplianceDigest extends Command
             Recently published article titles (avoid repeating these): {$recentTitles}
 
             Write a short, plain-English, practical article (250-400 words) aimed at DNFBP compliance officers in the UAE.
+            Write the way an experienced consultant talks to a client: warm, direct, short sentences, everyday words,
+            no corporate filler. Never use em dashes (—); use a full stop, comma or brackets instead.
             Do not invent specific dates, statistics, or claim specific regulations changed unless it's well-established
             general knowledge — keep it educational and general, not a claim of breaking news.
 
@@ -70,15 +72,18 @@ class GenerateComplianceDigest extends Command
 
         if (! is_array($parsed) || empty($parsed['title']) || empty($parsed['summary'])) {
             Log::error('GenerateComplianceDigest: could not parse AI response', ['raw' => $result['text']]);
-            $this->error('Could not parse AI response as JSON — see log for raw output.');
+            $this->error('Could not parse AI response as JSON; see the log for the raw output.');
 
             return 1;
         }
 
+        // House style: no em dashes, even if the model slips one in
+        $clean = fn (?string $t) => $t === null ? null : preg_replace(['/\s*—\s*/u'], [', '], $t);
+
         NewsItem::create([
-            'title'        => $parsed['title'],
-            'summary'      => $parsed['summary'],
-            'body'         => $parsed['body'] ?? null,
+            'title'        => $clean($parsed['title']),
+            'summary'      => $clean($parsed['summary']),
+            'body'         => $clean($parsed['body'] ?? null),
             'source_name'  => 'BA-Digest',
             'source_url'   => null,
             'category'     => 'insight',

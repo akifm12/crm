@@ -1,7 +1,7 @@
 @extends('layouts.public')
 
-@section('title', 'AML Compliance Guide for UAE Businesses — Blue Arrow')
-@section('meta_description', 'A plain-English, 5-step guide to AML compliance in the UAE: the rules, risk assessment, customer due diligence, sanctions screening and goAML reporting — for gold dealers, real estate, company service providers and accountants.')
+@section('title', 'AML Compliance Guide for UAE Businesses | Blue Arrow')
+@section('meta_description', 'A plain-English, 5-step guide to AML compliance in the UAE: the rules, risk assessment, customer due diligence, sanctions screening and goAML reporting, for gold dealers, real estate, company service providers and accountants.')
 
 @section('content')
 
@@ -78,7 +78,7 @@
 {{-- ── CTA ──────────────────────────────────────────────────────────────── --}}
 <section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-6 text-center">
     <h2 class="text-2xl font-bold text-gray-900">Not sure where you stand?</h2>
-    <p class="mt-2 text-gray-600">Tell us about your business and we'll tell you what applies — and what's missing.</p>
+    <p class="mt-2 text-gray-600">Tell us about your business and we'll tell you what applies, and what's missing.</p>
     <a href="{{ route('contact') }}" class="mt-6 inline-flex items-center justify-center bg-brand-600 hover:bg-brand-700 text-white font-semibold px-6 py-3 rounded-xl">Get a free consultation</a>
     <p class="mt-10 text-xs text-gray-400">General guidance only, not legal advice. Last reviewed {{ \App\Support\ComplianceGuide::REVIEWED }}.</p>
 </section>

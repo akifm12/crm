@@ -4,9 +4,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <meta name="description" content="@yield('meta_description', 'Blue Arrow Management Consultants — your trusted AML & regulatory compliance partner for DNFBPs across the UAE.')">
+    <meta name="description" content="@yield('meta_description', 'Blue Arrow Management Consultants helps UAE businesses get AML and regulatory compliance right, in plain English.')">
 
-    <title>@yield('title', 'Blue Arrow Management Consultants — UAE Regulatory Compliance')</title>
+    <title>@yield('title', 'Blue Arrow Management Consultants | UAE AML Compliance')</title>
 
     <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('images/favicon-32x32.png') }}">
     <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('images/favicon-16x16.png') }}">
@@ -40,7 +40,7 @@
                         </button>
                         <div x-cloak x-show="open" x-transition class="absolute left-0 top-full mt-2 w-72 rounded-xl border border-gray-100 bg-white shadow-lg py-2">
                             <a href="{{ route('guide') }}" class="block px-4 py-2.5 text-sm hover:bg-gray-50">
-                                <span class="block font-medium text-brand-700">Start here — the 5 steps</span>
+                                <span class="block font-medium text-brand-700">Start here: the 5 steps</span>
                                 <span class="block text-xs text-gray-400">AML compliance in plain English</span>
                             </a>
                             <div class="my-1 border-t border-gray-100"></div>
@@ -154,7 +154,7 @@
                         <svg class="h-4 w-4" :class="{'rotate-180': open}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </button>
                     <div x-show="open" x-cloak class="pl-6 space-y-1">
-                        <a href="{{ route('guide') }}" class="block px-3 py-2 rounded-md text-brand-700 hover:bg-gray-50">Start here — the 5 steps</a>
+                        <a href="{{ route('guide') }}" class="block px-3 py-2 rounded-md text-brand-700 hover:bg-gray-50">Start here: the 5 steps</a>
                         @foreach (\App\Support\ComplianceGuide::topics() as $slug => $g)
                             <a href="{{ route('guide.show', $slug) }}" class="block px-3 py-2 rounded-md text-gray-600 hover:bg-gray-50">{{ $g['step'] }}. {{ $g['title'] }}</a>
                         @endforeach
@@ -221,7 +221,7 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 grid grid-cols-1 md:grid-cols-4 gap-10">
             <div class="md:col-span-1">
                 <img src="{{ asset('images/logo.png') }}" alt="Blue Arrow" class="h-10 w-auto mb-4 brightness-0 invert opacity-90">
-                <p class="text-sm text-gray-400 leading-relaxed">Your trusted partner for regulatory compliance in the UAE. Expert AML &amp; DNFBP guidance for confident business operations.</p>
+                <p class="text-sm text-gray-400 leading-relaxed">We help UAE businesses understand their AML obligations and meet them, without the jargon.</p>
             </div>
 
             <div>
@@ -276,7 +276,7 @@
         <div class="border-t border-gray-800">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row justify-between items-center gap-2 text-xs text-gray-500">
                 <p>&copy; {{ date('Y') }} Blue Arrow Management Consultants. All rights reserved.</p>
-                <p><a href="{{ route('privacy') }}" class="hover:text-gray-300">Privacy Policy</a> &nbsp;·&nbsp; Trusted name in UAE regulatory compliance.</p>
+                <p><a href="{{ route('privacy') }}" class="hover:text-gray-300">Privacy Policy</a> &nbsp;·&nbsp; Based in Sharjah, working across the UAE.</p>
             </div>
         </div>
     </footer>

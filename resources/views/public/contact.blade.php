@@ -1,6 +1,6 @@
 @extends('layouts.public')
 
-@section('title', 'Contact — Blue Arrow Management Consultants')
+@section('title', 'Contact | Blue Arrow Management Consultants')
 @section('meta_description', 'Get in touch with Blue Arrow Management Consultants for a free AML & regulatory compliance consultation.')
 
 @section('content')
@@ -8,8 +8,8 @@
 <section class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
     <div class="max-w-2xl">
         <span class="text-brand-600 font-semibold text-sm">Get in touch</span>
-        <h1 class="mt-2 text-4xl font-extrabold text-gray-900">Ready to Simplify Your Compliance?</h1>
-        <p class="mt-4 text-gray-600">Get started today and ensure your business stays compliant. Our team typically responds within one business day.</p>
+        <h1 class="mt-2 text-4xl font-extrabold text-gray-900">Let's talk</h1>
+        <p class="mt-4 text-gray-600">Tell us a bit about your business and what's on your mind. We usually reply within one business day.</p>
     </div>
 
     <div class="mt-12 grid lg:grid-cols-5 gap-10">
@@ -68,7 +68,7 @@
             </div>
             <div class="rounded-2xl border border-brand-100 bg-brand-50 p-6">
                 <h3 class="font-semibold text-brand-800 text-sm">Already a client?</h3>
-                <p class="mt-2 text-sm text-brand-700">Log in to your portal instead.</p>
+                <p class="mt-2 text-sm text-brand-700">Sign in to your client portal.</p>
                 <a href="{{ route('login') }}" class="mt-3 inline-block text-sm font-semibold text-brand-700 hover:text-brand-800">Client Login →</a>
             </div>
         </div>

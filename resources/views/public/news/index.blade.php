@@ -1,6 +1,6 @@
 @extends('layouts.public')
 
-@section('title', 'Regulatory & Industry News — Blue Arrow Management Consultants')
+@section('title', 'Regulatory & Industry News | Blue Arrow Management Consultants')
 @section('meta_description', 'Continuously updated AML, sanctions and regulatory news for UAE DNFBPs, aggregated from regulatory sources plus Blue Arrow compliance insights.')
 
 @section('content')
@@ -9,8 +9,8 @@
     <span class="inline-flex items-center gap-1.5 text-red-600 font-semibold text-sm">🔴 Live Regulatory Feed</span>
     <h1 class="mt-2 text-4xl font-extrabold text-gray-900">Regulatory &amp; Industry News</h1>
     <p class="mt-4 text-gray-600 max-w-2xl">
-        Aggregated regulatory updates plus Blue Arrow's own BA-Digest compliance insights — refreshed automatically
-        so you always see the latest.
+        Regulatory updates from around the web, plus BA-Digest, our own short compliance notes. The page updates
+        itself through the day.
     </p>
 
     <div class="mt-8 flex flex-wrap gap-2">
@@ -41,7 +41,7 @@
             </a>
         @empty
             <div class="sm:col-span-2 lg:col-span-3 rounded-2xl border border-dashed border-gray-300 bg-white p-10 text-center text-gray-500">
-                No updates published yet — check back soon.
+                Nothing here yet. Check back soon.
             </div>
         @endforelse
     </div>

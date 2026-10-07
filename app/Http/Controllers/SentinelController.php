@@ -80,7 +80,7 @@ class SentinelController extends Controller
         }
 
         if ($res->successful()) {
-            return $this->back('trial', 'ok', 'Your trial account is ready — check your inbox for your login details, then sign in at aml.bluearrow.ae.');
+            return $this->back('trial', 'ok', 'Your trial account is ready. Check your inbox for your login details, then sign in at aml.bluearrow.ae.');
         }
 
         $message = match ($res->json('error')) {
@@ -107,7 +107,7 @@ class SentinelController extends Controller
 
         $body = "[Sentinel enquiry] Plan: {$data['plan']}\n"
               . "Company: {$data['company']}\n"
-              . 'Sector: ' . ($data['sector'] ?: '—') . "\n\n"
+              . 'Sector: ' . ($data['sector'] ?: 'not given') . "\n\n"
               . ($data['message'] ?: '(no message)');
 
         ContactMessage::create([
@@ -120,13 +120,13 @@ class SentinelController extends Controller
         try {
             Mail::raw("{$data['name']} <{$data['email']}>" . (($data['phone'] ?? '') ? " · {$data['phone']}" : '') . "\n\n{$body}",
                 fn ($m) => $m->to('info@bluearrow.ae')->replyTo($data['email'], $data['name'])
-                             ->subject("Sentinel enquiry — {$data['company']} ({$data['plan']})"));
+                             ->subject("Sentinel enquiry: {$data['company']} ({$data['plan']})"));
         } catch (\Throwable $e) {
             // The enquiry is already saved; a mail failure must not lose it
             Log::error('Sentinel enquiry email failed: ' . $e->getMessage());
         }
 
-        return $this->back('enquiry', 'ok', 'Thanks — we have your request and will be in touch within one business day.');
+        return $this->back('enquiry', 'ok', 'Thanks, we have your request. We\'ll be in touch within one business day.');
     }
 
     private function back(string $form, string $status, string $message): RedirectResponse

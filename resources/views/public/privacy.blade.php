@@ -1,6 +1,6 @@
 @extends('layouts.public')
 
-@section('title', 'Privacy Policy — Blue Arrow Management Consultants')
+@section('title', 'Privacy Policy | Blue Arrow Management Consultants')
 @section('meta_description', 'How Blue Arrow Management Consultants collects, uses and protects personal data across our website, client portal and mobile app.')
 
 @section('content')

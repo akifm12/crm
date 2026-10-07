@@ -17,7 +17,7 @@
 <body>
 
     <div class="brand">Blue Arrow</div>
-    <div class="subtitle">Management Consultants — AML &amp; Regulatory Compliance</div>
+    <div class="subtitle">Management Consultants · AML &amp; Regulatory Compliance</div>
 
     <div class="title">{{ $title }}</div>
     <div class="lead">{{ $lead }}</div>
@@ -33,7 +33,7 @@
 
     <div class="footer">
         This document is provided as general guidance by Blue Arrow Management Consultants and does not constitute
-        legal advice. Requirements vary by license type and business activity — always confirm specifics with your
+        legal advice. Requirements vary by licence type and business activity, so confirm the specifics with your
         MLRO or the Blue Arrow compliance team. &copy; {{ date('Y') }} Blue Arrow Management Consultants ·
         bluearrow.ae · info@bluearrow.ae
     </div>

@@ -1,6 +1,6 @@
 @extends('layouts.public')
 
-@section('title', $t['title'] . ' — UAE AML Compliance Guide, Step ' . $t['step'] . ' — Blue Arrow')
+@section('title', $t['title'] . ' | UAE AML Compliance Guide, Step ' . $t['step'] . ' | Blue Arrow')
 @section('meta_description', $t['oneliner'])
 
 @section('content')
@@ -166,7 +166,7 @@
     </nav>
 
     <p class="pb-4 text-xs text-gray-400">
-        General guidance only, not legal advice. Requirements can differ by supervisor and free zone — confirm specifics with your compliance officer or our team.
+        General guidance only, not legal advice. Requirements can differ by supervisor and free zone, so confirm the specifics with your compliance officer or our team.
     </p>
 </div>
 
