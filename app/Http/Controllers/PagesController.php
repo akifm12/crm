@@ -24,6 +24,8 @@ class PagesController extends Controller
             'techServices' => ServiceCatalog::techServiceTiles(),
             'news'         => NewsItem::published()->latest('published_at')->take(3)->get(),
             'sectors'      => SectorConfig::sectors(),
+            'sentinel'     => SentinelController::stats(),
+            'calendarCount'=> \App\Models\ComplianceDeadline::count(),
         ]);
     }
 

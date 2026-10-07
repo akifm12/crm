@@ -31,12 +31,18 @@ class SentinelController extends Controller
 
     public function show(): View
     {
+        return view('public.sentinel', ['stats' => self::stats()]);
+    }
+
+    /** Rounded-down coverage figures from the latest nightly import (also used on the home page). */
+    public static function stats(): array
+    {
         $c = rescue(fn () => json_decode(file_get_contents(self::COUNTS_FILE), true), null, false);
         if (! is_array($c) || array_sum($c) < 1_000_000) {
             $c = self::FALLBACK_COUNTS;
         }
 
-        return view('public.sentinel', ['stats' => [
+        return [
             'total'     => self::round(array_sum($c)),
             'sanctions' => self::round(($c['OpenSanctions sanctions'] ?? 0) + ($c['UN Security Council'] ?? 0)
                                        + ($c['UAE Local Terrorist List (via OpenSanctions)'] ?? 0)),
@@ -47,7 +53,7 @@ class SentinelController extends Controller
             'regulatory'=> self::round($c['Regulatory warnings'] ?? 0),
             'maritime'  => self::round($c['Maritime'] ?? 0),
             'crypto'    => self::round(($c['Ransomware wallets'] ?? 0) + ($c['Israel crypto seizures'] ?? 0)),
-        ]]);
+        ];
     }
 
     /** 1,440,399 → "1.4M+", 718,988 → "710k+", 6,368 → "6.3k+" — always rounded down so the claim stays true. */
