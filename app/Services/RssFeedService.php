@@ -11,11 +11,12 @@ use Illuminate\Support\Str;
 class RssFeedService
 {
     /**
-     * Fetch, parse and store new items from a single RSS/Atom feed.
+     * Fetch, parse and store new items from a single RSS/Atom feed. With $filter on,
+     * only items whose headline passes isRelevant() are stored; $limit counts stored items.
      *
      * @return array{fetched: int, created: int, error: ?string}
      */
-    public function ingest(string $name, string $url, string $category, int $limit = 8): array
+    public function ingest(string $name, string $url, string $category, int $limit = 8, bool $filter = false): array
     {
         try {
             $response = Http::timeout(15)
@@ -40,20 +41,38 @@ class RssFeedService
             $fetched = 0;
             $created = 0;
 
-            foreach (array_slice($entries, 0, $limit) as $entry) {
+            // Filtered feeds drop most items, so look further down the list; others keep the old top-N
+            $scan   = $filter ? $entries : array_slice($entries, 0, $limit);
+            $cutoff = now()->subDays((int) config('content.max_age_days', 60));
+
+            foreach ($scan as $entry) {
+                if ($created >= $limit) {
+                    break;
+                }
                 $fetched++;
 
                 if (empty($entry['link']) || empty($entry['title'])) {
                     continue;
                 }
 
-                $exists = NewsItem::where('source_url_hash', sha1($entry['link']))->exists();
+                $title = $this->clean($entry['title']);
+
+                if ($entry['published_at'] && $entry['published_at']->lt($cutoff)) {
+                    continue;
+                }
+
+                if (self::isJunkTitle($title) || ($filter && ! self::isRelevant($title))) {
+                    continue;
+                }
+
+                // Same story under a new URL (outlets re-publish) counts as a duplicate too
+                $exists = NewsItem::where('source_url_hash', sha1($entry['link']))->exists()
+                    || NewsItem::where('title', Str::limit($title, 250, ''))->where('published_at', '>=', now()->subDays(30))->exists();
 
                 if ($exists) {
                     continue;
                 }
 
-                $title   = $this->clean($entry['title']);
                 $summary = $this->clean($entry['summary'] ?? '') ?: $title;
 
                 NewsItem::create([
@@ -76,6 +95,20 @@ class RssFeedService
 
             return ['fetched' => 0, 'created' => 0, 'error' => $e->getMessage()];
         }
+    }
+
+    /** Does this headline look like AML / sanctions / financial-crime news? (config content.relevance_pattern) */
+    public static function isRelevant(string $title): bool
+    {
+        return (bool) preg_match(config('content.relevance_pattern'), $title);
+    }
+
+    /** A site page rather than a news item? (config content.junk_title_pattern; ignores the " - Source" suffix) */
+    public static function isJunkTitle(string $title): bool
+    {
+        $headline = preg_replace('/\s+-\s+[^-]+$/u', '', $title);
+
+        return (bool) preg_match(config('content.junk_title_pattern'), $headline);
     }
 
     private function clean(string $value): string

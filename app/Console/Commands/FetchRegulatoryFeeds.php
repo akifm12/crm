@@ -31,7 +31,7 @@ class FetchRegulatoryFeeds extends Command
         $totalCreated = 0;
 
         foreach ($feeds as $feed) {
-            $result = $this->rss->ingest($feed['name'], $feed['url'], $feed['category'], $limit);
+            $result = $this->rss->ingest($feed['name'], $feed['url'], $feed['category'], $limit, $feed['filter'] ?? false);
 
             if ($result['error']) {
                 $this->warn("  ✗ {$feed['name']}: {$result['error']}");
@@ -44,7 +44,7 @@ class FetchRegulatoryFeeds extends Command
         }
 
         $this->newLine();
-        $this->info("Done — {$totalCreated} new item(s) published.");
+        $this->info("Done: {$totalCreated} new item(s) published.");
 
         return 0;
     }
