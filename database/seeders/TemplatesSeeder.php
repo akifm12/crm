@@ -389,6 +389,37 @@ class TemplatesSeeder extends Seeder
                 'terms'        => "1. This quotation is valid for 30 days from the date of issue.\n2. Fees are subject to 5% VAT.\n3. Payment terms: 100% upon engagement.\n4. Delivery timeline: 2–4 weeks from engagement date.",
                 'validity_days'=> 30,
             ],
+
+            // KYC portal (with bullion accounting) bundled with standalone AML screening.
+            // Prices are the standard list prices — edit them per client when creating the quotation.
+            // Totals are first-year: maintenance is 12 x monthly fee, screening is one year.
+            [
+                'name'         => 'KYC Portal + Bullion Accounting + AML Screening (without monitoring)',
+                'service_type' => 'KYC Software & AML Screening',
+                'description'  => 'KYC Management Portal with Bullion Accounting (one-time fee) plus monthly maintenance and standalone AML Screening without ongoing monitoring.',
+                'line_items'   => [
+                    ['description' => 'KYC Management Portal with Bullion Accounting module — one-time fee (client onboarding with AI document scanning, screening and risk workflows, goAML/TFS support, bullion invoicing, inventory, ledger and reports)', 'qty' => 1, 'unit_price' => 15000],
+                    ['description' => 'Updates and maintenance — per month (12 months)', 'qty' => 12, 'unit_price' => 350],
+                    ['description' => 'AML Screening Software (standalone), without ongoing monitoring — per year', 'qty' => 1, 'unit_price' => 4000],
+                    ['description' => 'Customisation to client requirements — quoted separately, case by case', 'qty' => 1, 'unit_price' => 0],
+                ],
+                'terms'        => "1. This quotation is valid for 30 days from the date of issue.\n2. All prices are in UAE Dirhams (AED) and are subject to 5% VAT.\n3. The one-time fee is invoiced on acceptance. Updates and maintenance are billed monthly in advance. AML Screening is billed annually in advance.\n4. Payment terms: 14 days from invoice date.\n5. Customisations are quoted separately on a case-by-case basis and require written approval before work starts.\n6. Totals shown reflect the first year (12 months of maintenance and one year of screening).",
+                'validity_days'=> 30,
+            ],
+
+            [
+                'name'         => 'KYC Portal + Bullion Accounting + AML Screening (with monitoring)',
+                'service_type' => 'KYC Software & AML Screening',
+                'description'  => 'KYC Management Portal with Bullion Accounting (one-time fee) plus monthly maintenance and standalone AML Screening with ongoing monitoring.',
+                'line_items'   => [
+                    ['description' => 'KYC Management Portal with Bullion Accounting module — one-time fee (client onboarding with AI document scanning, screening and risk workflows, goAML/TFS support, bullion invoicing, inventory, ledger and reports)', 'qty' => 1, 'unit_price' => 15000],
+                    ['description' => 'Updates and maintenance — per month (12 months)', 'qty' => 12, 'unit_price' => 350],
+                    ['description' => 'AML Screening Software (standalone), with ongoing monitoring — per year', 'qty' => 1, 'unit_price' => 5000],
+                    ['description' => 'Customisation to client requirements — quoted separately, case by case', 'qty' => 1, 'unit_price' => 0],
+                ],
+                'terms'        => "1. This quotation is valid for 30 days from the date of issue.\n2. All prices are in UAE Dirhams (AED) and are subject to 5% VAT.\n3. The one-time fee is invoiced on acceptance. Updates and maintenance are billed monthly in advance. AML Screening is billed annually in advance.\n4. Payment terms: 14 days from invoice date.\n5. Customisations are quoted separately on a case-by-case basis and require written approval before work starts.\n6. Totals shown reflect the first year (12 months of maintenance and one year of screening).",
+                'validity_days'=> 30,
+            ],
         ];
 
         foreach ($qtTemplates as $t) {
