@@ -1,10 +1,25 @@
 #!/usr/bin/env node
 /**
- * tfs-submit.cjs  <url> <responseKey> <pdfOutputPath>
- * responseKey: no_match | confirmed_match | partial_match
+ * tfs-submit.cjs — drives a UAE EOCN (TFS) unique survey link in headless Chrome.
+ *
+ *   tfs-submit.cjs preview <url>
+ *       Opens the link and reads it. Submits NOTHING. Prints the page title, the
+ *       page text (so the app can check it against the tenant's clients) and a
+ *       state: form | used | unknown.
+ *
+ *   tfs-submit.cjs submit <url> <responseKey> <pdfAfterPath> [<pdfBeforePath>]
+ *       Selects the answer, saves a "before" PDF (the alert with the chosen
+ *       answer visible), clicks Continue/Submit, then saves an "after" PDF.
+ *       responseKey: no_match | confirmed_match | partial_match
+ *
+ * The last stdout line is always one JSON object. Debug goes to stderr.
  */
 
 'use strict';
+
+const fs   = require('fs');
+const os   = require('os');
+const path = require('path');
 
 const NODE_PATH = process.env.NODE_PATH || '/usr/lib/node_modules';
 const puppeteer = (() => {
@@ -17,12 +32,7 @@ const puppeteer = (() => {
     process.exit(1);
 })();
 
-const [,, url, responseKey, pdfPath] = process.argv;
-
-if (!url || !responseKey) {
-    console.log(JSON.stringify({ success: false, message: 'Usage: tfs-submit.cjs <url> <responseKey> <pdfPath>' }));
-    process.exit(1);
-}
+const CHROME = process.env.TFS_CHROME || '/usr/bin/google-chrome-stable';
 
 const KEYWORDS = {
     no_match:        ['no match', 'not found', 'no match identified', 'none identified'],
@@ -34,51 +44,108 @@ function debug(msg, data) {
     process.stderr.write('DEBUG ' + msg + (data ? ': ' + JSON.stringify(data) : '') + '\n');
 }
 
-// Click an element via JS — bypasses Puppeteer's visibility/pointer checks
-async function jsClick(page, selector) {
-    return page.evaluate((sel) => {
-        const el = document.querySelector(sel);
-        if (el) { el.click(); return true; }
-        return false;
-    }, selector);
-}
-
-// Wait for navigation OR for a selector to appear — whichever comes first
-// Handles both full-page navigation and AJAX/SPA page transitions
-async function waitForPageChange(page, nextSelector, timeout = 35000) {
-    return Promise.race([
-        page.waitForNavigation({ waitUntil: 'networkidle2', timeout }).catch(() => 'nav-timeout'),
-        page.waitForSelector(nextSelector, { timeout }).catch(() => 'selector-timeout'),
-    ]);
-}
-
-(async () => {
-    let browser;
+// A failed debug screenshot must never hide the real result. These used to go to a
+// fixed /tmp path that another OS user already owned, which threw EACCES and turned
+// every "already submitted" link into an unexplained failure.
+async function safeShot(page, name) {
     try {
-        browser = await puppeteer.launch({
-            executablePath: '/usr/bin/google-chrome-stable',
-            headless: true,
-            args: ['--no-sandbox', '--disable-dev-shm-usage', '--disable-gpu', '--no-zygote'],
-        });
+        const dir = process.env.TFS_DEBUG_DIR || os.tmpdir();
+        fs.mkdirSync(dir, { recursive: true });
+        const file = path.join(dir, `tfs-${name}-${process.pid}-${Date.now()}.png`);
+        await page.screenshot({ path: file, fullPage: true });
+        return file;
+    } catch (e) {
+        debug('debug screenshot skipped', { error: e.message });
+        return null;
+    }
+}
 
-        const page = await browser.newPage();
-        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+function pdfOptions(file, url, label) {
+    return {
+        path: file,
+        format: 'A4',
+        printBackground: true,
+        displayHeaderFooter: true,
+        headerTemplate: `
+            <div style="font-size:9px;padding:4px 20px;width:100%;box-sizing:border-box;
+                        border-bottom:1px solid #ccc;color:#333;font-family:Arial,sans-serif;">
+                <strong>${label}</strong> &nbsp; TFS Survey URL:
+                <span style="color:#1a56db;word-break:break-all;">${url}</span>
+            </div>`,
+        footerTemplate: `
+            <div style="font-size:8px;padding:4px 20px;width:100%;box-sizing:border-box;
+                        color:#999;font-family:Arial,sans-serif;text-align:center;">
+                Captured by Blue Arrow Portal &mdash; <span class="date"></span>
+            </div>`,
+        margin: { top: '55px', bottom: '35px', left: '10px', right: '10px' },
+    };
+}
 
-        // ── Step 1: Load the form ────────────────────────────────────────────
+async function launch() {
+    const browser = await puppeteer.launch({
+        executablePath: CHROME,
+        headless: true,
+        args: ['--no-sandbox', '--disable-dev-shm-usage', '--disable-gpu', '--no-zygote'],
+    });
+    const page = await browser.newPage();
+    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+    return { browser, page };
+}
+
+// What are we looking at? An open survey has an answer <select>; a link that was
+// already used shows a "Success / survey completed" page with no form at all.
+async function classify(page) {
+    const info = await page.evaluate(() => ({
+        title:     document.title || '',
+        text:      document.body ? document.body.innerText : '',
+        hasSelect: !!document.querySelector('form select'),
+    }));
+    let state = 'unknown';
+    if (info.hasSelect) {
+        state = 'form';
+    } else if (/survey completed|already (been )?submitted|thank you|^success/i.test(info.title + ' ' + info.text.slice(0, 800))) {
+        state = 'used';
+    }
+    return { ...info, state };
+}
+
+async function preview(url) {
+    const { browser, page } = await launch();
+    try {
+        await page.goto(url, { waitUntil: 'networkidle0', timeout: 45000 });
+        const c = await classify(page);
+        debug('preview', { title: c.title, state: c.state, textLength: c.text.length });
+        await browser.close();
+        console.log(JSON.stringify({
+            success: true,
+            state:   c.state,
+            title:   c.title,
+            text:    c.text.slice(0, 80000),
+            text_length: c.text.length,
+        }));
+    } catch (err) {
+        await browser.close().catch(() => {});
+        console.log(JSON.stringify({ success: false, message: err.message }));
+    }
+}
+
+async function submit(url, responseKey, pdfAfter, pdfBefore) {
+    const { browser, page } = await launch();
+    try {
         await page.goto(url, { waitUntil: 'networkidle0', timeout: 45000 });
 
-        debug('page1', { title: await page.title(), url: page.url() });
+        const c = await classify(page);
+        debug('page1', { title: c.title, state: c.state });
 
-        const bodyText1 = await page.evaluate(() => document.body.innerText);
-        if (/already submitted/i.test(bodyText1)) {
+        if (c.state === 'used') {
             await browser.close();
-            console.log(JSON.stringify({ success: false, message: 'Already submitted' }));
+            console.log(JSON.stringify({ success: false, state: 'used', message: 'This link was already submitted (TFS shows a completed page).' }));
             return;
         }
 
-        // ── Step 2: Select the answer ────────────────────────────────────────
         const keywords = KEYWORDS[responseKey] || KEYWORDS.no_match;
 
+        // Select the answer
         const formState = await page.evaluate((keywords) => {
             const info = { selects: [], buttons: [] };
             document.querySelectorAll('form select').forEach(sel => {
@@ -88,7 +155,6 @@ async function waitForPageChange(page, nextSelector, timeout = 35000) {
                 info.buttons.push({ tag: b.tagName, name: b.name, value: b.value, text: b.innerText?.trim() });
             });
 
-            // Select the matching option
             for (const sel of document.querySelectorAll('form select')) {
                 for (const opt of sel.options) {
                     if (keywords.some(kw => opt.text.toLowerCase().includes(kw))) {
@@ -114,14 +180,18 @@ async function waitForPageChange(page, nextSelector, timeout = 35000) {
         debug('form state', formState);
 
         if (!formState.selected) {
-            await page.screenshot({ path: '/tmp/tfs-debug-noselect.png', fullPage: true });
+            const shot = await safeShot(page, 'noselect');
             await browser.close();
-            console.log(JSON.stringify({ success: false, message: 'No select/answer found on page 1 — screenshot at /tmp/tfs-debug-noselect.png', debug: formState }));
+            console.log(JSON.stringify({ success: false, state: c.state, message: 'No answer field found on the page' + (shot ? ' (screenshot: ' + shot + ')' : ''), debug: formState }));
             return;
         }
 
-        // ── Step 3: Click Continue if present, then Submit ───────────────────
-        // The form may show Continue (to review) then Submit, or Submit directly.
+        // Evidence 1: the alert as received, with the chosen answer visible
+        if (pdfBefore) {
+            await page.pdf(pdfOptions(pdfBefore, url, 'BEFORE SUBMIT'));
+        }
+
+        // Continue (review page), then Submit
         const continueClicked = await page.evaluate(() => {
             const btn = document.querySelector('[name="SubmitButton"][value="Continue"]');
             if (!btn) return null;
@@ -130,12 +200,10 @@ async function waitForPageChange(page, nextSelector, timeout = 35000) {
         });
 
         if (continueClicked) {
-            // Wait for the Submit button to be ready after Continue
             await page.waitForSelector('[name="SubmitButton"][value="Submit"]', { timeout: 15000 }).catch(() => {});
             debug('continue clicked, now on page 2', { title: await page.title() });
         }
 
-        // ── Step 4: Click Submit and wait for confirmation ───────────────────
         const submitClicked = await page.evaluate(() => {
             let btn = document.querySelector('[name="SubmitButton"][value="Submit"]');
             if (!btn) btn = Array.from(document.querySelectorAll('input[type=submit], button'))
@@ -148,55 +216,31 @@ async function waitForPageChange(page, nextSelector, timeout = 35000) {
         debug('submit clicked', submitClicked);
 
         if (!submitClicked) {
-            await page.screenshot({ path: '/tmp/tfs-debug-nosubmit.png', fullPage: true });
-
-            // Log what IS on page 2 so we know what to look for
+            const shot = await safeShot(page, 'nosubmit');
             const page2html = await page.evaluate(() => document.body.innerHTML.slice(0, 2000));
             debug('page2 html excerpt', { html: page2html });
-
             await browser.close();
-            console.log(JSON.stringify({ success: false, message: 'Submit button not found on page 2 — screenshot at /tmp/tfs-debug-nosubmit.png' }));
+            console.log(JSON.stringify({ success: false, message: 'Submit button not found' + (shot ? ' (screenshot: ' + shot + ')' : '') }));
             return;
         }
 
-        // Wait for the Submit button to disappear — confirms the form processed
+        // The Submit button disappearing confirms the form processed
         await page.waitForFunction(
             () => !document.querySelector('[name="SubmitButton"][value="Submit"]'),
             { timeout: 30000 }
-        ).catch(() => {}); // if it never disappears, continue anyway
+        ).catch(() => {});
 
-        // Give AJAX content a moment to render
         await new Promise(r => setTimeout(r, 3000));
 
-        // ── Step 5: Verify and capture PDF ───────────────────────────────────
         const finalText = await page.evaluate(() => document.body.innerText);
-        const finalHtml = await page.evaluate(() => document.body.innerHTML);
-
-        // Success: either thank-you text found, OR the Submit button is gone
         const submitGone = !await page.$('[name="SubmitButton"][value="Submit"]');
-        const success    = submitGone || /thank|submitted|success|received/i.test(finalText);
+        const success    = submitGone || /thank|submitted|success|received|completed/i.test(finalText);
 
         debug('final page', { success, submitGone, url: page.url(), excerpt: finalText.slice(0, 300) });
 
-        if (pdfPath) {
-            await page.pdf({
-                path: pdfPath,
-                format: 'A4',
-                printBackground: true,
-                displayHeaderFooter: true,
-                headerTemplate: `
-                    <div style="font-size:9px;padding:4px 20px;width:100%;box-sizing:border-box;
-                                border-bottom:1px solid #ccc;color:#333;font-family:Arial,sans-serif;">
-                        <strong>TFS Survey URL:</strong>
-                        <span style="color:#1a56db;word-break:break-all;">${url}</span>
-                    </div>`,
-                footerTemplate: `
-                    <div style="font-size:8px;padding:4px 20px;width:100%;box-sizing:border-box;
-                                color:#999;font-family:Arial,sans-serif;text-align:center;">
-                        Captured by Blue Arrow Portal &mdash; <span class="date"></span>
-                    </div>`,
-                margin: { top: '55px', bottom: '35px', left: '10px', right: '10px' },
-            });
+        // Evidence 2: the completion page
+        if (pdfAfter) {
+            await page.pdf(pdfOptions(pdfAfter, url, 'AFTER SUBMIT'));
         }
 
         await browser.close();
@@ -207,8 +251,19 @@ async function waitForPageChange(page, nextSelector, timeout = 35000) {
         }));
 
     } catch (err) {
-        if (browser) await browser.close().catch(() => {});
+        await browser.close().catch(() => {});
         console.log(JSON.stringify({ success: false, message: err.message }));
-        process.exit(1);
     }
+}
+
+(async () => {
+    const [,, mode, ...args] = process.argv;
+
+    if (mode === 'preview' && args[0]) return preview(args[0]);
+    if (mode === 'submit'  && args[0]) return submit(args[0], args[1] || 'no_match', args[2], args[3]);
+
+    // Backwards compatible with the old positional call: <url> <responseKey> <pdf>
+    if (mode && /^https?:/i.test(mode)) return submit(mode, args[0] || 'no_match', args[1], null);
+
+    console.log(JSON.stringify({ success: false, message: 'Usage: tfs-submit.cjs preview <url> | submit <url> <responseKey> <pdfAfter> [<pdfBefore>]' }));
 })();

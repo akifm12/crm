@@ -35,8 +35,9 @@
         <div class="flex items-center gap-3">
             <button type="submit"
                     class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-5 py-2 rounded-lg transition">
-                Save
+                Save &amp; check my clients
             </button>
+            <p class="text-xs text-gray-400">Opens each link, checks your clients against the alert, and submits "No match" only if nothing matches.</p>
             <a href="{{ route('tenant.tfs.index', $tenant->slug) }}"
                class="text-sm text-gray-500 hover:text-gray-700">Cancel</a>
         </div>
