@@ -417,10 +417,12 @@
             <div x-show="clientType !== 'individual'">
                 @foreach([
                     ['trade_license','Trade licence','true', false],
+                    ['ejari','Ejari / tenancy contract','false', false],
                     ['moa','Memorandum of Association (MoA)','true', false],
                     ['passport','Authorised signatory passport','true', false],
                     ['eid','Emirates ID (signatory)','false', false],
                     ['shareholder_passport','Shareholder passport(s)','false', true],
+                    ['shareholder_eid','Shareholder Emirates ID(s)','false', true],
                     ['source_of_funds','Source of funds evidence','false', false],
                     ['other','Other document(s)','false', true],
                 ] as [$type,$label,$req,$multiple])

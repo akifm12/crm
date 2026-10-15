@@ -72,6 +72,49 @@ class DashboardController extends Controller
             ->whereNotNull('passport_expiry')
             ->whereBetween('passport_expiry', [now(), now()->addDays(60)])->count();
 
+        // -- Document upload gaps ------------------------------------------------
+        // The expiry fields above only say what is typed into the profile; they say
+        // nothing about whether the file itself was ever uploaded. Count uploads per
+        // client and type so a profile with dates but no documents is still flagged.
+        $docCounts = [];
+        ClientDocument::where('tenant_id', $tid)->whereIn('bullion_client_id', $clientIds)
+            ->get(['bullion_client_id', 'document_type'])
+            ->each(function ($d) use (&$docCounts) {
+                // Bulk import and the scanner stored 'trade_licence'; the form stores 'trade_license'.
+                $type = $d->document_type === 'trade_licence' ? 'trade_license' : $d->document_type;
+                $docCounts[$d->bullion_client_id][$type] = ($docCounts[$d->bullion_client_id][$type] ?? 0) + 1;
+            });
+        $docCount = fn ($cid, $type) => $docCounts[$cid][$type] ?? 0;
+
+        $clientsById = (clone $activeBase)->get()->keyBy('id');
+        $corporates  = $clientsById->where('client_type', '!=', 'individual');
+
+        $licenceNoFileIds = $corporates->filter(fn ($c) => !$docCount($c->id, 'trade_license'))->pluck('id')->all();
+        $ejariNoFileIds   = $corporates->filter(fn ($c) => !$docCount($c->id, 'ejari'))->pluck('id')->all();
+
+        // Documents are stored per client, not per shareholder, so compare counts:
+        // individual shareholders with passport/EID details on file vs files uploaded.
+        $passport_doc_gaps = [];
+        $eid_doc_gaps      = [];
+        $shareholdersByClient = ClientShareholder::whereIn('bullion_client_id', $clientIds)->get()->groupBy('bullion_client_id');
+        foreach ($shareholdersByClient as $cid => $rows) {
+            $people  = $rows->where('shareholder_type', '!=', 'corporate');
+            $needPp  = $people->filter(fn ($s) => $s->passport_number || $s->passport_expiry)->count();
+            $needEid = $people->filter(fn ($s) => $s->eid_number || $s->eid_expiry)->count();
+            $havePp  = $docCount($cid, 'shareholder_passport');
+            $haveEid = $docCount($cid, 'shareholder_eid');
+            if ($needPp > $havePp)   $passport_doc_gaps[] = ['client' => $clientsById[$cid] ?? null, 'expected' => $needPp,  'uploaded' => $havePp];
+            if ($needEid > $haveEid) $eid_doc_gaps[]      = ['client' => $clientsById[$cid] ?? null, 'expected' => $needEid, 'uploaded' => $haveEid];
+        }
+        $passport_doc_gaps = array_values(array_filter($passport_doc_gaps, fn ($g) => $g['client']));
+        $eid_doc_gaps      = array_values(array_filter($eid_doc_gaps, fn ($g) => $g['client']));
+        $has_shareholders  = $shareholdersByClient->isNotEmpty();
+
+        $licenceNoFile  = count($licenceNoFileIds);
+        $ejariNoFile    = count($ejariNoFileIds);
+        $eidNoFile      = count($eid_doc_gaps);
+        $passportNoFile = count($passport_doc_gaps);
+
         // ── goAML ─────────────────────────────────────────────────────────────
         $goamlTotal = GoamlReport::where('tenant_id', $tid)->count();
         $goamlMonth = GoamlReport::where('tenant_id', $tid)->where('created_at', '>=', now()->startOfMonth())->count();
@@ -94,14 +137,17 @@ class DashboardController extends Controller
             'unscreened', 'screeningMatch', 'edd',
             'monitoringActive', 'monitoringAlerts',
             'docsExpired', 'docsExpiring',
+            'licenceNoFile', 'ejariNoFile', 'eidNoFile', 'passportNoFile',
             'goamlTotal', 'goamlMonth',
             'typeBreakdown'
         );
 
         // ── Alert lists ───────────────────────────────────────────────────────
         $expiry_alerts = BullionClient::where('tenant_id', $tid)->whereIn('status', ['active', 'pending'])
+            ->where('client_type', '!=', 'individual')
             ->where(fn($q) => $q->whereNull('trade_license_expiry')
-                ->orWhere('trade_license_expiry', '<=', now()->addDays(60)))
+                ->orWhere('trade_license_expiry', '<=', now()->addDays(60))
+                ->orWhereIn('id', $licenceNoFileIds))
             ->orderByRaw('CASE WHEN trade_license_expiry IS NULL THEN 1 WHEN trade_license_expiry < NOW() THEN 0 ELSE 2 END')
             ->orderBy('trade_license_expiry')
             ->take(10)->get();
@@ -110,7 +156,8 @@ class DashboardController extends Controller
             ->whereIn('status', ['active', 'pending'])
             ->where('client_type', '!=', 'individual')
             ->where(fn($q) => $q->whereNull('ejari_expiry')
-                ->orWhere('ejari_expiry', '<=', now()->addDays(60)))
+                ->orWhere('ejari_expiry', '<=', now()->addDays(60))
+                ->orWhereIn('id', $ejariNoFileIds))
             ->orderByRaw('CASE WHEN ejari_expiry IS NULL THEN 1 WHEN ejari_expiry < NOW() THEN 0 ELSE 2 END')
             ->orderBy('ejari_expiry')
             ->take(10)->get();
@@ -144,6 +191,7 @@ class DashboardController extends Controller
             'tenant', 'stats',
             'expiry_alerts', 'ejari_alerts', 'eid_alerts', 'passport_alerts',
             'review_alerts', 'doc_alerts',
+            'licenceNoFileIds', 'ejariNoFileIds', 'passport_doc_gaps', 'eid_doc_gaps', 'has_shareholders',
             'recent', 'recent_goaml'
         ));
     }

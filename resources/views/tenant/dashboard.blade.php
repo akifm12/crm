@@ -43,7 +43,7 @@ $expiryBadge = function($date, bool $missingIsAlert = false) {
     </div>
 
     @php
-    $totalMissing  = $stats['licenceMissing'] + $stats['ejariMissing'];
+    $totalMissing  = $stats['licenceMissing'] + $stats['ejariMissing'] + $stats['licenceNoFile'] + $stats['ejariNoFile'] + $stats['eidNoFile'] + $stats['passportNoFile'];
     $totalExpired  = $stats['licenceExpired'] + $stats['ejariExpired'] + $stats['eidExpired'] + $stats['passportExpired'] + $stats['docsExpired'];
     $totalExpiring = $stats['licenceExpiring'] + $stats['ejariExpiring'] + $stats['eidExpiring'] + $stats['passportExpiring'] + $stats['docsExpiring'];
     $totalIssues   = $totalMissing + $totalExpired;
@@ -58,6 +58,10 @@ $expiryBadge = function($date, bool $missingIsAlert = false) {
             @if($stats['ejariExpired'])<span class="text-red-600 font-semibold">{{ $stats['ejariExpired'] }} ejari expired</span>@endif
             @if($stats['eidExpired'])<span class="text-red-600 font-semibold">{{ $stats['eidExpired'] }} EID expired</span>@endif
             @if($stats['passportExpired'])<span class="text-red-600 font-semibold">{{ $stats['passportExpired'] }} passport expired</span>@endif
+            @if($stats['licenceNoFile'])<span class="text-orange-600 font-semibold">{{ $stats['licenceNoFile'] }} licence file missing</span>@endif
+            @if($stats['ejariNoFile'])<span class="text-orange-600 font-semibold">{{ $stats['ejariNoFile'] }} ejari file missing</span>@endif
+            @if($stats['passportNoFile'])<span class="text-orange-600 font-semibold">{{ $stats['passportNoFile'] }} passport file(s) missing</span>@endif
+            @if($stats['eidNoFile'])<span class="text-orange-600 font-semibold">{{ $stats['eidNoFile'] }} EID file(s) missing</span>@endif
             @if($stats['docsExpired'])<span class="text-red-600 font-semibold">{{ $stats['docsExpired'] }} docs expired</span>@endif
             @if($totalIssues === 0 && $totalExpiring > 0)<span class="text-amber-600">{{ $totalExpiring }} expiring soon</span>@endif
             @if($totalIssues === 0 && $totalExpiring === 0)<span class="text-green-600">All documents current</span>@endif
@@ -202,7 +206,7 @@ $expiryBadge = function($date, bool $missingIsAlert = false) {
             <a href="{{ route('tenant.clients.show', [$tenant->slug, $client->id]) }}"
                class="flex items-center justify-between px-3 py-1.5 hover:bg-gray-50 transition">
                 <p class="text-xs font-medium text-gray-800 truncate mr-2">{{ $client->displayName() }}</p>
-                <span class="text-xs font-semibold px-1.5 py-0.5 rounded-full flex-shrink-0 {{ $cls }}">{{ $label }}</span>
+                <span class="flex items-center gap-1 flex-shrink-0">@if(in_array($client->id, $licenceNoFileIds))<span class="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-red-100 text-red-700">No file</span>@endif<span class="text-xs font-semibold px-1.5 py-0.5 rounded-full flex-shrink-0 {{ $cls }}">{{ $label }}</span></span>
             </a>
             @empty
             <div class="px-3 py-4 text-center">
@@ -224,7 +228,7 @@ $expiryBadge = function($date, bool $missingIsAlert = false) {
             <a href="{{ route('tenant.clients.show', [$tenant->slug, $client->id]) }}"
                class="flex items-center justify-between px-3 py-1.5 hover:bg-gray-50 transition">
                 <p class="text-xs font-medium text-gray-800 truncate mr-2">{{ $client->displayName() }}</p>
-                <span class="text-xs font-semibold px-1.5 py-0.5 rounded-full flex-shrink-0 {{ $cls }}">{{ $label }}</span>
+                <span class="flex items-center gap-1 flex-shrink-0">@if(in_array($client->id, $ejariNoFileIds))<span class="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-red-100 text-red-700">No file</span>@endif<span class="text-xs font-semibold px-1.5 py-0.5 rounded-full flex-shrink-0 {{ $cls }}">{{ $label }}</span></span>
             </a>
             @empty
             <div class="px-3 py-4 text-center">
@@ -241,6 +245,16 @@ $expiryBadge = function($date, bool $missingIsAlert = false) {
             <a href="{{ route('tenant.expiry', $tenant->slug) }}?tab=eid" class="text-xs text-blue-500 hover:underline">View all</a>
         </div>
         <div class="divide-y divide-gray-100">
+            @foreach($eid_doc_gaps as $gap)
+            <a href="{{ route('tenant.clients.show', [$tenant->slug, $gap['client']->id]) }}"
+               class="flex items-center justify-between px-3 py-1.5 hover:bg-gray-50 transition">
+                <div class="min-w-0 mr-2">
+                    <p class="text-xs font-medium text-gray-800 truncate">{{ $gap['client']->displayName() }}</p>
+                    <p class="text-xs text-gray-400 truncate">{{ $gap['uploaded'] }} of {{ $gap['expected'] }} EID files uploaded</p>
+                </div>
+                <span class="text-xs font-semibold px-1.5 py-0.5 rounded-full flex-shrink-0 bg-red-100 text-red-700">No file</span>
+            </a>
+            @endforeach
             @forelse($eid_alerts as $sh)
             @php [$cls, $label] = $expiryBadge($sh->eid_expiry); @endphp
             <a href="{{ route('tenant.clients.show', [$tenant->slug, $sh->bullion_client_id]) }}"
@@ -252,9 +266,11 @@ $expiryBadge = function($date, bool $missingIsAlert = false) {
                 <span class="text-xs font-semibold px-1.5 py-0.5 rounded-full flex-shrink-0 {{ $cls }}">{{ $label }}</span>
             </a>
             @empty
-            <div class="px-3 py-4 text-center">
-                <span class="text-xs font-semibold bg-green-100 text-green-700 px-2 py-0.5 rounded-full">✓ All current</span>
-            </div>
+            @if(!$has_shareholders)
+            <div class="px-3 py-4 text-center"><span class="text-xs font-semibold bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">No shareholders on file</span></div>
+            @elseif(count($eid_doc_gaps) === 0)
+            <div class="px-3 py-4 text-center"><span class="text-xs font-semibold bg-green-100 text-green-700 px-2 py-0.5 rounded-full">&#10003; All current</span></div>
+            @endif
             @endforelse
         </div>
     </div>
@@ -266,6 +282,16 @@ $expiryBadge = function($date, bool $missingIsAlert = false) {
             <a href="{{ route('tenant.expiry', $tenant->slug) }}?tab=passport" class="text-xs text-blue-500 hover:underline">View all</a>
         </div>
         <div class="divide-y divide-gray-100">
+            @foreach($passport_doc_gaps as $gap)
+            <a href="{{ route('tenant.clients.show', [$tenant->slug, $gap['client']->id]) }}"
+               class="flex items-center justify-between px-3 py-1.5 hover:bg-gray-50 transition">
+                <div class="min-w-0 mr-2">
+                    <p class="text-xs font-medium text-gray-800 truncate">{{ $gap['client']->displayName() }}</p>
+                    <p class="text-xs text-gray-400 truncate">{{ $gap['uploaded'] }} of {{ $gap['expected'] }} passport files uploaded</p>
+                </div>
+                <span class="text-xs font-semibold px-1.5 py-0.5 rounded-full flex-shrink-0 bg-red-100 text-red-700">No file</span>
+            </a>
+            @endforeach
             @forelse($passport_alerts as $sh)
             @php [$cls, $label] = $expiryBadge($sh->passport_expiry); @endphp
             <a href="{{ route('tenant.clients.show', [$tenant->slug, $sh->bullion_client_id]) }}"
@@ -277,9 +303,11 @@ $expiryBadge = function($date, bool $missingIsAlert = false) {
                 <span class="text-xs font-semibold px-1.5 py-0.5 rounded-full flex-shrink-0 {{ $cls }}">{{ $label }}</span>
             </a>
             @empty
-            <div class="px-3 py-4 text-center">
-                <span class="text-xs font-semibold bg-green-100 text-green-700 px-2 py-0.5 rounded-full">✓ All current</span>
-            </div>
+            @if(!$has_shareholders)
+            <div class="px-3 py-4 text-center"><span class="text-xs font-semibold bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">No shareholders on file</span></div>
+            @elseif(count($passport_doc_gaps) === 0)
+            <div class="px-3 py-4 text-center"><span class="text-xs font-semibold bg-green-100 text-green-700 px-2 py-0.5 rounded-full">&#10003; All current</span></div>
+            @endif
             @endforelse
         </div>
     </div>
