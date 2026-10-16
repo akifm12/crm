@@ -37,9 +37,7 @@
         <thead class="bg-gray-50 border-b border-gray-200">
             <tr>
                 <th class="text-left px-4 py-3 font-semibold text-gray-600">Title</th>
-                <th class="text-left px-4 py-3 font-semibold text-gray-600">Names</th>
-                <th class="text-left px-4 py-3 font-semibold text-gray-600">Response</th>
-                <th class="text-left px-4 py-3 font-semibold text-gray-600">Links</th>
+                <th class="text-left px-4 py-3 font-semibold text-gray-600">Evidence</th>
                 <th class="text-left px-4 py-3 font-semibold text-gray-600">Status</th>
                 <th class="text-left px-4 py-3 font-semibold text-gray-600">Date</th>
                 <th class="px-4 py-3"></th>
@@ -53,24 +51,10 @@
                         {{ Str::limit($sub->title, 60) }}
                     </a>
                 </td>
-                <td class="px-4 py-3 text-gray-500">
-                    {{ count($sub->alerted_names ?? []) ?: '—' }}
-                </td>
-                <td class="px-4 py-3">
-                    @if($sub->recommended_response || $sub->selected_response)
-                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $sub->responseBadge() }}">
-                        {{ $sub->responseLabel() }}
-                    </span>
-                    @else
-                    <span class="text-gray-400 text-xs">Pending screening</span>
-                    @endif
-                </td>
-                <td class="px-4 py-3 text-gray-500">
-                    {{ $sub->submittedCount() }}/{{ $sub->totalUrls() }}
-                </td>
+                <td class="px-4 py-3 text-gray-500 text-xs">{{ ($sub->survey_evidence_path ? 1 : 0) + ($sub->search_evidence_path ? 1 : 0) }}/2 uploaded</td>
                 <td class="px-4 py-3">
                     <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $sub->statusBadge() }}">
-                        {{ ucfirst($sub->status) }}
+                        {{ $sub->status === 'submitted' ? 'Complete' : ($sub->status === 'partial' ? 'Evidence missing' : 'Open') }}
                     </span>
                 </td>
                 <td class="px-4 py-3 text-gray-400 text-xs whitespace-nowrap">

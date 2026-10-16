@@ -12,6 +12,7 @@ class TfsSubmission extends Model
         'alerted_names', 'screening_results', 'tfs_urls',
         'recommended_response', 'selected_response',
         'status', 'submitted_at',
+        'survey_url', 'survey_evidence_path', 'search_evidence_path',
     ];
 
     protected $casts = [
