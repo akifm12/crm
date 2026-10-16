@@ -67,16 +67,45 @@ class TfsService
     }
 
     /**
-     * Answer and submit a single TFS link, saving "before" and "after" PDF evidence.
+     * Fill the form with a chosen answer and save a PDF of it. Nothing is clicked or
+     * sent: this is the step a person inspects before the real submit.
+     *
+     * Returns ['success', 'message', 'state'?, 'selected_text'?, 'options'?, 'prepared_snapshot_path']
+     */
+    public function prepare(string $tfsUrl, string $answerText): array
+    {
+        $snapshotDir = $this->snapshotDir();
+        $name = 'tfs-' . uniqid() . '-prepared.pdf';
+
+        $result = $this->runScript(['prepare', $tfsUrl, $answerText, $snapshotDir . '/' . $name]);
+
+        if ($result === null) {
+            return ['success' => false, 'message' => 'Script error — see Laravel log.', 'prepared_snapshot_path' => null];
+        }
+
+        $ok = (bool) ($result['success'] ?? false);
+
+        return [
+            'success'                => $ok,
+            'state'                  => $result['state'] ?? null,
+            'message'                => $result['message'] ?? 'Unknown result',
+            'selected_text'          => $result['selected_text'] ?? null,
+            'options'                => $result['options'] ?? null,
+            'prepared_snapshot_path' => ($ok && file_exists($snapshotDir . '/' . $name)) ? 'tfs-snapshots/' . $name : null,
+        ];
+    }
+
+    /**
+     * Answer and submit a single TFS link with the exact answer text a person approved,
+     * saving "before submit" and "after submit" PDF evidence. The script refuses (and
+     * submits nothing) unless that text selects exactly one option and the page still
+     * shows it right before the final click.
      *
      * Returns ['success', 'message', 'state'?, 'snapshot_path' (after), 'pre_snapshot_path' (before)]
      */
-    public function submitTfsUrl(string $tfsUrl, string $responseKey = 'no_match'): array
+    public function submitTfsUrl(string $tfsUrl, string $answerText): array
     {
-        $snapshotDir = storage_path('app/public/tfs-snapshots');
-        if (!is_dir($snapshotDir)) {
-            mkdir($snapshotDir, 0755, true);
-        }
+        $snapshotDir = $this->snapshotDir();
 
         $id          = uniqid();
         $afterName   = "tfs-{$id}.pdf";
@@ -84,7 +113,7 @@ class TfsService
         $afterPath   = $snapshotDir . '/' . $afterName;
         $beforePath  = $snapshotDir . '/' . $beforeName;
 
-        $result = $this->runScript(['submit', $tfsUrl, $responseKey, $afterPath, $beforePath]);
+        $result = $this->runScript(['submit', $tfsUrl, $answerText, $afterPath, $beforePath]);
 
         if ($result === null) {
             return [
@@ -104,6 +133,62 @@ class TfsService
             'snapshot_path'     => ($ok && file_exists($afterPath)) ? 'tfs-snapshots/' . $afterName : null,
             'pre_snapshot_path' => file_exists($beforePath) ? 'tfs-snapshots/' . $beforeName : null,
         ];
+    }
+
+    private function snapshotDir(): string
+    {
+        $dir = storage_path('app/public/tfs-snapshots');
+        if (!is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
+        return $dir;
+    }
+
+    // ── Answer classification ─────────────────────────────────────────────
+
+    private static function norm(string $s): string
+    {
+        return strtolower(trim(preg_replace('/\s+/', ' ', $s)));
+    }
+
+    /**
+     * What an answer means: no_match | partial_match | confirmed_match, or null when it
+     * can't be told. Deliberately cautious: anything unclear is null, and null is
+     * treated as if it could raise a match.
+     */
+    public static function answerKey(string $text): ?string
+    {
+        $t = self::norm($text);
+        $noMatch = (bool) preg_match('/\bno (potential |possible )?match(es)?\b/', $t);
+
+        if ($noMatch && !preg_match('/partial|confirmed|possible match found|yes/', $t)) return 'no_match';
+        if (str_contains($t, 'partial') && !$noMatch)                                       return 'partial_match';
+        if (str_contains($t, 'confirmed') && !$noMatch)                                      return 'confirmed_match';
+
+        return null;
+    }
+
+    /** True only for an answer that unambiguously says no match was found. */
+    public static function isSafeNoMatch(string $text): bool
+    {
+        return self::answerKey($text) === 'no_match';
+    }
+
+    /**
+     * The form's "no match" option, if exactly one option is unambiguously that.
+     * Null when there are none or several, so the person must choose explicitly.
+     */
+    public static function safeNoMatchOption(array $options): ?string
+    {
+        $safe = array_values(array_filter($options, fn ($o) => self::isSafeNoMatch((string) $o)));
+        return count($safe) === 1 ? $safe[0] : null;
+    }
+
+    /** True if $answer is exactly one of the options the form offered. */
+    public static function isOffered(string $answer, array $options): bool
+    {
+        $norm = self::norm($answer);
+        return count(array_filter($options, fn ($o) => self::norm((string) $o) === $norm)) === 1;
     }
 
     /**

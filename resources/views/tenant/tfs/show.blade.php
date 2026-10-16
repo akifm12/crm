@@ -5,6 +5,14 @@
 
 @section('content')
 
+@php
+    $searchNotes = $submission->screening_results['search_notes'] ?? '';
+    $userIds = collect($submission->tfs_urls ?? [])
+        ->flatMap(fn ($e) => [$e['attested_by'] ?? null, $e['prepared_by'] ?? null, $e['submitted_by'] ?? null])
+        ->filter()->unique()->values();
+    $userNames = $userIds->isEmpty() ? collect() : \App\Models\User::whereIn('id', $userIds)->pluck('name', 'id');
+@endphp
+
 @if(session('success'))
 <div class="bg-green-50 border border-green-200 rounded-xl p-4 mb-5 text-sm text-green-800">{{ session('success') }}</div>
 @endif
@@ -20,6 +28,15 @@
     </span>
 </div>
 
+<div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-5 text-sm text-amber-900">
+    <strong>Nothing is sent to the Ministry automatically.</strong>
+    Search your client list for the designated names yourself, then use these steps for each link:
+    <span class="font-semibold">1. read the link</span> →
+    <span class="font-semibold">2. confirm your search and fill the form</span> (not sent) →
+    <span class="font-semibold">3. confirm and submit</span>.
+    A "match" answer opens an inquiry, so any answer other than a clear "no match" also needs a typed confirmation.
+</div>
+
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
 
     {{-- TFS links list --}}
@@ -32,20 +49,24 @@
             @forelse($submission->tfs_urls ?? [] as $i => $entry)
             @php
                 $urlStatus    = $entry['status'] ?? 'pending';
+                $opts         = $entry['options'] ?? [];
                 $statusColour = match($urlStatus) {
                     'submitted' => 'bg-green-100 text-green-700',
-                    'clear'     => 'bg-green-100 text-green-700',
-                    'review'    => 'bg-red-100 text-red-700',
+                    'ready'     => 'bg-blue-100 text-blue-700',
+                    'prepared'  => 'bg-blue-100 text-blue-700',
                     'failed'    => 'bg-red-100 text-red-700',
                     'used'      => 'bg-amber-100 text-amber-700',
                     default     => 'bg-gray-100 text-gray-500',
                 };
                 $statusLabel = match($urlStatus) {
-                    'clear'  => 'Checked — clear',
-                    'review' => 'Needs your review',
-                    'used'   => 'Already used',
-                    default  => ucfirst($urlStatus),
+                    'ready'    => 'Link read — ready',
+                    'prepared' => 'Filled — NOT submitted',
+                    'used'     => 'Already used',
+                    default    => ucfirst($urlStatus),
                 };
+                $prepareUrl  = route('tenant.tfs.prepare',  [$tenant->slug, $submission->id, $i]);
+                $finalizeUrl = route('tenant.tfs.finalize', [$tenant->slug, $submission->id, $i]);
+                $recordUrl   = route('tenant.tfs.record',   [$tenant->slug, $submission->id, $i]);
             @endphp
             <div class="px-5 py-4 {{ !$loop->last ? 'border-b border-gray-100' : '' }}" id="tfs-row-{{ $i }}">
                 <div class="flex items-start justify-between gap-4">
@@ -56,64 +77,149 @@
                         <p class="text-xs text-gray-400 truncate mt-0.5">{{ $entry['url'] }}</p>
 
                         @if(!empty($entry['message']) && $urlStatus !== 'pending')
-                        <p class="text-xs mt-1 {{ in_array($urlStatus, ['submitted','clear']) ? 'text-green-600' : (in_array($urlStatus, ['used']) ? 'text-amber-600' : 'text-red-500') }}">
+                        <p class="text-xs mt-1 {{ $urlStatus === 'submitted' ? 'text-green-600' : (in_array($urlStatus, ['ready','prepared']) ? 'text-blue-700' : ($urlStatus === 'used' ? 'text-amber-600' : 'text-red-500')) }}">
                             {{ $entry['message'] }}
                         </p>
                         @endif
 
                         <p class="text-xs mt-1 text-blue-600 hidden" data-live="{{ $i }}"></p>
 
-                        @if(!empty($entry['submitted_at']))
-                        <p class="text-xs text-gray-400 mt-0.5">
-                            {{ $urlStatus === 'submitted' ? 'Submitted' : 'Attempted' }} {{ \Carbon\Carbon::parse($entry['submitted_at'])->format('d M Y H:i') }}
-                        </p>
-                        @elseif(!empty($entry['checked_at']))
-                        <p class="text-xs text-gray-400 mt-0.5">Checked {{ \Carbon\Carbon::parse($entry['checked_at'])->format('d M Y H:i') }}</p>
-                        @endif
-
-                        {{-- Possible matches in the tenant's client base --}}
-                        @if(!empty($entry['candidates']))
-                        <div class="mt-3 border border-red-200 bg-red-50 rounded-lg p-3 space-y-2">
-                            <p class="text-xs font-semibold text-red-800">Possible matches — not submitted automatically</p>
-                            @foreach($entry['candidates'] as $cand)
-                            <div class="text-xs text-gray-700">
-                                <a href="{{ route('tenant.clients.show', [$tenant->slug, $cand['client_id']]) }}" class="font-semibold text-blue-700 hover:underline">{{ $cand['client_name'] }}</a>
-                                <span class="text-gray-500">
-                                    · {{ $cand['role'] }} “{{ $cand['subject'] }}”
-                                    · matched on {{ $cand['matched_on'] === 'id' ? 'ID number' : 'name' }}
-                                    @if(($cand['strength'] ?? '') === 'weak')(weak: single word)@endif
-                                </span>
-                                @if(!empty($cand['snippet']))
-                                <p class="text-gray-400 italic mt-0.5">…{{ $cand['snippet'] }}…</p>
-                                @endif
-                            </div>
-                            @endforeach
+                        {{-- The record: who attested, what was sent, when --}}
+                        @if(!empty($entry['prepared_answer']) && in_array($urlStatus, ['prepared', 'submitted']))
+                        <div class="mt-2 text-xs text-gray-600 space-y-0.5">
+                            <p>Answer: <strong class="text-gray-800">“{{ $entry['prepared_answer'] }}”</strong>@if(!empty($entry['manual'])) <span class="text-gray-400">(recorded manually)</span>@endif</p>
+                            @if(!empty($entry['attested_at']))
+                            <p>Search confirmed by {{ $userNames[$entry['attested_by'] ?? 0] ?? 'user' }} on {{ \Carbon\Carbon::parse($entry['attested_at'])->format('d M Y H:i') }}</p>
+                            @endif
+                            @if(!empty($entry['submitted_at']))
+                            <p>Submitted by {{ $userNames[$entry['submitted_by'] ?? 0] ?? 'user' }} on {{ \Carbon\Carbon::parse($entry['submitted_at'])->format('d M Y H:i') }}</p>
+                            @endif
                         </div>
-                        @elseif($urlStatus === 'review' && !empty($entry['page_excerpt']))
-                        <details class="mt-2 text-xs text-gray-500">
-                            <summary class="cursor-pointer">What the browser could read</summary>
-                            <pre class="mt-1 whitespace-pre-wrap bg-gray-50 border border-gray-200 rounded p-2 max-h-40 overflow-auto">{{ $entry['page_excerpt'] }}</pre>
-                        </details>
+                        @elseif(!empty($entry['checked_at']))
+                        <p class="text-xs text-gray-400 mt-0.5">Read {{ \Carbon\Carbon::parse($entry['checked_at'])->format('d M Y H:i') }}</p>
                         @endif
                     </div>
 
                     <div class="flex flex-col items-end gap-2 flex-shrink-0">
-                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $statusColour }}" data-badge="{{ $i }}">
-                            {{ $statusLabel }}
-                        </span>
-
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $statusColour }}">{{ $statusLabel }}</span>
+                        @if(!empty($entry['prepared_snapshot_path']))
+                        <a href="{{ route('tenant.tfs.snapshot', [$tenant->slug, $submission->id, $i, 'type' => 'prepared']) }}" target="_blank"
+                           class="text-xs font-medium text-blue-600 hover:text-blue-800">Filled form (PDF)</a>
+                        @endif
                         @if(!empty($entry['pre_snapshot_path']))
                         <a href="{{ route('tenant.tfs.snapshot', [$tenant->slug, $submission->id, $i, 'type' => 'before']) }}" target="_blank"
-                           class="text-xs font-medium text-blue-600 hover:text-blue-800">Evidence: alert + answer</a>
+                           class="text-xs font-medium text-blue-600 hover:text-blue-800">Evidence: before submit</a>
                         @endif
                         @if($urlStatus === 'submitted' && !empty($entry['snapshot_path']))
                         <a href="{{ route('tenant.tfs.snapshot', [$tenant->slug, $submission->id, $i]) }}" target="_blank"
-                           class="text-xs font-medium text-blue-600 hover:text-blue-800">Evidence: confirmation</a>
-                        @elseif($urlStatus === 'submitted')
-                        <span class="text-xs text-gray-400">No snapshot</span>
+                           class="text-xs font-medium text-blue-600 hover:text-blue-800">{{ !empty($entry['manual']) ? 'Evidence (uploaded)' : 'Evidence: confirmation' }}</a>
                         @endif
                     </div>
                 </div>
+
+                {{-- STEP 2: confirm the search, choose the answer, fill the form (nothing is sent) --}}
+                @if(in_array($urlStatus, ['ready', 'prepared']) && count($opts))
+                @php $changing = $urlStatus === 'prepared'; @endphp
+                @if($changing)<details class="mt-3"><summary class="text-xs text-gray-500 cursor-pointer">Change the answer</summary><div class="mt-2">@endif
+                <form method="POST" action="{{ $prepareUrl }}" data-wait class="mt-3 border border-gray-200 rounded-lg p-3 space-y-3 bg-gray-50">
+                    @csrf
+                    <p class="text-xs font-semibold text-gray-700">Step 2 — confirm your search and fill the form <span class="font-normal text-gray-500">(nothing is sent)</span></p>
+
+                    <label class="flex items-start gap-2 text-xs text-gray-700">
+                        <input type="checkbox" name="attest" value="1" required class="mt-0.5 rounded border-gray-300">
+                        <span>I have searched our client database against the designated names in this alert, and the answer below reflects the result.</span>
+                    </label>
+
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Answer to send</label>
+                        <select name="answer" required data-answer
+                                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">Choose the answer…</option>
+                            @foreach($opts as $o)
+                            <option value="{{ $o }}" data-safe="{{ \App\Services\TfsService::isSafeNoMatch($o) ? 1 : 0 }}">{{ $o }}</option>
+                            @endforeach
+                        </select>
+                        <p class="text-xs text-gray-400 mt-1">These are the exact options on the TFS form.</p>
+                    </div>
+
+                    <div data-confirm-box class="hidden border border-red-200 bg-red-50 rounded-lg p-2">
+                        <p class="text-xs text-red-800 mb-1">This is not a clear “no match”, and a match answer starts an inquiry at the Ministry. Type <strong>{{ $matchPhrase }}</strong> to continue.</p>
+                        <input type="text" name="confirm_text" autocomplete="off" placeholder="{{ $matchPhrase }}"
+                               class="w-full border border-red-300 rounded px-2 py-1 text-sm">
+                    </div>
+
+                    <button type="submit" class="bg-gray-800 hover:bg-gray-900 disabled:opacity-60 text-white text-xs font-semibold px-4 py-2 rounded-lg transition">
+                        Fill the form — nothing is sent
+                    </button>
+                </form>
+                @if($changing)</div></details>@endif
+                @endif
+
+                {{-- STEP 3: confirm and submit (the only step that sends anything) --}}
+                @if($urlStatus === 'prepared' && !empty($entry['prepared_answer']))
+                @php
+                    $preparedSafe = \App\Services\TfsService::isSafeNoMatch($entry['prepared_answer']);
+                    $preparedAt   = \Carbon\Carbon::parse($entry['prepared_at']);
+                @endphp
+                <form method="POST" action="{{ $finalizeUrl }}" data-wait class="mt-3 border-2 {{ $preparedSafe ? 'border-blue-300 bg-blue-50' : 'border-red-400 bg-red-50' }} rounded-lg p-4 space-y-3">
+                    @csrf
+                    <p class="text-xs font-semibold text-gray-800">Step 3 — confirm and submit</p>
+                    <p class="text-sm text-gray-800">The form is filled with:</p>
+                    <p class="text-base font-bold {{ $preparedSafe ? 'text-blue-900' : 'text-red-700' }}">“{{ $entry['prepared_answer'] }}”</p>
+                    <p class="text-xs text-gray-500">
+                        Prepared {{ $preparedAt->diffForHumans() }}. Open the filled-form PDF above and check it first. Valid for 60 minutes.
+                    </p>
+
+                    @unless($preparedSafe)
+                    <div class="border border-red-300 bg-white rounded-lg p-2">
+                        <p class="text-xs text-red-800 mb-1">Not a clear “no match”: this raises a match with the Ministry. Type <strong>{{ $matchPhrase }}</strong> to submit.</p>
+                        <input type="text" name="confirm_text" autocomplete="off" placeholder="{{ $matchPhrase }}" required
+                               class="w-full border border-red-300 rounded px-2 py-1 text-sm">
+                    </div>
+                    @endunless
+
+                    <label class="flex items-start gap-2 text-xs text-gray-700">
+                        <input type="checkbox" name="confirm" value="1" required class="mt-0.5 rounded border-gray-300">
+                        <span>I have checked the filled form. I understand this answer is sent to the Executive Office for Control and Non-Proliferation and cannot be withdrawn.</span>
+                    </label>
+
+                    <button type="submit" class="bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">
+                        Submit this answer to the Ministry
+                    </button>
+                </form>
+                @endif
+
+                @if(in_array($urlStatus, ['ready', 'prepared']) && !count($opts))
+                <p class="mt-3 text-xs text-red-600">No answer options were detected on the form, so this link can't be answered from here. Open it in your browser.</p>
+                @endif
+
+                {{-- Submitted it yourself? Keep the record here --}}
+                @if($urlStatus !== 'submitted')
+                <details class="mt-3">
+                    <summary class="text-xs text-gray-500 cursor-pointer">I submitted this myself — record it</summary>
+                    <form method="POST" action="{{ $recordUrl }}" enctype="multipart/form-data" class="mt-2 border border-gray-200 rounded-lg p-3 space-y-2 bg-gray-50">
+                        @csrf
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Answer you gave</label>
+                                <input type="text" name="answer" required maxlength="300" placeholder="e.g. No match was identified"
+                                       class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm bg-white">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Date submitted</label>
+                                <input type="date" name="submitted_on" required max="{{ now()->toDateString() }}" value="{{ now()->toDateString() }}"
+                                       class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm bg-white">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Screenshot / PDF of the confirmation <span class="text-gray-400">(optional, max 5 MB)</span></label>
+                            <input type="file" name="evidence" accept=".pdf,.png,.jpg,.jpeg" class="text-xs text-gray-600">
+                        </div>
+                        <input type="text" name="note" maxlength="1000" placeholder="Note (optional)" class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm bg-white">
+                        <button type="submit" class="bg-gray-700 hover:bg-gray-800 text-white text-xs font-semibold px-3 py-1.5 rounded-lg">Save record</button>
+                    </form>
+                </details>
+                @endif
             </div>
             @empty
             <div class="px-5 py-8 text-center text-gray-400 text-sm">No URLs recorded.</div>
@@ -123,98 +229,82 @@
 
     <div class="space-y-4">
 
-        {{-- Automatic check + submit --}}
+        {{-- The record for this alert --}}
+        <div class="bg-white rounded-xl border border-gray-200 p-5">
+            <h2 class="font-semibold text-gray-800 mb-2">Record</h2>
+            @if($submission->alert_url)
+            <p class="text-xs text-gray-500">Alert / notice</p>
+            <a href="{{ $submission->alert_url }}" target="_blank" rel="noopener" class="block mb-2 text-xs text-blue-600 hover:underline truncate">{{ $submission->alert_url }}</a>
+            @endif
+            <p class="text-xs text-gray-500">Notes on the search</p>
+            <p class="text-xs text-gray-700 whitespace-pre-line">{{ $searchNotes ?: 'None recorded.' }}</p>
+        </div>
+
+        {{-- Step 1: read the links --}}
         @if(count($runIndices))
         <div class="bg-white rounded-xl border border-gray-200 p-5" id="tfs-runner">
-            <h2 class="font-semibold text-gray-800 mb-1">Check my clients &amp; submit</h2>
+            <h2 class="font-semibold text-gray-800 mb-1">Step 1 — read the links</h2>
             <p class="text-xs text-gray-500 mb-4">
-                For each link the app reads the alert, checks it against your clients, signatories, shareholders and UBOs,
-                and submits <strong>“No match”</strong> only if nothing matches. Any possible match is held for you to review.
-                A PDF of the alert and the confirmation is saved for each link.
+                Opens each link to confirm it is still open and to read the answer options.
+                <strong>This only reads. It never answers or submits.</strong>
             </p>
             <button type="button" id="tfs-run-btn"
                     class="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-semibold py-2.5 rounded-lg transition">
-                Check {{ count($runIndices) }} link(s) &amp; submit
+                Read {{ count($runIndices) }} link(s)
             </button>
-            <p id="tfs-run-note" class="mt-2 text-xs text-gray-400 text-center">Takes around 30 seconds per link. Keep this page open.</p>
-        </div>
-        @endif
-
-        {{-- Manual submit (after you've reviewed a possible match, or for a partial / confirmed answer) --}}
-        @if(in_array($submission->status, ['draft', 'partial', 'screened']))
-        <div class="bg-white rounded-xl border border-gray-200 p-5">
-            <h2 class="font-semibold text-gray-800 mb-1">Submit manually</h2>
-            <p class="text-xs text-gray-500 mb-4">Use this once you have reviewed a possible match yourself, or to send a different answer. It skips the client check.</p>
-
-            <form action="{{ route('tenant.tfs.submit', [$tenant->slug, $submission->id]) }}" method="POST">
-                @csrf
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Response</label>
-                    <select name="response"
-                            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="no_match" {{ ($submission->selected_response ?? '') === 'no_match' ? 'selected' : '' }}>
-                            No match identified
-                        </option>
-                        <option value="partial_match" {{ ($submission->selected_response ?? '') === 'partial_match' ? 'selected' : '' }}>
-                            Partial match
-                        </option>
-                        <option value="confirmed_match" {{ ($submission->selected_response ?? '') === 'confirmed_match' ? 'selected' : '' }}>
-                            Confirmed match
-                        </option>
-                    </select>
-                </div>
-
-                @php $pending = collect($submission->tfs_urls ?? [])->whereNotIn('status', ['submitted', 'used'])->count(); @endphp
-
-                <button type="submit"
-                        class="w-full bg-gray-800 hover:bg-gray-900 text-white text-sm font-semibold py-2.5 rounded-lg transition"
-                        onclick="return confirm('Submit {{ $pending }} TFS link(s) with the selected response, without the client check?')">
-                    Submit {{ $pending }} link(s) &amp; capture evidence
-                </button>
-            </form>
-        </div>
-        @else
-        <div class="bg-green-50 border border-green-200 rounded-xl p-5">
-            <p class="text-sm font-semibold text-green-800">All submitted</p>
-            @if($submission->submitted_at)
-            <p class="text-xs text-green-600 mt-1">{{ $submission->submitted_at->format('d M Y H:i') }}</p>
-            @endif
-            <p class="text-xs text-green-700 mt-1">Response: {{ $submission->responseLabel() }}</p>
+            <p id="tfs-run-note" class="mt-2 text-xs text-gray-400 text-center">Takes around 15 seconds per link. Keep this page open.</p>
         </div>
         @endif
 
         {{-- Meta --}}
         <div class="bg-gray-50 rounded-xl border border-gray-200 p-4 text-xs text-gray-500 space-y-1.5">
-            <div class="flex justify-between">
-                <span>Created</span>
-                <span>{{ $submission->created_at->format('d M Y') }}</span>
-            </div>
+            <div class="flex justify-between"><span>Created</span><span>{{ $submission->created_at->format('d M Y') }}</span></div>
             @if($submission->creator)
-            <div class="flex justify-between">
-                <span>By</span>
-                <span>{{ $submission->creator->name }}</span>
-            </div>
+            <div class="flex justify-between"><span>By</span><span>{{ $submission->creator->name }}</span></div>
             @endif
-            <div class="flex justify-between">
-                <span>Links</span>
-                <span>{{ $submission->totalUrls() }}</span>
-            </div>
-            <div class="flex justify-between">
-                <span>Submitted</span>
-                <span>{{ $submission->submittedCount() }} / {{ $submission->totalUrls() }}</span>
-            </div>
+            <div class="flex justify-between"><span>Links</span><span>{{ $submission->totalUrls() }}</span></div>
+            <div class="flex justify-between"><span>Submitted</span><span>{{ $submission->submittedCount() }} / {{ $submission->totalUrls() }}</span></div>
+            @if($submission->submitted_at)
+            <div class="flex justify-between"><span>Last submitted</span><span>{{ $submission->submitted_at->format('d M Y H:i') }}</span></div>
+            @endif
         </div>
     </div>
 
 </div>
 
+<script>
+// Forms that take a while: stop double clicks and say what is happening.
+document.querySelectorAll('form[data-wait]').forEach(function (form) {
+    form.addEventListener('submit', function () {
+        const btn = form.querySelector('button[type=submit]');
+        if (btn) { btn.disabled = true; btn.textContent = 'Working… about 30 seconds. Please keep this page open.'; }
+    });
+});
+
+// Show the typed-confirmation box whenever the chosen answer isn't a clear "no match".
+document.querySelectorAll('select[data-answer]').forEach(function (sel) {
+    const box = sel.closest('form').querySelector('[data-confirm-box]');
+    const input = box ? box.querySelector('input') : null;
+    const sync = function () {
+        const opt = sel.selectedOptions[0];
+        const risky = opt && opt.value !== '' && opt.dataset.safe !== '1';
+        if (!box) return;
+        box.classList.toggle('hidden', !risky);
+        if (input) input.required = !!risky;
+    };
+    sel.addEventListener('change', sync);
+    sync();
+});
+</script>
+
 @if(count($runIndices))
 <script>
+// Step 1 only: read each link. Nothing here can answer a survey.
 (function () {
-    const indices   = @json($runIndices);
+    const indices   = {!! json_encode($runIndices) !!};
     const urlBase   = {!! json_encode(route('tenant.tfs.process', [$tenant->slug, $submission->id, 0])) !!};
-    const csrf      = @json(csrf_token());
-    const autoStart = @json(request()->boolean('auto'));
+    const csrf      = {!! json_encode(csrf_token()) !!};
+    const autoStart = {!! json_encode(request()->boolean('auto')) !!};
     const btn  = document.getElementById('tfs-run-btn');
     const note = document.getElementById('tfs-run-note');
 
@@ -226,33 +316,25 @@
         el.classList.remove('hidden');
     };
 
-    async function step(idx, phase) {
-        const res = await fetch(urlFor(idx), {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf },
-            body: JSON.stringify({ phase }),
-        });
-        if (!res.ok) throw new Error('Server returned ' + res.status + (res.status === 504 ? ' (timed out)' : ''));
-        return res.json();
-    }
-
     async function run() {
         btn.disabled = true;
         for (const idx of indices) {
             try {
-                live(idx, 'Opening the link and checking your clients…');
-                let r = await step(idx, 'preview');
-                if (r.status === 'clear') {
-                    live(idx, 'No match found — submitting and saving evidence…');
-                    r = await step(idx, 'submit');
-                }
+                live(idx, 'Opening the link and reading the answer options…');
+                const res = await fetch(urlFor(idx), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf },
+                    body: JSON.stringify({}),
+                });
+                if (!res.ok) throw new Error('Server returned ' + res.status + (res.status === 504 ? ' (timed out)' : ''));
+                const r = await res.json();
                 live(idx, r.message || r.status);
             } catch (e) {
                 live(idx, 'Stopped: ' + e.message + '. Reload to see where it got to.');
             }
         }
         note.textContent = 'Done — refreshing…';
-        setTimeout(() => { window.location.href = window.location.pathname; }, 1200);
+        setTimeout(() => { window.location.href = window.location.pathname; }, 1000);
     }
 
     btn.addEventListener('click', run);

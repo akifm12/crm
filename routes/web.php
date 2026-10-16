@@ -361,7 +361,9 @@ Route::prefix('{slug}')
         Route::get('/tfs/create',                           [TfsController::class, 'create'])->name('tfs.create');
         Route::post('/tfs',                                 [TfsController::class, 'store'])->name('tfs.store');
         Route::get('/tfs/{submission}',                     [TfsController::class, 'show'])->name('tfs.show');
-        Route::post('/tfs/{submission}/submit',             [TfsController::class, 'submitAll'])->name('tfs.submit');
+        Route::post('/tfs/{submission}/{index}/prepare',    [TfsController::class, 'prepare'])->whereNumber('index')->name('tfs.prepare');
+        Route::post('/tfs/{submission}/{index}/finalize',   [TfsController::class, 'finalize'])->whereNumber('index')->name('tfs.finalize');
+        Route::post('/tfs/{submission}/{index}/record',     [TfsController::class, 'record'])->whereNumber('index')->name('tfs.record');
         Route::post('/tfs/{submission}/process/{index}',    [TfsController::class, 'process'])->whereNumber('index')->name('tfs.process');
         Route::get('/tfs/{submission}/snapshot/{index}',    [TfsController::class, 'snapshot'])->name('tfs.snapshot');
 
