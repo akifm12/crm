@@ -361,7 +361,8 @@ Route::prefix('{slug}')
         Route::get('/tfs/create',                           [TfsController::class, 'create'])->name('tfs.create');
         Route::post('/tfs',                                 [TfsController::class, 'store'])->name('tfs.store');
         Route::get('/tfs/{submission}',                     [TfsController::class, 'show'])->name('tfs.show');
-        Route::match(['get', 'post'], '/tfs/{submission}/frame', [TfsController::class, 'frame'])->name('tfs.frame');
+        Route::post('/tfs/{submission}/load',   [TfsController::class, 'load'])->name('tfs.load');
+        Route::post('/tfs/{submission}/answer', [TfsController::class, 'answer'])->name('tfs.answer');
         Route::post('/tfs/{submission}/upload/{type}',      [TfsController::class, 'upload'])->name('tfs.upload');
         Route::get('/tfs/{submission}/file/{type}',         [TfsController::class, 'file'])->name('tfs.file');
 

@@ -16,18 +16,65 @@
 @if($errors->any())<div class="bg-red-50 border border-red-200 rounded-xl p-4 mb-5 text-sm text-red-800">{{ $errors->first() }}</div>@endif
 
 <div class="grid lg:grid-cols-3 gap-5" x-data="{ view: null }">
-    <div class="lg:col-span-2 bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between text-sm">
-            <span class="font-medium text-gray-700">Survey</span>
-            <span class="text-xs text-gray-400">Choose your answer and submit here, then upload the screenshots.</span>
+    <div class="lg:col-span-2 bg-white rounded-xl border border-gray-200 overflow-hidden"
+         x-data="tfsSurvey({{ json_encode(['load' => route('tenant.tfs.load', [$tenant->slug, $submission->id]), 'answer' => route('tenant.tfs.answer', [$tenant->slug, $submission->id]), 'done' => (bool) $submission->survey_evidence_path, 'hasUrl' => (bool) $url, 'csrf' => csrf_token()]) }})"
+         x-init="start()">
+        <div class="px-4 py-3 border-b border-gray-100 text-sm font-medium text-gray-700">Survey</div>
+        <div class="p-5 text-sm space-y-4">
+            <template x-if="state === 'done'"><div class="bg-green-50 border border-green-200 rounded-lg p-4 text-green-800">Survey submitted. The confirmation page is saved as evidence 1 (view it on the right).</div></template>
+            <template x-if="state === 'loading'"><p class="text-gray-500">Opening your survey… this takes about 15 seconds.</p></template>
+            <template x-if="state === 'submitting'"><p class="text-gray-500">Submitting and saving the confirmation page…</p></template>
+            <template x-if="state === 'used'"><div class="bg-amber-50 border border-amber-200 rounded-lg p-4 text-amber-800">This link has already been used. If you submitted it earlier, upload your screenshots on the right.</div></template>
+            <template x-if="state === 'error'"><div class="bg-red-50 border border-red-200 rounded-lg p-4 text-red-800"><span x-text="msg"></span> <button type="button" class="underline ml-2" @click="start()">Try again</button></div></template>
+            <template x-if="state === 'form'">
+                <div class="space-y-4">
+                    <details class="text-xs text-gray-500"><summary class="cursor-pointer">What the survey page says</summary><pre class="whitespace-pre-wrap mt-2" x-text="text"></pre></details>
+                    <p class="font-medium text-gray-800">Choose your answer</p>
+                    <div class="space-y-2">
+                        <template x-for="o in options" :key="o">
+                            <label class="flex items-start gap-2 border rounded-lg p-3 cursor-pointer" :class="choice === o ? 'border-blue-500 bg-blue-50' : 'border-gray-200'">
+                                <input type="radio" class="mt-0.5" :value="o" x-model="choice"><span x-text="o"></span>
+                            </label>
+                        </template>
+                    </div>
+                    <p x-show="choice && !safe(choice)" class="text-xs text-red-700">This answer reports a match and starts an inquiry at the Ministry.</p>
+                    <label x-show="choice && !safe(choice)" class="flex items-center gap-2 text-xs text-red-700"><input type="checkbox" x-model="confirmMatch"> I confirm I want to report a match.</label>
+                    <button type="button" @click="submit()" :disabled="!choice || (!safe(choice) && !confirmMatch)"
+                            class="bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white text-sm font-medium px-4 py-2 rounded-lg">Submit</button>
+                </div>
+            </template>
         </div>
-        @if($url)
-        <iframe src="{{ route('tenant.tfs.frame', [$tenant->slug, $submission->id]) }}" class="w-full border-0" style="height:720px"></iframe>
-        @else
-        <p class="p-6 text-sm text-gray-500">No survey link on this record.</p>
-        @endif
     </div>
-
+    <script>
+    function tfsSurvey(c) {
+        return {
+            state: c.done ? 'done' : 'idle', options: [], text: '', msg: '', choice: '', confirmMatch: false,
+            safe(o) { return /\bno (potential |possible )?match(es)?\b/i.test(o) && !/partial|confirmed|yes/i.test(o); },
+            async post(url, body) {
+                const r = await fetch(url, {method: 'POST', headers: {'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': c.csrf}, body: JSON.stringify(body || {})});
+                return r.json();
+            },
+            async start() {
+                if (c.done || !c.hasUrl) return;
+                this.state = 'loading';
+                try {
+                    const r = await this.post(c.load);
+                    if (r.state === 'used') { this.state = 'used'; return; }
+                    if (r.state === 'form' && r.options.length) { this.options = r.options; this.text = r.text; this.state = 'form'; return; }
+                    this.msg = r.message || 'The survey could not be read.'; this.state = 'error';
+                } catch (e) { this.msg = 'Could not reach the survey.'; this.state = 'error'; }
+            },
+            async submit() {
+                this.state = 'submitting';
+                try {
+                    const r = await this.post(c.answer, {answer: this.choice, confirm_match: this.confirmMatch});
+                    if (r.success) { this.state = 'done'; setTimeout(() => location.reload(), 1200); return; }
+                    this.msg = r.message || 'Submission failed.'; this.state = 'error';
+                } catch (e) { this.msg = 'Submission failed.'; this.state = 'error'; }
+            },
+        };
+    }
+    </script>
     <div class="space-y-4">
         @foreach($slots as $type => [$label, $hint, $path])
         <div class="bg-white rounded-xl border border-gray-200 p-4">
