@@ -95,13 +95,13 @@ class BillingService
 
             $ap      = $this->requireAccount($tenant, 'ap');
             $expense = $this->requireAccount($tenant, 'other_expense');
-            // Utilities, electricity and internet have their own accounts; anything else
-            // (or a tenant whose chart doesn't have them yet) goes to other expenses.
-            $expenseFor = function (?string $category) use ($tenant, $expense) {
-                $subtype = ['utilities' => 'utilities', 'electricity' => 'electricity', 'internet' => 'internet'][$category] ?? null;
-                if (! $subtype) return $expense;
-                return ChartOfAccount::where('tenant_id', $tenant->id)->where('subtype', $subtype)->where('is_active', true)->first() ?? $expense;
-            };
+            // Each bill category posts to its own account (matched on the account's subtype
+            // = the category key), so the trial balance is split by type of expense.
+            // "Other", or a chart that doesn't have the account yet, uses other expenses.
+            $byCategory = ChartOfAccount::where('tenant_id', $tenant->id)->where('is_active', true)
+                ->whereIn('subtype', array_diff(array_keys(Bill::CATEGORIES), ['other']))
+                ->get()->keyBy('subtype');
+            $expenseFor = fn (?string $category) => $byCategory[$category] ?? $expense;
             $vatRec  = $bill->vat_total > 0 ? $this->requireAccount($tenant, 'vat_recoverable') : null;
 
             $lines = [];

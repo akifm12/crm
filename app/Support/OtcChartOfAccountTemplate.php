@@ -48,10 +48,17 @@ class OtcChartOfAccountTemplate
             ['code' => '5011', 'name' => 'Cost of Goods Sold — Silver', 'type' => 'expense', 'normal_balance' => 'debit', 'subtype' => 'cogs_silver', 'parent_code' => '5000'],
             ['code' => '5012', 'name' => 'Cost of Goods Sold — Platinum', 'type' => 'expense', 'normal_balance' => 'debit', 'subtype' => 'cogs_platinum', 'parent_code' => '5000'],
             ['code' => '5013', 'name' => 'Cost of Goods Sold — Palladium', 'type' => 'expense', 'normal_balance' => 'debit', 'subtype' => 'cogs_palladium', 'parent_code' => '5000'],
+            ['code' => '5020', 'name' => 'Rent Expense', 'type' => 'expense', 'normal_balance' => 'debit', 'subtype' => 'rent', 'parent_code' => '5000'],
+            ['code' => '5030', 'name' => 'Salaries & Wages', 'type' => 'expense', 'normal_balance' => 'debit', 'subtype' => 'salaries', 'parent_code' => '5000'],
             ['code' => '5040', 'name' => 'Other Operating Expenses', 'type' => 'expense', 'normal_balance' => 'debit', 'subtype' => 'other_expense', 'parent_code' => '5000'],
             ['code' => '5050', 'name' => 'Utilities', 'type' => 'expense', 'normal_balance' => 'debit', 'subtype' => 'utilities', 'parent_code' => '5000'],
             ['code' => '5051', 'name' => 'Electricity', 'type' => 'expense', 'normal_balance' => 'debit', 'subtype' => 'electricity', 'parent_code' => '5000'],
             ['code' => '5052', 'name' => 'Internet & Telecom', 'type' => 'expense', 'normal_balance' => 'debit', 'subtype' => 'internet', 'parent_code' => '5000'],
+            ['code' => '5060', 'name' => 'Marketing & Advertising', 'type' => 'expense', 'normal_balance' => 'debit', 'subtype' => 'marketing', 'parent_code' => '5000'],
+            ['code' => '5061', 'name' => 'Professional Fees', 'type' => 'expense', 'normal_balance' => 'debit', 'subtype' => 'professional_fees', 'parent_code' => '5000'],
+            ['code' => '5062', 'name' => 'Insurance', 'type' => 'expense', 'normal_balance' => 'debit', 'subtype' => 'insurance', 'parent_code' => '5000'],
+            ['code' => '5063', 'name' => 'Travel & Transport', 'type' => 'expense', 'normal_balance' => 'debit', 'subtype' => 'travel', 'parent_code' => '5000'],
+            ['code' => '5064', 'name' => 'Office Supplies', 'type' => 'expense', 'normal_balance' => 'debit', 'subtype' => 'office_supplies', 'parent_code' => '5000'],
             ['code' => '5900', 'name' => 'FX Rounding Adjustment', 'type' => 'expense', 'normal_balance' => 'debit', 'subtype' => 'rounding', 'parent_code' => '5000'],
         ];
     }
