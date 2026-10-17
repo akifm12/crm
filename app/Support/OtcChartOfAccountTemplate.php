@@ -49,6 +49,9 @@ class OtcChartOfAccountTemplate
             ['code' => '5012', 'name' => 'Cost of Goods Sold — Platinum', 'type' => 'expense', 'normal_balance' => 'debit', 'subtype' => 'cogs_platinum', 'parent_code' => '5000'],
             ['code' => '5013', 'name' => 'Cost of Goods Sold — Palladium', 'type' => 'expense', 'normal_balance' => 'debit', 'subtype' => 'cogs_palladium', 'parent_code' => '5000'],
             ['code' => '5040', 'name' => 'Other Operating Expenses', 'type' => 'expense', 'normal_balance' => 'debit', 'subtype' => 'other_expense', 'parent_code' => '5000'],
+            ['code' => '5050', 'name' => 'Utilities', 'type' => 'expense', 'normal_balance' => 'debit', 'subtype' => 'utilities', 'parent_code' => '5000'],
+            ['code' => '5051', 'name' => 'Electricity', 'type' => 'expense', 'normal_balance' => 'debit', 'subtype' => 'electricity', 'parent_code' => '5000'],
+            ['code' => '5052', 'name' => 'Internet & Telecom', 'type' => 'expense', 'normal_balance' => 'debit', 'subtype' => 'internet', 'parent_code' => '5000'],
             ['code' => '5900', 'name' => 'FX Rounding Adjustment', 'type' => 'expense', 'normal_balance' => 'debit', 'subtype' => 'rounding', 'parent_code' => '5000'],
         ];
     }
