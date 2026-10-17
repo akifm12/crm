@@ -12,6 +12,7 @@ class Bill extends Model
         'salaries'         => 'Salaries & Wages',
         'rent'             => 'Rent',
         'utilities'        => 'Utilities',
+        'electricity'      => 'Electricity',
         'internet'         => 'Internet & Telecom',
         'marketing'        => 'Marketing & Advertising',
         'professional_fees'=> 'Professional Fees',

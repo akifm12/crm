@@ -95,6 +95,13 @@ class BillingService
 
             $ap      = $this->requireAccount($tenant, 'ap');
             $expense = $this->requireAccount($tenant, 'other_expense');
+            // Utilities, electricity and internet have their own accounts; anything else
+            // (or a tenant whose chart doesn't have them yet) goes to other expenses.
+            $expenseFor = function (?string $category) use ($tenant, $expense) {
+                $subtype = ['utilities' => 'utilities', 'electricity' => 'electricity', 'internet' => 'internet'][$category] ?? null;
+                if (! $subtype) return $expense;
+                return ChartOfAccount::where('tenant_id', $tenant->id)->where('subtype', $subtype)->where('is_active', true)->first() ?? $expense;
+            };
             $vatRec  = $bill->vat_total > 0 ? $this->requireAccount($tenant, 'vat_recoverable') : null;
 
             $lines = [];
@@ -103,7 +110,7 @@ class BillingService
             foreach ($bill->lines as $line) {
                 if ((float) $line->amount <= 0) continue;
                 $lines[] = [
-                    'chart_of_account_id' => $expense->id,
+                    'chart_of_account_id' => $expenseFor($line->category)->id,
                     'debit'               => (float) $line->amount,
                     'credit'              => 0,
                     'description'         => $line->description,
