@@ -36,6 +36,7 @@ class BillController extends Controller
     {
         $tenant = app('tenant');
         $request->validate($this->lineRules());
+        $this->saveManualSupplier($request, $tenant);
 
         try {
             $bill = $billing->createDraft($tenant, $request->only(
@@ -74,6 +75,7 @@ class BillController extends Controller
         $tenant = app('tenant');
         abort_if($bill->tenant_id !== $tenant->id, 404);
         $request->validate($this->lineRules());
+        $this->saveManualSupplier($request, $tenant);
 
         try {
             $billing->updateDraft($bill, $request->only(
@@ -218,5 +220,26 @@ class BillController extends Controller
             'lines.*.vat_treatment' => ['required', Rule::in(Bill::VAT_TREATMENTS)],
             'lines.*.vat_rate'    => 'required|numeric|min:0|max:100',
         ];
+    }
+
+    /**
+     * A bill typed in with "Other / manual entry" is also saved as a supplier, or matched
+     * to the existing supplier of the same name, so it is on the list next time.
+     */
+    private function saveManualSupplier(Request $request, $tenant): void
+    {
+        $id   = (int) $request->input('supplier_id');
+        $name = trim((string) $request->input('supplier_name'));
+        if ($id > 0 || $name === '') return;
+
+        $supplier = Supplier::where('tenant_id', $tenant->id)->whereRaw('LOWER(name) = ?', [mb_strtolower($name)])->first()
+            ?? Supplier::create([
+                'tenant_id'  => $tenant->id,
+                'name'       => $name,
+                'vat_number' => trim((string) $request->input('supplier_vat_number')) ?: null,
+                'is_active'  => true,
+            ]);
+
+        $request->merge(['supplier_id' => $supplier->id]);
     }
 }
