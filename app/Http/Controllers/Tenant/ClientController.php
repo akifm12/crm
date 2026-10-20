@@ -426,6 +426,12 @@ PROMPT;
         $tenant = app('tenant');
         abort_if($client->tenant_id !== $tenant->id, 404);
 
+        $data = $request->validate(['archive_reason' => 'required|string|min:3|max:1000']);
+
+        $client->forceFill([
+            'archive_reason' => trim($data['archive_reason']),
+            'archived_by'    => auth()->id(),
+        ])->save();
         $client->delete(); // soft delete — sets deleted_at
 
         return redirect()

@@ -151,7 +151,8 @@
             <div class="px-5 py-3 flex items-center justify-between gap-4">
                 <div>
                     <p class="text-sm font-medium text-gray-800">{{ $ac->displayName() }}</p>
-                    <p class="text-xs text-gray-400">{{ ucfirst(str_replace('_',' ',$ac->client_type)) }} · Archived {{ $ac->deleted_at->format('d M Y') }}</p>
+                    <p class="text-xs text-gray-400">{{ ucfirst(str_replace('_',' ',$ac->client_type)) }} · Archived {{ $ac->deleted_at->format('d M Y') }}@if($ac->archived_by) by {{ \App\Models\User::find($ac->archived_by)?->name ?? 'a user' }}@endif</p>
+                    <p class="text-xs mt-1 {{ $ac->archive_reason ? 'text-gray-600' : 'text-gray-400 italic' }}">Reason: {{ $ac->archive_reason ?: 'not recorded' }}</p>
                 </div>
                 <form method="POST" action="{{ route('kyc.tenants.clients.restore', [$tenant->id, $ac->id]) }}">
                     @csrf @method('PATCH')

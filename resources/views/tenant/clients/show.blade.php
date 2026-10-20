@@ -83,15 +83,28 @@ $countryName = fn($code) => $code ? (\App\Models\Country::find($code)?->country_
                 </svg>
                 Edit
             </a>
-            <form method="POST" action="{{ route('tenant.clients.destroy', [$tenant->slug, $client->id]) }}"
-                  onsubmit="return confirm('Archive {{ addslashes($client->displayName()) }}?\n\nThis will remove them from your client list. The record is retained for regulatory purposes.')">
-                @csrf @method('DELETE')
-                <button type="submit"
+            <div x-data="{ open: false }">
+                <button type="button" @click="open = true"
                         class="flex items-center gap-1.5 px-4 py-1.5 text-sm font-medium text-red-500 border border-red-200 rounded-lg hover:bg-red-50 transition">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8l1 12a2 2 0 002 2h8a2 2 0 002-2l1-12"/></svg>
                     Archive
                 </button>
-            </form>
+                <div x-show="open" x-cloak class="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" @click.self="open = false" @keydown.escape.window="open = false">
+                    <form method="POST" action="{{ route('tenant.clients.destroy', [$tenant->slug, $client->id]) }}" class="bg-white rounded-xl shadow-xl w-full max-w-md p-5 space-y-3">
+                        @csrf @method('DELETE')
+                        <h3 class="text-sm font-semibold text-gray-800">Archive {{ $client->displayName() }}?</h3>
+                        <p class="text-xs text-gray-500">This removes them from your client list. The record is retained for regulatory purposes.</p>
+                        <label class="block text-xs font-medium text-gray-600">Reason for archiving <span class="text-red-500">*</span></label>
+                        <textarea name="archive_reason" rows="3" required minlength="3" maxlength="1000"
+                                  placeholder="e.g. Relationship ended, account closed, duplicate record"
+                                  class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg"></textarea>
+                        <div class="flex justify-end gap-2">
+                            <button type="button" @click="open = false" class="px-3 py-2 text-sm text-gray-600">Cancel</button>
+                            <button type="submit" class="px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700">Archive client</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
 

@@ -165,10 +165,12 @@ class TenantController extends Controller
 
     public function restoreClient(Tenant $tenant, int $clientId)
     {
-        \App\Models\BullionClient::withTrashed()
+        $client = \App\Models\BullionClient::withTrashed()
             ->where('tenant_id', $tenant->id)
             ->where('id', $clientId)
-            ->restore();
+            ->firstOrFail();
+        $client->restore();
+        $client->forceFill(['archive_reason' => null, 'archived_by' => null])->save();
 
         return back()->with('success', 'Client restored successfully.');
     }
