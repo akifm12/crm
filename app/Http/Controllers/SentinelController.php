@@ -38,6 +38,11 @@ class SentinelController extends Controller
     public static function stats(): array
     {
         $c = rescue(fn () => json_decode(file_get_contents(self::COUNTS_FILE), true), null, false);
+        // The count file also holds the Standard tier's official lists and Wikidata PEPs (since
+        // 2026-10-29); these figures describe the Premium (OpenSanctions) data, so leave those out
+        if (is_array($c)) {
+            $c = array_filter($c, fn ($k) => ! str_starts_with($k, 'Official:') && $k !== 'Wikidata PEPs', ARRAY_FILTER_USE_KEY);
+        }
         if (! is_array($c) || array_sum($c) < 1_000_000) {
             $c = self::FALLBACK_COUNTS;
         }
