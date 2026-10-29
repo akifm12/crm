@@ -130,7 +130,7 @@ class SentinelController extends Controller
 
         try {
             Mail::raw("{$data['name']} <{$data['email']}>" . (($data['phone'] ?? '') ? " · {$data['phone']}" : '') . "\n\n{$body}",
-                fn ($m) => $m->to('info@bluearrow.ae')->replyTo($data['email'], $data['name'])
+                fn ($m) => $m->to('aml@bluearrow.ae')->replyTo($data['email'], $data['name'])
                              ->subject("Sentinel enquiry: {$data['company']} ({$data['plan']})"));
         } catch (\Throwable $e) {
             // The enquiry is already saved; a mail failure must not lose it
