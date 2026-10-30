@@ -5,4 +5,6 @@ return [
     'base_url' => env('SENTINEL_URL', 'http://127.0.0.1:8085/api'),
     // Service key bound to the portal's Sentinel user; created in Sentinel's api_keys
     'api_key'  => env('SENTINEL_API_KEY'),
+    // Admin service key (Sentinel user portal-admin@bluearrow.ae) for Tools → Sentinel
+    'admin_key' => env('SENTINEL_ADMIN_KEY'),
 ];
