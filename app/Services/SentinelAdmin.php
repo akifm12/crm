@@ -48,6 +48,13 @@ class SentinelAdmin
         return $r && $r->successful() ? $r->json() : null;
     }
 
+    /** Adverse media provider calls (Serper, Newsdata): totals, this month, daily for 30 days */
+    public function mediaUsage(): ?array
+    {
+        $r = rescue(fn () => $this->http()->get('/media/usage'), null, false);
+        return $r && $r->successful() ? $r->json() : null;
+    }
+
     public function configured(): bool
     {
         return (bool) config('sentinel.admin_key');

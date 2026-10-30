@@ -114,6 +114,43 @@
                 </div>
             </div>
         </div>
+
+        {{-- Adverse media providers (paid per search) --}}
+        @if ($media)
+            @php
+                $providers = ['serper' => 'Serper (Google News)', 'newsdata' => 'Newsdata.io'];
+                $sum = fn ($rows, $service, $field) => collect($rows)->where('service', $service)->sum(fn ($r) => (int) $r[$field]);
+                $days = collect($media['daily'])->groupBy(fn ($r) => substr($r['period'], 0, 10))->take(14);
+            @endphp
+            <div class="bg-white rounded-xl border border-gray-200">
+                <h2 class="px-5 py-3 text-sm font-semibold text-gray-700 border-b border-gray-100">Adverse media searches</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5 p-5">
+                    <table class="text-sm">
+                        <thead class="text-xs text-gray-500"><tr><th class="text-left pb-2">Provider</th><th class="text-right pb-2">This month</th><th class="text-right pb-2">All time</th></tr></thead>
+                        <tbody>
+                        @foreach ($providers as $code => $label)
+                            <tr><td class="py-1 text-gray-700">{{ $label }}</td>
+                                <td class="py-1 text-right font-medium text-gray-900">{{ number_format($sum($media['monthly'], $code, 'calls')) }}</td>
+                                <td class="py-1 text-right text-gray-600">{{ number_format($sum($media['totals'], $code, 'total_calls')) }}</td></tr>
+                        @endforeach
+                        </tbody>
+                    </table>
+                    <div class="md:col-span-2">
+                        <p class="text-xs text-gray-500 mb-2">Last 14 days with searches</p>
+                        <div class="flex flex-wrap gap-2">
+                            @forelse ($days as $date => $rows)
+                                <div class="px-2.5 py-1.5 rounded-lg bg-gray-50 border border-gray-100 text-xs">
+                                    <span class="text-gray-500">{{ \Carbon\Carbon::parse($date)->format('j M') }}</span>
+                                    <span class="ml-1 font-medium text-gray-800">{{ collect($rows)->sum('calls') }}</span>
+                                </div>
+                            @empty
+                                <p class="text-sm text-gray-500">No searches in the last 30 days.</p>
+                            @endforelse
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
     @endif
 
     {{-- ── SIGN-UPS (trial users) ───────────────────────────────────────── --}}

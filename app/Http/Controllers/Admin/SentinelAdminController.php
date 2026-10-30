@@ -34,9 +34,10 @@ class SentinelAdminController extends Controller
             'log'      => $this->sentinel->get('/log'),
         };
         $clients = in_array($tab, ['users', 'signups'], true) ? ($this->sentinel->get('/companies') ?? []) : [];
+        $media   = $tab === 'overview' ? $this->sentinel->mediaUsage() : null;
 
         return view('admin.sentinel.index', [
-            'tab' => $tab, 'q' => $q, 'data' => $data, 'clients' => $clients,
+            'tab' => $tab, 'q' => $q, 'data' => $data, 'clients' => $clients, 'media' => $media,
             'plans' => self::PLANS, 'roles' => self::ROLES, 'configured' => $this->sentinel->configured(),
         ]);
     }
