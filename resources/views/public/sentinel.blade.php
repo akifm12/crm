@@ -121,7 +121,7 @@
             @endforeach
         </div>
         <p class="mt-4 text-xs text-gray-500">
-            Need wider coverage? Premium data (OpenSanctions: 100+ further national lists, wanted and debarment lists, regulatory warnings) is available on request.
+            Need wider coverage? Premium data extends screening into more industries, such as crypto (ransomware-linked and seized wallets) and shipping (shadow-fleet and detained vessels), and adds 100+ further national lists, wanted and debarment lists and regulatory warnings. Available on request.
             Counts are from the latest nightly import and rounded down.
         </p>
     </div>
@@ -192,7 +192,7 @@
         @foreach ([
             ['Essential', 'AED 4,000', 'per year', 'Screening at onboarding and a clean record, in the Sentinel app.', false, [['Ongoing monitoring', false], ['API access', false]]],
             ['Complete', 'AED 5,000', 'per year', 'Everything in Essential, plus ongoing monitoring and the Sentinel API.', true, [['Ongoing monitoring (daily / weekly / monthly)', true], ['API access with webhooks*', true]]],
-            ['Corporate API', 'Contact us', '', 'High-volume screening built into your platform, priced to your volumes.', false, [['Everything in Complete', true], ['Volume pricing and higher API limits', true], ['Premium data (OpenSanctions) on request', true]]],
+            ['Corporate API', 'Contact us', '', 'High-volume screening built into your platform, priced to your volumes.', false, [['Everything in Complete', true], ['Volume pricing and higher API limits', true], ['Premium data on request (crypto, shipping and more)', true]]],
         ] as [$plan, $price, $per, $desc, $featured, $extras])
             <div class="relative rounded-2xl bg-white p-8 flex flex-col {{ $featured ? 'border-2 border-brand-600 shadow-lg' : 'border border-gray-200 shadow-sm' }}">
                 @if ($featured)
