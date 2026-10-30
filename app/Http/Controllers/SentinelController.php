@@ -17,17 +17,19 @@ class SentinelController extends Controller
     // Sentinel API (sentinel_nginx), reached over loopback — see /opt/sentinel-aml
     private const API = 'http://127.0.0.1:8085/api';
 
-    // Per-source record counts written by the nightly list import (update_sanctions.py)
-    private const COUNTS_FILE = '/var/www/bluearrow.ae/scripts/last_counts.json';
+    // Listed entities per source in the Standard data (the official lists and Wikidata PEPs that the
+    // Essential and Complete plans screen against), written after each nightly import by daily_update.sh
+    private const COUNTS_FILE = '/var/www/bluearrow.ae/scripts/standard_counts.json';
 
-    // Used when the counts file is missing or unreadable — figures from the 2026-10-07 import
+    // Used when the counts file is missing or unreadable — figures from the 2026-10-30 import
     private const FALLBACK_COUNTS = [
-        'Debarment' => 197939, 'Global PEPs' => 718988, 'Interpol red notices' => 6368,
-        'Israel crypto seizures' => 1428, 'Maritime' => 16729, 'OpenSanctions sanctions' => 72406,
-        'Ransomware wallets' => 11186, 'Regulatory warnings' => 163256,
-        'UAE Local Terrorist List (via OpenSanctions)' => 313, 'UN Security Council' => 1010,
-        'Wanted (law enforcement)' => 251089,
+        'Australia (DFAT)' => 4010, 'Canada (SEMA)' => 5708, 'EU (Europe)' => 6269, 'OFAC (USA)' => 20000,
+        'OFAC (USA) Non-SDN' => 486, 'PEP (Wikidata)' => 557052, 'Switzerland (SECO)' => 7105,
+        'UAE (Local Terror List)' => 311, 'UK (FCDO)' => 6420, 'UN (Global)' => 1007,
+        'US Export Controls (BIS/State)' => 6213,
     ];
+    private const PEPS = 'PEP (Wikidata)';
+    private const EXPORT = 'US Export Controls (BIS/State)';
 
     public function show(): View
     {
@@ -38,30 +40,22 @@ class SentinelController extends Controller
     public static function stats(): array
     {
         $c = rescue(fn () => json_decode(file_get_contents(self::COUNTS_FILE), true), null, false);
-        // The count file also holds the Standard tier's official lists and Wikidata PEPs (since
-        // 2026-10-29); these figures describe the Premium (OpenSanctions) data, so leave those out
-        if (is_array($c)) {
-            $c = array_filter($c, fn ($k) => ! str_starts_with($k, 'Official:') && $k !== 'Wikidata PEPs', ARRAY_FILTER_USE_KEY);
-        }
-        if (! is_array($c) || array_sum($c) < 1_000_000) {
+        if (! is_array($c) || array_sum($c) < 300_000) {
             $c = self::FALLBACK_COUNTS;
         }
+        $peps = $c[self::PEPS] ?? 0;
+        $export = $c[self::EXPORT] ?? 0;
 
         return [
             'total'     => self::round(array_sum($c)),
-            'sanctions' => self::round(($c['OpenSanctions sanctions'] ?? 0) + ($c['UN Security Council'] ?? 0)
-                                       + ($c['UAE Local Terrorist List (via OpenSanctions)'] ?? 0)),
-            'peps'      => self::round($c['Global PEPs'] ?? 0),
-            'wanted'    => self::round($c['Wanted (law enforcement)'] ?? 0),
-            'interpol'  => self::round($c['Interpol red notices'] ?? 0),
-            'debarment' => self::round($c['Debarment'] ?? 0),
-            'regulatory'=> self::round($c['Regulatory warnings'] ?? 0),
-            'maritime'  => self::round($c['Maritime'] ?? 0),
-            'crypto'    => self::round(($c['Ransomware wallets'] ?? 0) + ($c['Israel crypto seizures'] ?? 0)),
+            'sanctions' => self::round(array_sum($c) - $peps - $export),
+            'peps'      => self::round($peps),
+            'export'    => self::round($export),
+            'uae'       => (string) ($c['UAE (Local Terror List)'] ?? 311),
         ];
     }
 
-    /** 1,440,399 → "1.4M+", 718,988 → "710k+", 6,368 → "6.3k+" — always rounded down so the claim stays true. */
+    /** 1,440,399 → "1.4M+", 557,052 → "550k+", 6,213 → "6.2k+" — always rounded down so the claim stays true. */
     private static function round(int $n): string
     {
         if ($n >= 1_000_000) return floor($n / 100_000) / 10 . 'M+';
@@ -111,7 +105,7 @@ class SentinelController extends Controller
             'email'    => ['required', 'email', 'max:150'],
             'company'  => ['required', 'string', 'max:150'],
             'phone'    => ['nullable', 'string', 'max:40'],
-            'plan'     => ['required', 'in:Essential,Complete,API,Not sure'],
+            'plan'     => ['required', 'in:Essential,Complete,Corporate API,Premium data,Not sure'],
             'sector'   => ['nullable', 'string', 'max:100'],
             'message'  => ['nullable', 'string', 'max:5000'],
         ]);
