@@ -33,7 +33,16 @@ class SentinelController extends Controller
 
     public function show(): View
     {
-        return view('public.sentinel', ['stats' => self::stats()]);
+        return view('public.sentinel', ['stats' => self::stats(), 'listStatus' => self::listStatus()]);
+    }
+
+    /** The latest EOCN/UN list-change notice Sentinel verified entry by entry (the "up to date" badge), or null. */
+    public static function listStatus(): ?array
+    {
+        return \Illuminate\Support\Facades\Cache::remember('sentinel.list_status', 600, function () {
+            $s = rescue(fn () => Http::timeout(5)->get(self::API . '/public/list-status')->json(), null, false);
+            return is_array($s) && ! empty($s['latest_verified']) ? $s : null;
+        });
     }
 
     /** Rounded-down coverage figures from the latest nightly import (also used on the home page). */

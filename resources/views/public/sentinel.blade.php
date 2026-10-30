@@ -34,6 +34,16 @@
                 <a href="#pricing" class="border border-white/20 hover:border-white/40 text-white font-semibold px-6 py-3 rounded-xl">See plans</a>
             </div>
             <p class="mt-4 text-sm text-slate-400">Already a customer? <a href="https://aml.bluearrow.ae" class="text-sky-300 hover:text-sky-200 font-medium">Sign in to Sentinel →</a></p>
+            @if ($listStatus)
+                <a href="{{ $listStatus['latest_verified']['url'] }}" target="_blank" rel="noopener"
+                   class="mt-6 inline-flex items-start gap-2 rounded-xl bg-emerald-500/10 border border-emerald-400/30 px-4 py-2.5 text-sm text-emerald-200 hover:border-emerald-400/60">
+                    <span class="text-emerald-400 font-bold">✓</span>
+                    <span>Lists up to date: every entry in the latest UN/EOCN notice
+                        ({{ $listStatus['latest_verified']['reference'] ?? 'update' }},
+                        {{ \Carbon\Carbon::parse($listStatus['latest_verified']['change_date'])->format('j M Y') }})
+                        is verified in Sentinel.</span>
+                </a>
+            @endif
         </div>
 
         <div class="lg:col-span-2 grid grid-cols-2 gap-px rounded-2xl overflow-hidden border border-white/10 bg-white/10">
@@ -99,6 +109,10 @@
             <p class="mt-3 text-gray-600">
                 Every night we download each list from the authority that publishes it and check it before it goes live.
                 If a source looks incomplete, yesterday's data stays in place and our team gets an alert.
+            </p>
+            <p class="mt-3 text-gray-600">
+                We also check every sanctions notice the UAE's Executive Office (EOCN) issues: each name it adds, amends or removes is
+                verified in Sentinel after the next update, and our team is alerted if anything doesn't match.
             </p>
         </div>
 
