@@ -79,6 +79,8 @@
         </form>
     </div>
 
+    @include('admin.sentinel._tm', ['tm' => $tm ?? null])
+
     {{-- Users --}}
     <div class="space-y-3" x-data="{ add: false }">
         <div class="flex items-center justify-between">

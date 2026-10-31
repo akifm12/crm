@@ -151,6 +151,30 @@
                 </div>
             </div>
         @endif
+
+        {{-- Transaction Monitoring add-on: who has it, billable transactions --}}
+        @if (! empty($tm))
+            <div class="bg-white rounded-xl border border-gray-200 overflow-x-auto">
+                <h2 class="px-5 py-3 text-sm font-semibold text-gray-700 border-b border-gray-100">Transaction monitoring (add-on)</h2>
+                <table class="min-w-full text-sm">
+                    <thead class="bg-gray-50 text-xs text-gray-500 uppercase tracking-wide"><tr>
+                        <th class="px-5 py-2 text-left">Client</th><th class="px-5 py-2 text-left">Status</th>
+                        <th class="px-5 py-2 text-right">This month</th><th class="px-5 py-2 text-right">Last month</th>
+                        <th class="px-5 py-2 text-right">All time</th><th class="px-5 py-2 text-right">Open alerts</th></tr></thead>
+                    <tbody class="divide-y divide-gray-100">
+                    @foreach ($tm as $r)
+                        <tr><td class="px-5 py-2"><a href="{{ route('sentinel-admin.company', $r['id']) }}" class="text-blue-600 hover:underline">{{ $r['name'] }}</a></td>
+                            <td class="px-5 py-2">{{ $r['enabled'] ? 'On' : 'Off' }}</td>
+                            <td class="px-5 py-2 text-right font-medium text-gray-900">{{ number_format($r['this_month']) }}</td>
+                            <td class="px-5 py-2 text-right">{{ number_format($r['last_month']) }}</td>
+                            <td class="px-5 py-2 text-right text-gray-500">{{ number_format($r['all_time']) }}</td>
+                            <td class="px-5 py-2 text-right">{{ $r['open_alerts'] }}</td></tr>
+                    @endforeach
+                    </tbody>
+                </table>
+                <p class="px-5 py-2 text-xs text-gray-500 border-t border-gray-100">Live transactions, charged per transaction. Switch it on or off on the client's page.</p>
+            </div>
+        @endif
     @endif
 
     {{-- ── SIGN-UPS (trial users) ───────────────────────────────────────── --}}

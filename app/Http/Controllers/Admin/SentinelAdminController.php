@@ -35,9 +35,10 @@ class SentinelAdminController extends Controller
         };
         $clients = in_array($tab, ['users', 'signups'], true) ? ($this->sentinel->get('/companies') ?? []) : [];
         $media   = $tab === 'overview' ? $this->sentinel->mediaUsage() : null;
+        $tm      = $tab === 'overview' ? $this->sentinel->get('/transaction-monitoring') : null;
 
         return view('admin.sentinel.index', [
-            'tab' => $tab, 'q' => $q, 'data' => $data, 'clients' => $clients, 'media' => $media,
+            'tab' => $tab, 'q' => $q, 'data' => $data, 'clients' => $clients, 'media' => $media, 'tm' => $tm,
             'plans' => self::PLANS, 'roles' => self::ROLES, 'configured' => $this->sentinel->configured(),
         ]);
     }
@@ -49,6 +50,7 @@ class SentinelAdminController extends Controller
         return view('admin.sentinel.company', [
             'd' => $data, 'plans' => self::PLANS, 'roles' => self::ROLES,
             'clients' => $this->sentinel->get('/companies') ?? [],
+            'tm' => $this->sentinel->get("/transaction-monitoring/companies/{$id}"),
         ]);
     }
 
@@ -81,6 +83,14 @@ class SentinelAdminController extends Controller
         return $this->done($this->sentinel->send('POST', "/companies/{$id}/plan",
             ['plan' => $v['plan'], 'expiryDate' => $v['expiry_date'] ?? null]),
             'Plan changed to ' . (self::PLANS[$v['plan']] ?? $v['plan']) . '. The team has been emailed.');
+    }
+
+    // The Transaction Monitoring add-on: on or off (records are always kept)
+    public function transactionMonitoring(Request $request, int $id)
+    {
+        $on = $request->boolean('enabled');
+        return $this->done($this->sentinel->send('PUT', "/transaction-monitoring/companies/{$id}", ['enabled' => $on]),
+            $on ? 'Transaction monitoring switched on. The client sees a Transactions tab in Sentinel.' : 'Transaction monitoring switched off. Existing records are kept.');
     }
 
     public function destroyCompany(int $id)

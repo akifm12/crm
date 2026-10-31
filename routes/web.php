@@ -96,6 +96,7 @@ Route::middleware(['auth', \App\Http\Middleware\EnsureAdminUser::class])->group(
         Route::get('/companies/{id}',                   'company')->whereNumber('id')->name('company');
         Route::patch('/companies/{id}',                 'updateCompany')->whereNumber('id')->name('companies.update');
         Route::post('/companies/{id}/plan',             'changePlan')->whereNumber('id')->name('companies.plan');
+        Route::post('/companies/{id}/transaction-monitoring', 'transactionMonitoring')->whereNumber('id')->name('companies.tm');
         Route::delete('/companies/{id}',                'destroyCompany')->whereNumber('id')->name('companies.destroy');
         Route::post('/companies/{id}/keys',             'storeKey')->whereNumber('id')->name('keys.store');
         Route::delete('/companies/{id}/keys/{keyId}',   'revokeKey')->whereNumber('id')->name('keys.revoke');
