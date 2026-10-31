@@ -245,10 +245,12 @@
 
     <div class="mt-8 rounded-2xl bg-gray-50 border border-gray-100 p-5 text-xs text-gray-500 leading-relaxed">
         <strong class="text-gray-700">* Fair use.</strong>
-        Unlimited screenings on Essential and Complete, and API access on Complete, are for screening the subscriber's own customers,
-        counterparties and staff in the normal course of a single business. They may not be resold, shared with other businesses or used
-        to screen on behalf of third parties. API keys allow up to 60 screenings a minute. Where usage regularly goes well beyond normal levels
-        for a business of the subscriber's size, we may ask to move the account to the Corporate API plan.
+        Screening on Essential and Complete is unlimited, with no per-screen charges. Plans, and API access on Complete, are for screening
+        the subscriber's own customers, counterparties and staff in the normal course of a single business. They may not be resold, shared
+        with other businesses or used to screen on behalf of third parties. As a guide, normal use is up to 2,500 screenings a month. Going
+        above that is not charged and the service is never stopped or restricted: the guide only comes into play if sustained usage adds
+        enough load to need extra server capacity. In that case we will write to you in advance and suggest moving to the Corporate API plan.
+        API keys allow up to 60 screenings a minute.
         Prices exclude 5% VAT. Plans are billed annually in advance and activate on payment.
     </div>
 </section>
