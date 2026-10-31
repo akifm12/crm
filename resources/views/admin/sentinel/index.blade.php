@@ -3,7 +3,7 @@
 @section('page-title', 'Sentinel')
 
 @php
-    $tabs = ['overview' => 'Overview', 'signups' => 'Sign-ups', 'clients' => 'Clients', 'users' => 'Users',
+    $tabs = ['overview' => 'Overview', 'signups' => 'Sign-ups', 'enquiries' => 'Enquiries', 'clients' => 'Clients', 'users' => 'Users',
              'orders' => 'Orders', 'requests' => 'API requests', 'log' => 'Activity log'];
     $day  = fn ($d) => $d ? \Carbon\Carbon::parse($d)->timezone('Asia/Dubai')->format('j M Y') : '—';
     $ago  = fn ($d) => $d ? \Carbon\Carbon::parse($d)->diffForHumans() : 'never';
@@ -175,6 +175,39 @@
                 <p class="px-5 py-2 text-xs text-gray-500 border-t border-gray-100">Live transactions, charged per transaction. Switch it on or off on the client's page.</p>
             </div>
         @endif
+    @endif
+
+    {{-- ── ENQUIRIES (the plan form on bluearrow.ae/sentinel) ─────────────── --}}
+    @if ($tab === 'enquiries')
+        <div class="bg-white rounded-xl border border-gray-200 overflow-x-auto">
+            <table class="min-w-full text-sm">
+                <thead class="bg-gray-50 text-xs text-gray-500 uppercase tracking-wide">
+                    <tr><th class="px-4 py-3 text-left">Received</th><th class="px-4 py-3 text-left">From</th><th class="px-4 py-3 text-left">Company</th>
+                        <th class="px-4 py-3 text-left">Plan</th><th class="px-4 py-3 text-left">Sector</th><th class="px-4 py-3 text-left">Message</th></tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                @forelse ($data as $e)
+                    @php
+                        [$head, $text] = array_pad(explode("\n\n", $e['message'], 2), 2, '');
+                        preg_match('/Plan: (.*)/', $head, $p); preg_match('/Company: (.*)/', $head, $co); preg_match('/Sector: (.*)/', $head, $se);
+                    @endphp
+                    <tr class="align-top">
+                        <td class="px-4 py-3 whitespace-nowrap text-gray-600">{{ \Carbon\Carbon::parse($e['created_at'])->timezone('Asia/Dubai')->format('j M Y, H:i') }}</td>
+                        <td class="px-4 py-3"><p class="font-medium text-gray-900">{{ $e['name'] }}</p>
+                            <a href="mailto:{{ $e['email'] }}" class="text-xs text-blue-600 hover:underline">{{ $e['email'] }}</a>
+                            @if ($e['phone'])<p class="text-xs text-gray-500">{{ $e['phone'] }}</p>@endif</td>
+                        <td class="px-4 py-3 text-gray-700">{{ trim($co[1] ?? '') }}</td>
+                        <td class="px-4 py-3">@include('admin.sentinel._plan', ['plan' => ['Essential' => 'ESSENTIAL', 'Complete' => 'COMPLETE', 'Corporate API' => 'API', 'Premium data' => 'PREMIUM'][trim($p[1] ?? '')] ?? trim($p[1] ?? '—')])</td>
+                        <td class="px-4 py-3 text-gray-600">{{ trim($se[1] ?? '') }}</td>
+                        <td class="px-4 py-3 text-gray-600 max-w-md whitespace-pre-line">{{ \Illuminate\Support\Str::limit(trim($text), 600) }}</td>
+                    </tr>
+                @empty
+                    <tr><td colspan="6" class="px-4 py-6 text-center text-gray-500">No enquiries yet.</td></tr>
+                @endforelse
+                </tbody>
+            </table>
+        </div>
+        <p class="text-xs text-gray-500">Enquiries are also emailed to aml@bluearrow.ae, and the enquirer gets a confirmation.</p>
     @endif
 
     {{-- ── SIGN-UPS (trial users) ───────────────────────────────────────── --}}

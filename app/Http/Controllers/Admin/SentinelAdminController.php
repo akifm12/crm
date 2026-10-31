@@ -11,7 +11,7 @@ use Illuminate\Http\Request;
 
 class SentinelAdminController extends Controller
 {
-    private const TABS = ['overview', 'signups', 'clients', 'users', 'orders', 'requests', 'log'];
+    private const TABS = ['overview', 'signups', 'enquiries', 'clients', 'users', 'orders', 'requests', 'log'];
     private const PLANS = ['TRIAL' => 'Trial', 'ESSENTIAL' => 'Essential', 'COMPLETE' => 'Complete',
                            'API' => 'Corporate API', 'PREMIUM' => 'Premium data'];
     private const ROLES = ['analyst' => 'Analyst', 'mlro' => 'MLRO', 'admin' => 'Admin (Blue Arrow only)'];
@@ -32,6 +32,9 @@ class SentinelAdminController extends Controller
             'orders'   => $this->sentinel->orders(),
             'requests' => $this->sentinel->get('/key-requests'),
             'log'      => $this->sentinel->get('/log'),
+            // Plan enquiries from bluearrow.ae/sentinel (SentinelController::enquire), kept in the portal's contact messages
+            'enquiries' => \App\Models\ContactMessage::where('message', 'like', '[Sentinel enquiry]%')
+                              ->latest('id')->take(200)->get()->toArray(),
         };
         $clients = in_array($tab, ['users', 'signups'], true) ? ($this->sentinel->get('/companies') ?? []) : [];
         $media   = $tab === 'overview' ? $this->sentinel->mediaUsage() : null;

@@ -140,6 +140,18 @@ class SentinelController extends Controller
             Log::error('Sentinel enquiry email failed: ' . $e->getMessage());
         }
 
+        // A confirmation to the enquirer. Nothing they typed is repeated in it (the form is public).
+        try {
+            Mail::raw("Hello,\n\nThank you for your interest in Sentinel AML ({$data['plan']}). We have received your request and "
+                . "will be in touch within one business day to set up your account and walk your team through it.\n\n"
+                . "In the meantime you can try Sentinel free at https://bluearrow.ae/sentinel\n\n"
+                . "Blue Arrow Management Consultants\naml@bluearrow.ae",
+                fn ($m) => $m->to($data['email'])->replyTo('aml@bluearrow.ae', 'Blue Arrow Sentinel')
+                             ->subject('We have received your Sentinel enquiry'));
+        } catch (\Throwable $e) {
+            Log::error('Sentinel enquiry confirmation failed: ' . $e->getMessage());
+        }
+
         return $this->back('enquiry', 'ok', 'Thanks, we have your request. We\'ll be in touch within one business day.');
     }
 
