@@ -209,7 +209,15 @@
                         <td class="px-4 py-3 text-gray-600">{{ $c['user_count'] }}</td>
                         <td class="px-4 py-3 text-gray-600">{{ number_format($c['screens_used']) }}</td>
                         <td class="px-4 py-3 text-gray-600">{{ $c['api_keys'] }}</td>
-                        <td class="px-4 py-3 text-gray-600">{{ $day($c['expiry_date']) }}</td>
+                        <td class="px-4 py-3 text-gray-600">{{ $day($c['expiry_date']) }}
+                            @if ($c['expiry_date'] && $c['id'] != 2 && ! in_array($c['plan'], ['TRIAL', 'PORTAL', 'INTERNAL'], true))
+                                @php $left = now()->startOfDay()->diffInDays(\Carbon\Carbon::parse($c['expiry_date'])->startOfDay(), false); @endphp
+                                @if ($left < -14)<span class="ml-1 text-xs font-medium text-red-600">paused</span>
+                                @elseif ($left < 0)<span class="ml-1 text-xs font-medium text-red-600">grace until {{ \Carbon\Carbon::parse($c['expiry_date'])->addDays(14)->format('j M') }}</span>
+                                @elseif ($left <= 30)<span class="ml-1 text-xs font-medium text-amber-600">{{ $left }} days left</span>
+                                @endif
+                            @endif
+                        </td>
                         <td class="px-4 py-3 text-gray-600">{{ $ago($c['last_login']) }}</td>
                     </tr>
                 @empty
