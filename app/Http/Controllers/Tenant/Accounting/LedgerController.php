@@ -1,0 +1,269 @@
+<?php
+
+namespace App\Http\Controllers\Tenant\Accounting;
+
+use App\Http\Controllers\Controller;
+use App\Models\JournalEntry;
+use App\Models\JournalLine;
+use App\Models\ChartOfAccount;
+use App\Models\AccountingPeriod;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+
+class LedgerController extends Controller
+{
+    // ── Journal ──────────────────────────────────────────────────────────────
+
+    public function journalIndex(Request $request, string $slug)
+    {
+        $tenant      = app('tenant');
+        $dateFrom    = $request->get('date_from', date('Y-01-01'));
+        $dateTo      = $request->get('date_to', date('Y-m-d'));
+        $status      = $request->get('status', 'all');
+        $journalType = $request->get('journal_type');
+        $reference   = $request->get('reference');
+
+        $query = JournalEntry::where('tenant_id', $tenant->id)
+            ->where('is_deleted', false)
+            ->whereBetween('entry_date', [$dateFrom, $dateTo])
+            ->orderByDesc('entry_date')
+            ->orderByDesc('id');
+
+        if ($status !== 'all') {
+            $query->where('status', strtoupper($status));
+        }
+        if ($journalType) {
+            $query->where('journal_type', strtoupper($journalType));
+        }
+        if ($reference) {
+            $query->where(function ($q) use ($reference) {
+                $q->where('reference', 'like', "%{$reference}%")
+                  ->orWhere('description', 'like', "%{$reference}%")
+                  ->orWhere('entry_number', 'like', "%{$reference}%");
+            });
+        }
+
+        $journals    = $query->get();
+        $totalDebit  = $journals->sum('total_debit');
+        $totalCredit = $journals->sum('total_credit');
+
+        $accounts = ChartOfAccount::where('tenant_id', $tenant->id)->where('is_active', true)->orderBy('code')->get();
+
+        return view('tenant.accounting.journal.index', compact('tenant', 'journals', 'dateFrom', 'dateTo', 'status', 'totalDebit', 'totalCredit', 'accounts', 'journalType', 'reference'));
+    }
+
+    public function journalStore(Request $request, string $slug)
+    {
+        $tenant = app('tenant');
+        $request->validate([
+            'entry_date'  => 'required|date',
+            'description' => 'required|string',
+            'accounts'    => 'required|array|min:2',
+        ]);
+
+        $lines       = [];
+        $totalDebit  = 0;
+        $totalCredit = 0;
+
+        foreach ($request->accounts as $i => $accountId) {
+            if (!$accountId) continue;
+            $debit   = floatval($request->debits[$i] ?? 0);
+            $credit  = floatval($request->credits[$i] ?? 0);
+            if ($debit == 0 && $credit == 0) continue;
+            $totalDebit  += $debit;
+            $totalCredit += $credit;
+            $lines[] = ['account_id' => $accountId, 'debit_amount' => $debit, 'credit_amount' => $credit, 'description' => $request->line_descriptions[$i] ?? $request->description, 'line_number' => $i + 1];
+        }
+
+        if (abs($totalDebit - $totalCredit) >= 0.01) {
+            return back()->withInput()->with('error', 'Debits must equal credits.');
+        }
+        if (count($lines) < 2) {
+            return back()->withInput()->with('error', 'At least 2 lines required.');
+        }
+
+        $period = AccountingPeriod::where('tenant_id', $tenant->id)
+            ->where('start_date', '<=', $request->entry_date)
+            ->where('end_date', '>=', $request->entry_date)
+            ->first();
+
+        $jeYear      = date('Y', strtotime($request->entry_date));
+        $count       = JournalEntry::where('tenant_id', $tenant->id)->whereYear('entry_date', $jeYear)->count() + 1;
+        $entryNumber = 'JE-' . $jeYear . '-' . str_pad($count, 5, '0', STR_PAD_LEFT);
+        $status      = $request->boolean('auto_post') ? 'POSTED' : 'DRAFT';
+
+        DB::transaction(function () use ($tenant, $request, $lines, $totalDebit, $totalCredit, $period, $entryNumber, $status) {
+            $je = JournalEntry::create(['tenant_id' => $tenant->id, 'period_id' => $period?->id, 'entry_number' => $entryNumber, 'entry_date' => $request->entry_date, 'journal_type' => $request->journal_type ?? 'GENERAL', 'status' => $status, 'description' => $request->description, 'reference' => $request->reference ?: null, 'total_debit' => $totalDebit, 'total_credit' => $totalCredit, 'currency_code' => 'AED', 'exchange_rate' => 1.0, 'is_reversal' => false, 'is_recurring' => false, 'is_deleted' => false, 'created_by_id' => auth()->id()]);
+            foreach ($lines as $line) {
+                JournalLine::create(array_merge($line, ['tenant_id' => $tenant->id, 'journal_entry_id' => $je->id, 'currency_code' => 'AED', 'exchange_rate' => 1.0, 'is_reconciled' => false]));
+            }
+        });
+
+        return redirect()->route('tenant.accounting.journal.index', app('tenant')->slug)
+            ->with('success', "Journal {$entryNumber} saved.");
+    }
+
+    public function journalShow(string $slug, JournalEntry $entry)
+    {
+        $tenant = app('tenant');
+        abort_if($entry->tenant_id !== $tenant->id, 404);
+        $lines = $entry->lines()->with('account')->orderByRaw('CASE WHEN debit_amount > 0 THEN 0 ELSE 1 END')->orderBy('line_number')->get();
+        return view('tenant.accounting.journal.show', compact('tenant', 'entry', 'lines'));
+    }
+
+    public function journalVoid(string $slug, JournalEntry $entry)
+    {
+        $tenant = app('tenant');
+        abort_if($entry->tenant_id !== $tenant->id, 404);
+        $entry->update(['status' => 'VOID', 'is_deleted' => true]);
+        return redirect()->route('tenant.accounting.journal.index', $tenant->slug)->with('success', 'Journal entry voided.');
+    }
+
+    // ── Reports ───────────────────────────────────────────────────────────────
+
+    public function trialBalance(Request $request, string $slug)
+    {
+        $tenant   = app('tenant');
+        $dateFrom = $request->get('date_from', date('Y-01-01'));
+        $dateTo   = $request->get('date_to', date('Y-m-d'));
+
+        $accounts = ChartOfAccount::where('tenant_id', $tenant->id)->where('is_active', true)
+            ->orderByRaw("FIELD(account_type,'ASSET','LIABILITY','EQUITY','REVENUE','EXPENSE')")->orderBy('code')->get();
+
+        $balances = DB::table('journal_lines')
+            ->join('journal_entries', 'journal_entries.id', '=', 'journal_lines.journal_entry_id')
+            ->where('journal_entries.tenant_id', $tenant->id)
+            ->where('journal_entries.status', 'POSTED')
+            ->where('journal_entries.is_deleted', false)
+            ->whereBetween('journal_entries.entry_date', [$dateFrom, $dateTo])
+            ->select('journal_lines.account_id', DB::raw('SUM(debit_amount) as total_dr'), DB::raw('SUM(credit_amount) as total_cr'))
+            ->groupBy('journal_lines.account_id')
+            ->get()
+            ->keyBy('account_id');
+
+        return view('tenant.accounting.reports.trial-balance', compact('tenant', 'accounts', 'balances', 'dateFrom', 'dateTo'));
+    }
+
+    public function trialBalancePdf(Request $request, string $slug) { return $this->trialBalance($request, $slug); }
+    public function trialBalanceCsv(Request $request, string $slug) { return $this->trialBalance($request, $slug); }
+
+    public function balanceSheet(Request $request, string $slug)
+    {
+        $tenant  = app('tenant');
+        $asOfDate = $request->get('as_of', date('Y-m-d'));
+
+        $accounts = ChartOfAccount::where('tenant_id', $tenant->id)->where('is_active', true)
+            ->whereIn('account_type', ['ASSET','LIABILITY','EQUITY'])->orderBy('account_type')->orderBy('code')->get();
+
+        $balances = DB::table('journal_lines')
+            ->join('journal_entries', 'journal_entries.id', '=', 'journal_lines.journal_entry_id')
+            ->where('journal_entries.tenant_id', $tenant->id)
+            ->where('journal_entries.status', 'POSTED')
+            ->where('journal_entries.is_deleted', false)
+            ->where('journal_entries.entry_date', '<=', $asOfDate)
+            ->select('journal_lines.account_id', DB::raw('SUM(debit_amount) as total_dr'), DB::raw('SUM(credit_amount) as total_cr'))
+            ->groupBy('journal_lines.account_id')
+            ->get()->keyBy('account_id');
+
+        return view('tenant.accounting.reports.balance-sheet', compact('tenant', 'accounts', 'balances', 'asOfDate'));
+    }
+
+    public function balanceSheetPdf(Request $request, string $slug) { return $this->balanceSheet($request, $slug); }
+    public function balanceSheetCsv(Request $request, string $slug) { return $this->balanceSheet($request, $slug); }
+
+    public function incomeStatement(Request $request, string $slug)
+    {
+        $tenant   = app('tenant');
+        $dateFrom = $request->get('date_from', date('Y-01-01'));
+        $dateTo   = $request->get('date_to', date('Y-m-d'));
+
+        $accounts = ChartOfAccount::where('tenant_id', $tenant->id)->where('is_active', true)
+            ->whereIn('account_type', ['REVENUE','EXPENSE'])->orderBy('account_type')->orderBy('code')->get();
+
+        $balances = DB::table('journal_lines')
+            ->join('journal_entries', 'journal_entries.id', '=', 'journal_lines.journal_entry_id')
+            ->where('journal_entries.tenant_id', $tenant->id)
+            ->where('journal_entries.status', 'POSTED')
+            ->where('journal_entries.is_deleted', false)
+            ->whereBetween('journal_entries.entry_date', [$dateFrom, $dateTo])
+            ->select('journal_lines.account_id', DB::raw('SUM(debit_amount) as total_dr'), DB::raw('SUM(credit_amount) as total_cr'))
+            ->groupBy('journal_lines.account_id')
+            ->get()->keyBy('account_id');
+
+        return view('tenant.accounting.reports.income-statement', compact('tenant', 'accounts', 'balances', 'dateFrom', 'dateTo'));
+    }
+
+    public function incomeStatementPdf(Request $request, string $slug) { return $this->incomeStatement($request, $slug); }
+    public function incomeStatementCsv(Request $request, string $slug) { return $this->incomeStatement($request, $slug); }
+
+    public function vatSummary(Request $request, string $slug)
+    {
+        $tenant   = app('tenant');
+        $dateFrom = $request->get('date_from', date('Y-01-01'));
+        $dateTo   = $request->get('date_to', date('Y-m-d'));
+
+        $bills = \App\Models\Bill::where('tenant_id', $tenant->id)
+            ->where('is_deleted', false)
+            ->whereIn('status', ['APPROVED','PAID','PARTIAL'])
+            ->whereBetween('bill_date', [$dateFrom, $dateTo])
+            ->get();
+
+        $inputVat  = $bills->sum('total_vat_amount');
+        $outputVat = 0;
+
+        return view('tenant.accounting.reports.vat-summary', compact('tenant', 'bills', 'inputVat', 'outputVat', 'dateFrom', 'dateTo'));
+    }
+
+    public function vatSummaryPdf(Request $request, string $slug) { return $this->vatSummary($request, $slug); }
+    public function vatSummaryCsv(Request $request, string $slug) { return $this->vatSummary($request, $slug); }
+
+    public function vatReturn(Request $request, string $slug) { return $this->vatSummary($request, $slug); }
+
+    public function apAging(Request $request, string $slug)
+    {
+        $tenant  = app('tenant');
+        $asOfDate = $request->get('as_of', date('Y-m-d'));
+
+        $bills = \App\Models\Bill::with('supplier')
+            ->where('tenant_id', $tenant->id)
+            ->where('is_deleted', false)
+            ->whereIn('status', ['APPROVED','PARTIAL'])
+            ->where('due_date', '<=', $asOfDate)
+            ->orderBy('due_date')
+            ->get();
+
+        return view('tenant.accounting.reports.ap-aging', compact('tenant', 'bills', 'asOfDate'));
+    }
+
+    public function apAgingPdf(Request $request, string $slug) { return $this->apAging($request, $slug); }
+    public function apAgingCsv(Request $request, string $slug) { return $this->apAging($request, $slug); }
+
+    public function arAging(Request $request, string $slug)
+    {
+        $tenant = app('tenant');
+        return view('tenant.accounting.reports.ar-aging', compact('tenant'));
+    }
+
+    public function arAgingPdf(Request $request, string $slug) { return $this->arAging($request, $slug); }
+    public function arAgingCsv(Request $request, string $slug) { return $this->arAging($request, $slug); }
+
+    // ── Bullion / Client reports ──────────────────────────────────────────────
+
+    public function clientBalances(Request $request, string $slug)
+    {
+        $tenant = app('tenant');
+        return view('tenant.accounting.reports.client-balances', compact('tenant'));
+    }
+
+    public function clientBalancesPdf(Request $request, string $slug) { return $this->clientBalances($request, $slug); }
+    public function clientBalancesCsv(Request $request, string $slug) { return $this->clientBalances($request, $slug); }
+
+    public function clientStatement(Request $request, string $slug)
+    {
+        $tenant = app('tenant');
+        return view('tenant.accounting.reports.client-statement', compact('tenant'));
+    }
+
+    public function clientStatementPdf(Request $request, string $slug) { return $this->clientStatement($request, $slug); }
+    public function clientStatementCsv(Request $request, string $slug) { return $this->clientStatement($request, $slug); }
+}

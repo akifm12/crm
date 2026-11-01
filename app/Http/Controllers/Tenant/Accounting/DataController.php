@@ -12,13 +12,13 @@ use Illuminate\Support\Facades\Response;
 
 class DataController extends Controller
 {
-    public function index()
+    public function index(string $slug)
     {
         $tenant = app('tenant');
         return view('tenant.accounting.data.index', compact('tenant'));
     }
 
-    public function exportJournals()
+    public function exportJournals(string $slug)
     {
         $tenant  = app('tenant');
         $entries = JournalEntry::where('tenant_id', $tenant->id)
@@ -30,13 +30,13 @@ class DataController extends Controller
         foreach ($entries as $entry) {
             foreach ($entry->lines as $line) {
                 $rows[] = [
-                    $entry->entry_date->format('Y-m-d'),
+                    $entry->entry_date,
                     $entry->reference,
-                    $entry->memo,
+                    $entry->description,
                     $line->account?->code,
                     $line->account?->name,
-                    $line->base_debit,
-                    $line->base_credit,
+                    $line->debit_amount,
+                    $line->credit_amount,
                 ];
             }
         }
@@ -44,7 +44,7 @@ class DataController extends Controller
         return $this->csvResponse($rows, "journals_{$tenant->slug}.csv");
     }
 
-    public function exportAccounts()
+    public function exportAccounts(string $slug)
     {
         $tenant   = app('tenant');
         $accounts = ChartOfAccount::where('tenant_id', $tenant->id)
@@ -59,7 +59,7 @@ class DataController extends Controller
         return $this->csvResponse($rows, "accounts_{$tenant->slug}.csv");
     }
 
-    public function exportSuppliers()
+    public function exportSuppliers(string $slug)
     {
         $tenant    = app('tenant');
         $suppliers = Supplier::where('tenant_id', $tenant->id)->orderBy('name')->get();
@@ -72,16 +72,16 @@ class DataController extends Controller
         return $this->csvResponse($rows, "suppliers_{$tenant->slug}.csv");
     }
 
-    public function exportBills()
+    public function exportBills(string $slug)
     {
         $tenant = app('tenant');
         $bills  = Bill::where('tenant_id', $tenant->id)
             ->orderBy('bill_date')
-            ->get(['bill_number', 'supplier_name', 'bill_date', 'due_date', 'total', 'status']);
+            ->get(['bill_number', 'vendor_name', 'bill_date', 'due_date', 'total_amount', 'status']);
 
         $rows = [['Bill #', 'Supplier', 'Date', 'Due', 'Total', 'Status']];
         foreach ($bills as $b) {
-            $rows[] = [$b->bill_number, $b->supplier_name, $b->bill_date?->format('Y-m-d'), $b->due_date?->format('Y-m-d'), $b->total, $b->status];
+            $rows[] = [$b->bill_number, $b->vendor_name, $b->bill_date, $b->due_date, $b->total_amount, $b->status];
         }
 
         return $this->csvResponse($rows, "bills_{$tenant->slug}.csv");
