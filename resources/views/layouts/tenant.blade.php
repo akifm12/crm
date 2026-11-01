@@ -131,6 +131,193 @@
             goAML reports
         </a>
 
+        {{-- TFS --}}
+        @if($tenant->hasModule('tfs') ?? true)
+        <a href="{{ route('tenant.tfs.index', $slug) }}"
+           class="nav-link {{ request()->routeIs('tenant.tfs*') ? 'active' : '' }}">
+            <svg style="width:16px;height:16px;flex-shrink:0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            TFS
+        </a>
+        @endif
+
+        {{-- Bullion Accounting accordion --}}
+        @if($tenant->hasModule('bullion_accounting'))
+        <div x-data="{ open: {{ request()->routeIs('tenant.accounting.dashboard') || request()->routeIs('tenant.accounting.invoices*') || request()->routeIs('tenant.accounting.inventory*') || request()->routeIs('tenant.accounting.reports*') || request()->routeIs('tenant.accounting.journal*') || request()->routeIs('tenant.accounting.bills*') || request()->routeIs('tenant.accounting.suppliers*') || request()->routeIs('tenant.accounting.banking*') || request()->routeIs('tenant.accounting.assets*') || request()->routeIs('tenant.accounting.payroll*') || request()->routeIs('tenant.accounting.vat-filings*') || request()->routeIs('tenant.accounting.ai*') || request()->routeIs('tenant.accounting.data*') || request()->routeIs('tenant.accounting.settings*') ? 'true' : 'false' }} }">
+            <button type="button" @click="open = !open"
+                    class="nav-btn w-full {{ request()->routeIs('tenant.accounting*') ? 'active' : '' }}">
+                <svg style="width:16px;height:16px;flex-shrink:0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 0v10m0-10L9 17M5 21h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                </svg>
+                <span style="flex:1">Accounting</span>
+                <svg style="width:10px;height:10px;flex-shrink:0;transition:transform .15s;opacity:0.6" :style="open ? 'transform:rotate(180deg)' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 9l-7 7-7-7"/>
+                </svg>
+            </button>
+            <div x-show="open" x-cloak style="padding-left:28px;margin-top:2px;display:flex;flex-direction:column;gap:2px">
+                <a href="{{ route('tenant.accounting.dashboard', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.dashboard') ? 'active' : '' }}">Dashboard</a>
+                <a href="{{ route('tenant.accounting.invoices.index', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.invoices*') ? 'active' : '' }}">Invoices</a>
+                <a href="{{ route('tenant.accounting.bills.index', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.bills*') ? 'active' : '' }}">Bills</a>
+                <a href="{{ route('tenant.accounting.inventory.index', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.inventory*') ? 'active' : '' }}">Inventory</a>
+                <a href="{{ route('tenant.accounting.journal.index', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.journal*') ? 'active' : '' }}">Journal</a>
+                <a href="{{ route('tenant.accounting.suppliers.index', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.suppliers*') ? 'active' : '' }}">Suppliers</a>
+                <a href="{{ route('tenant.accounting.reports.trial-balance', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.reports.trial-balance*') ? 'active' : '' }}">Trial Balance</a>
+                <a href="{{ route('tenant.accounting.reports.balance-sheet', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.reports.balance-sheet*') ? 'active' : '' }}">Balance Sheet</a>
+                <a href="{{ route('tenant.accounting.reports.income-statement', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.reports.income-statement*') ? 'active' : '' }}">Income Statement</a>
+                <a href="{{ route('tenant.accounting.reports.ar-aging', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.reports.ar-aging*') ? 'active' : '' }}">AR Aging</a>
+                <a href="{{ route('tenant.accounting.reports.ap-aging', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.reports.ap-aging*') ? 'active' : '' }}">AP Aging</a>
+                <a href="{{ route('tenant.accounting.reports.client-statement', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.reports.client-statement*') ? 'active' : '' }}">Client Statement</a>
+                <a href="{{ route('tenant.accounting.reports.vat-return', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.reports.vat-return') ? 'active' : '' }}">VAT Return</a>
+                <a href="{{ route('tenant.accounting.banking.index', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.banking*') ? 'active' : '' }}">Banking</a>
+                <a href="{{ route('tenant.accounting.assets.index', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.assets*') ? 'active' : '' }}">Fixed Assets</a>
+                <a href="{{ route('tenant.accounting.payroll.index', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.payroll*') ? 'active' : '' }}">Payroll</a>
+                <a href="{{ route('tenant.accounting.vat-filings.index', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.vat-filings*') ? 'active' : '' }}">VAT Filings</a>
+                <a href="{{ route('tenant.accounting.coa.index', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.coa*') ? 'active' : '' }}">Chart of Accounts</a>
+                <a href="{{ route('tenant.accounting.ai.index', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.ai*') ? 'active' : '' }}">AI Assistant</a>
+                <a href="{{ route('tenant.accounting.data.index', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.data*') ? 'active' : '' }}">Data Export</a>
+                <a href="{{ route('tenant.accounting.settings.fiscal-years', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.settings*') ? 'active' : '' }}">Fiscal Years</a>
+            </div>
+        </div>
+        @endif
+
+        {{-- General Accounting accordion --}}
+        @if($tenant->hasModule('general_accounting'))
+        <div x-data="{ open: {{ request()->routeIs('tenant.accounting.general*') || request()->routeIs('tenant.accounting.reports*') || request()->routeIs('tenant.accounting.journal*') || request()->routeIs('tenant.accounting.bills*') || request()->routeIs('tenant.accounting.banking*') || request()->routeIs('tenant.accounting.assets*') || request()->routeIs('tenant.accounting.payroll*') ? 'true' : 'false' }} }">
+            <button type="button" @click="open = !open"
+                    class="nav-btn w-full {{ request()->routeIs('tenant.accounting.general*') || request()->routeIs('tenant.accounting.reports*') || request()->routeIs('tenant.accounting.journal*') || request()->routeIs('tenant.accounting.bills*') ? 'active' : '' }}">
+                <svg style="width:16px;height:16px;flex-shrink:0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                </svg>
+                <span style="flex:1">General Accounting</span>
+                <svg style="width:10px;height:10px;flex-shrink:0;transition:transform .15s;opacity:0.6" :style="open ? 'transform:rotate(180deg)' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 9l-7 7-7-7"/>
+                </svg>
+            </button>
+            <div x-show="open" x-cloak style="padding-left:28px;margin-top:2px;display:flex;flex-direction:column;gap:2px">
+                <a href="{{ route('tenant.accounting.general.dashboard', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.general.dashboard') ? 'active' : '' }}">Dashboard</a>
+                <a href="{{ route('tenant.accounting.general.invoices.index', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.general.invoices*') ? 'active' : '' }}">Invoices</a>
+                <a href="{{ route('tenant.accounting.bills.index', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.bills*') ? 'active' : '' }}">Bills</a>
+                <a href="{{ route('tenant.accounting.suppliers.index', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.suppliers*') ? 'active' : '' }}">Suppliers</a>
+                <a href="{{ route('tenant.accounting.journal.index', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.journal*') ? 'active' : '' }}">Journal</a>
+                <a href="{{ route('tenant.accounting.reports.trial-balance', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.reports.trial-balance*') ? 'active' : '' }}">Trial Balance</a>
+                <a href="{{ route('tenant.accounting.reports.balance-sheet', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.reports.balance-sheet*') ? 'active' : '' }}">Balance Sheet</a>
+                <a href="{{ route('tenant.accounting.reports.income-statement', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.reports.income-statement*') ? 'active' : '' }}">Income Statement</a>
+                <a href="{{ route('tenant.accounting.reports.ar-aging', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.reports.ar-aging*') ? 'active' : '' }}">AR Aging</a>
+                <a href="{{ route('tenant.accounting.reports.ap-aging', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.reports.ap-aging*') ? 'active' : '' }}">AP Aging</a>
+                <a href="{{ route('tenant.accounting.reports.client-statement', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.reports.client-statement*') ? 'active' : '' }}">Client Statement</a>
+                <a href="{{ route('tenant.accounting.reports.vat-return', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.reports.vat-return') ? 'active' : '' }}">VAT Return</a>
+                <a href="{{ route('tenant.accounting.banking.index', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.banking*') ? 'active' : '' }}">Banking</a>
+                <a href="{{ route('tenant.accounting.assets.index', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.assets*') ? 'active' : '' }}">Fixed Assets</a>
+                <a href="{{ route('tenant.accounting.payroll.index', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.payroll*') ? 'active' : '' }}">Payroll</a>
+                <a href="{{ route('tenant.accounting.vat-filings.index', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.vat-filings*') ? 'active' : '' }}">VAT Filings</a>
+                <a href="{{ route('tenant.accounting.coa.index', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.coa*') ? 'active' : '' }}">Chart of Accounts</a>
+                <a href="{{ route('tenant.accounting.ai.index', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.ai*') ? 'active' : '' }}">AI Assistant</a>
+                <a href="{{ route('tenant.accounting.data.index', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.data*') ? 'active' : '' }}">Data Export</a>
+                <a href="{{ route('tenant.accounting.settings.fiscal-years', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.settings*') ? 'active' : '' }}">Fiscal Years</a>
+            </div>
+        </div>
+        @endif
+
+        {{-- Real Estate Accounting accordion --}}
+        @if($tenant->hasModule('real_estate_accounting'))
+        <div x-data="{ open: {{ request()->routeIs('tenant.accounting.re*') || request()->routeIs('tenant.accounting.reports*') || request()->routeIs('tenant.accounting.journal*') || request()->routeIs('tenant.accounting.bills*') || request()->routeIs('tenant.accounting.banking*') || request()->routeIs('tenant.accounting.assets*') ? 'true' : 'false' }} }">
+            <button type="button" @click="open = !open"
+                    class="nav-btn w-full {{ request()->routeIs('tenant.accounting.re*') || request()->routeIs('tenant.accounting.reports*') || request()->routeIs('tenant.accounting.journal*') || request()->routeIs('tenant.accounting.bills*') ? 'active' : '' }}">
+                <svg style="width:16px;height:16px;flex-shrink:0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                </svg>
+                <span style="flex:1">Real Estate Accounting</span>
+                <svg style="width:10px;height:10px;flex-shrink:0;transition:transform .15s;opacity:0.6" :style="open ? 'transform:rotate(180deg)' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 9l-7 7-7-7"/>
+                </svg>
+            </button>
+            <div x-show="open" x-cloak style="padding-left:28px;margin-top:2px;display:flex;flex-direction:column;gap:2px">
+                <a href="{{ route('tenant.accounting.re.dashboard', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.re.dashboard') ? 'active' : '' }}">Dashboard</a>
+                <a href="{{ route('tenant.accounting.re.invoices.index', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.re.invoices*') ? 'active' : '' }}">Invoices</a>
+                <a href="{{ route('tenant.accounting.bills.index', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.bills*') ? 'active' : '' }}">Bills / Expenses</a>
+                <a href="{{ route('tenant.accounting.suppliers.index', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.suppliers*') ? 'active' : '' }}">Suppliers</a>
+                <a href="{{ route('tenant.accounting.journal.index', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.journal*') ? 'active' : '' }}">Journal</a>
+                <a href="{{ route('tenant.accounting.reports.trial-balance', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.reports.trial-balance*') ? 'active' : '' }}">Trial Balance</a>
+                <a href="{{ route('tenant.accounting.reports.balance-sheet', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.reports.balance-sheet*') ? 'active' : '' }}">Balance Sheet</a>
+                <a href="{{ route('tenant.accounting.reports.income-statement', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.reports.income-statement*') ? 'active' : '' }}">Income Statement</a>
+                <a href="{{ route('tenant.accounting.reports.ar-aging', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.reports.ar-aging*') ? 'active' : '' }}">AR Aging</a>
+                <a href="{{ route('tenant.accounting.reports.ap-aging', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.reports.ap-aging*') ? 'active' : '' }}">AP Aging</a>
+                <a href="{{ route('tenant.accounting.reports.client-statement', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.reports.client-statement*') ? 'active' : '' }}">Client Statement</a>
+                <a href="{{ route('tenant.accounting.reports.vat-return', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.reports.vat-return') ? 'active' : '' }}">VAT Return</a>
+                <a href="{{ route('tenant.accounting.banking.index', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.banking*') ? 'active' : '' }}">Banking</a>
+                <a href="{{ route('tenant.accounting.assets.index', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.assets*') ? 'active' : '' }}">Fixed Assets</a>
+                <a href="{{ route('tenant.accounting.payroll.index', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.payroll*') ? 'active' : '' }}">Payroll</a>
+                <a href="{{ route('tenant.accounting.vat-filings.index', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.vat-filings*') ? 'active' : '' }}">VAT Filings</a>
+                <a href="{{ route('tenant.accounting.coa.index', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.coa*') ? 'active' : '' }}">Chart of Accounts</a>
+                <a href="{{ route('tenant.accounting.ai.index', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.ai*') ? 'active' : '' }}">AI Assistant</a>
+                <a href="{{ route('tenant.accounting.data.index', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.data*') ? 'active' : '' }}">Data Export</a>
+                <a href="{{ route('tenant.accounting.settings.fiscal-years', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.settings*') ? 'active' : '' }}">Fiscal Years</a>
+            </div>
+        </div>
+        @endif
+
         {{-- Settings --}}
         <a href="{{ route('tenant.settings', $slug) }}"
            class="nav-link {{ request()->routeIs('tenant.settings') ? 'active' : '' }}">

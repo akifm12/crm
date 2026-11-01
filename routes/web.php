@@ -18,21 +18,65 @@ use App\Http\Controllers\Tenant\TenantDocumentController;
 use App\Http\Controllers\Tenant\GoamlController;
 use App\Http\Controllers\Tenant\SettingsController as TenantSettingsController;
 use App\Http\Controllers\Tenant\ReportController;
+use App\Http\Controllers\PagesController;
+use App\Http\Controllers\ComplianceCalendarController;
+use App\Http\Controllers\ResourceController;
+use App\Http\Controllers\NewsController;
+use App\Http\Controllers\NewsletterController;
+use App\Http\Controllers\PublicAccountController;
+use App\Http\Controllers\PublicDeadlineController;
+use App\Http\Controllers\CertificateVerifyController;
+use App\Http\Controllers\PublicCertificateController;
+use App\Http\Controllers\Admin\TrainingSessionController;
+use App\Http\Controllers\BBook\BBookAuthController;
+use App\Http\Controllers\BBook\BBookClientController;
+use App\Http\Controllers\BBook\BBookDashboardController;
+use App\Http\Controllers\BBook\OtcDealController;
+use App\Http\Controllers\Tenant\TfsController;
 use App\Models\CrmQuotation;
 
 require __DIR__.'/auth.php';
 
-// Role-based access middleware aliases
-// EnsureAdminUser  → admin portal only
-// EnsureTenantUser → tenant portal, own portal only
+// ── Public marketing site (no auth) ────────────────────────────────────────
+Route::get('/',                              [PagesController::class, 'home'])->name('home');
+Route::get('/services',                      [PagesController::class, 'services'])->name('services');
+Route::get('/about',                         [PagesController::class, 'about'])->name('about');
+Route::get('/privacy',                       [PagesController::class, 'privacy'])->name('privacy');
+Route::get('/contact',                       [PagesController::class, 'contact'])->name('contact');
+Route::post('/contact',                      [PagesController::class, 'submitContact'])->name('contact.submit');
+Route::get('/compliance-calendar',           [ComplianceCalendarController::class, 'index'])->name('compliance-calendar');
+Route::get('/resources',                     [ResourceController::class, 'index'])->name('resources');
+Route::get('/resources/{resource}/download', [ResourceController::class, 'download'])->name('resources.download');
+Route::get('/news',                          [NewsController::class, 'index'])->name('news');
+Route::get('/news/{news}',                   [NewsController::class, 'show'])->name('news.show');
+Route::post('/newsletter/subscribe',         [NewsletterController::class, 'subscribe'])->name('newsletter.subscribe');
+Route::get('/technology',                    [PagesController::class, 'technology'])->name('technology');
+Route::get('/verify/certificate/{training}',  [CertificateVerifyController::class, 'show'])->name('certificate.verify');
+Route::get('/certificates/{token}',           [PublicCertificateController::class, 'show'])->name('certificate.public.show');
+Route::get('/certificates/{token}/download',  [PublicCertificateController::class, 'download'])->name('certificate.public.download');
 
-// ── Admin routes ───────────────────────────────────────────────────────────
+// ── Public free-account system ──────────────────────────────────────────────
+Route::middleware('guest:public')->group(function () {
+    Route::get('/account/register',  [PublicAccountController::class, 'showRegister'])->name('account.register');
+    Route::post('/account/register', [PublicAccountController::class, 'register'])->name('account.register.store');
+    Route::get('/account/login',     [PublicAccountController::class, 'showLogin'])->name('account.login');
+    Route::post('/account/login',    [PublicAccountController::class, 'login'])->name('account.login.store');
+});
+
+Route::middleware('auth:public')->group(function () {
+    Route::post('/account/logout',              [PublicAccountController::class, 'logout'])->name('account.logout');
+    Route::get('/account',                       [PublicAccountController::class, 'dashboard'])->name('account.dashboard');
+    Route::post('/account/deadlines',            [PublicDeadlineController::class, 'store'])->name('account.deadlines.store');
+    Route::patch('/account/deadlines/{deadline}', [PublicDeadlineController::class, 'update'])->name('account.deadlines.update');
+    Route::delete('/account/deadlines/{deadline}',[PublicDeadlineController::class, 'destroy'])->name('account.deadlines.destroy');
+});
+
+// ── Admin routes ────────────────────────────────────────────────────────────
 Route::middleware(['auth', \App\Http\Middleware\EnsureAdminUser::class])->group(function () {
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    Route::get('/',          [DashboardController::class, 'index'])->name('admin.dashboard');
 
-    // ── CRM ───────────────────────────────────────────────────────────────
+    // ── CRM ─────────────────────────────────────────────────────────────────
     Route::get('/crm',          [CrmController::class, 'index'])->name('crm.index');
     Route::get('/crm/new',      [CrmController::class, 'create'])->name('crm.create');
     Route::post('/crm',         [CrmController::class, 'store'])->name('crm.store');
@@ -45,6 +89,10 @@ Route::middleware(['auth', \App\Http\Middleware\EnsureAdminUser::class])->group(
     Route::post('/crm/{crm}/notes',                [CrmController::class, 'addNote'])->name('crm.notes.store');
     Route::post('/crm/{crm}/tasks',                [CrmController::class, 'addTask'])->name('crm.tasks.store');
     Route::patch('/crm/tasks/{task}/complete',     [CrmController::class, 'completeTask'])->name('crm.tasks.complete');
+    Route::get('/tasks',                           [CrmController::class, 'tasksIndex'])->name('tasks.index');
+    Route::post('/tasks/quick-capture',            [CrmController::class, 'quickCapture'])->name('tasks.quick-capture');
+    Route::post('/tasks/quick-capture/save',       [CrmController::class, 'quickCaptureSave'])->name('tasks.quick-capture.save');
+    Route::get('/crm/search',                      [CrmController::class, 'searchJson'])->name('crm.search');
     Route::post('/crm/{crm}/documents',            [CrmController::class, 'uploadDocument'])->name('crm.documents.upload');
     Route::get('/crm/documents/{document}/download',[CrmController::class, 'downloadDocument'])->name('crm.documents.download');
     Route::delete('/crm/documents/{document}',     [CrmController::class, 'deleteDocument'])->name('crm.documents.delete');
@@ -52,12 +100,43 @@ Route::middleware(['auth', \App\Http\Middleware\EnsureAdminUser::class])->group(
     Route::patch('/crm/slas/{sla}/status',         [CrmController::class, 'updateSlaStatus'])->name('crm.slas.status');
     Route::post('/crm/slas/{sla}/upload',          [CrmController::class, 'uploadSignedSla'])->name('crm.slas.upload');
     Route::post('/crm/{crm}/quotations',           [CrmController::class, 'createQuotation'])->name('crm.quotations.store');
+    Route::get('/training-sessions',                          [TrainingSessionController::class, 'index'])->name('training-sessions.index');
+    Route::get('/training-sessions/create',                   [TrainingSessionController::class, 'create'])->name('training-sessions.create');
+    Route::post('/training-sessions',                         [TrainingSessionController::class, 'store'])->name('training-sessions.store');
+    Route::get('/training-sessions/import-template',          [TrainingSessionController::class, 'importTemplate'])->name('training-sessions.import-template');
+    Route::get('/training-sessions/{date}/{type}',            [TrainingSessionController::class, 'show'])->name('training-sessions.show');
+    Route::post('/training-sessions/{date}/{type}/attendees', [TrainingSessionController::class, 'addAttendee'])->name('training-sessions.add-attendee');
+    Route::post('/training-sessions/{date}/{type}/import',    [TrainingSessionController::class, 'importAttendees'])->name('training-sessions.import');
+    Route::post('/training-sessions/{date}/{type}/email',     [TrainingSessionController::class, 'emailClients'])->name('training-sessions.email');
+    Route::get('/training-sessions/{date}/{type}/log',        [TrainingSessionController::class, 'exportLog'])->name('training-sessions.log');
+    Route::get('/training-sessions/{date}/{type}/log-docx',   [TrainingSessionController::class, 'exportLogDocx'])->name('training-sessions.log-docx');
 
-    // ── Document generation ───────────────────────────────────────────────
+    // ── Academy ──────────────────────────────────────────────────────────────
+    Route::get('/academy/courses',                      [\App\Http\Controllers\Admin\AcademyController::class, 'courses'])->name('academy.courses.index');
+    Route::get('/academy/courses/create',               [\App\Http\Controllers\Admin\AcademyController::class, 'createCourse'])->name('academy.courses.create');
+    Route::post('/academy/courses',                     [\App\Http\Controllers\Admin\AcademyController::class, 'storeCourse'])->name('academy.courses.store');
+    Route::get('/academy/courses/{course}/edit',        [\App\Http\Controllers\Admin\AcademyController::class, 'editCourse'])->name('academy.courses.edit');
+    Route::put('/academy/courses/{course}',             [\App\Http\Controllers\Admin\AcademyController::class, 'updateCourse'])->name('academy.courses.update');
+    Route::post('/academy/courses/{course}/sessions',   [\App\Http\Controllers\Admin\AcademyController::class, 'storeSession'])->name('academy.sessions.store');
+    Route::patch('/academy/sessions/{session}',         [\App\Http\Controllers\Admin\AcademyController::class, 'updateSession'])->name('academy.sessions.update');
+    Route::get('/academy/bookings',                     [\App\Http\Controllers\Admin\AcademyController::class, 'bookings'])->name('academy.bookings.index');
+    Route::get('/academy/bookings/{booking}',           [\App\Http\Controllers\Admin\AcademyController::class, 'showBooking'])->name('academy.bookings.show');
+    Route::patch('/academy/bookings/{booking}',         [\App\Http\Controllers\Admin\AcademyController::class, 'updateBooking'])->name('academy.bookings.update');
+    Route::post('/academy/bookings/{booking}/attendees',[\App\Http\Controllers\Admin\AcademyController::class, 'addAttendee'])->name('academy.bookings.attendees.store');
+    Route::post('/academy/bookings/{booking}/certificates', [\App\Http\Controllers\Admin\AcademyController::class, 'issueCertificates'])->name('academy.bookings.certificates');
+
+    Route::post('/crm/{crm}/trainings',            [CrmController::class, 'storeTraining'])->name('crm.trainings.store');
+    Route::delete('/crm/trainings/{training}',     [CrmController::class, 'deleteTraining'])->name('crm.trainings.delete');
+    Route::patch('/crm/trainings/{training}',      [CrmController::class, 'updateTraining'])->name('crm.trainings.update');
+    Route::get('/crm/trainings/{training}/certificate', [CrmController::class, 'downloadCertificate'])->name('crm.trainings.certificate');
+    Route::get('/crm/trainings/{training}/material',    [CrmController::class, 'downloadMaterial'])->name('crm.trainings.material');
+    Route::get('/crm/trainings/{training}/generate',    [CrmController::class, 'generateCertificate'])->name('crm.trainings.generate');
+
+    // ── Document generation ──────────────────────────────────────────────────
     Route::get('/crm/slas/{sla}/download',             [DocumentController::class, 'generateSla'])->name('sla.download');
     Route::get('/crm/quotations/{quotation}/download', [DocumentController::class, 'generateQuotation'])->name('crm.quotations.download');
 
-    // ── Standalone quotations ─────────────────────────────────────────────
+    // ── Standalone quotations ────────────────────────────────────────────────
     Route::get('/quotations',              [DocumentController::class, 'quotationIndex'])->name('quotations.index');
     Route::get('/quotations/new',          [DocumentController::class, 'quotationCreate'])->name('quotations.create');
     Route::post('/quotations',             [DocumentController::class, 'quotationStore'])->name('quotations.store');
@@ -68,7 +147,10 @@ Route::middleware(['auth', \App\Http\Middleware\EnsureAdminUser::class])->group(
         return back()->with('success', 'Status updated.');
     })->name('quotations.status');
 
-    // ── Settings ──────────────────────────────────────────────────────────
+    // ── Help ────────────────────────────────────────────────────────────────
+    Route::get('/help/user-manual', fn() => view('admin.help.user-manual'))->name('help.user-manual');
+
+    // ── Settings ────────────────────────────────────────────────────────────
     Route::get('/settings',                         [SettingsController::class, 'index'])->name('settings.index');
     Route::get('/settings/sla/new',                 [SettingsController::class, 'createSlaTemplate'])->name('settings.sla.create');
     Route::post('/settings/sla',                    [SettingsController::class, 'storeSlaTemplate'])->name('settings.sla.store');
@@ -81,9 +163,13 @@ Route::middleware(['auth', \App\Http\Middleware\EnsureAdminUser::class])->group(
     Route::put('/settings/qt/{template}',           [SettingsController::class, 'updateQtTemplate'])->name('settings.qt.update');
     Route::patch('/settings/qt/{template}/toggle',  [SettingsController::class, 'toggleQtTemplate'])->name('settings.qt.toggle');
     Route::post('/settings/staff',                  [SettingsController::class, 'storeStaff'])->name('settings.staff.store');
+    Route::put('/settings/staff/{user}',            [SettingsController::class, 'updateStaff'])->name('settings.staff.update');
+    Route::delete('/settings/staff/{user}',         [SettingsController::class, 'destroyStaff'])->name('settings.staff.destroy');
     Route::patch('/settings/staff/{user}/toggle',   [SettingsController::class, 'toggleStaff'])->name('settings.staff.toggle');
+    Route::post('/settings/certificate/upload',     [SettingsController::class, 'uploadCertificateAsset'])->name('settings.certificate.upload');
+    Route::post('/settings/screening',              [SettingsController::class, 'updateScreeningSettings'])->name('settings.screening.update');
 
-    // ── Other admin stubs ─────────────────────────────────────────────────
+    // ── Other admin stubs ────────────────────────────────────────────────────
     Route::get('/marketing', fn() => view('admin.marketing.index'))->name('marketing.index');
 
     // Marketing contacts — direct from mailer DB — PERMANENT, do not remove
@@ -107,16 +193,19 @@ Route::middleware(['auth', \App\Http\Middleware\EnsureAdminUser::class])->group(
         return response($response->body(), $response->status())
             ->header('Content-Type', 'application/json');
     })->name('marketing.api')->where('path', '.*');
-    // ── Screening ─────────────────────────────────────────────────────────
+
+    // ── Screening ────────────────────────────────────────────────────────────
     Route::get('/screening',                              [ScreeningController::class, 'index'])->name('screening.index');
     Route::post('/screening/run',                         [ScreeningController::class, 'run'])->name('screening.run');
     Route::post('/crm/{crm}/screen',                      [ScreeningController::class, 'screenClient'])->name('screening.client');
     Route::post('/crm/shareholders/{shareholder}/screen', [ScreeningController::class, 'screenShareholder'])->name('screening.shareholder');
-    // ── WhatsApp ──────────────────────────────────────────────────────────
+
+    // ── WhatsApp ─────────────────────────────────────────────────────────────
     Route::get('/whatsapp',                          [WhatsAppController::class, 'index'])->name('whatsapp.index');
     Route::get('/whatsapp/api/status',               [WhatsAppController::class, 'status'])->name('wa.status');
     Route::get('/whatsapp/api/groups',               [WhatsAppController::class, 'groups'])->name('wa.groups');
     Route::post('/whatsapp/api/groups/refresh',      [WhatsAppController::class, 'refreshGroups'])->name('wa.groups.refresh');
+    Route::get('/whatsapp/api/contacts',             [WhatsAppController::class, 'contacts'])->name('wa.contacts');
     Route::get('/whatsapp/api/schedules',            [WhatsAppController::class, 'schedules'])->name('wa.schedules');
     Route::post('/whatsapp/api/schedules',           [WhatsAppController::class, 'addSchedule'])->name('wa.schedules.add');
     Route::put('/whatsapp/api/schedules/{id}',      [WhatsAppController::class, 'updateSchedule'])->name('wa.schedules.update');
@@ -132,6 +221,7 @@ Route::middleware(['auth', \App\Http\Middleware\EnsureAdminUser::class])->group(
     Route::get('/kyc/submissions/{id}',         fn() => view('admin.stub', ['module' => 'KYC Review']))->name('kyc.review');
     Route::get('/kyc/tenants',                   [TenantController::class, 'index'])->name('kyc.tenants');
     Route::get('/kyc/tenants/create',            [TenantController::class, 'create'])->name('kyc.tenants.create');
+    Route::get('/kyc/tenants/check-slug',        [TenantController::class, 'checkSlug'])->name('kyc.tenants.check-slug');
     Route::post('/kyc/tenants',                  [TenantController::class, 'store'])->name('kyc.tenants.store');
     Route::get('/kyc/tenants/{tenant}/edit',     [TenantController::class, 'edit'])->name('kyc.tenants.edit');
     Route::patch('/kyc/tenants/{tenant}',        [TenantController::class, 'update'])->name('kyc.tenants.update');
@@ -139,19 +229,62 @@ Route::middleware(['auth', \App\Http\Middleware\EnsureAdminUser::class])->group(
     Route::post('/kyc/tenants/{tenant}/users',                   [TenantController::class, 'addUser'])->name('kyc.tenants.users.add');
     Route::patch('/kyc/tenants/{tenant}/users/{user}/password',  [TenantController::class, 'updatePassword'])->name('kyc.tenants.users.password');
     Route::delete('/kyc/tenants/{tenant}/users/{user}',          [TenantController::class, 'deleteUser'])->name('kyc.tenants.users.delete');
+    Route::patch('/kyc/tenants/{tenant}/users/{user}/bbook',     [TenantController::class, 'toggleBBookAccess'])->name('kyc.tenants.users.bbook');
     Route::patch('/kyc/tenants/{tenant}/clients/{client}/restore', [TenantController::class, 'restoreClient'])->name('kyc.tenants.clients.restore');
     Route::patch('/kyc/submissions/{id}/approve', fn() => back())->name('kyc.approve');
     Route::patch('/kyc/submissions/{id}/reject',  fn() => back())->name('kyc.reject');
 
-}); // ← end auth middleware group
+    // ── Public site content manager ──────────────────────────────────────────
+    Route::get('/content/compliance-deadlines',        [\App\Http\Controllers\Admin\ComplianceDeadlineController::class, 'index'])->name('content.deadlines.index');
+    Route::post('/content/compliance-deadlines',        [\App\Http\Controllers\Admin\ComplianceDeadlineController::class, 'store'])->name('content.deadlines.store');
+    Route::patch('/content/compliance-deadlines/{deadline}', [\App\Http\Controllers\Admin\ComplianceDeadlineController::class, 'update'])->name('content.deadlines.update');
+    Route::delete('/content/compliance-deadlines/{deadline}', [\App\Http\Controllers\Admin\ComplianceDeadlineController::class, 'destroy'])->name('content.deadlines.destroy');
+    Route::get('/content/resources',                    [\App\Http\Controllers\Admin\ResourceDocumentController::class, 'index'])->name('content.resources.index');
+    Route::post('/content/resources',                    [\App\Http\Controllers\Admin\ResourceDocumentController::class, 'store'])->name('content.resources.store');
+    Route::patch('/content/resources/{resource}/toggle', [\App\Http\Controllers\Admin\ResourceDocumentController::class, 'togglePublish'])->name('content.resources.toggle');
+    Route::delete('/content/resources/{resource}',       [\App\Http\Controllers\Admin\ResourceDocumentController::class, 'destroy'])->name('content.resources.destroy');
+    Route::get('/content/news',                          [\App\Http\Controllers\Admin\NewsItemController::class, 'index'])->name('content.news.index');
+    Route::patch('/content/news/{item}/toggle',          [\App\Http\Controllers\Admin\NewsItemController::class, 'togglePublish'])->name('content.news.toggle');
+    Route::delete('/content/news/{item}',                [\App\Http\Controllers\Admin\NewsItemController::class, 'destroy'])->name('content.news.destroy');
+    Route::get('/content/public-users',                  [\App\Http\Controllers\Admin\PublicUserController::class, 'index'])->name('content.public-users.index');
+    Route::delete('/content/public-users/{user}',        [\App\Http\Controllers\Admin\PublicUserController::class, 'destroy'])->name('content.public-users.destroy');
 
-// ── Public client self-fill routes (no auth) ───────────────────────────────
+}); // ← end admin middleware group
+
+// ── Public client self-fill routes (no auth) ────────────────────────────────
 Route::prefix('{slug}')->middleware(['resolve.tenant'])->name('tenant.')->group(function () {
     Route::get('/fill/{token}',         [\App\Http\Controllers\Tenant\ClientFillController::class, 'show'])->name('fill.show');
     Route::post('/fill/{token}/submit', [\App\Http\Controllers\Tenant\ClientFillController::class, 'submit'])->name('fill.submit');
 });
 
-// ── Tenant portal routes  /{slug}/... ──────────────────────────────────────
+// ── B-Book ────────────────────────────────────────────────────────────────────
+Route::prefix('{slug}/bbook')->middleware(['resolve.tenant'])->name('bbook.')->group(function () {
+    Route::get('/login',  [BBookAuthController::class, 'create'])->name('login');
+    Route::post('/login', [BBookAuthController::class, 'store'])->name('login.store');
+    Route::post('/logout',[BBookAuthController::class, 'destroy'])->name('logout');
+
+    Route::middleware(['bbook.user'])->group(function () {
+        Route::get('/', [BBookDashboardController::class, 'index'])->name('dashboard');
+
+        Route::get('/deals',                    [OtcDealController::class, 'index'])->name('deals.index');
+        Route::get('/deals/new',                [OtcDealController::class, 'create'])->name('deals.create');
+        Route::post('/deals',                   [OtcDealController::class, 'store'])->name('deals.store');
+        Route::get('/deals/{deal}',             [OtcDealController::class, 'show'])->name('deals.show');
+        Route::get('/deals/{deal}/edit',        [OtcDealController::class, 'edit'])->name('deals.edit');
+        Route::put('/deals/{deal}',             [OtcDealController::class, 'update'])->name('deals.update');
+        Route::post('/deals/{deal}/post',       [OtcDealController::class, 'post'])->name('deals.post');
+        Route::get('/deals/{deal}/fix-price',   [OtcDealController::class, 'fixPriceForm'])->name('deals.fix-price.form');
+        Route::post('/deals/{deal}/fix-price',  [OtcDealController::class, 'fixPrice'])->name('deals.fix-price.store');
+        Route::post('/deals/{deal}/void',       [OtcDealController::class, 'void'])->name('deals.void');
+        Route::post('/deals/{deal}/payments',   [OtcDealController::class, 'storePayment'])->name('deals.payments.store');
+
+        Route::get('/clients',              [BBookClientController::class, 'index'])->name('clients.index');
+        Route::get('/clients/otc/{name}',   [BBookClientController::class, 'showCounterparty'])->name('clients.counterparty');
+        Route::get('/clients/{client}',     [BBookClientController::class, 'show'])->name('clients.show');
+    });
+});
+
+// ── Tenant portal routes /{slug}/... ─────────────────────────────────────────
 Route::prefix('{slug}')
     ->middleware(['auth', 'resolve.tenant', \App\Http\Middleware\EnsureTenantUser::class])
     ->name('tenant.')
@@ -163,8 +296,10 @@ Route::prefix('{slug}')
         Route::delete('/clients/{client}',           [ClientController::class, 'destroy'])->name('clients.destroy');
         Route::post('/fill/generate',              [ClientFillController::class, 'generate'])->name('fill.generate');
         Route::get('/fill/pending',                [ClientFillController::class, 'pending'])->name('fill.pending');
+        Route::post('/fill/{token}/reissue',       [ClientFillController::class, 'reissue'])->name('fill.reissue');
         Route::post('/clients/scan-document',          [ClientController::class, 'scanDocument'])->name('clients.scan');
         Route::post('/clients/screen-preview',         [ClientController::class, 'screenPreview'])->name('clients.screen.preview');
+        Route::get('/clients/search',                  [ClientController::class, 'search'])->name('clients.search');
         Route::get('/clients/new',                     [ClientController::class, 'create'])->name('clients.create');
         Route::post('/clients',                        [ClientController::class, 'store'])->name('clients.store');
         Route::get('/clients/{client}/confirm',        [ClientController::class, 'confirm'])->name('clients.confirm');
@@ -173,20 +308,23 @@ Route::prefix('{slug}')
         Route::patch('/clients/{client}',      [ClientController::class, 'update'])->name('clients.update');
         Route::patch('/clients/{client}/risk',         [ClientController::class, 'updateRisk'])->name('clients.risk');
         Route::patch('/clients/{client}/status',       [ClientController::class, 'updateStatus'])->name('clients.status');
-        Route::patch('/clients/{client}/declarations', [ClientController::class, 'updateDeclarations'])->name('clients.declarations');
+        Route::patch('/clients/{client}/declarations',  [ClientController::class, 'updateDeclarations'])->name('clients.declarations');
+        Route::patch('/clients/{client}/questionnaire', [ClientController::class, 'updateQuestionnaire'])->name('clients.questionnaire');
         Route::post('/clients/{client}/documents/bulk', [ClientController::class, 'bulkUploadDocuments'])->name('docs.bulk');
         Route::post('/clients/{client}/documents',   [ClientController::class, 'uploadDocument'])->name('docs.upload');
         Route::get('/documents/{document}/download', [ClientController::class, 'downloadDocument'])->name('docs.download');
         Route::delete('/documents/{document}',       [ClientController::class, 'deleteDocument'])->name('docs.delete');
+        Route::post('/scan-logs/{log}/revert',       [ClientController::class, 'revertScanLog'])->name('scan.revert');
         Route::get('/screening',                          [TenantScreeningController::class, 'index'])->name('screening');
         Route::post('/screening/run',                      [TenantScreeningController::class, 'run'])->name('screening.run');
         Route::post('/clients/{client}/screen',              [TenantScreeningController::class, 'screenClient'])->name('clients.screen');
         Route::post('/clients/{client}/screen-subject',      [TenantScreeningController::class, 'screenSubject'])->name('clients.screen.subject');
         Route::post('/clients/{client}/screen-save',         [TenantScreeningController::class, 'screenSave'])->name('clients.screen.save');
+        Route::post('/clients/{client}/monitoring',          [ClientController::class, 'updateMonitoring'])->name('clients.monitoring.update');
         Route::get('/risk',                          [RiskController::class, 'index'])->name('risk');
         Route::get('/risk/{client}/assess',          [RiskController::class, 'assess'])->name('risk.assess');
         Route::post('/risk/{client}/assess',         [RiskController::class, 'saveAssessment'])->name('risk.save');
-        // ── Documents ──────────────────────────────────────────────────────────
+        // ── Documents ────────────────────────────────────────────────────────
         Route::get('/docs/company',                         [TenantDocumentController::class, 'companyIndex'])->name('docs.company');
         Route::post('/docs/company/upload',                 [TenantDocumentController::class, 'companyUpload'])->name('docs.company.upload');
         Route::get('/docs/company/{document}/download',     [TenantDocumentController::class, 'companyDownload'])->name('docs.company.download');
@@ -194,7 +332,8 @@ Route::prefix('{slug}')
         Route::get('/docs/clients',                         [TenantDocumentController::class, 'clientIndex'])->name('docs.clients');
         Route::get('/docs/clients/{document}/download',     [TenantDocumentController::class, 'clientDownload'])->name('docs.client.download');
         Route::delete('/docs/clients/{document}',           [TenantDocumentController::class, 'clientDelete'])->name('docs.client.delete');
-        // ── goAML ──────────────────────────────────────────────────────────────
+        Route::get('/expiry', [\App\Http\Controllers\Tenant\ExpiryController::class, 'index'])->name('expiry');
+        // ── goAML ────────────────────────────────────────────────────────────
         Route::get('/goaml',                   [GoamlController::class, 'index'])->name('goaml');
         Route::get('/goaml/create',            [GoamlController::class, 'create'])->name('goaml.create');
         Route::get('/goaml/settings',          [GoamlController::class, 'settings'])->name('goaml.settings');
@@ -203,11 +342,206 @@ Route::prefix('{slug}')
         Route::get('/goaml/{report}/download', [GoamlController::class, 'download'])->name('goaml.download');
         Route::delete('/goaml/{report}',       [GoamlController::class, 'destroy'])->name('goaml.destroy');
         Route::get('/settings',                    [TenantSettingsController::class, 'index'])->name('settings');
+        Route::get('/clients/{client}/kyc-pdf',        [ReportController::class, 'kycPdf'])->name('clients.kyc.pdf');
+        Route::get('/clients/{client}/kyc-docx',       [ReportController::class, 'kycDocx'])->name('clients.kyc.docx');
+        Route::get('/kyc-blank-template',              [ReportController::class, 'kycBlankDocx'])->name('kyc.blank');
         Route::get('/clients/{client}/screening-pdf',  [ReportController::class, 'screeningPdf'])->name('clients.screening.pdf');
+        Route::get('/screening/log/{log}/pdf',         [ReportController::class, 'screeningLogPdf'])->name('screening.log.pdf');
+        Route::get('/screening/log/{log}/review',      [TenantScreeningController::class, 'showReview'])->name('screening.log.review');
+        Route::post('/screening/log/{log}/review/save', [TenantScreeningController::class, 'saveHitReview'])->name('screening.log.review.save');
         Route::get('/clients/{client}/declaration/{type}', [ReportController::class, 'declaration'])->name('clients.declaration');
         Route::get('/clients/{client}/combined-declaration',   [ReportController::class, 'combinedDeclaration'])->name('clients.declaration.combined');
         Route::patch('/settings/profile',          [TenantSettingsController::class, 'updateProfile'])->name('settings.profile');
         Route::patch('/settings/mlro',             [TenantSettingsController::class, 'updateMlro'])->name('settings.mlro');
         Route::post('/settings/logo',              [TenantSettingsController::class, 'uploadLogo'])->name('settings.logo');
         Route::patch('/settings/password',         [TenantSettingsController::class, 'updatePassword'])->name('settings.password');
+
+        // ── TFS Submissions ──────────────────────────────────────────────────
+        Route::get('/tfs',                                  [TfsController::class, 'index'])->name('tfs.index');
+        Route::get('/tfs/create',                           [TfsController::class, 'create'])->name('tfs.create');
+        Route::post('/tfs',                                 [TfsController::class, 'store'])->name('tfs.store');
+        Route::get('/tfs/{submission}',                     [TfsController::class, 'show'])->name('tfs.show');
+        Route::post('/tfs/{submission}/submit',             [TfsController::class, 'submitAll'])->name('tfs.submit');
+        Route::get('/tfs/{submission}/snapshot/{index}',    [TfsController::class, 'snapshot'])->name('tfs.snapshot');
+
+        // ── Accounting (all routes under /accounting prefix) ─────────────────
+        Route::prefix('accounting')->name('accounting.')->group(function () {
+
+            // Bullion-specific
+            Route::middleware('module:bullion_accounting')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Tenant\Accounting\DashboardController::class, 'index'])->name('dashboard');
+
+                Route::post('/clients/{client}/payments',   [\App\Http\Controllers\Tenant\Accounting\ClientPaymentController::class, 'store'])->name('clients.payments.store');
+                Route::get('/payments/{payment}/receipt',   [\App\Http\Controllers\Tenant\Accounting\ClientPaymentController::class, 'receipt'])->name('payments.receipt');
+                Route::post('/deposits/{deposit}/apply',    [\App\Http\Controllers\Tenant\Accounting\ClientPaymentController::class, 'apply'])->name('deposits.apply');
+
+                Route::get('/inventory',                    [\App\Http\Controllers\Tenant\Accounting\InventoryController::class, 'index'])->name('inventory.index');
+                Route::get('/inventory/new',                [\App\Http\Controllers\Tenant\Accounting\InventoryController::class, 'create'])->name('inventory.create');
+                Route::post('/inventory',                   [\App\Http\Controllers\Tenant\Accounting\InventoryController::class, 'store'])->name('inventory.store');
+                Route::get('/inventory/options',            [\App\Http\Controllers\Tenant\Accounting\InventoryController::class, 'optionsIndex'])->name('inventory.options');
+                Route::post('/inventory/options',           [\App\Http\Controllers\Tenant\Accounting\InventoryController::class, 'optionsStore'])->name('inventory.options.store');
+                Route::delete('/inventory/options',         [\App\Http\Controllers\Tenant\Accounting\InventoryController::class, 'optionsDestroy'])->name('inventory.options.destroy');
+                Route::get('/inventory/{item}',             [\App\Http\Controllers\Tenant\Accounting\InventoryController::class, 'show'])->name('inventory.show');
+                Route::post('/inventory/{item}/adjust',     [\App\Http\Controllers\Tenant\Accounting\InventoryController::class, 'adjust'])->name('inventory.adjust');
+
+                Route::get('/invoices',                     [\App\Http\Controllers\Tenant\Accounting\InvoiceController::class, 'index'])->name('invoices.index');
+                Route::get('/invoices/new',                 [\App\Http\Controllers\Tenant\Accounting\InvoiceController::class, 'create'])->name('invoices.create');
+                Route::post('/invoices',                    [\App\Http\Controllers\Tenant\Accounting\InvoiceController::class, 'store'])->name('invoices.store');
+                Route::get('/invoices/{invoice}',           [\App\Http\Controllers\Tenant\Accounting\InvoiceController::class, 'show'])->name('invoices.show');
+                Route::get('/invoices/{invoice}/edit',      [\App\Http\Controllers\Tenant\Accounting\InvoiceController::class, 'edit'])->name('invoices.edit');
+                Route::put('/invoices/{invoice}',           [\App\Http\Controllers\Tenant\Accounting\InvoiceController::class, 'update'])->name('invoices.update');
+                Route::delete('/invoices/{invoice}',        [\App\Http\Controllers\Tenant\Accounting\InvoiceController::class, 'destroy'])->name('invoices.destroy');
+                Route::post('/invoices/{invoice}/post',     [\App\Http\Controllers\Tenant\Accounting\InvoiceController::class, 'post'])->name('invoices.post');
+                Route::get('/invoices/{invoice}/fix',       [\App\Http\Controllers\Tenant\Accounting\InvoiceController::class, 'fixPriceForm'])->name('invoices.fix.form');
+                Route::post('/invoices/{invoice}/fix',      [\App\Http\Controllers\Tenant\Accounting\InvoiceController::class, 'fixPrice'])->name('invoices.fix');
+                Route::post('/invoices/{invoice}/void',     [\App\Http\Controllers\Tenant\Accounting\InvoiceController::class, 'void'])->name('invoices.void');
+                Route::get('/invoices/{invoice}/pdf',       [\App\Http\Controllers\Tenant\Accounting\InvoiceController::class, 'pdf'])->name('invoices.pdf');
+                Route::post('/invoices/{invoice}/payments', [\App\Http\Controllers\Tenant\Accounting\InvoiceController::class, 'storePayment'])->name('invoices.payments.store');
+
+                Route::get('/reports/client-balances',      [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'clientBalances'])->name('reports.client-balances');
+                Route::get('/reports/client-balances/pdf',  [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'clientBalancesPdf'])->name('reports.client-balances.pdf');
+                Route::get('/reports/client-balances/csv',  [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'clientBalancesCsv'])->name('reports.client-balances.csv');
+            });
+
+            // General Accounting
+            Route::middleware('module:general_accounting')->prefix('general')->name('general.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Tenant\GeneralAccounting\DashboardController::class, 'index'])->name('dashboard');
+                Route::prefix('invoices')->name('invoices.')->group(function () {
+                    Route::get('/',              [\App\Http\Controllers\Tenant\Accounting\StandardInvoiceController::class, 'index'])->name('index');
+                    Route::get('/new',           [\App\Http\Controllers\Tenant\Accounting\StandardInvoiceController::class, 'create'])->name('create');
+                    Route::post('/',             [\App\Http\Controllers\Tenant\Accounting\StandardInvoiceController::class, 'store'])->name('store');
+                    Route::get('/{invoice}',     [\App\Http\Controllers\Tenant\Accounting\StandardInvoiceController::class, 'show'])->name('show');
+                    Route::get('/{invoice}/edit',[\App\Http\Controllers\Tenant\Accounting\StandardInvoiceController::class, 'edit'])->name('edit');
+                    Route::put('/{invoice}',     [\App\Http\Controllers\Tenant\Accounting\StandardInvoiceController::class, 'update'])->name('update');
+                    Route::delete('/{invoice}',  [\App\Http\Controllers\Tenant\Accounting\StandardInvoiceController::class, 'destroy'])->name('destroy');
+                    Route::post('/{invoice}/post',    [\App\Http\Controllers\Tenant\Accounting\StandardInvoiceController::class, 'post'])->name('post');
+                    Route::post('/{invoice}/void',    [\App\Http\Controllers\Tenant\Accounting\StandardInvoiceController::class, 'void'])->name('void');
+                    Route::post('/{invoice}/payments',[\App\Http\Controllers\Tenant\Accounting\StandardInvoiceController::class, 'storePayment'])->name('payments.store');
+                    Route::get('/{invoice}/pdf',      [\App\Http\Controllers\Tenant\Accounting\StandardInvoiceController::class, 'pdf'])->name('pdf');
+                });
+            });
+
+            // Real Estate Accounting
+            Route::middleware('module:real_estate_accounting')->prefix('re')->name('re.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Tenant\RealEstate\DashboardController::class, 'index'])->name('dashboard');
+                Route::prefix('invoices')->name('invoices.')->group(function () {
+                    Route::get('/',              [\App\Http\Controllers\Tenant\Accounting\StandardInvoiceController::class, 'index'])->name('index');
+                    Route::get('/new',           [\App\Http\Controllers\Tenant\Accounting\StandardInvoiceController::class, 'create'])->name('create');
+                    Route::post('/',             [\App\Http\Controllers\Tenant\Accounting\StandardInvoiceController::class, 'store'])->name('store');
+                    Route::get('/{invoice}',     [\App\Http\Controllers\Tenant\Accounting\StandardInvoiceController::class, 'show'])->name('show');
+                    Route::get('/{invoice}/edit',[\App\Http\Controllers\Tenant\Accounting\StandardInvoiceController::class, 'edit'])->name('edit');
+                    Route::put('/{invoice}',     [\App\Http\Controllers\Tenant\Accounting\StandardInvoiceController::class, 'update'])->name('update');
+                    Route::delete('/{invoice}',  [\App\Http\Controllers\Tenant\Accounting\StandardInvoiceController::class, 'destroy'])->name('destroy');
+                    Route::post('/{invoice}/post',    [\App\Http\Controllers\Tenant\Accounting\StandardInvoiceController::class, 'post'])->name('post');
+                    Route::post('/{invoice}/void',    [\App\Http\Controllers\Tenant\Accounting\StandardInvoiceController::class, 'void'])->name('void');
+                    Route::post('/{invoice}/payments',[\App\Http\Controllers\Tenant\Accounting\StandardInvoiceController::class, 'storePayment'])->name('payments.store');
+                    Route::get('/{invoice}/pdf',      [\App\Http\Controllers\Tenant\Accounting\StandardInvoiceController::class, 'pdf'])->name('pdf');
+                });
+            });
+
+            // Shared features — gated by ANY accounting module ─────────────────
+            Route::middleware('any.accounting')->group(function () {
+                Route::get('/reports/client-statement',     [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'clientStatement'])->name('reports.client-statement');
+                Route::get('/reports/client-statement/pdf', [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'clientStatementPdf'])->name('reports.client-statement.pdf');
+                Route::get('/reports/client-statement/csv', [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'clientStatementCsv'])->name('reports.client-statement.csv');
+
+                Route::get('/chart-of-accounts',            [\App\Http\Controllers\Tenant\Accounting\ChartOfAccountController::class, 'index'])->name('coa.index');
+                Route::post('/chart-of-accounts',           [\App\Http\Controllers\Tenant\Accounting\ChartOfAccountController::class, 'store'])->name('coa.store');
+                Route::delete('/chart-of-accounts/{account}', [\App\Http\Controllers\Tenant\Accounting\ChartOfAccountController::class, 'destroy'])->name('coa.destroy');
+
+                Route::get('/journal',                      [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'journalIndex'])->name('journal.index');
+                Route::post('/journal',                     [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'journalStore'])->name('journal.store');
+                Route::get('/journal/{entry}',              [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'journalShow'])->name('journal.show');
+                Route::delete('/journal/{entry}',           [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'journalVoid'])->name('journal.void');
+
+                Route::get('/bills',                        [\App\Http\Controllers\Tenant\Accounting\BillController::class, 'index'])->name('bills.index');
+                Route::get('/bills/new',                    [\App\Http\Controllers\Tenant\Accounting\BillController::class, 'create'])->name('bills.create');
+                Route::post('/bills',                       [\App\Http\Controllers\Tenant\Accounting\BillController::class, 'store'])->name('bills.store');
+                Route::get('/bills/{bill}',                 [\App\Http\Controllers\Tenant\Accounting\BillController::class, 'show'])->name('bills.show');
+                Route::get('/bills/{bill}/edit',            [\App\Http\Controllers\Tenant\Accounting\BillController::class, 'edit'])->name('bills.edit');
+                Route::put('/bills/{bill}',                 [\App\Http\Controllers\Tenant\Accounting\BillController::class, 'update'])->name('bills.update');
+                Route::delete('/bills/{bill}',              [\App\Http\Controllers\Tenant\Accounting\BillController::class, 'destroy'])->name('bills.destroy');
+                Route::post('/bills/{bill}/post',           [\App\Http\Controllers\Tenant\Accounting\BillController::class, 'post'])->name('bills.post');
+                Route::post('/bills/{bill}/void',           [\App\Http\Controllers\Tenant\Accounting\BillController::class, 'void'])->name('bills.void');
+                Route::post('/bills/{bill}/payments',       [\App\Http\Controllers\Tenant\Accounting\BillController::class, 'storePayment'])->name('bills.payments.store');
+                Route::get('/bills/{bill}/pdf',             [\App\Http\Controllers\Tenant\Accounting\BillController::class, 'pdf'])->name('bills.pdf');
+                Route::post('/bills/{bill}/attachment',     [\App\Http\Controllers\Tenant\Accounting\BillController::class, 'uploadAttachment'])->name('bills.attachment.upload');
+                Route::get('/bills/{bill}/attachment',      [\App\Http\Controllers\Tenant\Accounting\BillController::class, 'downloadAttachment'])->name('bills.attachment.download');
+
+                Route::get('/suppliers',                    [\App\Http\Controllers\Tenant\Accounting\SupplierController::class, 'index'])->name('suppliers.index');
+                Route::post('/suppliers',                   [\App\Http\Controllers\Tenant\Accounting\SupplierController::class, 'store'])->name('suppliers.store');
+                Route::put('/suppliers/{supplier}',         [\App\Http\Controllers\Tenant\Accounting\SupplierController::class, 'update'])->name('suppliers.update');
+                Route::delete('/suppliers/{supplier}',      [\App\Http\Controllers\Tenant\Accounting\SupplierController::class, 'destroy'])->name('suppliers.destroy');
+
+                Route::get('/reports/trial-balance',        [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'trialBalance'])->name('reports.trial-balance');
+                Route::get('/reports/trial-balance/pdf',    [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'trialBalancePdf'])->name('reports.trial-balance.pdf');
+                Route::get('/reports/trial-balance/csv',    [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'trialBalanceCsv'])->name('reports.trial-balance.csv');
+                Route::get('/reports/balance-sheet',        [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'balanceSheet'])->name('reports.balance-sheet');
+                Route::get('/reports/balance-sheet/pdf',    [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'balanceSheetPdf'])->name('reports.balance-sheet.pdf');
+                Route::get('/reports/balance-sheet/csv',    [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'balanceSheetCsv'])->name('reports.balance-sheet.csv');
+                Route::get('/reports/income-statement',     [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'incomeStatement'])->name('reports.income-statement');
+                Route::get('/reports/income-statement/pdf', [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'incomeStatementPdf'])->name('reports.income-statement.pdf');
+                Route::get('/reports/income-statement/csv', [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'incomeStatementCsv'])->name('reports.income-statement.csv');
+                Route::get('/reports/vat-summary',          [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'vatSummary'])->name('reports.vat-summary');
+                Route::get('/reports/vat-summary/pdf',      [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'vatSummaryPdf'])->name('reports.vat-summary.pdf');
+                Route::get('/reports/vat-summary/csv',      [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'vatSummaryCsv'])->name('reports.vat-summary.csv');
+                Route::get('/reports/vat-return',           [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'vatReturn'])->name('reports.vat-return');
+                Route::get('/reports/ar-aging',             [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'arAging'])->name('reports.ar-aging');
+                Route::get('/reports/ar-aging/pdf',         [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'arAgingPdf'])->name('reports.ar-aging.pdf');
+                Route::get('/reports/ar-aging/csv',         [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'arAgingCsv'])->name('reports.ar-aging.csv');
+                Route::get('/reports/ap-aging',             [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'apAging'])->name('reports.ap-aging');
+                Route::get('/reports/ap-aging/pdf',         [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'apAgingPdf'])->name('reports.ap-aging.pdf');
+                Route::get('/reports/ap-aging/csv',         [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'apAgingCsv'])->name('reports.ap-aging.csv');
+
+                // ── Banking ──────────────────────────────────────────────────
+                Route::get('/banking',                      [\App\Http\Controllers\Tenant\Accounting\BankAccountController::class, 'index'])->name('banking.index');
+                Route::get('/banking/new',                  [\App\Http\Controllers\Tenant\Accounting\BankAccountController::class, 'create'])->name('banking.create');
+                Route::post('/banking',                     [\App\Http\Controllers\Tenant\Accounting\BankAccountController::class, 'store'])->name('banking.store');
+                Route::get('/banking/{bankAccount}',        [\App\Http\Controllers\Tenant\Accounting\BankAccountController::class, 'show'])->name('banking.show');
+                Route::post('/banking/{bankAccount}/transaction', [\App\Http\Controllers\Tenant\Accounting\BankAccountController::class, 'addTransaction'])->name('banking.transaction');
+
+                // ── Fixed Assets ─────────────────────────────────────────────
+                Route::get('/assets',                       [\App\Http\Controllers\Tenant\Accounting\FixedAssetController::class, 'index'])->name('assets.index');
+                Route::get('/assets/new',                   [\App\Http\Controllers\Tenant\Accounting\FixedAssetController::class, 'create'])->name('assets.create');
+                Route::post('/assets',                      [\App\Http\Controllers\Tenant\Accounting\FixedAssetController::class, 'store'])->name('assets.store');
+                Route::get('/assets/{fixedAsset}',          [\App\Http\Controllers\Tenant\Accounting\FixedAssetController::class, 'show'])->name('assets.show');
+                Route::post('/assets/{fixedAsset}/depreciate', [\App\Http\Controllers\Tenant\Accounting\FixedAssetController::class, 'runDepreciation'])->name('assets.depreciate');
+                Route::post('/assets/{fixedAsset}/dispose', [\App\Http\Controllers\Tenant\Accounting\FixedAssetController::class, 'dispose'])->name('assets.dispose');
+
+                // ── Payroll ──────────────────────────────────────────────────
+                Route::get('/payroll',                      [\App\Http\Controllers\Tenant\Accounting\PayrollController::class, 'index'])->name('payroll.index');
+                Route::get('/payroll/employees',            [\App\Http\Controllers\Tenant\Accounting\PayrollController::class, 'employees'])->name('payroll.employees');
+                Route::get('/payroll/employees/new',        [\App\Http\Controllers\Tenant\Accounting\PayrollController::class, 'createEmployee'])->name('payroll.employees.create');
+                Route::post('/payroll/employees',           [\App\Http\Controllers\Tenant\Accounting\PayrollController::class, 'storeEmployee'])->name('payroll.employees.store');
+                Route::get('/payroll/employees/{employee}', [\App\Http\Controllers\Tenant\Accounting\PayrollController::class, 'showEmployee'])->name('payroll.employees.show');
+                Route::get('/payroll/run',                  [\App\Http\Controllers\Tenant\Accounting\PayrollController::class, 'runForm'])->name('payroll.run');
+                Route::post('/payroll/run',                 [\App\Http\Controllers\Tenant\Accounting\PayrollController::class, 'processPayroll'])->name('payroll.process');
+                Route::get('/payroll/{payrollRun}',         [\App\Http\Controllers\Tenant\Accounting\PayrollController::class, 'showRun'])->name('payroll.show');
+
+                // ── VAT Filings ──────────────────────────────────────────────
+                Route::get('/vat-filings',                  [\App\Http\Controllers\Tenant\Accounting\VatFilingController::class, 'index'])->name('vat-filings.index');
+                Route::get('/vat-filings/new',              [\App\Http\Controllers\Tenant\Accounting\VatFilingController::class, 'create'])->name('vat-filings.create');
+                Route::post('/vat-filings',                 [\App\Http\Controllers\Tenant\Accounting\VatFilingController::class, 'store'])->name('vat-filings.store');
+                Route::get('/vat-filings/{vatFiling}',      [\App\Http\Controllers\Tenant\Accounting\VatFilingController::class, 'show'])->name('vat-filings.show');
+                Route::post('/vat-filings/{vatFiling}/submit', [\App\Http\Controllers\Tenant\Accounting\VatFilingController::class, 'submit'])->name('vat-filings.submit');
+                Route::post('/vat-filings/{vatFiling}/pay',    [\App\Http\Controllers\Tenant\Accounting\VatFilingController::class, 'pay'])->name('vat-filings.pay');
+
+                // ── AI Assistant ─────────────────────────────────────────────
+                Route::get('/ai',                           [\App\Http\Controllers\Tenant\Accounting\AiController::class, 'index'])->name('ai.index');
+                Route::post('/ai/query',                    [\App\Http\Controllers\Tenant\Accounting\AiController::class, 'query'])->name('ai.query');
+
+                // ── Data Export ──────────────────────────────────────────────
+                Route::get('/data',                         [\App\Http\Controllers\Tenant\Accounting\DataController::class, 'index'])->name('data.index');
+                Route::get('/data/export/journals',         [\App\Http\Controllers\Tenant\Accounting\DataController::class, 'exportJournals'])->name('data.export.journals');
+                Route::get('/data/export/accounts',         [\App\Http\Controllers\Tenant\Accounting\DataController::class, 'exportAccounts'])->name('data.export.accounts');
+                Route::get('/data/export/suppliers',        [\App\Http\Controllers\Tenant\Accounting\DataController::class, 'exportSuppliers'])->name('data.export.suppliers');
+                Route::get('/data/export/bills',            [\App\Http\Controllers\Tenant\Accounting\DataController::class, 'exportBills'])->name('data.export.bills');
+
+                // ── Fiscal Years ─────────────────────────────────────────────
+                Route::get('/settings/fiscal-years',        [\App\Http\Controllers\Tenant\Accounting\FiscalYearController::class, 'index'])->name('settings.fiscal-years');
+                Route::post('/settings/fiscal-years',       [\App\Http\Controllers\Tenant\Accounting\FiscalYearController::class, 'store'])->name('settings.fiscal-years.store');
+                Route::post('/settings/fiscal-years/{fiscalYear}/close',  [\App\Http\Controllers\Tenant\Accounting\FiscalYearController::class, 'close'])->name('settings.fiscal-years.close');
+                Route::post('/settings/fiscal-years/{fiscalYear}/reopen', [\App\Http\Controllers\Tenant\Accounting\FiscalYearController::class, 'reopen'])->name('settings.fiscal-years.reopen');
+            });
+        });
     });
