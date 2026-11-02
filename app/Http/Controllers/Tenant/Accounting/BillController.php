@@ -102,7 +102,7 @@ class BillController extends Controller
         $count      = Bill::where('tenant_id', $tenant->id)->count() + 1;
         $billNumber = 'BILL-' . date('Y') . '-' . str_pad($count, 5, '0', STR_PAD_LEFT);
 
-        DB::transaction(function () use ($tenant, $request, $supplier, $lines, $subtotal, $totalVat, $totalAmount, $dueDate, $billNumber, $period) {
+        DB::transaction(function () use ($tenant, $request, $supplier, $lines, $subtotal, $totalVat, $totalAmount, $dueDate, $billNumber) {
             $bill = Bill::create([
                 'tenant_id'       => $tenant->id,
                 'supplier_id'     => $request->supplier_id,
