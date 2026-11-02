@@ -89,6 +89,27 @@ Route::middleware(['auth', \App\Http\Middleware\EnsureAdminUser::class])->group(
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
+    // ── Tools → Sentinel (Sentinel AML administration) ────────────────────
+    Route::prefix('sentinel-admin')->name('sentinel-admin.')->controller(\App\Http\Controllers\Admin\SentinelAdminController::class)->group(function () {
+        Route::get('/',                                 'index')->name('index');
+        Route::post('/companies',                       'storeCompany')->name('companies.store');
+        Route::get('/companies/{id}',                   'company')->whereNumber('id')->name('company');
+        Route::patch('/companies/{id}',                 'updateCompany')->whereNumber('id')->name('companies.update');
+        Route::post('/companies/{id}/plan',             'changePlan')->whereNumber('id')->name('companies.plan');
+        Route::post('/companies/{id}/transaction-monitoring', 'transactionMonitoring')->whereNumber('id')->name('companies.tm');
+        Route::delete('/companies/{id}',                'destroyCompany')->whereNumber('id')->name('companies.destroy');
+        Route::post('/companies/{id}/keys',             'storeKey')->whereNumber('id')->name('keys.store');
+        Route::delete('/companies/{id}/keys/{keyId}',   'revokeKey')->whereNumber('id')->name('keys.revoke');
+        Route::post('/users',                           'storeUser')->name('users.store');
+        Route::patch('/users/{userId}',                 'updateUser')->whereNumber('userId')->name('users.update');
+        Route::post('/users/{userId}/password-link',    'passwordLink')->whereNumber('userId')->name('users.password');
+        Route::post('/users/{userId}/convert',          'convertUser')->whereNumber('userId')->name('users.convert');
+        Route::delete('/users/{userId}',                'destroyUser')->whereNumber('userId')->name('users.destroy');
+        Route::post('/orders/{orderId}/paid',           'orderPaid')->whereNumber('orderId')->name('orders.paid');
+        Route::post('/orders/{orderId}/cancel',         'orderCancel')->whereNumber('orderId')->name('orders.cancel');
+        Route::patch('/key-requests/{requestId}',       'keyRequestStatus')->whereNumber('requestId')->name('requests.status');
+    });
+
     // ── CRM ───────────────────────────────────────────────────────────────
     Route::get('/crm',          [CrmController::class, 'index'])->name('crm.index');
     Route::get('/crm/new',      [CrmController::class, 'create'])->name('crm.create');
