@@ -192,12 +192,11 @@ class LedgerController extends Controller
         $dateTo   = $request->get('date_to', date('Y-m-d'));
 
         $bills = \App\Models\Bill::where('tenant_id', $tenant->id)
-            ->where('is_deleted', false)
-            ->whereIn('status', ['APPROVED','PAID','PARTIAL'])
+            ->whereIn('status', ['approved','paid','partial'])
             ->whereBetween('bill_date', [$dateFrom, $dateTo])
             ->get();
 
-        $inputVat  = $bills->sum('total_vat_amount');
+        $inputVat  = $bills->sum('vat_total');
         $outputVat = 0;
 
         return view('tenant.accounting.reports.vat-summary', compact('tenant', 'bills', 'inputVat', 'outputVat', 'dateFrom', 'dateTo'));
@@ -215,8 +214,7 @@ class LedgerController extends Controller
 
         $bills = \App\Models\Bill::with('supplier')
             ->where('tenant_id', $tenant->id)
-            ->where('is_deleted', false)
-            ->whereIn('status', ['APPROVED','PARTIAL'])
+            ->whereIn('status', ['approved','partial'])
             ->where('due_date', '<=', $asOfDate)
             ->orderBy('due_date')
             ->get();

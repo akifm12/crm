@@ -15,6 +15,12 @@ class Bill extends Model
 
     protected $casts = ['is_deleted' => 'boolean'];
 
+    // DB columns are `vat_total` and `total`; expose the model-conventional names as aliases
+    public function getTotalVatAmountAttribute(): float { return (float)($this->attributes['vat_total'] ?? 0); }
+    public function setTotalVatAmountAttribute(float $v): void { $this->attributes['vat_total'] = $v; }
+    public function getTotalAmountAttribute(): float { return (float)($this->attributes['total'] ?? 0); }
+    public function setTotalAmountAttribute(float $v): void { $this->attributes['total'] = $v; }
+
     public function tenant()       { return $this->belongsTo(Tenant::class); }
     public function supplier()     { return $this->belongsTo(Supplier::class); }
     public function journalEntry() { return $this->belongsTo(JournalEntry::class); }
