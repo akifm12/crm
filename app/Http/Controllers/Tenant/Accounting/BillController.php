@@ -210,7 +210,7 @@ class BillController extends Controller
         $tenant = app('tenant');
         abort_if($bill->tenant_id !== $tenant->id, 404);
 
-        // Look for an AP account; fall back to cash (code 1050) if none exists
+        // AP/payable account: prefer LIABILITY, fall back to cash (1050)
         $apAccount = ChartOfAccount::where('tenant_id', $tenant->id)
             ->where('type', 'LIABILITY')->where('is_active', true)->first()
             ?? ChartOfAccount::where('tenant_id', $tenant->id)->where('code', '1050')->first();
@@ -218,9 +218,20 @@ class BillController extends Controller
             return back()->with('error', 'No liability or cash account found. Please check Chart of Accounts.');
         }
 
-        DB::transaction(function () use ($tenant, $bill, $apAccount) {
-            $count    = JournalEntry::where('tenant_id', $tenant->id)->whereYear('entry_date', date('Y', strtotime($bill->bill_date)))->count() + 1;
+        // VAT Input Tax account: look by name, fall back to null (VAT line skipped if missing)
+        $vatAccount = ChartOfAccount::where('tenant_id', $tenant->id)->where('is_active', true)
+            ->where(function ($q) {
+                $q->where('name', 'like', '%VAT%Input%')
+                  ->orWhere('name', 'like', '%Input%VAT%')
+                  ->orWhere('name', 'like', '%VAT%Recoverable%')
+                  ->orWhere('name', 'like', '%VAT%Receivable%');
+            })->first();
 
+        // Default expense account fallback (used when a line has no category match)
+        $defaultExpense = ChartOfAccount::where('tenant_id', $tenant->id)
+            ->where('type', 'EXPENSE')->where('is_active', true)->orderBy('code')->first();
+
+        DB::transaction(function () use ($tenant, $bill, $apAccount, $vatAccount, $defaultExpense) {
             $je = JournalEntry::create([
                 'tenant_id'     => $tenant->id,
                 'entry_date'    => $bill->bill_date,
@@ -235,10 +246,32 @@ class BillController extends Controller
 
             $lineNum = 1;
             foreach ($bill->lines as $line) {
-                JournalLine::create(['journal_entry_id' => $je->id, 'chart_of_account_id' => $apAccount->id, 'debit' => $line->getTotalAmountAttribute(), 'credit' => 0, 'description' => $line->description ?: $bill->bill_number, 'line_order' => $lineNum++]);
+                $netAmount = (float)($line->attributes['amount'] ?? 0);
+                $vatAmount = (float)($line->vat_amount ?? 0);
+
+                // Try to match category to a COA account by name; fall back to default expense
+                $expenseAccount = $defaultExpense;
+                if (!empty($line->attributes['category'])) {
+                    $matched = ChartOfAccount::where('tenant_id', $tenant->id)
+                        ->where('type', 'EXPENSE')->where('is_active', true)
+                        ->where('name', 'like', '%' . $line->attributes['category'] . '%')
+                        ->first();
+                    if ($matched) $expenseAccount = $matched;
+                }
+
+                // DR Expense (net amount excl. VAT)
+                if ($netAmount > 0 && $expenseAccount) {
+                    JournalLine::create(['journal_entry_id' => $je->id, 'chart_of_account_id' => $expenseAccount->id, 'debit' => $netAmount, 'credit' => 0, 'description' => $line->description ?: $bill->bill_number, 'line_order' => $lineNum++]);
+                }
+
+                // DR VAT Input Tax (if applicable and account exists)
+                if ($vatAmount > 0 && $vatAccount) {
+                    JournalLine::create(['journal_entry_id' => $je->id, 'chart_of_account_id' => $vatAccount->id, 'debit' => $vatAmount, 'credit' => 0, 'description' => "VAT ({$line->vat_rate}%) - " . ($line->description ?: $bill->bill_number), 'line_order' => $lineNum++]);
+                }
             }
 
-            JournalLine::create(['journal_entry_id' => $je->id, 'chart_of_account_id' => $apAccount->id, 'debit' => 0, 'credit' => $bill->total_amount, 'description' => "Payment - {$bill->supplier_name}", 'line_order' => $lineNum]);
+            // CR Accounts Payable (total incl. VAT)
+            JournalLine::create(['journal_entry_id' => $je->id, 'chart_of_account_id' => $apAccount->id, 'debit' => 0, 'credit' => (float)$bill->total_amount, 'description' => "Payable - {$bill->supplier_name}", 'line_order' => $lineNum]);
 
             $bill->update(['status' => 'approved', 'journal_entry_id' => $je->id]);
         });
