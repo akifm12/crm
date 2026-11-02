@@ -34,8 +34,8 @@
                     @endforeach
                     <tr class="bg-gray-50 font-semibold text-sm">
                         <td class="px-4 py-2" colspan="2">Total</td>
-                        <td class="px-4 py-2 text-right font-mono">{{ number_format($entry->total_debit, 2) }}</td>
-                        <td class="px-4 py-2 text-right font-mono text-gray-500">{{ number_format($entry->total_credit, 2) }}</td>
+                        <td class="px-4 py-2 text-right font-mono">{{ number_format($lines->sum('debit_amount'), 2) }}</td>
+                        <td class="px-4 py-2 text-right font-mono text-gray-500">{{ number_format($lines->sum('credit_amount'), 2) }}</td>
                     </tr>
                 </tbody>
             </table>

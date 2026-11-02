@@ -142,7 +142,7 @@ class BillController extends Controller
         $tenant = app('tenant');
         abort_if($bill->tenant_id !== $tenant->id, 404);
 
-        $lines = $bill->lines()->with('account')->orderBy('line_number')->get();
+        $lines = $bill->lines()->with('account')->orderBy('line_order')->get();
 
         return view('tenant.accounting.bills.show', compact('tenant', 'bill', 'lines'));
     }
@@ -160,7 +160,7 @@ class BillController extends Controller
         $suppliers = Supplier::where('tenant_id', $tenant->id)->where('is_active', true)->orderBy('name')->get();
         $accounts  = ChartOfAccount::where('tenant_id', $tenant->id)->where('is_active', true)
             ->orderByRaw("FIELD(type,'ASSET','LIABILITY','EQUITY','REVENUE','EXPENSE')")->orderBy('code')->get()->groupBy('account_type');
-        $lines     = $bill->lines()->orderBy('line_number')->get();
+        $lines     = $bill->lines()->orderBy('line_order')->get();
 
         return view('tenant.accounting.bills.edit', compact('tenant', 'bill', 'suppliers', 'accounts', 'lines'));
     }
@@ -295,7 +295,7 @@ class BillController extends Controller
     {
         $tenant = app('tenant');
         abort_if($bill->tenant_id !== $tenant->id, 404);
-        $lines = $bill->lines()->with('account')->orderBy('line_number')->get();
+        $lines = $bill->lines()->with('account')->orderBy('line_order')->get();
         return view('tenant.accounting.bills.pdf', compact('tenant', 'bill', 'lines'));
     }
 
