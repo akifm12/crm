@@ -162,7 +162,24 @@ class LedgerController extends Controller
             ->groupBy('journal_entry_lines.chart_of_account_id')
             ->get()->keyBy('account_id');
 
-        return view('tenant.accounting.reports.balance-sheet', compact('tenant', 'accounts', 'balances', 'asOfDate'));
+        // Compute YTD net income (Revenue - Expenses) to include in equity
+        $incomeAccounts = ChartOfAccount::where('tenant_id', $tenant->id)->where('is_active', true)
+            ->whereIn('type', ['REVENUE','EXPENSE'])->pluck('id');
+        $incomeBalances = DB::table('journal_entry_lines')
+            ->join('journal_entries', 'journal_entries.id', '=', 'journal_entry_lines.journal_entry_id')
+            ->where('journal_entries.tenant_id', $tenant->id)
+            ->whereIn('journal_entries.status', ['posted', 'POSTED'])
+            ->where('journal_entries.entry_date', '<=', $asOfDate)
+            ->whereIn('journal_entry_lines.chart_of_account_id', $incomeAccounts)
+            ->join('chart_of_accounts', 'chart_of_accounts.id', '=', 'journal_entry_lines.chart_of_account_id')
+            ->select('chart_of_accounts.type', DB::raw('SUM(debit) as dr'), DB::raw('SUM(credit) as cr'))
+            ->groupBy('chart_of_accounts.type')
+            ->get()->keyBy('type');
+        $revenue  = isset($incomeBalances['REVENUE'])  ? ($incomeBalances['REVENUE']->cr  - $incomeBalances['REVENUE']->dr)  : 0;
+        $expenses = isset($incomeBalances['EXPENSE'])  ? ($incomeBalances['EXPENSE']->dr  - $incomeBalances['EXPENSE']->cr)  : 0;
+        $netIncome = $revenue - $expenses;
+
+        return view('tenant.accounting.reports.balance-sheet', compact('tenant', 'accounts', 'balances', 'asOfDate', 'netIncome'));
     }
 
     public function balanceSheetPdf(Request $request, string $slug) { return $this->balanceSheet($request, $slug); }
