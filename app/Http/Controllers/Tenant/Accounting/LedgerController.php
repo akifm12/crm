@@ -24,23 +24,15 @@ class LedgerController extends Controller
         $reference   = $request->get('reference');
 
         $query = JournalEntry::where('tenant_id', $tenant->id)
-            ->where('is_deleted', false)
             ->whereBetween('entry_date', [$dateFrom, $dateTo])
             ->orderByDesc('entry_date')
             ->orderByDesc('id');
 
         if ($status !== 'all') {
-            $query->where('status', strtoupper($status));
-        }
-        if ($journalType) {
-            $query->where('journal_type', strtoupper($journalType));
+            $query->where('status', strtolower($status));
         }
         if ($reference) {
-            $query->where(function ($q) use ($reference) {
-                $q->where('reference', 'like', "%{$reference}%")
-                  ->orWhere('description', 'like', "%{$reference}%")
-                  ->orWhere('entry_number', 'like', "%{$reference}%");
-            });
+            $query->where('reference', 'like', "%{$reference}%");
         }
 
         $journals    = $query->get();
@@ -128,16 +120,15 @@ class LedgerController extends Controller
         $dateTo   = $request->get('date_to', date('Y-m-d'));
 
         $accounts = ChartOfAccount::where('tenant_id', $tenant->id)->where('is_active', true)
-            ->orderByRaw("FIELD(account_type,'ASSET','LIABILITY','EQUITY','REVENUE','EXPENSE')")->orderBy('code')->get();
+            ->orderByRaw("FIELD(type,'ASSET','LIABILITY','EQUITY','REVENUE','EXPENSE')")->orderBy('code')->get();
 
-        $balances = DB::table('journal_lines')
-            ->join('journal_entries', 'journal_entries.id', '=', 'journal_lines.journal_entry_id')
+        $balances = DB::table('journal_entry_lines')
+            ->join('journal_entries', 'journal_entries.id', '=', 'journal_entry_lines.journal_entry_id')
             ->where('journal_entries.tenant_id', $tenant->id)
-            ->where('journal_entries.status', 'POSTED')
-            ->where('journal_entries.is_deleted', false)
+            ->where('journal_entries.status', 'posted')
             ->whereBetween('journal_entries.entry_date', [$dateFrom, $dateTo])
-            ->select('journal_lines.account_id', DB::raw('SUM(debit_amount) as total_dr'), DB::raw('SUM(credit_amount) as total_cr'))
-            ->groupBy('journal_lines.account_id')
+            ->select('journal_entry_lines.chart_of_account_id as account_id', DB::raw('SUM(debit) as total_dr'), DB::raw('SUM(credit) as total_cr'))
+            ->groupBy('journal_entry_lines.chart_of_account_id')
             ->get()
             ->keyBy('account_id');
 
@@ -153,16 +144,15 @@ class LedgerController extends Controller
         $asOfDate = $request->get('as_of', date('Y-m-d'));
 
         $accounts = ChartOfAccount::where('tenant_id', $tenant->id)->where('is_active', true)
-            ->whereIn('account_type', ['ASSET','LIABILITY','EQUITY'])->orderBy('account_type')->orderBy('code')->get();
+            ->whereIn('type', ['ASSET','LIABILITY','EQUITY'])->orderBy('type')->orderBy('code')->get();
 
-        $balances = DB::table('journal_lines')
-            ->join('journal_entries', 'journal_entries.id', '=', 'journal_lines.journal_entry_id')
+        $balances = DB::table('journal_entry_lines')
+            ->join('journal_entries', 'journal_entries.id', '=', 'journal_entry_lines.journal_entry_id')
             ->where('journal_entries.tenant_id', $tenant->id)
-            ->where('journal_entries.status', 'POSTED')
-            ->where('journal_entries.is_deleted', false)
+            ->where('journal_entries.status', 'posted')
             ->where('journal_entries.entry_date', '<=', $asOfDate)
-            ->select('journal_lines.account_id', DB::raw('SUM(debit_amount) as total_dr'), DB::raw('SUM(credit_amount) as total_cr'))
-            ->groupBy('journal_lines.account_id')
+            ->select('journal_entry_lines.chart_of_account_id as account_id', DB::raw('SUM(debit) as total_dr'), DB::raw('SUM(credit) as total_cr'))
+            ->groupBy('journal_entry_lines.chart_of_account_id')
             ->get()->keyBy('account_id');
 
         return view('tenant.accounting.reports.balance-sheet', compact('tenant', 'accounts', 'balances', 'asOfDate'));
@@ -178,16 +168,15 @@ class LedgerController extends Controller
         $dateTo   = $request->get('date_to', date('Y-m-d'));
 
         $accounts = ChartOfAccount::where('tenant_id', $tenant->id)->where('is_active', true)
-            ->whereIn('account_type', ['REVENUE','EXPENSE'])->orderBy('account_type')->orderBy('code')->get();
+            ->whereIn('type', ['REVENUE','EXPENSE'])->orderBy('type')->orderBy('code')->get();
 
-        $balances = DB::table('journal_lines')
-            ->join('journal_entries', 'journal_entries.id', '=', 'journal_lines.journal_entry_id')
+        $balances = DB::table('journal_entry_lines')
+            ->join('journal_entries', 'journal_entries.id', '=', 'journal_entry_lines.journal_entry_id')
             ->where('journal_entries.tenant_id', $tenant->id)
-            ->where('journal_entries.status', 'POSTED')
-            ->where('journal_entries.is_deleted', false)
+            ->where('journal_entries.status', 'posted')
             ->whereBetween('journal_entries.entry_date', [$dateFrom, $dateTo])
-            ->select('journal_lines.account_id', DB::raw('SUM(debit_amount) as total_dr'), DB::raw('SUM(credit_amount) as total_cr'))
-            ->groupBy('journal_lines.account_id')
+            ->select('journal_entry_lines.chart_of_account_id as account_id', DB::raw('SUM(debit) as total_dr'), DB::raw('SUM(credit) as total_cr'))
+            ->groupBy('journal_entry_lines.chart_of_account_id')
             ->get()->keyBy('account_id');
 
         return view('tenant.accounting.reports.income-statement', compact('tenant', 'accounts', 'balances', 'dateFrom', 'dateTo'));

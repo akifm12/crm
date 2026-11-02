@@ -28,4 +28,8 @@ class ChartOfAccount extends Model
     public function tenant()   { return $this->belongsTo(Tenant::class); }
     public function parent()   { return $this->belongsTo(ChartOfAccount::class, 'parent_id'); }
     public function children() { return $this->hasMany(ChartOfAccount::class, 'parent_id'); }
+
+    // The DB column is `type`; expose it as `account_type` for view compatibility
+    public function getAccountTypeAttribute(): string { return $this->attributes['type'] ?? ''; }
+    public function setAccountTypeAttribute(string $v): void { $this->attributes['type'] = $v; }
 }
