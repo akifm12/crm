@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class JournalLine extends Model
 {
+    protected $table = 'journal_entry_lines';
+
     protected $fillable = [
         'tenant_id','journal_entry_id','account_id','line_number','description',
         'debit_amount','credit_amount','currency_code','exchange_rate','is_reconciled',
