@@ -85,9 +85,9 @@ class LedgerController extends Controller
         $status      = $request->boolean('auto_post') ? 'POSTED' : 'DRAFT';
 
         DB::transaction(function () use ($tenant, $request, $lines, $totalDebit, $totalCredit, $period, $entryNumber, $status) {
-            $je = JournalEntry::create(['tenant_id' => $tenant->id, 'period_id' => $period?->id, 'entry_number' => $entryNumber, 'entry_date' => $request->entry_date, 'journal_type' => $request->journal_type ?? 'GENERAL', 'status' => $status, 'description' => $request->description, 'reference' => $request->reference ?: null, 'total_debit' => $totalDebit, 'total_credit' => $totalCredit, 'currency_code' => 'AED', 'exchange_rate' => 1.0, 'is_reversal' => false, 'is_recurring' => false, 'is_deleted' => false, 'created_by_id' => auth()->id()]);
+            $je = JournalEntry::create(['tenant_id' => $tenant->id, 'entry_date' => $request->entry_date, 'source_type' => $request->journal_type ?? 'GENERAL', 'status' => strtolower($status), 'memo' => $request->description, 'reference' => $request->reference ?: null, 'currency_code' => 'AED', 'exchange_rate' => 1.0, 'created_by' => auth()->id()]);
             foreach ($lines as $line) {
-                JournalLine::create(array_merge($line, ['tenant_id' => $tenant->id, 'journal_entry_id' => $je->id, 'currency_code' => 'AED', 'exchange_rate' => 1.0, 'is_reconciled' => false]));
+                JournalLine::create(['journal_entry_id' => $je->id, 'chart_of_account_id' => $line['account_id'], 'debit' => $line['debit_amount'], 'credit' => $line['credit_amount'], 'description' => $line['description'], 'line_order' => $line['line_number']]);
             }
         });
 
@@ -99,7 +99,7 @@ class LedgerController extends Controller
     {
         $tenant = app('tenant');
         abort_if($entry->tenant_id !== $tenant->id, 404);
-        $lines = $entry->lines()->with('account')->orderByRaw('CASE WHEN debit_amount > 0 THEN 0 ELSE 1 END')->orderBy('line_number')->get();
+        $lines = $entry->lines()->with('account')->orderByRaw('CASE WHEN debit > 0 THEN 0 ELSE 1 END')->orderBy('line_order')->get();
         return view('tenant.accounting.journal.show', compact('tenant', 'entry', 'lines'));
     }
 
@@ -107,7 +107,7 @@ class LedgerController extends Controller
     {
         $tenant = app('tenant');
         abort_if($entry->tenant_id !== $tenant->id, 404);
-        $entry->update(['status' => 'VOID', 'is_deleted' => true]);
+        $entry->update(['status' => 'voided']);
         return redirect()->route('tenant.accounting.journal.index', $tenant->slug)->with('success', 'Journal entry voided.');
     }
 

@@ -33,10 +33,10 @@
                 <td class="px-4 py-2.5 font-mono text-xs">
                     <a href="{{ route('tenant.accounting.bills.show', [$tenant->slug, $bill->id]) }}" class="text-blue-600 hover:underline">{{ $bill->bill_number }}</a>
                 </td>
-                <td class="px-4 py-2.5">{{ $bill->vendor_name }}</td>
+                <td class="px-4 py-2.5">{{ $bill->supplier_name }}</td>
                 <td class="px-4 py-2.5 text-xs text-gray-500">{{ $bill->bill_date }}</td>
                 <td class="px-4 py-2.5 text-xs text-red-600">{{ $bill->due_date }}</td>
-                <td class="px-4 py-2.5 text-right font-mono text-xs">{{ number_format($bill->total_amount, 2) }}</td>
+                <td class="px-4 py-2.5 text-right font-mono text-xs">{{ number_format($bill->total_amount ?: $bill->total, 2) }}</td>
                 <td class="px-4 py-2.5 text-right font-mono text-xs text-red-600">{{ number_format($bill->amount_due, 2) }}</td>
                 <td class="px-4 py-2.5 text-right text-xs {{ $daysOverdue > 60 ? 'text-red-600 font-semibold' : ($daysOverdue > 30 ? 'text-orange-500' : 'text-gray-500') }}">
                     {{ $daysOverdue }} days
