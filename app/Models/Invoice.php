@@ -19,8 +19,6 @@ class Invoice extends Model
         'due_date'        => 'date',
         'subtotal'        => 'float',
         'discount_amount' => 'float',
-        'vat_amount'      => 'float',
-        'total_amount'    => 'float',
         'amount_paid'     => 'float',
         'amount_due'      => 'float',
         'exchange_rate'   => 'float',
@@ -28,9 +26,17 @@ class Invoice extends Model
     ];
 
     public function tenant()       { return $this->belongsTo(Tenant::class); }
-    public function client()       { return $this->belongsTo(BullionClient::class, 'client_id'); }
+    public function client()       { return $this->belongsTo(BullionClient::class, 'bullion_client_id'); }
     public function lines()        { return $this->hasMany(InvoiceLine::class)->orderBy('line_order'); }
     public function journalEntry() { return $this->belongsTo(JournalEntry::class); }
+
+    // Bridge: existing table uses bullion_client_id, vat_total, total
+    public function getClientIdAttribute()       { return $this->attributes['bullion_client_id'] ?? null; }
+    public function setClientIdAttribute($v)     { $this->attributes['bullion_client_id'] = $v; }
+    public function getVatAmountAttribute()      { return (float)($this->attributes['vat_total'] ?? 0); }
+    public function setVatAmountAttribute($v)    { $this->attributes['vat_total'] = $v; }
+    public function getTotalAmountAttribute()    { return (float)($this->attributes['total'] ?? 0); }
+    public function setTotalAmountAttribute($v)  { $this->attributes['total'] = $v; }
 
     public function getStatusAttribute(): string { return strtoupper($this->attributes['status'] ?? 'DRAFT'); }
     public function setStatusAttribute(string $v): void { $this->attributes['status'] = strtolower($v); }

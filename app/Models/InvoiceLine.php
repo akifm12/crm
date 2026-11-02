@@ -15,12 +15,16 @@ class InvoiceLine extends Model
     protected $casts = [
         'quantity'           => 'float',
         'unit_price'         => 'float',
-        'line_amount'        => 'float',
         'vat_rate'           => 'float',
         'vat_amount'         => 'float',
-        'total_amount'       => 'float',
         'gold_weight_grams'  => 'float',
     ];
+
+    // Bridge: existing table uses line_subtotal and line_total
+    public function getLineAmountAttribute()    { return (float)($this->attributes['line_subtotal'] ?? 0); }
+    public function setLineAmountAttribute($v)  { $this->attributes['line_subtotal'] = $v; }
+    public function getTotalAmountAttribute()   { return (float)($this->attributes['line_total'] ?? 0); }
+    public function setTotalAmountAttribute($v) { $this->attributes['line_total'] = $v; }
 
     public function invoice()       { return $this->belongsTo(Invoice::class); }
     public function item()          { return $this->belongsTo(InventoryItem::class, 'inventory_item_id'); }
