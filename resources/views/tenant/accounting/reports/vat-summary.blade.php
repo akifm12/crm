@@ -42,7 +42,7 @@
             @forelse($bills->where('total_vat_amount','>', 0) as $bill)
             <tr>
                 <td class="px-4 py-2.5 font-mono text-xs">{{ $bill->bill_number }}</td>
-                <td class="px-4 py-2.5">{{ $bill->vendor_name }}</td>
+                <td class="px-4 py-2.5">{{ $bill->supplier_name }}</td>
                 <td class="px-4 py-2.5 text-xs text-gray-500">{{ $bill->bill_date }}</td>
                 <td class="px-4 py-2.5 text-right font-mono text-xs">{{ number_format($bill->subtotal, 2) }}</td>
                 <td class="px-4 py-2.5 text-right font-mono text-xs">{{ number_format($bill->total_vat_amount, 2) }}</td>
