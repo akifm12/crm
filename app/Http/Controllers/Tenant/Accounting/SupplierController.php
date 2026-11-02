@@ -13,7 +13,7 @@ class SupplierController extends Controller
     {
         $tenant    = app('tenant');
         $suppliers = Supplier::where('tenant_id', $tenant->id)
-            ->where('is_deleted', false)
+            ->where('is_active', true)
             ->orderBy('name')
             ->get();
 
@@ -29,36 +29,21 @@ class SupplierController extends Controller
         ]);
 
         $liabilityAccounts = ChartOfAccount::where('tenant_id', $tenant->id)
-            ->where('account_type', 'LIABILITY')
+            ->where('type', 'LIABILITY')
             ->where('is_active', true)
             ->orderBy('code')
             ->get();
 
         Supplier::create([
-            'tenant_id'          => $tenant->id,
-            'code'               => $request->code,
-            'name'               => $request->name,
-            'name_arabic'        => $request->name_arabic,
-            'trn'                => $request->trn,
-            'is_vat_registered'  => $request->boolean('is_vat_registered'),
-            'is_foreign_vendor'  => $request->boolean('is_foreign_vendor'),
-            'email'              => $request->email,
-            'phone'              => $request->phone,
-            'contact_person'     => $request->contact_person,
-            'address_line1'      => $request->address_line1,
-            'city'               => $request->city,
-            'emirate'            => $request->emirate,
-            'country'            => $request->country ?? 'UAE',
-            'payment_terms_days' => $request->payment_terms_days ?? 30,
-            'currency_code'      => 'AED',
-            'ap_account_id'      => $request->ap_account_id ?: null,
-            'bank_name'          => $request->bank_name,
-            'bank_account_no'    => $request->bank_account_no,
-            'iban'               => $request->iban,
-            'swift_code'         => $request->swift_code,
-            'is_active'          => true,
-            'is_deleted'         => false,
-            'notes'              => $request->notes,
+            'tenant_id'    => $tenant->id,
+            'name'         => $request->name,
+            'vat_number'   => $request->trn,
+            'email'        => $request->email,
+            'phone'        => $request->phone,
+            'contact_name' => $request->contact_person,
+            'address'      => $request->address_line1,
+            'is_active'    => true,
+            'notes'        => $request->notes,
         ]);
 
         return redirect()->route('tenant.accounting.suppliers.index', $tenant->slug)
@@ -73,25 +58,13 @@ class SupplierController extends Controller
         $request->validate(['name' => 'required|string|max:255']);
 
         $supplier->update([
-            'name'               => $request->name,
-            'name_arabic'        => $request->name_arabic,
-            'trn'                => $request->trn,
-            'is_vat_registered'  => $request->boolean('is_vat_registered'),
-            'is_foreign_vendor'  => $request->boolean('is_foreign_vendor'),
-            'email'              => $request->email,
-            'phone'              => $request->phone,
-            'contact_person'     => $request->contact_person,
-            'address_line1'      => $request->address_line1,
-            'city'               => $request->city,
-            'emirate'            => $request->emirate,
-            'country'            => $request->country ?? 'UAE',
-            'payment_terms_days' => $request->payment_terms_days ?? 30,
-            'ap_account_id'      => $request->ap_account_id ?: null,
-            'bank_name'          => $request->bank_name,
-            'bank_account_no'    => $request->bank_account_no,
-            'iban'               => $request->iban,
-            'swift_code'         => $request->swift_code,
-            'notes'              => $request->notes,
+            'name'         => $request->name,
+            'vat_number'   => $request->trn,
+            'email'        => $request->email,
+            'phone'        => $request->phone,
+            'contact_name' => $request->contact_person,
+            'address'      => $request->address_line1,
+            'notes'        => $request->notes,
         ]);
 
         return redirect()->route('tenant.accounting.suppliers.index', $tenant->slug)
@@ -108,7 +81,7 @@ class SupplierController extends Controller
             return back()->with('error', 'Cannot delete supplier with existing bills.');
         }
 
-        $supplier->update(['is_deleted' => true]);
+        $supplier->update(['is_active' => false]);
 
         return redirect()->route('tenant.accounting.suppliers.index', $tenant->slug)
             ->with('success', 'Supplier removed.');

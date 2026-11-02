@@ -13,7 +13,7 @@ class ChartOfAccountController extends Controller
         $tenant   = app('tenant');
         $accounts = ChartOfAccount::where('tenant_id', $tenant->id)
             ->where('is_active', true)
-            ->orderByRaw("FIELD(account_type,'ASSET','LIABILITY','EQUITY','REVENUE','EXPENSE')")
+            ->orderByRaw("FIELD(type,'ASSET','LIABILITY','EQUITY','REVENUE','EXPENSE')")
             ->orderBy('code')
             ->get();
 
@@ -91,7 +91,7 @@ class ChartOfAccountController extends Controller
         $tenant = app('tenant');
         abort_if($account->tenant_id !== $tenant->id, 404);
 
-        $inUse = \App\Models\JournalLine::where('account_id', $account->id)->exists();
+        $inUse = \App\Models\JournalLine::where('chart_of_account_id', $account->id)->exists();
         if ($inUse) {
             return back()->with('error', 'Cannot delete — this account has journal entries.');
         }

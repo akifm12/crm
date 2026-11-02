@@ -32,4 +32,26 @@ class ChartOfAccount extends Model
     // The DB column is `type`; expose it as `account_type` for view compatibility
     public function getAccountTypeAttribute(): string { return $this->attributes['type'] ?? ''; }
     public function setAccountTypeAttribute(string $v): void { $this->attributes['type'] = $v; }
+    // DB has `subtype` not `account_sub_type`
+    public function getAccountSubTypeAttribute(): ?string { return $this->attributes['subtype'] ?? null; }
+    public function setAccountSubTypeAttribute($v): void { $this->attributes['subtype'] = $v; }
+    // Boolean flags that don't exist in DB — no-ops (DB only has is_system/is_active)
+    public function getIsPayableAttribute(): bool { return false; }
+    public function setIsPayableAttribute($v): void {}
+    public function getIsBankAttribute(): bool { return false; }
+    public function setIsBankAttribute($v): void {}
+    public function getIsCashAttribute(): bool { return false; }
+    public function setIsCashAttribute($v): void {}
+    public function getIsReceivableAttribute(): bool { return false; }
+    public function setIsReceivableAttribute($v): void {}
+    public function getIsVatAccountAttribute(): bool { return false; }
+    public function setIsVatAccountAttribute($v): void {}
+    public function getIsControlAttribute(): bool { return false; }
+    public function setIsControlAttribute($v): void {}
+    // Other missing columns — no-ops
+    public function setCurrencyCodeAttribute($v): void {}
+    public function setNotesAttribute($v): void {}
+    public function setOpeningBalanceAttribute($v): void {}
+    public function setOpeningBalanceDateAttribute($v): void {}
+    public function setNameArabicAttribute($v): void {}
 }

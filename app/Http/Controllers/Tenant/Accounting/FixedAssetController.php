@@ -37,7 +37,7 @@ class FixedAssetController extends Controller
     {
         $tenant     = app('tenant');
         $categories = AssetCategory::where('tenant_id', $tenant->id)->orderBy('name')->get();
-        $suppliers  = Supplier::where('tenant_id', $tenant->id)->where('is_deleted', false)->orderBy('name')->get();
+        $suppliers  = Supplier::where('tenant_id', $tenant->id)->where('is_active', true)->orderBy('name')->get();
         $accounts   = ChartOfAccount::where('tenant_id', $tenant->id)
             ->where('is_active', true)
             ->orderBy('code')
@@ -115,7 +115,7 @@ class FixedAssetController extends Controller
         $tenant     = app('tenant');
         abort_if($asset->tenant_id !== $tenant->id, 403);
         $categories = AssetCategory::where('tenant_id', $tenant->id)->orderBy('name')->get();
-        $suppliers  = Supplier::where('tenant_id', $tenant->id)->where('is_deleted', false)->orderBy('name')->get();
+        $suppliers  = Supplier::where('tenant_id', $tenant->id)->where('is_active', true)->orderBy('name')->get();
         $accounts   = ChartOfAccount::where('tenant_id', $tenant->id)->where('is_active', true)->orderBy('code')->get()->groupBy('account_type');
         return view('tenant.accounting.assets.edit', compact('tenant', 'asset', 'categories', 'suppliers', 'accounts'));
     }

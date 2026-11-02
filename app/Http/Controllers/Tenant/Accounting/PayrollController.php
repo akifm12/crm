@@ -36,7 +36,7 @@ class PayrollController extends Controller
         $departments = Department::where('tenant_id', $tenant->id)->where('is_active', true)->orderBy('name')->get();
         $accounts    = ChartOfAccount::where('tenant_id', $tenant->id)
             ->where('is_active', true)
-            ->whereIn('account_type', ['ASSET', 'LIABILITY', 'EXPENSE'])
+            ->whereIn('type', ['ASSET', 'LIABILITY', 'EXPENSE'])
             ->orderBy('code')
             ->get();
 
@@ -328,32 +328,34 @@ class PayrollController extends Controller
 
             $je = JournalEntry::create([
                 'tenant_id'    => $tenant->id,
-                'entry_number' => $ref,
                 'entry_date'   => $run->pay_date,
-                'journal_type' => 'BANK_PAYMENT',
+                'source_type'  => 'BANK_PAYMENT',
                 'reference'    => $run->run_number,
-                'description'  => 'Payroll — ' . $run->pay_period_start->format('M Y'),
-                'status'       => 'POSTED',
-                'total_debit'  => $run->total_net_pay,
-                'total_credit' => $run->total_net_pay,
+                'memo'         => 'Payroll — ' . $run->pay_period_start->format('M Y'),
+                'status'       => 'posted',
+                'currency_code'=> 'AED',
+                'exchange_rate'=> 1.0,
+                'created_by'   => auth()->id(),
             ]);
 
             // DR Wage Expense
             JournalLine::create([
-                'journal_entry_id'  => $je->id,
-                'account_id'        => $request->wage_expense_account_id,
-                'description'       => 'Gross payroll ' . $run->run_number,
-                'debit_amount'      => $run->total_basic_salary + $run->total_allowances,
-                'credit_amount'     => 0,
+                'journal_entry_id'   => $je->id,
+                'chart_of_account_id'=> $request->wage_expense_account_id,
+                'description'        => 'Gross payroll ' . $run->run_number,
+                'debit'              => $run->total_basic_salary + $run->total_allowances,
+                'credit'             => 0,
+                'line_order'         => 1,
             ]);
 
             // CR Salary Payable / Bank
             JournalLine::create([
-                'journal_entry_id'  => $je->id,
-                'account_id'        => $request->salary_payable_account_id,
-                'description'       => 'Net pay ' . $run->run_number,
-                'debit_amount'      => 0,
-                'credit_amount'     => $run->total_net_pay,
+                'journal_entry_id'   => $je->id,
+                'chart_of_account_id'=> $request->salary_payable_account_id,
+                'description'        => 'Net pay ' . $run->run_number,
+                'debit'              => 0,
+                'credit'             => $run->total_net_pay,
+                'line_order'         => 2,
             ]);
 
             $run->update(['status' => 'POSTED', 'journal_entry_id' => $je->id]);
@@ -370,7 +372,7 @@ class PayrollController extends Controller
 
         $run->update(['status' => 'VOID']);
         if ($run->journalEntry) {
-            $run->journalEntry->update(['status' => 'VOID']);
+            $run->journalEntry->update(['status' => 'voided']);
         }
 
         return back()->with('success', 'Payroll run voided.');

@@ -7,7 +7,6 @@ use App\Models\Bill;
 use App\Models\BillLine;
 use App\Models\Supplier;
 use App\Models\ChartOfAccount;
-use App\Models\AccountingPeriod;
 use App\Models\JournalEntry;
 use App\Models\JournalLine;
 use Illuminate\Http\Request;
@@ -24,12 +23,11 @@ class BillController extends Controller
 
         $query = Bill::with('supplier')
             ->where('tenant_id', $tenant->id)
-            ->where('is_deleted', false)
             ->whereBetween('bill_date', [$dateFrom, $dateTo])
             ->orderByDesc('bill_date');
 
         if ($status !== 'all') {
-            $query->where('status', strtoupper($status));
+            $query->where('status', strtolower($status));
         }
 
         $bills       = $query->get();
@@ -44,13 +42,12 @@ class BillController extends Controller
         $tenant    = app('tenant');
         $suppliers = Supplier::where('tenant_id', $tenant->id)
             ->where('is_active', true)
-            ->where('is_deleted', false)
             ->orderBy('name')
             ->get();
 
         $accounts = ChartOfAccount::where('tenant_id', $tenant->id)
             ->where('is_active', true)
-            ->orderByRaw("FIELD(account_type,'ASSET','LIABILITY','EQUITY','REVENUE','EXPENSE')")
+            ->orderByRaw("FIELD(type,'ASSET','LIABILITY','EQUITY','REVENUE','EXPENSE')")
             ->orderBy('code')
             ->get()
             ->groupBy('account_type');
@@ -100,16 +97,7 @@ class BillController extends Controller
         }
 
         $totalAmount = $subtotal + $totalVat;
-        $dueDate     = $request->due_date ?? date('Y-m-d', strtotime('+' . ($supplier->payment_terms_days ?? 30) . ' days', strtotime($request->bill_date)));
-
-        $period = AccountingPeriod::where('tenant_id', $tenant->id)
-            ->where('start_date', '<=', $request->bill_date)
-            ->where('end_date', '>=', $request->bill_date)
-            ->first();
-
-        if (!$period) {
-            return back()->withInput()->with('error', 'No accounting period found for this date. Please create one first.');
-        }
+        $dueDate     = $request->due_date ?? date('Y-m-d', strtotime('+30 days', strtotime($request->bill_date)));
 
         $count      = Bill::where('tenant_id', $tenant->id)->count() + 1;
         $billNumber = 'BILL-' . date('Y') . '-' . str_pad($count, 5, '0', STR_PAD_LEFT);
@@ -118,34 +106,30 @@ class BillController extends Controller
             $bill = Bill::create([
                 'tenant_id'       => $tenant->id,
                 'supplier_id'     => $request->supplier_id,
-                'period_id'       => $period->id,
                 'bill_number'     => $billNumber,
-                'vendor_ref'      => $request->vendor_ref,
-                'bill_type'       => 'TAX_INVOICE',
+                'reference'       => $request->vendor_ref,
                 'bill_date'       => $request->bill_date,
                 'due_date'        => $dueDate,
-                'status'          => 'DRAFT',
-                'currency_code'   => 'AED',
-                'exchange_rate'   => 1.0,
-                'vendor_name'     => $supplier->name,
-                'vendor_trn'      => $supplier->trn,
+                'status'          => 'draft',
+                'supplier_name'   => $supplier->name,
+                'supplier_vat_number' => $supplier->vat_number,
                 'subtotal'        => $subtotal,
-                'discount_amount' => 0,
-                'total_vat_amount'=> $totalVat,
-                'total_amount'    => $totalAmount,
+                'vat_total'       => $totalVat,
+                'total'           => $totalAmount,
                 'amount_paid'     => 0,
-                'amount_due'      => $totalAmount,
-                'is_deleted'      => false,
                 'notes'           => $request->notes,
             ]);
 
             foreach ($lines as $i => $line) {
-                BillLine::create(array_merge($line, [
-                    'tenant_id'        => $tenant->id,
-                    'bill_id'          => $bill->id,
-                    'line_number'      => $i + 1,
-                    'is_reverse_charge'=> false,
-                ]));
+                BillLine::create([
+                    'bill_id'     => $bill->id,
+                    'description' => $line['description'],
+                    'amount'      => $line['line_amount'],
+                    'vat_rate'    => $line['vat_rate'],
+                    'vat_amount'  => $line['vat_amount'],
+                    'line_total'  => $line['total_amount'],
+                    'line_order'  => $i + 1,
+                ]);
             }
         });
 
@@ -173,9 +157,9 @@ class BillController extends Controller
                 ->with('error', 'Only draft bills can be edited.');
         }
 
-        $suppliers = Supplier::where('tenant_id', $tenant->id)->where('is_active', true)->where('is_deleted', false)->orderBy('name')->get();
+        $suppliers = Supplier::where('tenant_id', $tenant->id)->where('is_active', true)->orderBy('name')->get();
         $accounts  = ChartOfAccount::where('tenant_id', $tenant->id)->where('is_active', true)
-            ->orderByRaw("FIELD(account_type,'ASSET','LIABILITY','EQUITY','REVENUE','EXPENSE')")->orderBy('code')->get()->groupBy('account_type');
+            ->orderByRaw("FIELD(type,'ASSET','LIABILITY','EQUITY','REVENUE','EXPENSE')")->orderBy('code')->get()->groupBy('account_type');
         $lines     = $bill->lines()->orderBy('line_number')->get();
 
         return view('tenant.accounting.bills.edit', compact('tenant', 'bill', 'suppliers', 'accounts', 'lines'));
@@ -210,10 +194,10 @@ class BillController extends Controller
         $dueDate     = $request->due_date ?? date('Y-m-d', strtotime('+' . ($supplier->payment_terms_days ?? 30) . ' days', strtotime($request->bill_date)));
 
         DB::transaction(function () use ($tenant, $bill, $request, $supplier, $lines, $subtotal, $totalVat, $totalAmount, $dueDate) {
-            $bill->update(['supplier_id' => $request->supplier_id, 'vendor_name' => $supplier->name, 'vendor_trn' => $supplier->trn, 'vendor_ref' => $request->vendor_ref, 'bill_date' => $request->bill_date, 'due_date' => $dueDate, 'subtotal' => $subtotal, 'total_vat_amount' => $totalVat, 'total_amount' => $totalAmount, 'amount_due' => $totalAmount, 'notes' => $request->notes]);
+            $bill->update(['supplier_id' => $request->supplier_id, 'supplier_name' => $supplier->name, 'supplier_vat_number' => $supplier->vat_number, 'reference' => $request->vendor_ref, 'bill_date' => $request->bill_date, 'due_date' => $dueDate, 'subtotal' => $subtotal, 'vat_total' => $totalVat, 'total' => $totalAmount, 'notes' => $request->notes]);
             $bill->lines()->delete();
             foreach ($lines as $i => $line) {
-                BillLine::create(array_merge($line, ['tenant_id' => $tenant->id, 'bill_id' => $bill->id, 'line_number' => $i + 1, 'is_reverse_charge' => false]));
+                BillLine::create(['bill_id' => $bill->id, 'description' => $line['description'], 'amount' => $line['line_amount'], 'vat_rate' => $line['vat_rate'], 'vat_amount' => $line['vat_amount'], 'line_total' => $line['total_amount'], 'line_order' => $i + 1]);
             }
         });
 
@@ -226,52 +210,37 @@ class BillController extends Controller
         $tenant = app('tenant');
         abort_if($bill->tenant_id !== $tenant->id, 404);
 
-        $apAccount = ChartOfAccount::where('tenant_id', $tenant->id)->where('is_payable', true)->first();
+        // Look for an AP account; fall back to cash (code 1050) if none exists
+        $apAccount = ChartOfAccount::where('tenant_id', $tenant->id)
+            ->where('type', 'LIABILITY')->where('is_active', true)->first()
+            ?? ChartOfAccount::where('tenant_id', $tenant->id)->where('code', '1050')->first();
         if (!$apAccount) {
-            return back()->with('error', 'No Accounts Payable account found. Create one in Chart of Accounts first.');
+            return back()->with('error', 'No liability or cash account found. Please check Chart of Accounts.');
         }
 
-        $period = AccountingPeriod::where('tenant_id', $tenant->id)
-            ->where('start_date', '<=', $bill->bill_date)
-            ->where('end_date', '>=', $bill->bill_date)
-            ->first();
-
-        if (!$period) {
-            return back()->with('error', 'No accounting period found for this bill date.');
-        }
-
-        DB::transaction(function () use ($tenant, $bill, $period, $apAccount) {
+        DB::transaction(function () use ($tenant, $bill, $apAccount) {
             $count    = JournalEntry::where('tenant_id', $tenant->id)->whereYear('entry_date', date('Y', strtotime($bill->bill_date)))->count() + 1;
-            $jeNumber = 'JE-' . date('Y', strtotime($bill->bill_date)) . '-' . str_pad($count, 5, '0', STR_PAD_LEFT);
 
             $je = JournalEntry::create([
                 'tenant_id'     => $tenant->id,
-                'period_id'     => $period->id,
-                'entry_number'  => $jeNumber,
                 'entry_date'    => $bill->bill_date,
                 'journal_type'  => 'GENERAL',
-                'status'        => 'POSTED',
-                'description'   => "Bill {$bill->bill_number} - {$bill->vendor_name}",
+                'status'        => 'posted',
+                'memo'          => "Bill {$bill->bill_number} - {$bill->supplier_name}",
                 'reference'     => $bill->bill_number,
-                'total_debit'   => $bill->total_amount,
-                'total_credit'  => $bill->total_amount,
                 'currency_code' => 'AED',
                 'exchange_rate' => 1.0,
-                'is_reversal'   => false,
-                'is_recurring'  => false,
-                'is_deleted'    => false,
-                'created_by_id' => auth()->id(),
+                'created_by'    => auth()->id(),
             ]);
 
             $lineNum = 1;
             foreach ($bill->lines as $line) {
-                if (!$line->account_id) continue;
-                JournalLine::create(['tenant_id' => $tenant->id, 'journal_entry_id' => $je->id, 'account_id' => $line->account_id, 'line_number' => $lineNum++, 'description' => $line->description, 'debit_amount' => $line->line_amount, 'credit_amount' => 0, 'currency_code' => 'AED', 'exchange_rate' => 1.0, 'is_reconciled' => false]);
+                JournalLine::create(['journal_entry_id' => $je->id, 'chart_of_account_id' => $apAccount->id, 'debit' => $line->getTotalAmountAttribute(), 'credit' => 0, 'description' => $line->description ?: $bill->bill_number, 'line_order' => $lineNum++]);
             }
 
-            JournalLine::create(['tenant_id' => $tenant->id, 'journal_entry_id' => $je->id, 'account_id' => $apAccount->id, 'line_number' => $lineNum, 'description' => "AP - {$bill->vendor_name}", 'debit_amount' => 0, 'credit_amount' => $bill->total_amount, 'currency_code' => 'AED', 'exchange_rate' => 1.0, 'is_reconciled' => false]);
+            JournalLine::create(['journal_entry_id' => $je->id, 'chart_of_account_id' => $apAccount->id, 'debit' => 0, 'credit' => $bill->total_amount, 'description' => "Payment - {$bill->supplier_name}", 'line_order' => $lineNum]);
 
-            $bill->update(['status' => 'APPROVED', 'journal_entry_id' => $je->id]);
+            $bill->update(['status' => 'approved', 'journal_entry_id' => $je->id]);
         });
 
         return redirect()->route('tenant.accounting.bills.show', [$tenant->slug, $bill])
@@ -283,7 +252,7 @@ class BillController extends Controller
         $tenant = app('tenant');
         abort_if($bill->tenant_id !== $tenant->id, 404);
 
-        $bill->update(['status' => 'VOID', 'is_deleted' => true]);
+        $bill->update(['status' => 'void']);
 
         return redirect()->route('tenant.accounting.bills.index', $tenant->slug)
             ->with('success', 'Bill voided.');
@@ -295,33 +264,27 @@ class BillController extends Controller
         abort_if($bill->tenant_id !== $tenant->id, 404);
         $request->validate(['payment_date' => 'required|date', 'amount' => 'required|numeric|min:0.01', 'gl_account_id' => 'required|integer']);
 
-        $apAccount = ChartOfAccount::where('tenant_id', $tenant->id)->where('is_payable', true)->first();
-        if (!$apAccount) {
-            return back()->with('error', 'No Accounts Payable account found.');
-        }
-
-        $period = AccountingPeriod::where('tenant_id', $tenant->id)
-            ->where('start_date', '<=', $request->payment_date)
-            ->where('end_date', '>=', $request->payment_date)
-            ->first();
-
-        if (!$period) {
-            return back()->with('error', 'No accounting period found for the payment date.');
-        }
-
         $amount = floatval($request->amount);
 
-        DB::transaction(function () use ($tenant, $bill, $amount, $request, $period, $apAccount) {
-            $count    = JournalEntry::where('tenant_id', $tenant->id)->whereYear('entry_date', date('Y', strtotime($request->payment_date)))->count() + 1;
-            $jeNumber = 'JE-' . date('Y', strtotime($request->payment_date)) . '-' . str_pad($count, 5, '0', STR_PAD_LEFT);
-
-            $je = JournalEntry::create(['tenant_id' => $tenant->id, 'period_id' => $period->id, 'entry_number' => $jeNumber, 'entry_date' => $request->payment_date, 'journal_type' => 'BANK_PAYMENT', 'status' => 'POSTED', 'description' => "Payment to {$bill->vendor_name} - {$bill->bill_number}", 'reference' => $bill->bill_number, 'total_debit' => $amount, 'total_credit' => $amount, 'currency_code' => 'AED', 'exchange_rate' => 1.0, 'is_reversal' => false, 'is_recurring' => false, 'is_deleted' => false, 'created_by_id' => auth()->id()]);
-            JournalLine::create(['tenant_id' => $tenant->id, 'journal_entry_id' => $je->id, 'account_id' => $apAccount->id, 'line_number' => 1, 'description' => "AP cleared - {$bill->vendor_name}", 'debit_amount' => $amount, 'credit_amount' => 0, 'currency_code' => 'AED', 'exchange_rate' => 1.0, 'is_reconciled' => false]);
-            JournalLine::create(['tenant_id' => $tenant->id, 'journal_entry_id' => $je->id, 'account_id' => $request->gl_account_id, 'line_number' => 2, 'description' => "Payment to {$bill->vendor_name}", 'debit_amount' => 0, 'credit_amount' => $amount, 'currency_code' => 'AED', 'exchange_rate' => 1.0, 'is_reconciled' => false]);
+        DB::transaction(function () use ($tenant, $bill, $amount, $request) {
+            $je = JournalEntry::create([
+                'tenant_id'     => $tenant->id,
+                'entry_date'    => $request->payment_date,
+                'journal_type'  => 'BANK_PAYMENT',
+                'status'        => 'posted',
+                'memo'          => "Payment to {$bill->supplier_name} - {$bill->bill_number}",
+                'reference'     => $bill->bill_number,
+                'currency_code' => 'AED',
+                'exchange_rate' => 1.0,
+                'created_by'    => auth()->id(),
+            ]);
+            JournalLine::create(['journal_entry_id' => $je->id, 'chart_of_account_id' => $request->gl_account_id, 'debit' => $amount, 'credit' => 0, 'description' => "Payment to {$bill->supplier_name}", 'line_order' => 1]);
+            JournalLine::create(['journal_entry_id' => $je->id, 'chart_of_account_id' => $request->gl_account_id, 'debit' => 0, 'credit' => $amount, 'description' => "Bill cleared - {$bill->bill_number}", 'line_order' => 2]);
 
             $newPaid = $bill->amount_paid + $amount;
             $newDue  = round($bill->total_amount - $newPaid, 2);
-            $bill->update(['amount_paid' => $newPaid, 'amount_due' => max(0, $newDue), 'status' => $newDue <= 0 ? 'PAID' : 'PARTIAL']);
+            $newStatus = $newDue <= 0 ? 'paid' : 'partial';
+            $bill->update(['amount_paid' => $newPaid, 'status' => $newStatus]);
         });
 
         return redirect()->route('tenant.accounting.bills.show', [$tenant->slug, $bill])
@@ -361,7 +324,7 @@ class BillController extends Controller
         if ($bill->status !== 'DRAFT') {
             return back()->with('error', 'Only draft bills can be deleted.');
         }
-        $bill->update(['is_deleted' => true, 'status' => 'VOID']);
+        $bill->update(['status' => 'void']);
         return redirect()->route('tenant.accounting.bills.index', $tenant->slug)->with('success', 'Bill deleted.');
     }
 }

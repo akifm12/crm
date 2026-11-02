@@ -36,8 +36,15 @@ class LedgerController extends Controller
         }
 
         $journals    = $query->get();
-        $totalDebit  = $journals->sum('total_debit');
-        $totalCredit = $journals->sum('total_credit');
+
+        // Compute totals from actual journal lines (total_debit/credit don't exist in DB)
+        $jeIds       = $journals->pluck('id');
+        $lineTotals  = DB::table('journal_entry_lines')
+            ->whereIn('journal_entry_id', $jeIds)
+            ->selectRaw('SUM(debit) as total_dr, SUM(credit) as total_cr')
+            ->first();
+        $totalDebit  = (float)($lineTotals->total_dr ?? 0);
+        $totalCredit = (float)($lineTotals->total_cr ?? 0);
 
         $accounts = ChartOfAccount::where('tenant_id', $tenant->id)->where('is_active', true)->orderBy('code')->get();
 
@@ -125,7 +132,7 @@ class LedgerController extends Controller
         $balances = DB::table('journal_entry_lines')
             ->join('journal_entries', 'journal_entries.id', '=', 'journal_entry_lines.journal_entry_id')
             ->where('journal_entries.tenant_id', $tenant->id)
-            ->where('journal_entries.status', 'posted')
+            ->whereIn('journal_entries.status', ['posted', 'POSTED'])
             ->whereBetween('journal_entries.entry_date', [$dateFrom, $dateTo])
             ->select('journal_entry_lines.chart_of_account_id as account_id', DB::raw('SUM(debit) as total_dr'), DB::raw('SUM(credit) as total_cr'))
             ->groupBy('journal_entry_lines.chart_of_account_id')
@@ -149,7 +156,7 @@ class LedgerController extends Controller
         $balances = DB::table('journal_entry_lines')
             ->join('journal_entries', 'journal_entries.id', '=', 'journal_entry_lines.journal_entry_id')
             ->where('journal_entries.tenant_id', $tenant->id)
-            ->where('journal_entries.status', 'posted')
+            ->whereIn('journal_entries.status', ['posted', 'POSTED'])
             ->where('journal_entries.entry_date', '<=', $asOfDate)
             ->select('journal_entry_lines.chart_of_account_id as account_id', DB::raw('SUM(debit) as total_dr'), DB::raw('SUM(credit) as total_cr'))
             ->groupBy('journal_entry_lines.chart_of_account_id')
@@ -173,7 +180,7 @@ class LedgerController extends Controller
         $balances = DB::table('journal_entry_lines')
             ->join('journal_entries', 'journal_entries.id', '=', 'journal_entry_lines.journal_entry_id')
             ->where('journal_entries.tenant_id', $tenant->id)
-            ->where('journal_entries.status', 'posted')
+            ->whereIn('journal_entries.status', ['posted', 'POSTED'])
             ->whereBetween('journal_entries.entry_date', [$dateFrom, $dateTo])
             ->select('journal_entry_lines.chart_of_account_id as account_id', DB::raw('SUM(debit) as total_dr'), DB::raw('SUM(credit) as total_cr'))
             ->groupBy('journal_entry_lines.chart_of_account_id')
