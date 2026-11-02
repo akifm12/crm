@@ -22,8 +22,8 @@ class JournalEntry extends Model
     public function getStatusAttribute(): string { return strtoupper($this->attributes['status'] ?? 'POSTED'); }
     public function setStatusAttribute(string $v): void { $this->attributes['status'] = strtolower($v); }
 
-    // DB column is `memo`; expose as `description` for view/controller compatibility
-    public function getDescriptionAttribute(): string  { return $this->attributes['memo'] ?? ''; }
+    // DB column is `memo`; strip leading em-dashes inserted by the migration
+    public function getDescriptionAttribute(): string  { return trim(preg_replace('/^[\x{2014}\s]+/u', '', $this->attributes['memo'] ?? '')); }
     public function setDescriptionAttribute(string $v): void { $this->attributes['memo'] = $v; }
     // DB has no entry_number — synthesise a display value from reference or id
     public function getEntryNumberAttribute(): string  { return $this->attributes['reference'] ?? ('JE-'.$this->id); }

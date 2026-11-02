@@ -37,18 +37,19 @@ class LedgerController extends Controller
 
         $journals    = $query->get();
 
-        // Compute totals from actual journal lines (total_debit/credit don't exist in DB)
+        // Compute per-entry and page totals from actual journal lines (no total_debit/credit in DB)
         $jeIds       = $journals->pluck('id');
-        $lineTotals  = DB::table('journal_entry_lines')
+        $lineRows    = DB::table('journal_entry_lines')
             ->whereIn('journal_entry_id', $jeIds)
-            ->selectRaw('SUM(debit) as total_dr, SUM(credit) as total_cr')
-            ->first();
-        $totalDebit  = (float)($lineTotals->total_dr ?? 0);
-        $totalCredit = (float)($lineTotals->total_cr ?? 0);
+            ->select('journal_entry_id', DB::raw('SUM(debit) as dr'), DB::raw('SUM(credit) as cr'))
+            ->groupBy('journal_entry_id')
+            ->get()->keyBy('journal_entry_id');
+        $totalDebit  = $lineRows->sum('dr');
+        $totalCredit = $lineRows->sum('cr');
 
         $accounts = ChartOfAccount::where('tenant_id', $tenant->id)->where('is_active', true)->orderBy('code')->get();
 
-        return view('tenant.accounting.journal.index', compact('tenant', 'journals', 'dateFrom', 'dateTo', 'status', 'totalDebit', 'totalCredit', 'accounts', 'journalType', 'reference'));
+        return view('tenant.accounting.journal.index', compact('tenant', 'journals', 'lineRows', 'dateFrom', 'dateTo', 'status', 'totalDebit', 'totalCredit', 'accounts', 'journalType', 'reference'));
     }
 
     public function journalStore(Request $request, string $slug)

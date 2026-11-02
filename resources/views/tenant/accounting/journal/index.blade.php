@@ -77,8 +77,9 @@
                 <td class="px-4 py-2.5 text-gray-500 text-xs">{{ $j->entry_date }}</td>
                 <td class="px-4 py-2.5 text-gray-700">{{ Str::limit($j->description, 60) }}</td>
                 <td class="px-4 py-2.5 text-xs text-gray-500">{{ str_replace('_', ' ', $j->journal_type) }}</td>
-                <td class="px-4 py-2.5 text-right font-mono text-xs">{{ number_format($j->total_debit, 2) }}</td>
-                <td class="px-4 py-2.5 text-right font-mono text-xs">{{ number_format($j->total_credit, 2) }}</td>
+                @php $jt = $lineRows[$j->id] ?? null; @endphp
+                <td class="px-4 py-2.5 text-right font-mono text-xs">{{ number_format($jt->dr ?? 0, 2) }}</td>
+                <td class="px-4 py-2.5 text-right font-mono text-xs">{{ number_format($jt->cr ?? 0, 2) }}</td>
                 <td class="px-4 py-2.5 text-center">
                     <span class="text-xs px-2 py-0.5 rounded-full
                         @if($j->status==='POSTED') bg-green-50 text-green-700
