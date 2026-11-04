@@ -8,7 +8,7 @@ module.exports = (L) => {
   p('{{COMPANY_SHORT}} identifies, assesses, understands, documents and keeps up to date its ML/TF/PF risks, and applies controls in proportion: enhanced measures where risk is higher, and, only where the law and this Manual allow, simplified measures where it is demonstrably lower. Even for low-risk customers, identification, verification and sanctions screening are always carried out.');
   p('The assessment is objective, based on reasonable grounds, documented, approved by {{SENIOR_MANAGEMENT}}, and updated at least annually and whenever the business changes.');
   h2('4.2 Business risk assessment');
-  p('The MLRO prepares a written business (enterprise-wide) risk assessment covering ML, TF and PF, taking account of the UAE National Risk Assessment and MoE sector guidance [VERIFY: current National Risk Assessment and sectoral risk assessment for DPMS]. It considers at least:');
+  p('The MLRO prepares a written business (enterprise-wide) risk assessment covering ML, TF and PF, taking account of the UAE National Risk Assessment (2024) and the MoET sectoral findings, which rate the DPMS sector as high inherent risk. It is documented, kept, updated at least annually and provided to the authorities on request. It considers at least:');
   bullets([
     'customer types and their activities (retail, jewellers, refiners, traders, corporates, walk-in sellers of scrap gold);',
     'countries and areas of the customers, suppliers, gold origin, transit and destination;',
@@ -54,20 +54,29 @@ module.exports = (L) => {
     'any relationship {{COMPANY_SHORT}} cannot manage within its resources and risk appetite.',
   ]);
 
-  // ── 5. CDD ─────────────────────────────────────────────────────────────
+  // ── 4.7 high-risk countries
+  h2('4.7 High-risk countries (MoET Circular No. 1 of 2026)');
+  p('The MLRO follows the lists issued by the National Committee for AML/CFT/CPF and the FATF (Appendix C) and applies the following:');
+  bullets([
+    '**Countries subject to a FATF call for action ("blacklist"):** Enhanced Due Diligence on every business relationship and transaction connected with the country; no branches, representative offices or subsidiaries there; no reliance on third parties located there for CDD; strengthened internal reporting and STRs where appropriate; full compliance with targeted financial sanctions.',
+    '**Countries under increased monitoring ("greylist"):** Enhanced Due Diligence proportionate to the risk, and account taken of FATF updates in risk assessments and relationship reviews.',
+    '**HRC / HRCA reports:** a transaction or activity related to a high-risk country is reported to the FIU through goAML (section 8.4) and not carried out until three working days after reporting, unless the FIU objects. If it is also suspicious, the STR obligation takes priority.',
+  ]);
+
+  // ── 5. CDD
   h1('5. CUSTOMER DUE DILIGENCE');
   h2('5.1 When customer due diligence (CDD) is required');
   p('{{COMPANY_SHORT}} applies CDD:');
   bullets([
     'before establishing a business relationship;',
-    'before any occasional transaction in cash, or equivalent, of AED 55,000 or more, whether a single transaction or several that appear linked [VERIFY: current MoE threshold and whether it also applies to non-cash payments];',
+    'before any occasional transaction of AED 55,000 or more, whether a single transaction or several that appear linked, including instalments, deposits, trade-ins and payments in kind, whatever the payment method (the Supplemental Guidance treats AED 55,000 as the minimum legal trigger and not as an exemption below it) [VERIFY: MoET to confirm the reading of "cash" in Article 3(3) of Cabinet Resolution No. (134) of 2025; this Manual applies the stricter reading];',
     'when buying gold from any individual or business, whatever the value (section 7.3);',
     'whenever ML, TF or PF is suspected;',
     'whenever there are doubts about the accuracy or adequacy of previously obtained information.',
   ]);
-  p('CDD is also applied to existing customers, on the schedule in section 5.9 and whenever circumstances change.');
+  p('CDD is also applied to existing customers, on the schedule in section 5.9 and whenever circumstances change. Sanctions and PEP screening applies to every customer without exception, whatever the value or payment method (Circular 3 of 2025).');
   h2('5.2 Timing');
-  p('CDD, including sanctions and PEP screening, is completed before the relationship is established and before any transaction is carried out. This Manual does not allow transactions to proceed before verification is complete. A walk-in customer who cannot be identified and screened is not served.');
+  p('CDD, including sanctions and PEP screening, is completed before the relationship is established and before any transaction is carried out. The Executive Regulations allow identity verification to be deferred in low-risk cases; **this Manual does not use that option**. A walk-in customer who cannot be identified and screened is not served.');
   h2('5.3 Identifying and verifying the customer');
   p('{{COMPANY_SHORT}} identifies the customer and verifies identity from original, valid documents (or certified copies where originals cannot be seen). Copies taken by staff are dated, signed and marked "original sighted". The standard documents are listed in Appendix F.');
   table(['Customer type', 'Information obtained and verified'], [
@@ -86,11 +95,11 @@ module.exports = (L) => {
     'for trusts and similar arrangements, identify the settlor, trustees, protector, each beneficiary or class of beneficiaries and anyone with ultimate effective control;',
     'for foundations, the founder, council members, guardian, beneficiaries and anyone with control.',
   ]);
-  p('For High-risk customers the ownership threshold for identification is lowered to 10%. Where a shareholder is itself a legal entity, {{COMPANY_SHORT}} looks through the chain until it reaches natural persons. Beneficial owners are not identified only where the law exempts the customer (for example a listed company or a government-owned entity), and the basis is recorded. {{COMPANY_SHORT}} also checks the customer\'s declared ownership against the UBO register where accessible [VERIFY: current UBO register access and the duty to report discrepancies].');
+  p('For High-risk customers the ownership threshold for identification is lowered to 10%. Where a shareholder is itself a legal entity, {{COMPANY_SHORT}} looks through the chain until it reaches natural persons. Beneficial owners are not identified only where the law exempts the customer (for example a listed company or a government-owned entity), and the basis is recorded. {{COMPANY_SHORT}} keeps beneficial-owner information on its customers up to date, and its own beneficial-owner information current, notifying changes within 15 working days as the Executive Regulations and Cabinet Decision No. (109) of 2023 require.');
   h2('5.5 Purpose, nature and source of funds');
   p('{{COMPANY_SHORT}} obtains the purpose and intended nature of the relationship, the expected volume, value, frequency and payment method of transactions, and the source of funds. For Medium and High risk customers, and for cash transactions at or above the reporting threshold, the source of funds is obtained and recorded; for High risk it is evidenced by documents (such as bank statements, sale contracts, invoices, or proof of dividends) and source of wealth is also established.');
   h2('5.6 Politically exposed persons (PEPs)');
-  p('{{COMPANY_SHORT}} screens every customer and beneficial owner for PEP status at onboarding and on an ongoing basis ({{SCREENING_TOOL}}). Being a PEP does not by itself make a person unacceptable, but it requires EDD:');
+  p('{{COMPANY_SHORT}} screens every customer and beneficial owner for PEP status at onboarding and on an ongoing basis ({{SCREENING_TOOL}}). Being a PEP does not by itself make a person unacceptable, but it requires EDD. The law requires Senior Management approval and source-of-wealth checks for all foreign PEPs, and for domestic PEPs and international-organisation officials in high-risk relationships; this Manual applies them to every PEP:');
   bullets([
     'approval of Senior Management before the relationship starts or continues, on the MLRO\'s recommendation;',
     'identification and evidence of source of wealth and source of funds;',
@@ -99,7 +108,7 @@ module.exports = (L) => {
   ]);
   p('The assessment of each PEP and the reasons for the decision are recorded on the Customer Risk Assessment Form.');
   h2('5.7 Simplified due diligence (SDD)');
-  p('SDD is available only for customers the MLRO has rated Low risk in writing, and only where the law permits. SDD never removes identification, verification of identity, beneficial owner identification or sanctions and PEP screening. It may only reduce, in proportion to the risk, the frequency of reviews (to every 2 years) and the amount of supporting evidence on purpose and source of funds. SDD is not applied when there is any suspicion, any sanctions or PEP hit, any high-risk jurisdiction link, or a cash transaction at or above the reporting threshold.');
+  p('SDD is available only for customers the MLRO has rated Low risk in writing, only where there is no suspicion, only in coordination with MoET (Circular 6 of 2025), and always with full application of targeted financial sanctions. SDD never removes identification, verification of identity, beneficial owner identification or sanctions and PEP screening. It may only reduce, in proportion to the risk, the frequency of reviews (to every 2 years) and the amount of supporting evidence on purpose and source of funds. SDD is not applied when there is any suspicion, any sanctions or PEP hit, any high-risk jurisdiction link, or a cash transaction at or above the reporting threshold.');
   h2('5.8 Enhanced due diligence (EDD)');
   p('EDD is applied to all High-risk customers, all PEPs, every relationship or transaction involving a high-risk jurisdiction, and wherever the MLRO decides it is needed. In addition to standard CDD, {{COMPANY_SHORT}}:');
   bullets([
@@ -123,88 +132,110 @@ module.exports = (L) => {
   p('If {{COMPANY_SHORT}} cannot complete CDD, it must not establish the relationship, open an account, provide a service or carry out any transaction; it ends or suspends an existing relationship; and the MLRO decides, without alerting the customer, whether to file an STR/SAR and what to do with any funds or gold held (nothing is returned or released without the MLRO\'s approval, and anything linked to a sanctions match is frozen under section 6). {{COMPANY_SHORT}} does not take any step that would amount to tipping off.');
   h2('5.11 Reliance on third parties and outsourcing');
   p('{{COMPANY_SHORT}} may rely on CDD done by another regulated and supervised person (such as a bank, a licensed financial institution or another AML-supervised DNFBP) only if it immediately obtains the CDD information and has satisfied itself that copies of the underlying documents will be provided without delay on request, that the third party is subject to equivalent AML/CFT regulation and supervision, and that the information is up to date. If it is not satisfied, {{COMPANY_SHORT}} carries out CDD itself. {{COMPANY_SHORT}} remains responsible for the outcome. It records how it assessed the third party.');
-  p('Where {{COMPANY_SHORT}} outsources any AML/CFT function (including the MLRO role, screening, record storage or CDD), it first performs due diligence on the provider, documents the provider\'s obligations in a written agreement that includes confidentiality, access for MoE and audit, and record return on termination, and reviews performance at least annually. Responsibility stays with {{COMPANY_SHORT}}.');
+  p('Where {{COMPANY_SHORT}} outsources any AML/CFT function (including the MLRO role, screening, record storage or CDD), it first performs due diligence on the provider, documents the provider\'s obligations in a written agreement that includes confidentiality, access for MoET and audit, and record return on termination, and reviews performance at least annually. Responsibility stays with {{COMPANY_SHORT}}.');
 
   // ── 6. TFS ─────────────────────────────────────────────────────────────
   h1('6. TARGETED FINANCIAL SANCTIONS (TFS)');
   h2('6.1 Obligation');
-  p('{{COMPANY_SHORT}} must, without delay and without prior notice: freeze all funds and assets owned or controlled by, or held for the benefit of, persons and entities on the UN Consolidated List and the UAE Local Terrorist List; not make funds, assets, gold or services available to them; and report to the authorities as set out in this section. These duties apply at all times and to all customers, beneficial owners, agents, suppliers, counterparties and transaction parties. [VERIFY: current Cabinet Decision No. (74) of 2020 and EOCN guidance on scope, deadlines and report types.]');
+  p('{{COMPANY_SHORT}} must, without delay and without prior notice: freeze all funds and other assets owned or controlled by, or held for the benefit of, persons and entities on the UN Consolidated List and the UAE Local Terrorist List; not make funds, assets, gold or services available to them, directly or indirectly; and report to the authorities as set out in this section (Cabinet Decision No. (74) of 2020, Article 21, and the EOCN Guidance on TFS, last amended March 2026). "Without delay" means immediately and in any case within 24 hours of the designation. These duties apply at all times and to all customers, beneficial owners, agents, suppliers, counterparties and transaction parties.');
   h2('6.2 Responsibilities');
-  p('The MLRO is {{COMPANY_SHORT}}\'s TFS compliance officer, and the deputy MLRO acts in the MLRO\'s absence. {{SENIOR_MANAGEMENT}} makes sure the MLRO has the tools and authority to freeze and report. All staff must stop and refer to the MLRO any actual or possible match.');
+  p('The MLRO is {{COMPANY_SHORT}}\'s TFS compliance officer, and the deputy MLRO acts in the MLRO\'s absence. {{SENIOR_MANAGEMENT}} makes sure the MLRO has the tools, human and technical resources and authority to freeze and report. Staff must not tell any customer or third party that a freeze is going to be applied. All staff must stop and refer to the MLRO any actual or possible match.');
   h2('6.3 Staying informed');
-  p('{{COMPANY_SHORT}} is registered with the EOCN notification system so it receives list updates and alerts, and keeps the registration current, with at least two monitored contacts. The MLRO checks that notifications are being received and keeps evidence of each notification and the action taken.');
+  p('{{COMPANY_SHORT}} is registered with the EOCN Notification Alert System (NAS) so it receives every list update by email, and uses its "Follow TFS Instructions" feature. The registration is kept current with at least two monitored contacts. The MLRO also checks the UN website for press releases regularly (daily where the business model requires it) and keeps evidence of each notification and the action taken.');
   h2('6.4 Screening');
-  table(['Who is screened', 'When', 'Against'], [
-    ['Customers, beneficial owners, directors, shareholders, authorised signatories and agents', 'Before the relationship starts and before any transaction; again automatically whenever a list is updated; and at each periodic review', 'UN Consolidated List and UAE Local Terrorist List (mandatory); other lists chosen by {{COMPANY_SHORT}} on a risk basis (for example OFAC, EU, UK) and PEP/adverse media data'],
-    ['Suppliers, refiners, intermediaries and counterparties, including the parties named on shipping and customs documents', 'Before the first purchase or sale, and on list updates', 'As above'],
-    ['Payers and payees of third-party payments (section 7.2) and the beneficiaries of any transaction', 'Before the payment is accepted or made', 'As above'],
-    ['Employees', 'At hiring and periodically', 'As above'],
-  ], [3300, 3200, 2900]);
-  p('Screening is done with {{SCREENING_TOOL}}. The MLRO checks that the tool carries current lists and records the date the lists were last updated. A screening record (name, date, lists, result, who reviewed) is kept for every check (Appendix H).');
-  h2('6.5 Handling potential matches');
+  p('Sanctions and terrorist-list screening applies to all customers without exception, whether the transaction is cash or non-cash and whatever its value (MoET Circular No. (3) of 2025). Screening is done immediately:');
   bullets([
-    'Any alert is passed to the MLRO immediately. The transaction or relationship is put on hold, and nothing is released while the alert is open.',
-    'The MLRO compares the name and identifying details (date of birth, nationality, passport/ID number, address, aliases) with the listing and classifies the alert as: false positive (clearly a different person, with documented reasons), partial/possible match (some details match, but identity cannot be excluded), or confirmed match.',
-    'The reasoning and evidence for every alert, including false positives, are recorded in the TFS Screening and Match Record (Appendix H).',
+    'upon any update to the UN Consolidated List or UAE Local Terrorist List (so that any freeze happens within 24 hours);',
+    'before onboarding any new customer, and before any transaction with a counterparty;',
+    'at each periodic KYC review and on any material change in the nature or ownership of a customer.',
   ]);
-  h2('6.6 Confirmed or partial matches');
+  table(['What is screened', 'Details'], [
+    ['Customers and prospective customers', 'All current customers and everyone seeking to deal with {{COMPANY_SHORT}}, before any transaction or relationship. Former customers are included for 5 years after the relationship ended.'],
+    ['Beneficial owners and related parties', 'Beneficial owners (natural and legal), directors, authorised signatories, agents and anyone with power of attorney, and persons known to be directly or indirectly connected with a designated person.'],
+    ['Transaction parties', 'Buyers, sellers, suppliers, refiners, agents, freight forwarders, shipping and other parties named in a transaction, and payers and payees of any third-party payment (section 7.2).'],
+    ['Employees', 'At hiring and periodically.'],
+  ], [3000, 6400]);
+  p('Lists: the UN Consolidated List and the UAE Local Terrorist List are mandatory. Others (for example OFAC, EU, UK) are screened as a risk measure (section 6.8). Screening is done with {{SCREENING_TOOL}}. The MLRO makes sure that every system holding customer or transaction data is covered by the screening, checks that the tool carries the current lists, and records when the lists were last updated. Screening is also effective on weekends and public holidays: {{COMPANY_SHORT}} has a procedure so that no assets can be accessed or used during a closure, and screening resumes from the first minute of business. A record is made of every check (Appendix H).');
+  h2('6.5 Matching and handling alerts');
+  p('Any alert is passed to the MLRO immediately; the transaction or relationship is put on hold, and nothing is released while the alert is open. The MLRO compares the **key identifiers** first, and only then other identifiers such as aliases:');
+  table(['Person', 'Key identifiers'], [
+    ['Natural person', 'Full name, date of birth, nationality, ID or passport number, last known address.'],
+    ['Entity / company', 'Name, trade licence number, address of registration, address of branches.'],
+  ], [2200, 7200]);
+  table(['Result', 'Meaning', 'Action'], [
+    ['Negative match', 'No match on the key identifiers.', 'Proceed. Record the check.'],
+    ['False positive', 'A name match that, on the key identifiers, is clearly not the designated person.', 'Document the reasons and evidence (Appendix H). No report is needed.'],
+    ['Partial name match', 'Some key identifiers match, but the MLRO cannot conclude it is a false positive or a confirmed match.', 'Section 6.6, PNMR.'],
+    ['Confirmed name match', 'All key identifiers match a designated person.', 'Section 6.6, freeze and CNMR.'],
+  ], [2000, 4000, 3400]);
+  h2('6.6 Confirmed and partial matches');
   bullets([
-    '**Confirmed match:** freeze, without delay (within 24 hours at the latest) all funds, gold and other assets of the listed person that {{COMPANY_SHORT}} holds or controls; do not carry out any transaction or provide any service; report through goAML with a Funds Freeze Report (FFR) within 5 business days, and notify EOCN as required.',
-    '**Partial / possible match that cannot be excluded:** suspend the transaction, do not tip off, and report through goAML with a Partial Name Match Report (PNMR) within 5 business days, then follow the instructions of the authorities.',
-    '**Maintain the freeze** until the authority instructs otherwise; do not release, return or deal with the assets.',
-    '**Do not alert** the customer or anyone else, other than as required by the authorities.',
-    '**Humanitarian or other exemptions** and requests to use frozen funds are handled only on the written approval of the competent authority.',
+    '**Confirmed name match:** freeze without delay (within 24 hours at the latest) all funds, gold and other assets of the listed person; do not carry out any transaction or provide any service; and file a **Confirmed Name Match Report (CNMR)** through goAML within **5 business days** of the freeze (or of rejecting a transaction from a prospective customer). The report goes to EOCN and MoET. A CNMR is also filed for relationships and transactions in the previous five years, including closed accounts and where no assets are held now, stating that none are held.',
+    '**Partial name match, existing customer:** suspend without delay any transaction, offer no funds, assets or services, and file a **Partial Name Match Report (PNMR)** through goAML within 5 business days of the suspension. Send all documents on the match and keep the suspension in place until EOCN instructs through goAML either to cancel it (false positive) or to freeze (confirmed).',
+    '**Partial name match, prospective customer or counterparty:** first try to obtain identification documents to decide whether it is a false positive or a confirmed match. If it is a false positive, the relationship or transaction may go ahead, with the reasons documented. If the identification documents cannot be obtained within 10 business days, reject the transaction or service and file a PNMR within 5 business days of the rejection, stating that it was rejected for lack of ID documents.',
+    '**Majority ownership:** an entity that a designated person owns by more than 50%, or controls, is also frozen. A designated person holding 50% or less is monitored for any increase in stake or control, and anything owed to the designated person (profits, sale proceeds) is frozen.',
+    '**Maintain the freeze** until the authorities instruct otherwise; do not release, return or deal with the assets. Additions to a frozen account are allowed, but they too are frozen.',
+    '**Do not alert** the customer or anyone else other than as the authorities require. Requests to use frozen funds, or any humanitarian exemption, are handled only on the written approval of the competent authority.',
   ]);
-  p('[VERIFY: freezing deadline, reporting deadline, report types and contact channels against current Cabinet Decision No. (74) of 2020, EOCN guidance and goAML requirements.]');
   h2('6.7 EOCN alerts and notifications');
   p('When EOCN issues a notification asking {{COMPANY_SHORT}} to check its records against newly listed or amended names, or to confirm the outcome of a search (for example through a unique survey link):');
   bullets([
     'the MLRO receives the notification, records the date and time, and checks the deadline;',
-    'the MLRO searches the complete customer, beneficial owner, supplier and counterparty records, using {{SCREENING_TOOL}} and the company\'s own client list, for every name in the notification, including variants and transliterations;',
+    'the MLRO searches the complete customer, former customer, beneficial owner, supplier and counterparty records, using {{SCREENING_TOOL}} and the company\'s own client list, for every name in the notification, including variants and transliterations;',
     'the MLRO keeps evidence of the search (dated screenshot or export showing the names searched and the result);',
     'only after the search is complete does the MLRO answer EOCN. "No match" is given only if nothing was found. If a possible or confirmed match exists, the MLRO answers accordingly, freezes and reports under section 6.6. Nobody else may answer on {{COMPANY_SHORT}}\'s behalf, and the answer must never be given before the search is done;',
     'the MLRO keeps the confirmation of submission (for example the survey completion page) together with the search evidence.',
   ]);
-  h2('6.8 Other sanctions regimes');
-  p('{{COMPANY_SHORT}} considers sanctions issued by other jurisdictions (for example the US, EU and UK) as a risk factor and screens against them as set out in 6.4, because they affect banking, shipment and insurance. Dealing with a person who is sanctioned only under a foreign regime is not automatically prohibited by UAE law, but it is escalated to the MLRO and Senior Management for a risk decision. Proliferation-related risk is assessed in the business risk assessment.');
+  h2('6.8 Other sanctions regimes and sanctions evasion');
+  p('Sanctions imposed by other jurisdictions (for example the US, EU and UK) and criminal watch-lists are screened as a risk measure because they affect banking, shipment and insurance, but **CNMR and PNMR are for the UN and UAE Local Terrorist Lists only**. A match with any other list is escalated to the MLRO and Senior Management, who consult MoET and consider an STR/SAR to the FIU. Suspected sanctions evasion, including a customer named in a UN Panel of Experts report but not listed, is reported to the FIU as an STR/SAR, using the sanctions-evasion reasons for reporting in goAML. The MLRO must be able to tell which reports are CNMR/PNMR and which are STR/SAR. Proliferation-related risk, including the UN sanctions on Iran (re-imposed under UNSCR 1737 (2006), MoET Circular No. (7) of 2025) and on the DPRK, is assessed in the business risk assessment.');
   h2('6.9 Records and training');
-  p('All TFS records (screening results, alerts, decisions, freezes, reports, EOCN notifications and responses) are kept for at least {{RETENTION_YEARS}} years. TFS is part of induction and annual training for all staff and of additional training for the MLRO and anyone who screens or onboards customers.');
+  p('All TFS records (screening results of every kind, alerts, decisions, freezes, reports, EOCN notifications and responses) are kept for at least {{RETENTION_YEARS}} years and never less than five. TFS is part of induction and annual training for all staff, and of additional training for the MLRO, Senior Management and anyone who screens or onboards customers. {{COMPANY_SHORT}} cooperates with EOCN and MoET in verifying the accuracy of any report.');
 
   // ── 7. Gold-sector controls ───────────────────────────────────────────
   h1('7. CONTROLS SPECIFIC TO THE GOLD AND PRECIOUS METALS TRADE');
   h2('7.1 Cash transactions and DPMSR reporting');
+  p('The AED 55,000 threshold is a minimum legal trigger, not a safe level. Below it, {{COMPANY_SHORT}} still applies the risk-based controls in this Manual.');
   bullets([
-    'Every cash transaction is recorded with the customer\'s identity, the amount, the gold bought or sold, the payment method and the source of funds.',
-    'CDD is required for any cash (or equivalent) transaction of AED 55,000 or more, whether a single transaction or linked transactions, and the customer\'s source of funds is recorded [VERIFY: current threshold and the types of payment covered].',
-    'The MLRO files a DPMSR through goAML for every transaction that falls in the MoE\'s reporting scope, within the deadline MoE sets [VERIFY: DPMSR scope (cash, wire transfers, others), threshold, linked-transaction rule and filing deadline].',
-    'Staff must not split a transaction, advise a customer to split it, or accept several payments that appear designed to stay below the threshold. Apparent structuring is escalated to the MLRO as an Internal SAR even if no single transaction reaches the threshold.',
-    'Cash is accepted only in the UAE currency or other currency the Senior Management has approved. Cash received is counted, receipted and banked as soon as practicable.',
+    'Every cash transaction is recorded with the customer\'s identity, the amount, the gold bought or sold, the payment method and the source of funds. For cash, staff record as much detail as possible, including banknote denominations and serial numbers.',
+    'A **DPMSR** is filed through goAML for: cash transactions of AED 55,000 or more (or the foreign-currency equivalent) with resident individuals; cash transactions of AED 55,000 or more with non-resident individuals; and transactions of AED 55,000 or more with companies and other entities, **in cash or by wire transfer**. The obligation applies even if CDD is complete and there are no red flags. If the transaction is also suspicious, the DPMSR and the STR/SAR are both filed.',
+    'For a resident individual the Emirates ID or passport is obtained; for a non-resident, the passport or ID; for a company, a copy of the trade licence and the ID (Emirates ID or passport) of its representative. Records are kept for the period in section 10 [VERIFY: DPMSR filing deadline in the current goAML/FIU guidance].',
+    'Linked transactions, instalments, deposits, cash equivalents and trade-ins are added together. Splitting one purchase over separate invoices does not avoid the threshold. Staff must not split a transaction or advise a customer to do so. Apparent structuring is escalated to the MLRO as an Internal SAR even if no single transaction reaches the threshold.',
+    'Cash is counted, receipted and banked as soon as practicable.',
   ]);
   h2('7.2 Payments');
   bullets([
     'Payments are accepted only from, and made only to, the customer or supplier named in the transaction, from an account in their own name.',
-    'A payment from or to a third party is not accepted unless the MLRO approves it in advance after establishing the reason for the payment, the identity of the third party and its relationship to the customer, and screening the third party.',
+    'The payment method must be consistent with the customer\'s profile. Hard-to-trace instruments (cashier\'s or traveller\'s cheques, postal money orders, prepaid cards, third-party endorsed cheques, cryptocurrencies, IOUs and promissory notes) are not accepted unless the MLRO approves in advance.',
+    'A payment from or to a third party is not accepted unless the MLRO approves it in advance, after establishing the reason, the identity of the third party and its relationship to the customer, and screening the third party. Where fees are collected for services (refining, consignment), funds must come from the known customer, not from third parties or unknown foreign accounts.',
     'Payment to a different account from the one the customer paid from, or to a country unrelated to the transaction, is treated as a red flag.',
-    'Virtual assets, prepaid instruments and cheques from unrelated parties are not accepted unless Senior Management has approved the channel in writing with controls in place.',
+    'Virtual assets are not accepted unless Senior Management has approved the channel in writing, with controls in place.',
   ]);
   h2('7.3 Buying gold from the public (scrap, jewellery and second-hand gold)');
   bullets([
     'The seller is identified, verified and screened for every purchase, whatever the value, and a purchase record is kept (seller ID, date, description, weight, purity, price, payment method).',
-    'The seller states, and where possible shows evidence of, how they came to own the gold. Bulk or recurrent sales of scrap gold, gold without a plausible origin, damaged or defaced marks, or items that appear new are escalated to the MLRO.',
+    'The seller states, and where possible shows evidence of, how they came to own the gold. Unverifiable "scrap" claims, bulk or recurrent sales of scrap, scrap volumes that exceed what a retail or personal source would produce, gold without a plausible origin, damaged or defaced marks, or items that appear new are treated as high risk: Enhanced Due Diligence and escalation to the MLRO.',
     'Items showing signs of theft or tampering are not bought. Payments follow section 7.2.',
   ]);
   h2('7.4 Suppliers, refiners and responsible sourcing');
-  p('{{COMPANY_SHORT}} applies due diligence to every supplier and upstream counterparty before first dealing and periodically, following the five-step framework of the OECD Due Diligence Guidance and MoE requirements on responsible sourcing [VERIFY: current MoE responsible sourcing rules, reporting and audit requirements]:');
+  p('Under Ministerial Decree No. (68) of 2024, precious metals dealers and other participants in the supply chain must apply the first three steps of the Ministry\'s due diligence regulations for responsible sourcing of gold. Refiners and recyclers must also appoint an independent third-party auditor and submit an annual due diligence report. {{COMPANY_SHORT}} applies steps 1 to 3 to every supplier and upstream counterparty before first dealing and periodically:');
   bullets([
-    ['**Step 1 — Management systems:** this Manual and the supplier due diligence procedure are the company policy; the MLRO is responsible; records are kept; staff are trained.', null],
-    ['**Step 2 — Identify and assess risks:** for each supplier and consignment, record the supplier\'s identity, ownership and beneficial owners (CDD as for a customer), licence and regulatory status, the type of gold (mined, recycled/scrap, refined, jewellery), the country of origin and transit, and whether any CAHRA is involved. Obtain and check supporting documents: invoices, packing lists, assay certificates, refiner certificates, import/export and customs documents, transport and insurance documents. Check for consistency of weight, purity, value and parties.', null],
-    ['**Step 3 — Manage and mitigate:** accept, suspend or refuse; apply EDD for higher-risk suppliers; do not deal with any supplier linked to sanctions, serious human rights abuses, funding of armed groups, or illicit trade. Document each decision.', null],
-    ['**Step 4 — Independent check:** include supplier due diligence and responsible sourcing in the annual independent review (section 3.5) and any third-party audit MoE requires.', null],
-    ['**Step 5 — Report:** prepare the annual responsible-sourcing report where required, make it available to the authorities, and retain it.', null],
+    ['**Step 1 — Management systems:** this Manual is the company-specific policy on due diligence for gold supply chains; the MLRO is responsible; records are kept; staff are trained.', null],
+    ['**Step 2 — Identify and assess risks:** for each supplier and consignment record the supplier\'s identity, ownership and beneficial owners (CDD as for a customer), licence and regulatory status, the type of gold (mined, recycled/scrap, refined, jewellery), the country of origin and transit, and whether any conflict-affected or high-risk area (CAHRA) is involved. Obtain and check the supporting documents: invoices, packing lists, assay and refiner certificates, import/export and customs documents, transport and insurance documents. Check the plausibility of origin and reconcile weight, purity, value and parties. For rough diamonds, verify the Kimberley Process certificate.', null],
+    ['**Step 3 — Manage and mitigate:** accept, suspend or refuse; apply EDD for higher-risk suppliers; reject incomplete or unverifiable documents; do not deal with any supplier linked to sanctions, serious human rights abuses, funding of armed groups, or illicit trade. Document each decision.', null],
+    ['If {{COMPANY_SHORT}} also operates as a refiner or recycler, it additionally appoints an independent third-party auditor and files the annual due diligence report with MoET. Otherwise, supplier due diligence is included in the annual independent review (section 3.5).', null],
   ]);
-  p('Suppliers are rated Low, Medium or High risk and reviewed on the same schedule as customers (section 5.9).');
-  h2('7.5 Trade and shipment red flags');
+  p('Suppliers are rated Low, Medium or High risk and reviewed on the same schedule as customers (section 5.9). Gold of all kinds must also meet the precious metals stamping and trade-monitoring rules in Federal Law No. (11) of 2015.');
+  h2('7.5 Monitoring and record details');
+  bullets([
+    'For covered transactions, keep the certificate numbers and identifying characteristics of the metals or stones involved (weight, purity or quality, colour, shape, cut, markings).',
+    'For items held in safekeeping for a customer or partner, keep the same records and watch for unusual changes or substitutions.',
+    'Wholesale and trading flows: watch for price deviations from the market, mismatches between weight, purity and documents, and circular trading.',
+    'Retail: monitor cumulative totals per customer, and record cash denominations and serial numbers.',
+  ]);
+  h2('7.6 Trade and shipment red flags');
   p('The MLRO assesses and escalates: mismatch between the quantity, purity, value or origin of the gold and the documents; prices well above or below market; unnecessary intermediaries or routing through jurisdictions unrelated to the transaction; unexplained changes of consignee or payee; sanctioned or high-risk vessels, ports, routes or end users; and dual-use goods in the customer\'s other business. See Appendix B.');
-  h2('7.6 Refusing or ending a transaction');
-  p('Staff may refuse any transaction they are not comfortable with. A refusal and its reason are recorded and passed to the MLRO, who decides whether it is also reportable. Staff do not explain to the customer that a suspicion exists.');
+  h2('7.7 Data disclosure notice');
+  p('The MoET Data Disclosure Notice (Circular No. (2) of 2023) is displayed visibly on {{COMPANY_SHORT}}\'s premises so that customers are told they must disclose their data when dealing with the company. The MLRO checks each branch, and replaces the notice if it is lost or updated.');
+  h2('7.8 Refusing or ending a transaction');
+  p('Staff may refuse any transaction they are not comfortable with. A refusal and its reason are recorded and passed to the MLRO, who decides whether it is also reportable. Staff do not explain to the customer that a suspicion exists. {{COMPANY_SHORT}} refuses or exits any relationship where beneficial ownership, source of funds or origin of the gold cannot be reasonably verified, or where sanctions or PF risks cannot be mitigated.');
 };

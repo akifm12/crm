@@ -6,7 +6,7 @@ module.exports = (L) => {
 
   // ── Template guide (delete before issue) ───────────────────────────────
   add(new Paragraph({ spacing: { after: 160 }, children: [new TextRun({ text: 'TEMPLATE GUIDE — delete this page before issue', bold: true, size: 28, color: NAVY })] }));
-  p('This is the master template of the AML / CFT / CPF and Sanctions Policy Manual for dealers in precious metals (gold / bullion). It is written for a UAE mainland company supervised by the Ministry of Economy (MoE). Replace every highlighted placeholder with the company\'s own details. Nothing else in the text is company-specific.');
+  p('This is the master template of the AML / CFT / CPF and Sanctions Policy Manual for dealers in precious metals (gold / bullion). It is written for a UAE mainland company supervised by the Ministry of Economy and Tourism (MoET). Replace every highlighted placeholder with the company\'s own details. Nothing else in the text is company-specific.');
   table(['Placeholder', 'Replace with', 'Example'], [
     ['{{COMPANY_NAME}}', 'Full legal name, as on the trade licence', 'Example Gold Trading LLC'],
     ['{{COMPANY_SHORT}}', 'Short name used throughout the text', 'Example Gold'],
@@ -21,7 +21,7 @@ module.exports = (L) => {
     ['{{RETENTION_YEARS}}', 'Record retention period in years (not less than five)', '5'],
     ['{{VERSION}} / {{ISSUE_DATE}} / {{APPROVER}}', 'Document control', '1.0 / 1 January 2027 / Managing Director'],
   ], [3300, 3900, 2200]);
-  p('**Cyan [VERIFY: …] tags** mark statements that depend on the current text of a law, circular or authority guidance (deadlines, thresholds, instrument numbers, report types). They are to be checked against the latest MoE, FIU and EOCN publications and removed once confirmed. The regulatory change log in section 1.6 records each update.');
+  p('**Cyan [VERIFY: …] tags** mark statements that depend on the current text of a law, circular or authority guidance (deadlines, thresholds, instrument numbers, report types). They are to be checked against the latest MoET, FIU and EOCN publications and removed once confirmed. The regulatory change log in section 1.6 records each update.');
 
   // ── Cover ──────────────────────────────────────────────────────────────
   add(new Paragraph({ children: [new PageBreak()] }));
@@ -30,7 +30,7 @@ module.exports = (L) => {
   add(new Paragraph({ spacing: { after: 360 }, children: [new TextRun({ text: 'Policy and Procedures Manual', size: 32, color: NAVY })] }));
   add(new Paragraph({ spacing: { after: 120 }, children: runs('{{COMPANY_NAME}}', { size: 32, bold: true }) }));
   add(new Paragraph({ spacing: { after: 60 }, children: runs('Dealer in Precious Metals and Stones — Trade Licence No. {{TRADE_LICENCE_NO}}', { size: 22 }) }));
-  add(new Paragraph({ spacing: { after: 360 }, children: runs('Licensing authority: {{LICENSING_AUTHORITY}}   |   AML supervisor: Ministry of Economy', { size: 22 }) }));
+  add(new Paragraph({ spacing: { after: 360 }, children: runs('Licensing authority: {{LICENSING_AUTHORITY}}   |   AML supervisor: Ministry of Economy and Tourism', { size: 22 }) }));
   add(new Paragraph({ spacing: { after: 60 }, children: runs('Version {{VERSION}}', { size: 24 }) }));
   add(new Paragraph({ spacing: { after: 600 }, children: runs('Issued {{ISSUE_DATE}}', { size: 24 }) }));
   add(new Paragraph({ children: runs('CONFIDENTIAL — for internal use by {{COMPANY_SHORT}} staff and its regulators.', { size: 20, italics: true }) }));
@@ -52,25 +52,45 @@ module.exports = (L) => {
     'never help anyone to launder money, finance terrorism or evade sanctions, or "aid or abet" such activity;',
     'complete customer due diligence and sanctions screening before any transaction.',
   ]);
-  p('Failure to comply may lead to disciplinary action up to dismissal, and may be a criminal offence for the individual and an administrative or criminal matter for {{COMPANY_SHORT}}. {{COMPANY_SHORT}} may report breaches to the Ministry of Economy (MoE) or law enforcement.');
+  p('Failure to comply may lead to disciplinary action up to dismissal, and may be a criminal offence for the individual and an administrative or criminal matter for {{COMPANY_SHORT}}. {{COMPANY_SHORT}} may report breaches to the Ministry of Economy and Tourism (MoET) or law enforcement.');
 
   h2('1.3 Legal and regulatory framework');
-  p('This Manual is based on the following. The instruments and their latest amendments must be kept up to date by the MLRO (section 12).');
+  p('This Manual is based on the following official instruments. The MLRO keeps the list current (section 12) and records every change in the log in section 1.6.');
+  h3('Legislation');
   bullets([
-    'Federal Decree-Law No. (10) of 2025 on Anti-Money Laundering, Combating the Financing of Terrorism and Proliferation Financing, and its Executive Regulations [VERIFY: exact title, effective date and the Cabinet resolution issuing the Executive Regulations].',
-    'Cabinet Decision No. (74) of 2020 on the Terrorism Lists Regulation and the implementation of United Nations Security Council (UNSC) resolutions, and guidance of the Executive Office for Control and Non-Proliferation (EOCN) [VERIFY: still current].',
-    'Cabinet Decision No. (58) of 2020 on the Beneficial Owner procedures [VERIFY: still current].',
-    'Federal Decree-Law No. (31) of 2021 (Crimes and Penalties), Federal Decree-Law No. (38) of 2022 (Criminal Procedure) and Federal Decree-Law No. (34) of 2021 (Combating Rumours and Cybercrimes), and the federal law on combating terrorism offences [VERIFY: current instrument].',
-    'MoE circulars and guidance for DNFBPs, in particular for dealers in precious metals and stones, including the goAML reporting obligations and the rules on responsible sourcing of gold [VERIFY: list the circulars currently in force].',
-    'FATF Recommendations and FATF guidance for dealers in precious metals and stones; the OECD Due Diligence Guidance for Responsible Supply Chains of Minerals from Conflict-Affected and High-Risk Areas.',
+    'Federal Decree-Law No. (10) of 2025 on Anti-Money Laundering, Combating the Financing of Terrorism and Proliferation Financing (issued 30 September 2025), the primary law.',
+    'Cabinet Resolution No. (134) of 2025, the Executive Regulations of that law (issued 29 October 2025; in force 30 days after publication; it repealed Cabinet Resolution No. (10) of 2019).',
+    'Cabinet Decision No. (74) of 2020 on the Terrorism Lists Regulation and the implementation of United Nations Security Council (UNSC) resolutions (targeted financial sanctions).',
+    'Cabinet Decision No. (109) of 2023 on beneficial owner procedures, and Cabinet Decision No. (132) of 2023 on the penalties for breaching it.',
+    'Cabinet Resolution No. (71) of 2024 on violations and administrative penalties for entities supervised by the Ministry of Justice and MoET [VERIFY: whether this list is still the operative fine schedule alongside Article (17) of Federal Decree-Law No. (10) of 2025].',
+    'Ministerial Decree No. (68) of 2024 on adherence to the due diligence regulations for responsible sourcing of gold, and Federal Law No. (11) of 2015 on Monitoring Trade in Precious Metals and its Stamping.',
+    'Ministerial Decision No. (253) of 2025 on the controls and conditions for registration of DNFBPs by licensing authorities (11 December 2025) [VERIFY: content applying to {{COMPANY_SHORT}}; text not yet reviewed].',
+    'Federal Decree-Law No. (31) of 2021 (Crimes and Penalties), No. (38) of 2022 (Criminal Procedure) and No. (34) of 2021 (cybercrimes), and the federal law on combating terrorism offences [VERIFY: current instrument].',
+  ]);
+  h3('MoET circulars and guidance (DPMS)');
+  bullets([
+    'Circular No. 08/AML/2021 (2 June 2021): DPMSR reporting through goAML.',
+    'Circular No. (2) of 2023: Data Disclosure Notice to be displayed to customers (section 7.7).',
+    'Circular No. (3) of 2025 (19 March 2025): sanctions and terrorist-list screening of all customers, regardless of value or payment method.',
+    'Circular No. (6) of 2025 (5 August 2025): risk-based CDD, with simplified due diligence for low risk.',
+    'Circular No. (7) of 2025 (19 December 2025): re-imposition of UN sanctions on Iran (UNSCR 1737 and later resolutions).',
+    'Circular No. (1) of 2026 (11 March 2026): high-risk countries and countries under increased monitoring, under National Committee Resolution No. (15) of 2025.',
+    'Guidelines for Designated Non-Financial Businesses and Professions (March 2026) and the Supplemental Guidance for Dealers in Precious Metals and Stones (March 2026).',
+  ]);
+  h3('Other');
+  bullets([
+    'EOCN Guidance on Targeted Financial Sanctions (issued January 2021; last amended March 2026).',
+    'The UAE National Risk Assessment (2024) and MoET sectoral risk assessment findings.',
+    'FATF Recommendations and guidance for dealers in precious metals and stones; the OECD Due Diligence Guidance for Responsible Supply Chains of Minerals from Conflict-Affected and High-Risk Areas.',
   ]);
 
   h2('1.4 Authorities and their roles');
   table(['Authority', 'Role for {{COMPANY_SHORT}}'], [
-    ['Ministry of Economy (MoE)', 'AML/CFT supervisor of dealers in precious metals and stones. Inspects, issues guidance and circulars, and can impose administrative sanctions. Must be informed of the matters in section 3.8.'],
-    ['{{LICENSING_AUTHORITY}}', 'Issues and renews the trade licence. Licence conditions and renewals depend on compliance.'],
-    ['UAE Financial Intelligence Unit (FIU)', 'Receives reports through the goAML platform (suspicious transaction/activity reports, DPMSR, funds-freeze and partial-name-match reports, and any others it requires). {{COMPANY_SHORT}} is registered on goAML under entity ID {{GOAML_ENTITY_ID}}.'],
-    ['Executive Office for Control and Non-Proliferation (EOCN)', 'Administers targeted financial sanctions: publishes the UN and UAE Local Terrorist Lists, issues alerts and notifications, and receives freeze and match information.'],
+    ['Ministry of Economy and Tourism (MoET)', 'AML/CFT/CPF supervisor of dealers in precious metals and stones. Approves the Compliance Officer/MLRO, inspects, issues circulars and guidance, and can impose administrative sanctions (Article 17 of Federal Decree-Law No. (10) of 2025). Must be informed of the matters in section 3.8.'],
+    ['{{LICENSING_AUTHORITY}}', 'Issues and renews the trade licence. Registration and licence conditions for DNFBPs depend on compliance.'],
+    ['UAE Financial Intelligence Unit (FIU)', 'Receives reports through the goAML platform: STR/SAR, DPMSR, HRC/HRCA and follow-up reports (AIF/AIFT/RFI). {{COMPANY_SHORT}} is registered on goAML under entity ID {{GOAML_ENTITY_ID}}.'],
+    ['Executive Office for Control and Non-Proliferation (EOCN)', 'Administers targeted financial sanctions: publishes the UN and UAE Local Terrorist Lists, operates the Notification Alert System, and receives CNMR and PNMR reports (copied to MoET) through goAML.'],
+    ['National Committee for AML/CFT/CPF', 'Issues the UAE list of high-risk countries and countries under increased monitoring (Appendix C).'],
   ], [2900, 6500]);
 
   h2('1.5 Definitions');
@@ -81,11 +101,13 @@ module.exports = (L) => {
     ['Beneficial owner (UBO)', 'The natural person who ultimately owns or controls the customer, or on whose behalf a transaction is carried out. For a company this includes anyone holding, directly or indirectly, 25% or more of the shares or voting rights, or exercising control by other means; where none is found, the senior managing official.'],
     ['Politically exposed person (PEP)', 'A natural person who is or has been entrusted with a prominent public function in the UAE or elsewhere (head of state or government, senior politician, senior government, judicial or military official, ambassador, senior executive of a state-owned company, important political party official, or a senior official of an international organisation), and their family members (spouse, children, children\'s spouses, parents) and close associates.'],
     ['Source of funds / source of wealth', 'Source of funds: the origin of the money used in a specific transaction. Source of wealth: how the customer\'s overall wealth was acquired.'],
-    ['MLRO', 'The Money Laundering Reporting Officer appointed under section 3.3.'],
+    ['MLRO / Compliance Officer', 'The Money Laundering Reporting Officer appointed under section 3.3. The Executive Regulations call this role the Compliance Officer, appointed at management level.'],
     ['Senior Management', '{{SENIOR_MANAGEMENT}}.'],
     ['goAML / STR / SAR', 'goAML is the FIU\'s online reporting platform. STR/SAR: Suspicious Transaction Report / Suspicious Activity Report.'],
-    ['DPMSR', 'Dealers in Precious Metals and Stones Report: the goAML report for cash and other reportable transactions at or above the MoE threshold (section 7.1).'],
-    ['FFR / PNMR', 'Funds Freeze Report / Partial Name Match Report: goAML reports under the TFS regime (section 6).'],
+    ['DPMSR', 'Dealers in Precious Metals and Stones Report: the goAML report filed for the transactions described in section 7.1.'],
+    ['CNMR / PNMR', 'Confirmed Name Match Report (formerly the Funds Freeze Report, FFR) and Partial Name Match Report: goAML reports to EOCN under the TFS regime (section 6).'],
+    ['HRC / HRCA', 'High-Risk Country Transaction Report / High-Risk Country Activity Report: goAML reports to the FIU for transactions or activity related to high-risk countries (section 8.4).'],
+    ['Covered precious metals and stones', 'Precious metals at minimum purity (per 1,000 parts): gold 500, silver 800, platinum 850, palladium 500; objects whose value is at least 50% precious metal or stones; rough diamonds of any weight; loose polished diamonds of 0.3 ct or more (mounted 0.5 ct); loose emeralds, rubies and sapphires of 1 ct or more (mounted 2 ct); loose pearls of 3 mm or more (strung or mounted 10 mm). Anything else is handled on a risk basis (MoET Supplemental Guidance).'],
     ['TFS', 'Targeted financial sanctions: asset freezing and the prohibition on making funds or services available to listed persons.'],
     ['CAHRA', 'Conflict-affected and high-risk area (as defined in the OECD Due Diligence Guidance).'],
   ], [2500, 6900]);
@@ -97,9 +119,12 @@ module.exports = (L) => {
   ], [1100, 1800, 4700, 1800]);
   p('Regulatory change log (record each change in law, circular or guidance, the date the MLRO reviewed it and the section of this Manual changed):');
   table(['Date reviewed', 'Source / reference', 'What changed', 'Manual section updated', 'Reviewed by'], [
+    ['4 Nov 2026', 'Federal Decree-Law 10/2025; Cabinet Resolution 134/2025 (MoET, UAE FIU)', 'New AML/CFT/CPF law and Executive Regulations; PF added; retention triggers widened; Compliance Officer approval; penalty schedule.', '1.3, 2.6, 3.3, 10', ''],
+    ['4 Nov 2026', 'EOCN TFS Guidance (amended March 2026); MoET Circulars 3/2025 and 7/2025', 'FFR renamed CNMR; screening scope and triggers; partial-match handling; majority ownership; foreign-sanctions rule.', '6', ''],
+    ['4 Nov 2026', 'MoET Supplemental Guidance for DPMS and DNFBP Guidelines (March 2026); Circulars 6/2025, 1/2026, 2/2023', 'DPMSR scope; linked-transaction aggregation; SDD; high-risk country measures and HRC/HRCA; data disclosure notice; third-party Compliance Officer.', '3.3, 4.7, 5, 7, 8.4, App. C', ''],
+    ['4 Nov 2026', 'Ministerial Decree 68/2024', 'Dealers apply responsible-sourcing steps 1 to 3; audit and report apply to refiners and recyclers.', '7.4', ''],
     ['', '', '', '', ''],
-    ['', '', '', '', ''],
-  ], [1400, 2200, 2800, 1700, 1300]);
+  ], [1200, 2300, 3000, 1500, 1400]);
 
   // ── 2. ML / TF / PF ────────────────────────────────────────────────────
   h1('2. MONEY LAUNDERING, TERRORIST FINANCING AND PROLIFERATION FINANCING');
@@ -124,8 +149,21 @@ module.exports = (L) => {
     'it is used in trade-based money laundering through false invoicing and misdeclared quantity, purity or value.',
   ]);
   h2('2.6 Penalties and consequences');
-  p('Money laundering, terrorist financing, financing of illegal organisations, failure to report, tipping off, breach of TFS obligations and breach of AML/CFT requirements are punishable by imprisonment and fines for individuals, and by fines, suspension or cancellation of the licence and closure of the business for legal entities. Foreign nationals convicted of these crimes may be deported. MoE can also impose administrative sanctions on {{COMPANY_SHORT}} and its management for breaching AML/CFT obligations.');
-  note('[VERIFY: insert the current penalty schedule (fines and imprisonment, for individuals and entities, and the administrative sanctions available to MoE) from Federal Decree-Law No. (10) of 2025 and the Executive Regulations.]');
+  p('Under Federal Decree-Law No. (10) of 2025 the main penalties include:');
+  table(['Offence', 'Penalty'], [
+    ['Money laundering (Art. 26)', 'Imprisonment of 1 to 10 years and a fine of AED 100,000 to 5,000,000, or the value of the criminal property if greater. Aggravated cases (abuse of position, through a non-profit, organised group, certain predicate offences, repeat offence): temporary imprisonment and AED 1,000,000 to 10,000,000, or twice the value if greater.'],
+    ['Financing of terrorism', 'Life or temporary imprisonment of at least 10 years and AED 1,000,000 to 10,000,000, or twice the value if greater.'],
+    ['Proliferation financing', 'Temporary imprisonment and AED 1,000,000 to 10,000,000, or twice the value if greater.'],
+    ['Attempt', 'Same penalty as the completed offence.'],
+    ['Legal persons (Art. 27)', 'AED 5,000,000 to 100,000,000, or the value of the property if greater, for ML, TF or PF by its representatives, directors or agents; dissolution and closure for TF/PF and possibly for ML. AED 200,000 to 10,000,000 for the other offences below. The person actually managing the company may also be imprisoned and fined.'],
+    ['Failure to report, deliberately or through gross negligence (Art. 28)', 'Imprisonment and AED 100,000 to 1,000,000, or either.'],
+    ['Tipping off, or breaching a freezing or seizure order (Art. 29)', 'Imprisonment and a fine of at least AED 50,000, or either.'],
+    ['Dealing in funds of evidently illegitimate source or concealed beneficial owner (Art. 30)', 'At least 3 months and at least AED 50,000, or either.'],
+    ['Violating EOCN or other competent-authority instructions on targeted financial sanctions (Art. 33)', 'Imprisonment and a fine of at least AED 20,000, or either.'],
+    ['False or misleading beneficial-owner information (Art. 35)', 'Imprisonment and a fine of at least AED 20,000, or either.'],
+    ['Administrative sanctions by MoET (Art. 17)', 'Warning; fine of AED 10,000 to 5,000,000 per violation; ban from the sector; restriction or suspension of directors and managers; suspension or restriction of the activity; revocation of the licence; periodic remediation reports.'],
+  ], [3300, 6100]);
+  p('Foreign nationals convicted of these crimes may be deported. Confiscation of the criminal property, or its equivalent value, is mandatory on conviction. [VERIFY: the operative MoET fine schedule per violation type (Cabinet Resolution No. (71) of 2024 predates the new law).]');
   h2('2.7 Protection for good-faith reporting');
   p('Persons who report suspicion in good faith to the FIU, or provide information required by law, are protected from administrative, civil and criminal liability even if a duty of confidentiality is breached, unless the report was made in bad faith.');
   h2('2.8 Freezing, seizure and confiscation');
@@ -138,7 +176,7 @@ module.exports = (L) => {
   h2('3.2 Responsibilities of Senior Management');
   p('{{SENIOR_MANAGEMENT}} is responsible, with due skill, care and diligence, for:');
   bullets([
-    'complying with the AML/CFT/CPF laws, MoE requirements and this Manual, and adopting a risk-based approach;',
+    'complying with the AML/CFT/CPF laws, MoET requirements and this Manual, and adopting a risk-based approach;',
     'approving this Manual and the business risk assessment, and reviewing them at least annually and on any material change to the business;',
     'appointing a suitably qualified MLRO and deputy, and giving them the authority, resources, independence and access to information they need;',
     'receiving and acting on the MLRO\'s reports and the findings of the independent review, and recording the action taken;',
@@ -147,21 +185,21 @@ module.exports = (L) => {
   ]);
   h2('3.3 Money Laundering Reporting Officer (MLRO)');
   h3('3.3.1 Appointment');
-  p('{{COMPANY_SHORT}} has appointed an MLRO and a deputy MLRO who acts in the MLRO\'s absence. The MLRO is {{MLRO_APPOINTMENT}}. The MLRO must be resident in the UAE, hold sufficient and up-to-date qualifications and experience for the role, and be approved by MoE where required [VERIFY: MoE approval or notification requirements for MLRO appointment].');
+  p('{{COMPANY_SHORT}} has appointed an MLRO (the Compliance Officer, at management level) and a deputy MLRO who acts in the MLRO\'s absence. The MLRO is {{MLRO_APPOINTMENT}}. The MLRO and deputy must be resident in the UAE and must have passed a documented fit-and-proper evaluation (qualifications, AML/CFT/CPF experience, reputation, no criminal or regulatory record). **The appointment of the MLRO requires the prior written approval of MoET**, and MoET must be notified of any change in the role or reporting lines. The MLRO must be registered as a user on goAML for {{COMPANY_SHORT}} and keep the registration active. Records of the fit-and-proper assessment are kept.');
   table(['Function', 'Name', 'Contact'], [
     ['MLRO', '{{MLRO_NAME}}', 'Email: {{MLRO_EMAIL}}\nPhone: {{MLRO_PHONE}}'],
     ['Deputy MLRO', '{{DEPUTY_MLRO_NAME}}', 'Email: {{DEPUTY_MLRO_EMAIL}}\nPhone: {{DEPUTY_MLRO_PHONE}}'],
   ], [2000, 3400, 4000]);
   p('The MLRO and deputy must use an official company or professional email address, not a personal one.');
-  p('If the MLRO is an external appointee, the appointment is recorded in a written agreement that gives the MLRO the same authority, independence and access as an employee MLRO; the engagement is documented as outsourcing under section 5.11; and the appointee must not also carry out the independent review in section 3.5.');
+  p('If the MLRO is an external appointee, MoET permits this where {{COMPANY_SHORT}} cannot appoint a suitably qualified independent officer internally, on these conditions: the person has the qualifications, experience and understanding of {{COMPANY_SHORT}}\'s business and risks; they are independent of operational and revenue-generating roles; they have unrestricted access to all records, systems and staff they need; the appointment is recorded in a written agreement and documented as outsourcing under section 5.11; and the MLRO remains fully accountable for validating any external service or tool used. The appointee must not also carry out the independent review in section 3.5.');
   h3('3.3.2 Independence and access');
   p('The MLRO has direct access to {{SENIOR_MANAGEMENT}}; timely and unrestricted access to all customer, transaction and supplier information; sufficient resources, including trained staff if needed; and the independence to act on their own authority. The decision whether to file an STR/SAR is the MLRO\'s alone and is not subject to anyone\'s consent or approval. If the MLRO resigns or is absent, {{SENIOR_MANAGEMENT}} must immediately appoint a replacement or arrange cover.');
   h3('3.3.3 Responsibilities');
   p('The MLRO is responsible for implementing this Manual and for day-to-day oversight of compliance. The MLRO:');
   bullets([
     'operates the AML/CFT/CPF controls, including customer risk ratings, onboarding approvals and ongoing reviews;',
-    'receives and investigates Internal SARs, decides whether to report, and files STRs/SARs and other goAML reports (DPMSR, FFR, PNMR) on time;',
-    'is the point of contact for the FIU, MoE, EOCN and other competent authorities, and answers their requests promptly;',
+    'receives and investigates Internal SARs, decides whether to report, and files STRs/SARs and other goAML reports (DPMSR, HRC/HRCA, CNMR, PNMR) on time;',
+    'is the point of contact for the FIU, MoET, EOCN and other competent authorities, and answers their requests promptly;',
     'runs sanctions screening and the TFS procedure (section 6);',
     'monitors changes in law, circulars and guidance and updates this Manual (section 12);',
     'runs the training programme (section 11) and maintains the records required by section 10;',
@@ -169,17 +207,17 @@ module.exports = (L) => {
   ]);
   p('The full terms of reference are in Appendix A.');
   h3('3.3.4 Annual MLRO report');
-  p('Within two months of the end of each financial year the MLRO reports in writing to {{SENIOR_MANAGEMENT}} on: reviews carried out; compliance with the law and with MoE requirements; the adequacy of policies, systems and controls; guidance and findings received and how they were applied; Internal SARs and external reports filed, with decisions and reasons; TFS alerts, screening results and any freezes; training delivered; and any other relevant matter. {{SENIOR_MANAGEMENT}} assesses the report, acts on any deficiency and records its decisions in writing. A full copy is provided to MoE on request.');
+  p('Within two months of the end of each financial year the MLRO reports in writing to {{SENIOR_MANAGEMENT}} on: reviews carried out; compliance with the law and with MoET requirements; the adequacy of policies, systems and controls; guidance and findings received and how they were applied; Internal SARs and external reports filed, with decisions and reasons; TFS alerts, screening results and any freezes; training delivered; and any other relevant matter. {{SENIOR_MANAGEMENT}} assesses the report, acts on any deficiency and records its decisions in writing. A full copy, with Senior Management\'s observations and decisions, is provided to MoET on request.');
   h2('3.4 Annual AML return');
-  p('{{COMPANY_SHORT}} completes and submits any periodic AML/CFT return or compliance report required by MoE by the deadline set. {{SENIOR_MANAGEMENT}} reviews it before submission and confirms that the information is correct to the best of its knowledge. [VERIFY: current MoE periodic return or self-assessment requirements and deadlines.]');
+  p('{{COMPANY_SHORT}} completes and submits any periodic AML/CFT return or compliance report required by MoET by the deadline set. {{SENIOR_MANAGEMENT}} reviews it before submission and confirms that the information is correct to the best of its knowledge. [VERIFY: current MoET periodic return or self-assessment requirements and deadlines.]');
   h2('3.5 Independent review');
   p('At least annually, an independent function reviews the effectiveness of {{COMPANY_SHORT}}\'s AML/CFT/CPF framework and its compliance with this Manual and the law. The reviewer may be an internal function independent of the MLRO\'s work, or an external auditor or compliance professional. The review covers at least: sample testing of customer due diligence files; the quality of risk ratings; screening and TFS records; the timeliness and quality of Internal SARs and external reports; cash transactions and DPMSR filings; supplier due diligence; and training records. The report is given to {{SENIOR_MANAGEMENT}}, who records the action taken.');
   h2('3.6 Staff screening');
   p('Before hiring, {{COMPANY_SHORT}} verifies the identity and references of each candidate and checks their background, with a level of checking proportionate to the role. Employees, including the MLRO, are screened against sanctions lists at hiring and periodically.');
   h2('3.7 Training');
   p('Training is described in section 11.');
-  h2('3.8 Notification to MoE');
-  p('{{COMPANY_SHORT}} informs MoE in writing, promptly and in any case within the period MoE requires, if it:');
+  h2('3.8 Notification to MoET');
+  p('{{COMPANY_SHORT}} informs MoET in writing, promptly and in any case within the period MoET requires, if it:');
   bullets([
     'becomes aware of, or has reasonable grounds to suspect, money laundering, terrorist or proliferation financing or a sanctions breach in or through its business, or by another person it deals with;',
     'receives a request for information from a regulator or authority in another jurisdiction on AML or sanctions matters;',
@@ -187,7 +225,7 @@ module.exports = (L) => {
     'changes its MLRO or deputy, its ownership or control, or its business activity materially;',
     'is prevented by the law of another jurisdiction from complying with UAE AML/CFT requirements.',
   ]);
-  p('This does not apply to information protected by legal privilege or already in the public domain. [VERIFY: the exact notification triggers and channels required by MoE for DPMS.]');
+  p('This does not apply to information protected by legal privilege or already in the public domain. [VERIFY: the exact notification triggers and channels required by MoET for DPMS.]');
   h2('3.9 Cooperation with the authorities');
-  p('{{COMPANY_SHORT}} deals with MoE, the FIU, EOCN and law enforcement in an open and cooperative way, answers requests promptly and in the language required, and provides records and access to premises, systems and staff when lawfully requested.');
+  p('{{COMPANY_SHORT}} deals with MoET, the FIU, EOCN and law enforcement in an open and cooperative way, answers requests promptly and in the language required, and provides records and access to premises, systems and staff when lawfully requested.');
 };

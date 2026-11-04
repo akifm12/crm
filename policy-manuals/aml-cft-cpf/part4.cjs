@@ -19,6 +19,7 @@ module.exports = (L) => {
     'sufficient resources, including trained staff where needed;',
     'timely and unrestricted access to all customer, transaction, supplier and system information;',
     'authority to hold or refuse any transaction, to freeze assets under section 6 and to refuse any relationship;',
+    'prior written approval of MoET for the appointment, and fit-and-proper records (section 3.3.1);',
     'the decision to file an STR/SAR is the MLRO\'s alone, and is not subject to anyone\'s consent.',
   ]);
   h3('Responsibilities');
@@ -26,10 +27,10 @@ module.exports = (L) => {
     'day-to-day operation of the AML/CFT/CPF policies, procedures, systems and controls;',
     'customer risk ratings, onboarding approvals, reviews and the customer register;',
     'receiving and investigating Internal SARs and deciding on external reports;',
-    'filing STRs/SARs, DPMSRs, FFRs, PNMRs and other goAML reports on time, and notifying MoE where required;',
+    'filing STRs/SARs, DPMSRs, HRC/HRCA, CNMRs, PNMRs and other goAML reports on time, and notifying MoET where required;',
     'TFS: screening, EOCN notifications, freezing and reporting (section 6);',
     'supplier due diligence and responsible sourcing oversight (section 7.4);',
-    'liaison with the FIU, MoE, EOCN and other authorities, and prompt response to their requests;',
+    'liaison with the FIU, MoET, EOCN and other authorities, and prompt response to their requests;',
     'monitoring regulatory change and keeping this Manual and the regulatory change log current;',
     'training programme and records (section 11);',
     'the annual MLRO report (section 3.3.4) and the business risk assessment (section 4.2);',
@@ -78,14 +79,15 @@ module.exports = (L) => {
 
   // ── C. High-risk jurisdictions ───────────────────────────────────────
   h1('APPENDIX C — HIGH-RISK JURISDICTIONS');
-  p('This Manual does not reproduce lists that change. The MLRO keeps the register below up to date from these sources and checks them at least quarterly and after each FATF plenary:');
+  p('This Manual does not reproduce lists that change. The MLRO keeps the register below up to date from the following sources and checks them at least quarterly and after each FATF plenary and each National Committee resolution (the current resolution is No. (15) of 2025, notified by MoET Circular No. (1) of 2026):');
   bullets([
-    '**FATF "Call for Action" list** (high-risk jurisdictions subject to a call for action). Relationships are High risk and require EDD, Senior Management approval and the countermeasures MoE and the FIU require; new relationships are refused unless authorised.',
-    '**FATF "Increased Monitoring" list.** Treated as High risk unless the MLRO documents why the specific relationship is lower risk.',
-    '**UAE-published lists and MoE / FIU circulars** on high-risk countries, and UN/UAE sanctions regimes.',
-    'Jurisdictions {{COMPANY_SHORT}} itself assesses as high risk (for example for corruption, illicit gold, conflict, or weak AML supervision), recorded with the reason.',
+    '**FATF "Call for Action" list** ("blacklist"): measures as in section 4.7 (Enhanced Due Diligence on all relationships and transactions, no branches or subsidiaries, no third-party reliance, strengthened reporting, HRC/HRCA reports).',
+    '**FATF "Increased Monitoring" list** ("greylist"): Enhanced Due Diligence proportionate to the risk, and HRC/HRCA reporting where the National Committee list requires it.',
+    '**National Committee for AML/CFT/CPF** list of high-risk countries (namlcftc.gov.ae), and any MoET or FIU circular updating it.',
+    'UN and UAE sanctions regimes, including the UN sanctions on Iran re-imposed under UNSCR 1737 (2006) (Circular 7 of 2025) and on the DPRK.',
+    'Jurisdictions {{COMPANY_SHORT}} itself assesses as high risk (corruption, illicit gold, conflict, weak AML supervision), recorded with the reason.',
   ]);
-  p('[VERIFY: current FATF lists and the UAE list of high-risk countries, and the exact MoE requirements for dealing with countries under a call for action.]');
+  p('[VERIFY: the jurisdictions currently on each list, taken from the National Committee website and the FATF pages cited in Circular No. (1) of 2026.]');
   table(['Jurisdiction', 'Source list', 'Date added', 'Reason / measures', 'Last reviewed'], [
     ['', '', '', '', ''], ['', '', '', '', ''], ['', '', '', '', ''], ['', '', '', '', ''],
   ], [2000, 1900, 1400, 2800, 1300]);
@@ -126,7 +128,7 @@ module.exports = (L) => {
     ['Investigation steps and information reviewed', '\n\n'],
     ['Decision', '☐ Report to FIU (STR/SAR)     ☐ No report     ☐ Further information needed'],
     ['Reasons for the decision', '\n\n'],
-    ['goAML reference / date filed; MoE notified (if required)', ''],
+    ['goAML reference / date filed; MoET notified (if required)', ''],
     ['Action on the relationship / transaction', ''],
     ['MLRO signature and date', ''],
   ], [3800, 5600]);
@@ -189,9 +191,9 @@ module.exports = (L) => {
     ['Tool and list versions used; list update date', '{{SCREENING_TOOL}}  /  '],
     ['Result', '☐ No match     ☐ Alert raised'],
     ['If an alert: details compared (DOB, nationality, ID no., address)', '\n\n'],
-    ['Classification', '☐ False positive     ☐ Partial / possible match     ☐ Confirmed match'],
+    ['Classification', '☐ Negative match     ☐ False positive     ☐ Partial name match     ☐ Confirmed name match'],
     ['Reasons and evidence kept (screenshots / exports)', '\n'],
-    ['Action', '☐ Cleared     ☐ Frozen (date/time: ______ )     ☐ PNMR filed     ☐ FFR filed     ☐ EOCN notified'],
+    ['Action', '☐ Cleared     ☐ Frozen (date/time: ______ )     ☐ PNMR filed     ☐ CNMR filed     ☐ EOCN notified'],
     ['goAML report reference(s) and date(s)', ''],
     ['EOCN response given (if any) and confirmation saved', ''],
     ['MLRO signature and date', ''],
