@@ -35,7 +35,7 @@ const h3 = (text) => add(new Paragraph({ heading: HeadingLevel.HEADING_3, childr
 function p(text, opts = {}) {
   add(new Paragraph({
     spacing: { after: 120 },
-    alignment: opts.align,
+    alignment: opts.align || AlignmentType.JUSTIFIED,
     keepNext: opts.keepNext,
     children: runs(text, opts.run || {}),
   }));
@@ -45,14 +45,14 @@ function p(text, opts = {}) {
 function bullets(items, level = 0) {
   for (const it of items) {
     const [t, sub] = Array.isArray(it) ? it : [it, null];
-    add(new Paragraph({ numbering: { reference: 'bullets', level }, spacing: { after: 60 }, children: runs(t) }));
+    add(new Paragraph({ numbering: { reference: 'bullets', level }, alignment: AlignmentType.JUSTIFIED, spacing: { after: 60 }, children: runs(t) }));
     if (sub) bullets(sub, level + 1);
   }
 }
 
 function numbered(items, ref = 'steps') {
   for (const t of items) {
-    add(new Paragraph({ numbering: { reference: ref, level: 0 }, spacing: { after: 60 }, children: runs(t) }));
+    add(new Paragraph({ numbering: { reference: ref, level: 0 }, alignment: AlignmentType.JUSTIFIED, spacing: { after: 60 }, children: runs(t) }));
   }
 }
 

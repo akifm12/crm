@@ -11,7 +11,7 @@ require('./part2.cjs')(L);
 require('./part3.cjs')(L);
 require('./part4.cjs')(L);
 
-const FONT = 'Calibri';
+const FONT = 'Arial';
 const NAVY = L.NAVY;
 
 const doc = new Document({
