@@ -51,7 +51,7 @@ class PolicyManualGenerator
 
     /** Template files, relative to resources/policy-manuals. */
     public const TEMPLATES = [
-        'aml-cft-policy' => 'aml-cft-cpf/AML-CFT-CPF-Manual-Template-v2.1.docx',
+        'aml-cft-policy' => 'aml-cft-cpf/AML-CFT-CPF-Manual-Template-v2.2.docx',
     ];
 
     public static function templatePath(string $manual): ?string

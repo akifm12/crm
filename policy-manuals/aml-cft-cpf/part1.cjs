@@ -71,7 +71,7 @@ module.exports = (L) => {
   h3('MoET circulars and guidance (DPMS)');
   bullets([
     'Circular No. 08/AML/2021 (2 June 2021): DPMSR reporting through goAML.',
-    'Circular No. (2) of 2023: Data Disclosure Notice to be displayed to customers (section 7.7).',
+    'Circular No. (2) of 2023: Data Disclosure Notice to be displayed to customers (section 7.8).',
     'Circular No. (3) of 2025 (19 March 2025): sanctions and terrorist-list screening of all customers, regardless of value or payment method.',
     'Circular No. (6) of 2025 (5 August 2025): risk-based CDD, with simplified due diligence for low risk.',
     'Circular No. (7) of 2025 (19 December 2025): re-imposition of UN sanctions on Iran (UNSCR 1737 and later resolutions).',
@@ -124,6 +124,7 @@ module.exports = (L) => {
     ['4 Nov 2026', 'EOCN TFS Guidance (amended March 2026); MoET Circulars 3/2025 and 7/2025', 'FFR renamed CNMR; screening scope and triggers; partial-match handling; majority ownership; foreign-sanctions rule.', '6', ''],
     ['4 Nov 2026', 'MoET Supplemental Guidance for DPMS and DNFBP Guidelines (March 2026); Circulars 6/2025, 1/2026, 2/2023', 'DPMSR scope; linked-transaction aggregation; SDD; high-risk country measures and HRC/HRCA; data disclosure notice; third-party Compliance Officer.', '3.3, 4.7, 5, 7, 8.4, App. C', ''],
     ['4 Nov 2026', 'Ministerial Decree 68/2024', 'Dealers apply responsible-sourcing steps 1 to 3; audit and report apply to refiners and recyclers.', '7.4', ''],
+    ['4 Nov 2026', 'FATF lists of 30 October 2026; National Committee (high-risk jurisdictions); MoET Responsible Sourcing page and Due Diligence Regulations v1; DNFBP Guidelines section 8', 'Dated register of FATF lists; CAHRA assessment per supply chain; risk assessment method, certification and update triggers.', '4.1 to 4.3, 7.5, App. C, G, I', ''],
     ['', '', '', '', ''],
   ], [1200, 2300, 3000, 1500, 1400]);
 
@@ -212,7 +213,7 @@ module.exports = (L) => {
   h2('3.4 Annual AML return');
   p('{{COMPANY_SHORT}} completes and submits any periodic AML/CFT return or compliance report required by MoET by the deadline set. {{SENIOR_MANAGEMENT}} reviews it before submission and confirms that the information is correct to the best of its knowledge. [VERIFY: current MoET periodic return or self-assessment requirements and deadlines.]');
   h2('3.5 Independent review');
-  p('At least annually, an independent function reviews the effectiveness of {{COMPANY_SHORT}}\'s AML/CFT/CPF framework and its compliance with this Manual and the law. The reviewer may be an internal function independent of the MLRO\'s work, or an external auditor or compliance professional. The review covers at least: sample testing of customer due diligence files; the quality of risk ratings; screening and TFS records; the timeliness and quality of Internal SARs and external reports; cash transactions and DPMSR filings; supplier due diligence; and training records. The report is given to {{SENIOR_MANAGEMENT}}, who records the action taken.');
+  p('At least annually, an independent function reviews the effectiveness of {{COMPANY_SHORT}}\'s AML/CFT/CPF framework and its compliance with this Manual and the law. The reviewer may be an internal function independent of the MLRO\'s work, or an external auditor or compliance professional. The review covers at least: sample testing of customer due diligence files; the risk assessment methodology and the quality of risk ratings; screening and TFS records; the timeliness and quality of Internal SARs and external reports; cash transactions and DPMSR filings; supplier due diligence; and training records. The report is given to {{SENIOR_MANAGEMENT}}, who records the action taken.');
   h2('3.6 Staff screening');
   p('Before hiring, {{COMPANY_SHORT}} verifies the identity and references of each candidate and checks their background, with a level of checking proportionate to the role. Employees, including the MLRO, are screened against sanctions lists at hiring and periodically.');
   h2('3.7 Training');

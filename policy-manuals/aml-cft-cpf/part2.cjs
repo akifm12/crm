@@ -6,22 +6,29 @@ module.exports = (L) => {
   h1('4. RISK-BASED APPROACH');
   h2('4.1 Principle');
   p('{{COMPANY_SHORT}} identifies, assesses, understands, documents and keeps up to date its ML/TF/PF risks, and applies controls in proportion: enhanced measures where risk is higher, and, only where the law and this Manual allow, simplified measures where it is demonstrably lower. Even for low-risk customers, identification, verification and sanctions screening are always carried out.');
-  p('The assessment is objective, based on reasonable grounds, documented, approved by {{SENIOR_MANAGEMENT}}, and updated at least annually and whenever the business changes.');
+  p('The risk methodology, both for the business and for customers, is written down with its rationale and assumptions, approved by {{SENIOR_MANAGEMENT}}, and communicated to everyone who applies it. Its results decide the due diligence applied (simplified, standard or enhanced).');
   h2('4.2 Business risk assessment');
-  p('The MLRO prepares a written business (enterprise-wide) risk assessment covering ML, TF and PF, taking account of the UAE National Risk Assessment (2024) and the MoET sectoral findings, which rate the DPMS sector as high inherent risk. It is documented, kept, updated at least annually and provided to the authorities on request. It considers at least:');
+  p('The MLRO prepares a written business (enterprise-wide) risk assessment (BRA) covering ML, TF and PF, taking account of the UAE National Risk Assessment (2024) and the MoET sectoral findings, which rate the DPMS sector as high inherent risk. The BRA is separate from the customer risk assessment: it measures the risk of the business as a whole, while the customer assessment rates one relationship.');
+  h3('Method');
   bullets([
-    'customer types and their activities (retail, jewellers, refiners, traders, corporates, walk-in sellers of scrap gold);',
-    'countries and areas of the customers, suppliers, gold origin, transit and destination;',
-    'products and services (bars, coins, jewellery, scrap, refined gold; buy and sell);',
-    'delivery channels and counterparties (walk-in, remote, intermediaries, agents);',
-    'transaction size, frequency, payment methods, especially cash and third-party payments;',
-    'supply chain and responsible-sourcing exposure;',
-    'proliferation-financing exposure, including dual-use goods and sanctioned jurisdictions;',
-    'new products, practices, delivery mechanisms and technologies. Before any is launched, the MLRO assesses its ML/TF/PF risk and the mitigation required.',
+    'Identify the inherent risks from these factors: customer types and their activities; countries and geographic areas of customers, suppliers, gold origin, transit and destination; products and services (bars, coins, jewellery, scrap, refined gold; buying and selling); delivery channels and counterparties; transaction size, frequency and payment methods, especially cash and third-party payments; supply chain and responsible-sourcing exposure; proliferation-financing exposure, including dual-use goods and sanctioned jurisdictions; new products, practices, delivery mechanisms and technologies.',
+    'Rate each risk for likelihood and impact, using both quantitative data (transaction volumes, cash share, customer mix, report counts) and qualitative input (interviews with staff, the MLRO and management; internal questionnaires; audit and review findings).',
+    'Weight the factors, rank the risks and record the rationale for the weights.',
+    'Assess how well the existing controls work, using the independent review, MLRO reports, testing and management information.',
+    'Work out the residual risk (inherent risk less control effectiveness) and compare it with the risk appetite approved by {{SENIOR_MANAGEMENT}}. Where residual risk is above appetite, decide on added controls, with an owner and a deadline.',
+    'Record any manual override of a model-based weighting or rating, with the reason and who approved it.',
   ]);
-  p('The results are used to design and test controls, to allocate resources, and to inform the customer risk assessment. The report is kept as a controlled document.');
+  h3('Documentation, certification and updating');
+  bullets([
+    'The BRA, its methodology, analysis, data and sources are documented and kept (section 10), and given to MoET on request.',
+    '{{SENIOR_MANAGEMENT}} formally certifies in writing that the BRA is an accurate reflection of {{COMPANY_SHORT}}\'s risk exposure, is supported by appropriate mitigation measures, and is available for MoET review. The certification is dated and signed.',
+    'The BRA is reviewed at least annually, and updated sooner whenever there is a change in business strategy, products, services or customer base; a new technology or delivery channel; a change in law, a circular or guidance; a new National or sectoral risk assessment; a FATF or National Committee list change affecting {{COMPANY_SHORT}}\'s markets; or the identification of a material new threat.',
+    'Before any new product, service, practice or technology is launched, the MLRO assesses its ML/TF/PF risk and the mitigation needed.',
+    'The BRA methodology and its outputs are tested in the annual independent review (section 3.5).',
+  ]);
+  p('The results feed the design and testing of controls, the allocation of resources, and the customer risk assessment.');
   h2('4.3 Customer risk assessment');
-  p('Every customer is risk-assessed and rated Low, Medium or High before the relationship starts or any transaction takes place, then reviewed periodically (section 5.9) and whenever risk factors change. The rating decides the level of due diligence (Simplified, Standard or Enhanced). The assessment is recorded on the Customer Risk Assessment Form (Appendix G). Factors:');
+  p('Every customer is risk-assessed and rated Low, Medium or High before the relationship starts or any transaction takes place, then reviewed periodically (section 5.9) and whenever risk factors change. The assessment is recorded on the Customer Risk Assessment Form (Appendix G). Factors:');
   bullets([
     'the customer and each beneficial owner: nature, business, reputation, ownership and control structure;',
     'purpose and intended nature of the relationship and the expected volume and type of transactions;',
@@ -30,6 +37,7 @@ module.exports = (L) => {
     'PEP status, sanctions screening and adverse media results;',
     'the outcome of the business risk assessment.',
   ]);
+  p('The scoring model in Appendix G, including its factors, scores and rating bands, is a documented model: the MLRO explains the rationale and assumptions behind it, and {{SENIOR_MANAGEMENT}} approves it. The MLRO reviews the model at least annually and when the BRA changes. The rating decides the due diligence level. A rating may be overridden only by the MLRO, in writing, with reasons, and never to a lower rating than the Appendix G overrides require. Besides the scheduled reviews in section 5.9, an event-driven review is carried out on: contradictory or outdated CDD information; a change of ownership, structure or control; new legal proceedings involving the customer or a beneficial owner; adverse media; qualified audit opinions or third-party concerns; and transactions inconsistent with the customer\'s profile. Each review decides whether to update the rating, escalate to Senior Management, file an STR/SAR, or suspend or end the relationship.');
   h2('4.4 Lower-risk indicators');
   p('A customer may be rated Low only after the MLRO has assessed its actual exposure, and only if all of the following hold: ownership and activity are transparent; the customer is, for example, a government body or government-owned entity, a company listed on a regulated exchange with equivalent disclosure obligations, or a regulated financial institution supervised for AML/CFT in a jurisdiction with equivalent standards; there is no PEP, sanctions or adverse media concern; no high-risk jurisdiction is involved; and the customer is not cash-intensive. Other DNFBPs (including lawyers, accountants, real estate agents and other precious metals dealers) are not automatically Low risk.');
   h2('4.5 Higher-risk indicators');
@@ -41,7 +49,7 @@ module.exports = (L) => {
     'complex, opaque or frequently changing ownership; nominee shareholders or directors; bearer shares; personal asset-holding vehicles; unexplained use of multiple entities;',
     'non-face-to-face relationships without appropriate safeguards;',
     'payments from or to unknown or unrelated third parties;',
-    'gold of unclear or undocumented origin, scrap or second-hand gold in bulk, or gold from conflict-affected and high-risk areas (section 7.4);',
+    'gold of unclear or undocumented origin, scrap or second-hand gold in bulk, or gold from conflict-affected and high-risk areas (section 7.5);',
     'adverse media about financial crime, sanctions evasion, smuggling or illicit gold.',
   ]);
   h2('4.6 Relationships {{COMPANY_SHORT}} will not enter into');
@@ -225,17 +233,50 @@ module.exports = (L) => {
     ['If {{COMPANY_SHORT}} also operates as a refiner or recycler, it additionally appoints an independent third-party auditor and files the annual due diligence report with MoET. Otherwise, supplier due diligence is included in the annual independent review (section 3.5).', null],
   ]);
   p('Suppliers are rated Low, Medium or High risk and reviewed on the same schedule as customers (section 5.9). Gold of all kinds must also meet the precious metals stamping and trade-monitoring rules in Federal Law No. (11) of 2015.');
-  h2('7.5 Monitoring and record details');
+  h2('7.5 Conflict-affected and high-risk areas (CAHRA)');
+  p('The UAE does not publish a list of conflict-affected and high-risk areas, and neither does the OECD. MoET\'s Due Diligence Regulations for Responsible Sourcing of Gold (Version 1, August 2022) define CAHRAs as areas of armed conflict, widespread violence (including violence by criminal networks), or other serious and widespread harm to people, and high-risk areas as those with a high risk of conflict or of widespread or serious abuses, as described in Annex II of the OECD Due Diligence Guidance. They are often marked by political instability or repression, institutional weakness, insecurity, collapse of civil infrastructure, and widespread violations of national or international law. Gold or stones that originate in, are routed through, or are linked to a CAHRA need enhanced scrutiny. **{{COMPANY_SHORT}} therefore decides for itself, and records, which areas it treats as CAHRAs (Appendix I).**');
+  h3('Assessment of each supply chain');
+  bullets([
+    'The assessment is made for **each supply chain** (each consignment or batch), not once for the supplier, and is repeated even if earlier supplies from that supplier were clean or showed no high-risk element.',
+    'Collect, for each supply: the country and place of origin and the type of source (large-scale mine, artisanal and small-scale mining (ASM), recycled or scrap, mixed); the transport and transit route; where and by whom it was refined; and the upstream suppliers as far as can be established.',
+    'Use KYC and the red flags below to decide whether the gold was mined, transported or traded in a CAHRA. Record the conclusion and the evidence in Appendix I.',
+  ]);
+  h3('Location red flags');
+  bullets([
+    'the gold comes from, or has passed through, a CAHRA or a country subject to international sanctions;',
+    'the gold comes from a country with limited known reserves or production that does not match the volume offered;',
+    'the gold comes from a country through which gold from CAHRAs is known or reasonably suspected to transit;',
+    'the gold is described as recycled, scrap or mixed and was refined in such a transit country;',
+    'the gold comes from or passed through countries with weak oversight of money laundering, corruption, bribery, informal banking and cash-intensive economies.',
+  ]);
+  h3('Supplier red flags');
+  bullets([
+    'the supplier or its upstream entities operate in a location above, or hold interests in suppliers from one;',
+    'the supplier is known to have sourced gold from one of those locations in the last 12 months;',
+    'the KYC information is inconsistent, or the supplier refuses to provide documents;',
+    'the supplier or a beneficial owner appears on a government list for money laundering, fraud or terrorism, or under international sanctions;',
+    'the supplier has no ethics, integrity, anti-money-laundering, bribery and corruption policies;',
+    'the supplier cannot show an effective assessment of its own counterparties and upstream supply chain.',
+  ]);
+  p('For ASM gold also check whether the supplier, processing plant, trader or exporter is legitimate: legally registered, cooperative-based or government-recognised, or part of a government or central-bank supported initiative, and whether the mining follows recognised standards and good practice.');
+  h3('Outcome and action');
+  table(['Finding', 'Action'], [
+    ['No CAHRA link and no red flags, on the information collected', 'Record the reasoning. Standard supplier CDD and monitoring apply; no further enhanced due diligence on that supply chain.'],
+    ['Red flags, or origin or route information is missing', 'Enhanced due diligence: obtain the missing evidence, corroborate origin and route with independent documents, and escalate to the MLRO. Do not accept the gold until the MLRO has cleared it.'],
+    ['CAHRA link confirmed, or red flags cannot be resolved', 'Suspend or refuse the supply chain. Any exception needs Senior Management approval and a written risk-mitigation plan with monitoring. The MLRO considers an STR/SAR, and reviews the supplier relationship.'],
+  ], [3300, 6100]);
+  p('The MLRO keeps the CAHRA register in Appendix I and reviews it at least quarterly, and whenever circumstances change. Inputs include: UN Security Council and UAE sanctions regimes; the FATF and National Committee lists (Appendix C); MoET circulars and guidance; and reputable government and intergovernmental reporting on conflict, illicit gold and human rights abuse. Records of each assessment are kept under section 10.');
+  h2('7.6 Monitoring and record details');
   bullets([
     'For covered transactions, keep the certificate numbers and identifying characteristics of the metals or stones involved (weight, purity or quality, colour, shape, cut, markings).',
     'For items held in safekeeping for a customer or partner, keep the same records and watch for unusual changes or substitutions.',
     'Wholesale and trading flows: watch for price deviations from the market, mismatches between weight, purity and documents, and circular trading.',
     'Retail: monitor cumulative totals per customer, and record cash denominations and serial numbers.',
   ]);
-  h2('7.6 Trade and shipment red flags');
+  h2('7.7 Trade and shipment red flags');
   p('The MLRO assesses and escalates: mismatch between the quantity, purity, value or origin of the gold and the documents; prices well above or below market; unnecessary intermediaries or routing through jurisdictions unrelated to the transaction; unexplained changes of consignee or payee; sanctioned or high-risk vessels, ports, routes or end users; and dual-use goods in the customer\'s other business. See Appendix B.');
-  h2('7.7 Data disclosure notice');
+  h2('7.8 Data disclosure notice');
   p('The MoET Data Disclosure Notice (Circular No. (2) of 2023) is displayed visibly on {{COMPANY_SHORT}}\'s premises so that customers are told they must disclose their data when dealing with the company. The MLRO checks each branch, and replaces the notice if it is lost or updated.');
-  h2('7.8 Refusing or ending a transaction');
+  h2('7.9 Refusing or ending a transaction');
   p('Staff may refuse any transaction they are not comfortable with. A refusal and its reason are recorded and passed to the MLRO, who decides whether it is also reportable. Staff do not explain to the customer that a suspicion exists. {{COMPANY_SHORT}} refuses or exits any relationship where beneficial ownership, source of funds or origin of the gold cannot be reasonably verified, or where sanctions or PF risks cannot be mitigated.');
 };

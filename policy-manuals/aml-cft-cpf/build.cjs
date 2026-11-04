@@ -1,4 +1,4 @@
-// Builds the AML/CFT/CPF manual template:  node build.cjs  ->  AML-CFT-CPF-Manual-Template-v2.1.docx
+// Builds the AML/CFT/CPF manual template:  node build.cjs  ->  AML-CFT-CPF-Manual-Template-v2.2.docx
 const fs = require('fs');
 const path = require('path');
 const {
@@ -16,7 +16,7 @@ const NAVY = L.NAVY;
 
 const doc = new Document({
   creator: 'Blue Arrow Management Consultants',
-  title: 'AML / CFT / CPF and Sanctions Policy and Procedures Manual — Template v2.1',
+  title: 'AML / CFT / CPF and Sanctions Policy and Procedures Manual — Template v2.2',
   features: { updateFields: true },
   styles: {
     default: { document: { run: { font: FONT, size: 21 } } },
@@ -63,7 +63,7 @@ const doc = new Document({
 });
 
 Packer.toBuffer(doc).then((buf) => {
-  const out = path.join(__dirname, 'AML-CFT-CPF-Manual-Template-v2.1.docx');
+  const out = path.join(__dirname, 'AML-CFT-CPF-Manual-Template-v2.2.docx');
   fs.writeFileSync(out, buf);
   console.log('wrote', out, buf.length, 'bytes');
 });

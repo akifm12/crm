@@ -79,18 +79,47 @@ module.exports = (L) => {
 
   // ── C. High-risk jurisdictions ───────────────────────────────────────
   h1('APPENDIX C — HIGH-RISK JURISDICTIONS');
-  p('This Manual does not reproduce lists that change. The MLRO keeps the register below up to date from the following sources and checks them at least quarterly and after each FATF plenary and each National Committee resolution (the current resolution is No. (15) of 2025, notified by MoET Circular No. (1) of 2026):');
-  bullets([
-    '**FATF "Call for Action" list** ("blacklist"): measures as in section 4.7 (Enhanced Due Diligence on all relationships and transactions, no branches or subsidiaries, no third-party reliance, strengthened reporting, HRC/HRCA reports).',
-    '**FATF "Increased Monitoring" list** ("greylist"): Enhanced Due Diligence proportionate to the risk, and HRC/HRCA reporting where the National Committee list requires it.',
-    '**National Committee for AML/CFT/CPF** list of high-risk countries (namlcftc.gov.ae), and any MoET or FIU circular updating it.',
-    'UN and UAE sanctions regimes, including the UN sanctions on Iran re-imposed under UNSCR 1737 (2006) (Circular 7 of 2025) and on the DPRK.',
-    'Jurisdictions {{COMPANY_SHORT}} itself assesses as high risk (corruption, illicit gold, conflict, weak AML supervision), recorded with the reason.',
-  ]);
-  p('[VERIFY: the jurisdictions currently on each list, taken from the National Committee website and the FATF pages cited in Circular No. (1) of 2026.]');
-  table(['Jurisdiction', 'Source list', 'Date added', 'Reason / measures', 'Last reviewed'], [
-    ['', '', '', '', ''], ['', '', '', '', ''], ['', '', '', '', ''], ['', '', '', '', ''],
-  ], [2000, 1900, 1400, 2800, 1300]);
+  p('The UAE list of high-risk countries and countries under increased monitoring is issued by the National Committee for AML/CFT/CPF and notified by MoET circulars (currently Circular No. (1) of 2026, under National Committee Resolution No. (15) of 2025). It follows the FATF lists, which the National Committee publishes on its website (namlcftc.gov.ae). The MLRO checks the sources below at least quarterly and after every FATF plenary and National Committee resolution, updates the register, and records each check in the review log. If the National Committee\'s list and the FATF list ever differ, the stricter applies until MoET clarifies.');
+  h3('Register as at 30 October 2026');
+  p('Source: FATF publications of 30 October 2026 ("Call for Action" and "Increased Monitoring"), the editions linked from the National Committee website. Last checked by the MLRO: ______ (date).');
+  table(['Jurisdiction', 'List', 'Measures'], [
+    ['Democratic People\'s Republic of Korea', 'FATF Call for Action', 'Section 4.7: Enhanced Due Diligence on all relationships and transactions, countermeasures, HRC/HRCA reports, no reliance on third parties there, no branches or subsidiaries.'],
+    ['Iran', 'FATF Call for Action', 'As above. Also UN sanctions re-imposed (Circular No. (7) of 2025): screen and freeze under section 6.'],
+    ['Myanmar', 'FATF Call for Action', 'As above.'],
+  ], [3000, 2000, 4400]);
+  table(['Jurisdiction', 'List', 'Measures'], [
+    ['Angola', 'FATF Increased Monitoring', 'Enhanced Due Diligence proportionate to the risk; account taken in risk assessments and reviews; HRC/HRCA where the National Committee list requires.'],
+    ['Bolivia', 'FATF Increased Monitoring', 'As above.'],
+    ['Bosnia and Herzegovina', 'FATF Increased Monitoring (added June 2026)', 'As above.'],
+    ['Bulgaria', 'FATF Increased Monitoring', 'As above. FATF made an initial determination in June 2026 that its action plan is substantially complete; watch for removal.'],
+    ['Cameroon', 'FATF Increased Monitoring', 'As above.'],
+    ['Côte d\'Ivoire', 'FATF Increased Monitoring', 'As above.'],
+    ['Democratic Republic of the Congo', 'FATF Increased Monitoring', 'As above. Also treat as a CAHRA candidate (Appendix I).'],
+    ['Haiti', 'FATF Increased Monitoring', 'As above.'],
+    ['Iraq', 'FATF Increased Monitoring (added June 2026)', 'As above.'],
+    ['Kenya', 'FATF Increased Monitoring', 'As above.'],
+    ['Kuwait', 'FATF Increased Monitoring', 'As above.'],
+    ['Lao PDR', 'FATF Increased Monitoring', 'As above.'],
+    ['Lebanon', 'FATF Increased Monitoring', 'As above.'],
+    ['Monaco', 'FATF Increased Monitoring', 'As above.'],
+    ['Nepal', 'FATF Increased Monitoring', 'As above.'],
+    ['Papua New Guinea', 'FATF Increased Monitoring', 'As above.'],
+    ['South Sudan', 'FATF Increased Monitoring', 'As above.'],
+    ['Syria', 'FATF Increased Monitoring', 'As above.'],
+    ['Venezuela', 'FATF Increased Monitoring', 'As above.'],
+    ['Vietnam', 'FATF Increased Monitoring', 'As above.'],
+    ['Virgin Islands (UK)', 'FATF Increased Monitoring', 'As above.'],
+    ['Yemen', 'FATF Increased Monitoring', 'As above.'],
+  ], [3000, 2400, 4000]);
+  h3('Other jurisdictions treated as high risk by {{COMPANY_SHORT}}');
+  p('Countries {{COMPANY_SHORT}} assesses as high risk for corruption, illicit gold, conflict or weak AML supervision, with the reason, are recorded here. UN and UAE sanctions regimes (including Iran under UNSCR 1737 (2006), and the DPRK) apply in addition. Conflict-affected and high-risk areas for the gold supply chain are recorded in Appendix I.');
+  table(['Jurisdiction', 'Reason', 'Date added', 'Measures'], [
+    ['', '', '', ''], ['', '', '', ''], ['', '', '', ''],
+  ], [2400, 3600, 1400, 2000]);
+  h3('Review log');
+  table(['Date checked', 'Sources checked', 'Change found', 'Register updated', 'MLRO'], [
+    ['', '', '', '', ''], ['', '', '', '', ''], ['', '', '', '', ''],
+  ], [1300, 2900, 2500, 1500, 1200]);
 
   // ── D. Declaration ───────────────────────────────────────────────────
   h1('APPENDIX D — STAFF DECLARATION');
@@ -158,8 +187,9 @@ module.exports = (L) => {
     ['Type (individual / company / other)', ''],
     ['Beneficial owner(s) identified', ''],
     ['Date of assessment; assessor', ''],
+    ['Scoring model version; approved by Senior Management on', ''],
   ], [3200, 6200]);
-  p('Score each factor 1 (Low), 2 (Medium) or 3 (High). Add the scores.');
+  p('Score each factor 1 (Low), 2 (Medium) or 3 (High). Add the scores. The factors, scores and rating bands are the documented model approved by Senior Management (section 4.3); only the MLRO may override a rating, in writing and with reasons.');
   table(['Factor', 'Low (1)', 'Medium (2)', 'High (3)', 'Score'], [
     ['Customer type and structure', 'Individual, simple company, transparent ownership', 'Company with layered but traceable ownership', 'Complex or opaque structure, trust/foundation, nominees', ''],
     ['Nationality / residence / incorporation', 'UAE or low-risk country', 'Other country, no concerns', 'High-risk jurisdiction (Appendix C)', ''],
@@ -198,4 +228,30 @@ module.exports = (L) => {
     ['EOCN response given (if any) and confirmation saved', ''],
     ['MLRO signature and date', ''],
   ], [3800, 5600]);
+
+  // ── I. CAHRA assessment ──────────────────────────────────────────────
+  h1('APPENDIX I — CAHRA ASSESSMENT RECORD');
+  p('Complete one record for each supply chain (consignment or batch) before the gold is accepted (section 7.5). Keep it with the supplier file.');
+  table(null, [
+    ['Date; completed by', ''],
+    ['Supplier and ultimate beneficial owners', ''],
+    ['Supply / consignment reference', ''],
+    ['Type of source', '☐ Large-scale mine     ☐ ASM     ☐ Recycled / scrap     ☐ Mixed     ☐ Refined bars'],
+    ['Country and place of origin', ''],
+    ['Transport and transit route; refiner and refining location', ''],
+    ['Upstream suppliers identified', ''],
+    ['Documents obtained (origin certificate, assay, invoices, customs, transport)', ''],
+    ['Location red flags found (section 7.5)', '☐ None     ☐ CAHRA or sanctioned origin or transit     ☐ Output beyond known reserves     ☐ CAHRA transit country     ☐ Scrap refined in a transit country     ☐ Weak AML oversight / cash economy'],
+    ['Supplier red flags found (section 7.5)', '☐ None     ☐ Operates in or sources from a red-flag location (last 12 months)     ☐ Inconsistent KYC / refusal     ☐ Listed person / sanctions     ☐ No integrity policies     ☐ Weak upstream assessment'],
+    ['ASM checks (if applicable)', '☐ Legally registered / cooperative / government-recognised     ☐ Recognised standards followed     ☐ Not applicable'],
+    ['Conclusion', '☐ No CAHRA link, no red flags – accept     ☐ Red flags or gaps – EDD     ☐ CAHRA link – suspend / refuse / exception'],
+    ['Reasons and evidence', '\n\n'],
+    ['MLRO decision, signature, date', ''],
+    ['Senior Management approval (exceptions only) and mitigation plan', ''],
+  ], [3800, 5600]);
+  h3('CAHRA register');
+  p('Areas {{COMPANY_SHORT}} treats as conflict-affected or high-risk for gold supply chains, kept by the MLRO and reviewed at least quarterly (section 7.5). No official list exists; record the basis for each entry.');
+  table(['Area / country', 'Why treated as a CAHRA (sources)', 'Date added', 'Last reviewed', 'Reviewed by'], [
+    ['', '', '', '', ''], ['', '', '', '', ''], ['', '', '', '', ''], ['', '', '', '', ''],
+  ], [2000, 3600, 1200, 1400, 1200]);
 };
