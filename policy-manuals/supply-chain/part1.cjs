@@ -19,7 +19,7 @@ module.exports = (L) => {
     ['{{GRIEVANCE_CONTACT}}', 'Confidential channel for concerns (email, hotline or form)', 'concerns@example.ae'],
     ['{{VERSION}} / {{ISSUE_DATE}} / {{APPROVER}}', 'Document control', '1.0 / 1 January 2027 / Managing Director'],
   ], [3300, 3900, 2200]);
-  p('**Cyan [VERIFY: ...] tags** mark statements that depend on the current wording of a regulation or circular. Check them against the latest MoET publications and clear them once confirmed. Record each update in the log in section 1.6. This policy works together with the company\'s AML/CFT/CPF and Sanctions Manual, which it refers to by section number.');
+  p('Record each update in the log in section 1.6. This policy works together with the company\'s AML/CFT/CPF and Sanctions Manual, which it refers to by section number.');
   p('End of template guide.');
 
   // ── Cover ──────────────────────────────────────────────────────────────
@@ -52,7 +52,7 @@ module.exports = (L) => {
     'Federal Decree-Law No. (10) of 2025 on Anti-Money Laundering, Combating the Financing of Terrorism and Proliferation Financing, and Cabinet Resolution No. (134) of 2025 (its Executive Regulations).',
     'Cabinet Decision No. (74) of 2020 on the Terrorism Lists Regulation and implementation of UN Security Council resolutions (targeted financial sanctions).',
     'Ministerial Decree No. (68) of 2024 on adherence to the Due Diligence Regulations for Responsible Sourcing of Gold.',
-    'The MoET Due Diligence Regulations for Responsible Sourcing of Gold, Version 1 (August 2022), based on the OECD Due Diligence Guidance for Responsible Supply Chains of Minerals from Conflict-Affected and High-Risk Areas and its Supplement on Gold. The "V9" in the title of the file on the MoET site is not a version of the document.',
+    'The MoET Due Diligence Regulations for Responsible Sourcing of Gold, Version 1 (August 2022), based on the OECD Due Diligence Guidance for Responsible Supply Chains of Minerals from Conflict-Affected and High-Risk Areas and its Supplement on Gold.',
     'MoET Guidelines for Designated Non-Financial Businesses and Professions and the Supplemental Guidance for Dealers in Precious Metals and Stones (March 2026), and MoET Circular No. 08/AML/2021 on DPMSR reporting.',
     'Federal Law No. (11) of 2015 on Monitoring Trade in Precious Metals and its Stamping, and the customs and export laws that apply to the import, export and transit of gold.',
   ]);

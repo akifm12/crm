@@ -16,7 +16,7 @@ module.exports = (L) => {
     'appoint an independent third-party reviewer approved by MoET, and arrange an independent audit of the supply chain due diligence framework every year, at the company\'s own cost;',
     'make sure the reviewer is independent of the company, its subsidiaries, licensees, contractors and suppliers, has no conflict of interest, and has not provided compliance consultancy (such as setting up a compliance framework or drafting policies) in the past 12 months;',
     'give the reviewer access to all sites, interviews with management, and a risk-based sample of suppliers and documents;',
-    'submit the audit reports and the Comprehensive Management Report (management systems, risk assessment and risk management, with the numbers of relationships continued, suspended and terminated, without naming the parties) to MoET every year [VERIFY: current submission deadline; the MoET announcement of September 2022 gave 90 days after the end of the review cycle]; and',
+    'submit the audit reports and the Comprehensive Management Report (management systems, risk assessment and risk management, with the numbers of relationships continued, suspended and terminated, without naming the parties) to MoET every year, within the deadline MoET sets for each review cycle; and',
     'if an accredited member of the Emirates Good Delivery, submit its accreditation reports to MoET each year.',
   ]);
 
@@ -24,7 +24,7 @@ module.exports = (L) => {
   h1('7. TRAINING AND AWARENESS');
   h2('7.1 Staff training');
   bullets([
-    'Everyone involved in supply chain due diligence is trained at recruitment, before they handle suppliers or gold, and on an ongoing basis, **at least twice a year**, in person or digitally [VERIFY: the MoET Regulations say "bi-annual"; this policy applies the stricter reading].',
+    'Everyone involved in supply chain due diligence is trained at recruitment, before they handle suppliers or gold, and on an ongoing basis, **at least twice a year**, in person or digitally.',
     'Training mixes general supply chain due diligence topics (this policy, the OECD Guidance, CAHRAs, red flags, the grievance mechanism) with role-specific content for procurement, compliance, logistics and finance staff.',
     'The AML/CFT/CPF training in the AML Manual (section 11) also covers cash and DPMSR reporting, sanctions, and suspicious activity reporting.',
     'Effectiveness is assessed through questionnaires and feedback forms, and staff who do not pass repeat the training.',

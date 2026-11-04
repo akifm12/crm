@@ -1,4 +1,4 @@
-// Builds the Supply Chain Policy template:  node build.cjs  ->  Supply-Chain-Policy-Template-v1.docx
+// Builds the Supply Chain Policy template:  node build.cjs  ->  Supply-Chain-Policy-Template-v1.1.docx
 const fs = require('fs');
 const path = require('path');
 const {
@@ -16,7 +16,7 @@ const NAVY = L.NAVY;
 
 const doc = new Document({
   creator: 'Blue Arrow Management Consultants',
-  title: 'Supply Chain Policy for Responsible Sourcing of Gold, Template v1',
+  title: 'Supply Chain Policy for Responsible Sourcing of Gold',
   features: { updateFields: true },
   styles: {
     default: { document: { run: { font: FONT, size: 21 } } },
@@ -63,7 +63,7 @@ const doc = new Document({
 });
 
 Packer.toBuffer(doc).then((buf) => {
-  const out = path.join(__dirname, 'Supply-Chain-Policy-Template-v1.docx');
+  const out = path.join(__dirname, 'Supply-Chain-Policy-Template-v1.1.docx');
   fs.writeFileSync(out, buf);
   console.log('wrote', out, buf.length, 'bytes');
 });
