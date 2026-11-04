@@ -1,4 +1,4 @@
-// Builds the AML/CFT/CPF manual template:  node build.cjs  ->  AML-CFT-CPF-Manual-Template-v2.2.docx
+// Builds the AML/CFT/CPF manual template:  node build.cjs  ->  AML-CFT-CPF-Manual-Template-v2.3.docx
 const fs = require('fs');
 const path = require('path');
 const {
@@ -16,7 +16,7 @@ const NAVY = L.NAVY;
 
 const doc = new Document({
   creator: 'Blue Arrow Management Consultants',
-  title: 'AML / CFT / CPF and Sanctions Policy and Procedures Manual — Template v2.2',
+  title: 'AML / CFT / CPF and Sanctions Policy and Procedures Manual, Template v2.3',
   features: { updateFields: true },
   styles: {
     default: { document: { run: { font: FONT, size: 21 } } },
@@ -36,7 +36,7 @@ const doc = new Document({
     config: [
       { reference: 'bullets', levels: [
         { level: 0, format: LevelFormat.BULLET, text: '•', alignment: AlignmentType.LEFT, style: { paragraph: { indent: { left: 540, hanging: 270 } } } },
-        { level: 1, format: LevelFormat.BULLET, text: '–', alignment: AlignmentType.LEFT, style: { paragraph: { indent: { left: 1000, hanging: 270 } } } },
+        { level: 1, format: LevelFormat.BULLET, text: '-', alignment: AlignmentType.LEFT, style: { paragraph: { indent: { left: 1000, hanging: 270 } } } },
       ] },
       { reference: 'steps', levels: [
         { level: 0, format: LevelFormat.DECIMAL, text: '%1.', alignment: AlignmentType.LEFT, style: { paragraph: { indent: { left: 540, hanging: 360 } } } },
@@ -47,7 +47,7 @@ const doc = new Document({
     properties: { page: { size: { width: 11906, height: 16838 }, margin: { top: 1300, bottom: 1200, left: 1253, right: 1253 } } },
     headers: { default: new Header({ children: [new Paragraph({
       alignment: AlignmentType.RIGHT,
-      children: L.runs('{{COMPANY_NAME}}  —  AML / CFT / CPF and Sanctions Manual', { size: 16, color: '7F7F7F' }),
+      children: L.runs('{{COMPANY_NAME}}  |  AML / CFT / CPF and Sanctions Manual', { size: 16, color: '7F7F7F' }),
     })] }) },
     footers: { default: new Footer({ children: [new Paragraph({
       alignment: AlignmentType.CENTER,
@@ -63,7 +63,7 @@ const doc = new Document({
 });
 
 Packer.toBuffer(doc).then((buf) => {
-  const out = path.join(__dirname, 'AML-CFT-CPF-Manual-Template-v2.2.docx');
+  const out = path.join(__dirname, 'AML-CFT-CPF-Manual-Template-v2.3.docx');
   fs.writeFileSync(out, buf);
   console.log('wrote', out, buf.length, 'bytes');
 });

@@ -5,9 +5,9 @@ module.exports = (L) => {
   // ── 8. Monitoring and suspicious activity reporting ───────────────────
   h1('8. MONITORING AND SUSPICIOUS ACTIVITY REPORTING');
   h2('8.1 Monitoring');
-  p('{{COMPANY_SHORT}} monitors transactions and customer behaviour to detect activity that is inconsistent with the customer\'s profile, or that has no apparent economic or lawful purpose. Front-line staff watch for the red flags in Appendix B. The MLRO reviews transaction records at least monthly for patterns such as structuring, repeated purchases and sales of the same gold, changes in volume or value, and payments through third parties, and documents the review.');
+  p('{{COMPANY_SHORT}} monitors transactions and customer behavior to detect activity that is inconsistent with the customer\'s profile, or that has no apparent economic or lawful purpose. Front-line staff watch for the red flags in Appendix B. The MLRO reviews transaction records at least monthly for patterns such as structuring, repeated purchases and sales of the same gold, changes in volume or value, and payments through third parties, and documents the review.');
   h2('8.2 Internal reporting');
-  p('Any member of staff who knows, suspects or has reasonable grounds to suspect that a person is engaged in, or attempting, money laundering, terrorist or proliferation financing, or any related crime, must report it to the MLRO immediately on the Internal SAR form (Appendix E), and in any case on the same working day. Staff are not expected to know the exact offence. The MLRO must start any internal investigation immediately and continue it without interruption until the matter is reported or cleared. Failure to report may be a criminal offence and gross misconduct. Making an Internal SAR in good faith does not breach customer confidentiality.');
+  p('Any member of staff who knows, suspects or has reasonable grounds to suspect that a person is engaged in, or attempting, money laundering, terrorist or proliferation financing, or any related crime, must report it to the MLRO immediately on the Internal SAR form (Appendix E), and in any case on the same working day. Staff are not expected to know the exact offense. The MLRO must start any internal investigation immediately and continue it without interruption until the matter is reported or cleared. Failure to report may be a criminal offense and gross misconduct. Making an Internal SAR in good faith does not breach customer confidentiality.');
   h2('8.3 The MLRO\'s review');
   bullets([
     'The MLRO acknowledges the Internal SAR, investigates it without delay and records the steps taken, the information reviewed and the conclusion.',
@@ -26,7 +26,7 @@ module.exports = (L) => {
   ], [2200, 7200]);
   p('Select the correct report type. Do not use a CNMR or PNMR for foreign sanctions lists or for suspected sanctions evasion without a list match: those go to the FIU as an STR/SAR (section 6.8). The MLRO keeps the report, the confirmation and all supporting analysis (section 10). Email or post is used only if the FIU directs it.');
   h2('8.5 Tipping off');
-  p('After an Internal SAR has been made, and in particular after any STR/SAR, staff must not tell the customer or anyone else, directly or indirectly, that a report has been made or that an investigation is likely, or do anything that could prejudice an investigation. If staff reasonably believe that carrying out CDD would alert the customer, they stop and consult the MLRO, who may decide to file without completing it. Tipping off is a criminal offence.');
+  p('After an Internal SAR has been made, and in particular after any STR/SAR, staff must not tell the customer or anyone else, directly or indirectly, that a report has been made or that an investigation is likely, or do anything that could prejudice an investigation. If staff reasonably believe that carrying out CDD would alert the customer, they stop and consult the MLRO, who may decide to file without completing it. Tipping off is a criminal offense.');
   h2('8.6 Protection of staff');
   p('{{COMPANY_SHORT}} will not disadvantage any employee who reports a suspicion in good faith, internally or to the authorities. Reports may be made directly to the MLRO or, if the concern involves the MLRO, to {{SENIOR_MANAGEMENT}} or directly to the FIU.');
 
@@ -34,18 +34,18 @@ module.exports = (L) => {
   h1('9. CUSTOMER ONBOARDING PROCESS');
   h2('9.1 Steps');
   table(['Step', 'Who', 'Action'], [
-    ['1. Enquiry', 'Sales / front desk', 'Confirm there is a genuine intention to trade. Explain the documents needed. Never accept cash or gold before CDD is complete.'],
-    ['2. Collect information', 'Sales / front desk', 'Customer completes and signs the Customer Identification Form. Collect all documents in the checklist (Appendix F). Verify originals, mark copies "original sighted". Record expected activity and source of funds in the Customer Profile.'],
-    ['3. Screen', 'MLRO (or trained delegate)', 'Screen the customer, each beneficial owner, director, signatory and agent for sanctions, PEP and adverse media using {{SCREENING_TOOL}}. Record the results (Appendix H). Any hit stops the process and goes to the MLRO.'],
-    ['4. Risk-assess', 'MLRO', 'Complete the Customer Risk Assessment Form (Appendix G). Decide the rating and level of due diligence. Request more information or documents where required.'],
+    ['1. Inquiry', 'Sales / front desk', 'Confirm there is a genuine intention to trade. Explain the documents needed. Never accept cash or gold before CDD is complete.'],
+    ['2. Collect information', 'Sales / front desk', 'Customer completes and signs the Customer Identification Form. Collect all documents in the KYC module checklist. Verify originals, mark copies "original sighted". Record expected activity and source of funds in the Customer Profile.'],
+    ['3. Screen', 'MLRO (or trained delegate)', 'Screen the customer, each beneficial owner, director, signatory and agent for sanctions, PEP and adverse media using {{SCREENING_TOOL}}. Record the results in the KYC module or screening record. Any hit stops the process and goes to the MLRO.'],
+    ['4. Risk-assess', 'MLRO', 'Complete the customer risk assessment in the KYC module. Decide the rating and level of due diligence. Request more information or documents where required.'],
     ['5. Approve', 'MLRO; {{SENIOR_MANAGEMENT}} for High risk and PEPs', 'Approve, refuse, or ask for more information. Record the decision, date and reasons. High-risk customers and PEPs also need Senior Management approval.'],
     ['6. Register', 'MLRO', 'Enter the customer in the customer register with the rating, review date and approvals. Confirm the start of the relationship in writing. No transaction before this step.'],
     ['7. Keep records', 'MLRO', 'File the documents in the customer file (electronic and paper) and keep them for the period in section 10.'],
   ], [1700, 2200, 5500]);
   h2('9.2 Due diligence by risk rating');
-  table(['', 'Low risk — SDD', 'Medium risk — CDD', 'High risk — EDD'], [
+  table(['', 'Low risk, SDD', 'Medium risk, CDD', 'High risk, EDD'], [
     ['Customer Identification Form', 'Signed by customer and staff', 'Signed by customer and staff', 'Signed by customer and staff'],
-    ['Identity verification', 'Original ID/trade licence', 'Original ID/trade licence', 'Original ID/trade licence, plus independent corroboration'],
+    ['Identity verification', 'Original ID/trade license', 'Original ID/trade license', 'Original ID/trade license, plus independent corroboration'],
     ['Beneficial owners', 'Identify and verify at 25%', 'Identify and verify at 25%', 'Identify and verify at 10%'],
     ['Source of funds / wealth', 'Declared source of funds', 'Declared and recorded; documents on request', 'Documented source of funds and source of wealth'],
     ['Document certification', 'Copy acceptable if original seen', 'Original seen and copy stamped', 'Original seen; external certification for any copies'],
@@ -69,7 +69,7 @@ module.exports = (L) => {
     'any other record required by law or MoET.',
   ]);
   p('**Retention.** Records are kept for at least {{RETENTION_YEARS}} years (never less than five) from the **latest** of: the termination of the business relationship or closure of the account; the completion of an occasional transaction where there is no business relationship; the issue of a final judgment by a competent court; the dissolution, liquidation or termination of a legal person; the completion of an inspection by MoET; or the completion of an investigation. If the end of a relationship is unclear, it is taken to be the date of the last transaction. This covers CDD records, account files, correspondence, STRs and analysis, CCTV and other recordings, and screening results (confirmed, partial and false positive), which are kept for at least five years. Records under investigation or requested by an authority are kept for as long as required, even beyond this period. Training logs are kept for the same period.');
-  p('**Form and access.** Records may be electronic if readily available. They must be organised so that {{COMPANY_SHORT}} can promptly give MoET, the FIU, other authorities or a court any information requested, identify each customer, transaction and report, and show compliance. Records are kept securely, backed up, with access limited to authorised staff, and, if kept outside the UAE, in a way that keeps them immediately available for inspection. Where another country\'s secrecy or data-protection law could restrict access, certified copies are kept where authorities can obtain them. Records are destroyed only after the retention period, by the MLRO\'s decision.');
+  p('**Form and access.** Records may be electronic if readily available. They must be organized so that {{COMPANY_SHORT}} can promptly give MoET, the FIU, other authorities or a court any information requested, identify each customer, transaction and report, and show compliance. Records are kept securely, backed up, with access limited to authorized staff, and, if kept outside the UAE, in a way that keeps them immediately available for inspection. Where another country\'s secrecy or data-protection law could restrict access, certified copies are kept where authorities can obtain them. Records are destroyed only after the retention period, by the MLRO\'s decision.');
 
   // ── 11. Training ──────────────────────────────────────────────────────
   h1('11. TRAINING AND AWARENESS');
@@ -77,7 +77,7 @@ module.exports = (L) => {
     'Every new employee receives AML/CFT/CPF induction training before dealing with customers or transactions, and in any case within the first month.',
     'All staff receive refresher training at least once a year, and additional training when the law or this Manual changes materially.',
     'The MLRO, deputy MLRO, Senior Management and onboarding staff receive additional role-based training; the MLRO keeps professional knowledge up to date, including attending MoET and FIU events where available.',
-    'Training is tailored to {{COMPANY_SHORT}}\'s business and covers: the law and penalties; this Manual and the staff duties; recognising red flags in the gold trade; cash and DPMSR rules; CDD and screening; TFS and the EOCN procedure; responsible sourcing; how to make an Internal SAR; tipping off; and the identity of the MLRO and deputy.',
+    'Training is tailored to {{COMPANY_SHORT}}\'s business and covers: the law and penalties; this Manual and the staff duties; recognizing red flags in the gold trade; cash and DPMSR rules; CDD and screening; TFS and the EOCN procedure; responsible sourcing; how to make an Internal SAR; tipping off; and the identity of the MLRO and deputy.',
     'Training is tested (for example a short assessment). Records show the date, content, trainer and attendees and are kept (section 10). Staff who fail the assessment repeat the training.',
   ]);
 

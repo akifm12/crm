@@ -3,7 +3,7 @@ module.exports = (L) => {
   const { h1, h2, h3, p, bullets, table, note } = L;
 
   // ── A. MLRO terms of reference ────────────────────────────────────────
-  h1('APPENDIX A — TERMS OF REFERENCE: MLRO');
+  h1('APPENDIX A: TERMS OF REFERENCE: MLRO');
   table(null, [
     ['Name', '{{MLRO_NAME}}'],
     ['Contact', '{{MLRO_EMAIL}}   |   {{MLRO_PHONE}}'],
@@ -32,7 +32,7 @@ module.exports = (L) => {
     'supplier due diligence and responsible sourcing oversight (section 7.4);',
     'liaison with the FIU, MoET, EOCN and other authorities, and prompt response to their requests;',
     'monitoring regulatory change and keeping this Manual and the regulatory change log current;',
-    'training programme and records (section 11);',
+    'training program and records (section 11);',
     'the annual MLRO report (section 3.3.4) and the business risk assessment (section 4.2);',
     'maintaining the high-risk jurisdictions register (Appendix C).',
   ]);
@@ -40,9 +40,9 @@ module.exports = (L) => {
   p('The MLRO reports in writing to {{SENIOR_MANAGEMENT}} at least annually (section 3.3.4), and immediately on any serious matter, including any freeze, any STR/SAR of significance, any regulatory request or any significant breach.');
 
   // ── B. Red flags ──────────────────────────────────────────────────────
-  h1('APPENDIX B — RED FLAG INDICATORS: GOLD AND PRECIOUS METALS');
+  h1('APPENDIX B: RED FLAG INDICATORS: GOLD AND PRECIOUS METALS');
   p('The presence of a red flag does not mean that a crime has occurred. Red flags are assessed together and in context. If a concern cannot be resolved, it is escalated to the MLRO on an Internal SAR for investigation, EDD, and a decision whether to file an STR/SAR through goAML.');
-  h3('Customer behaviour and profile');
+  h3('Customer behavior and profile');
   bullets([
     'unwilling or unable to provide satisfactory KYC, beneficial ownership or business information; refuses to identify or to explain the source of funds or wealth;',
     'stated business or financial profile is inconsistent with the volume or value of gold dealt in;',
@@ -74,11 +74,11 @@ module.exports = (L) => {
     'a party that is, or may be linked to, a sanctioned person or entity or a PEP;',
     'unusual countries, routes, vessels, ports, freight forwarders or payment arrangements that are not commercially justified;',
     'links to dual-use goods or to entities in countries of proliferation concern; end user or destination unclear;',
-    'any other behaviour or transaction inconsistent with the customer\'s known profile or lacking an apparent legitimate economic purpose.',
+    'any other behavior or transaction inconsistent with the customer\'s known profile or lacking an apparent legitimate economic purpose.',
   ]);
 
   // ── C. High-risk jurisdictions ───────────────────────────────────────
-  h1('APPENDIX C — HIGH-RISK JURISDICTIONS');
+  h1('APPENDIX C: HIGH-RISK JURISDICTIONS');
   p('The UAE list of high-risk countries and countries under increased monitoring is issued by the National Committee for AML/CFT/CPF and notified by MoET circulars (currently Circular No. (1) of 2026, under National Committee Resolution No. (15) of 2025). It follows the FATF lists, which the National Committee publishes on its website (namlcftc.gov.ae). The MLRO checks the sources below at least quarterly and after every FATF plenary and National Committee resolution, updates the register, and records each check in the review log. If the National Committee\'s list and the FATF list ever differ, the stricter applies until MoET clarifies.');
   h3('Register as at 30 October 2026');
   p('Source: FATF publications of 30 October 2026 ("Call for Action" and "Increased Monitoring"), the editions linked from the National Committee website. Last checked by the MLRO: ______ (date).');
@@ -94,7 +94,7 @@ module.exports = (L) => {
     ['Bulgaria', 'FATF Increased Monitoring', 'As above. FATF made an initial determination in June 2026 that its action plan is substantially complete; watch for removal.'],
     ['Cameroon', 'FATF Increased Monitoring', 'As above.'],
     ['Côte d\'Ivoire', 'FATF Increased Monitoring', 'As above.'],
-    ['Democratic Republic of the Congo', 'FATF Increased Monitoring', 'As above. Also treat as a CAHRA candidate (Appendix I).'],
+    ['Democratic Republic of the Congo', 'FATF Increased Monitoring', 'As above. Also treat as a CAHRA candidate (Appendix F).'],
     ['Haiti', 'FATF Increased Monitoring', 'As above.'],
     ['Iraq', 'FATF Increased Monitoring (added June 2026)', 'As above.'],
     ['Kenya', 'FATF Increased Monitoring', 'As above.'],
@@ -112,7 +112,7 @@ module.exports = (L) => {
     ['Yemen', 'FATF Increased Monitoring', 'As above.'],
   ], [3000, 2400, 4000]);
   h3('Other jurisdictions treated as high risk by {{COMPANY_SHORT}}');
-  p('Countries {{COMPANY_SHORT}} assesses as high risk for corruption, illicit gold, conflict or weak AML supervision, with the reason, are recorded here. UN and UAE sanctions regimes (including Iran under UNSCR 1737 (2006), and the DPRK) apply in addition. Conflict-affected and high-risk areas for the gold supply chain are recorded in Appendix I.');
+  p('Countries {{COMPANY_SHORT}} assesses as high risk for corruption, illicit gold, conflict or weak AML supervision, with the reason, are recorded here. UN and UAE sanctions regimes (including Iran under UNSCR 1737 (2006), and the DPRK) apply in addition. Conflict-affected and high-risk areas for the gold supply chain are recorded in Appendix F.');
   table(['Jurisdiction', 'Reason', 'Date added', 'Measures'], [
     ['', '', '', ''], ['', '', '', ''], ['', '', '', ''],
   ], [2400, 3600, 1400, 2000]);
@@ -122,12 +122,12 @@ module.exports = (L) => {
   ], [1300, 2900, 2500, 1500, 1200]);
 
   // ── D. Declaration ───────────────────────────────────────────────────
-  h1('APPENDIX D — STAFF DECLARATION');
+  h1('APPENDIX D: STAFF DECLARATION');
   p('I confirm that I have received a copy of the Anti-Money Laundering, Counter-Terrorist Financing, Counter-Proliferation Financing and Sanctions Policy and Procedures Manual of {{COMPANY_NAME}}, that I have read and understood it, that I am subject to it and that I agree to comply with it.');
   bullets([
     'I understand it is {{COMPANY_SHORT}}\'s policy to prevent its business being used for money laundering, terrorist financing or the financing of weapons of mass destruction, and that it is my duty to be vigilant.',
-    'I understand it is a criminal offence to knowingly help any person with these activities, or to tell anyone that a transaction is being examined or that an authority is investigating.',
-    'I understand that if I know or have reasonable grounds to suspect money laundering, terrorist financing or proliferation financing, I must report it immediately to the MLRO on the Internal SAR form, and that failing to do so may be grounds for disciplinary action and an offence under UAE law.',
+    'I understand it is a criminal offense to knowingly help any person with these activities, or to tell anyone that a transaction is being examined or that an authority is investigating.',
+    'I understand that if I know or have reasonable grounds to suspect money laundering, terrorist financing or proliferation financing, I must report it immediately to the MLRO on the Internal SAR form, and that failing to do so may be grounds for disciplinary action and an offense under UAE law.',
     'I understand that I must not carry out a transaction before the customer has been identified, verified and screened.',
     'I agree that this declaration also covers any later written supplementary or replacement procedures given to me by the MLRO or {{SENIOR_MANAGEMENT}}.',
     'I agree that this declaration forms part of my contract of employment (or contract for services), and that a breach entitles {{COMPANY_SHORT}} to take disciplinary action, including termination with immediate effect.',
@@ -135,13 +135,13 @@ module.exports = (L) => {
   table(['Name', 'Function', 'Signature', 'Date'], [['', '', '', ''], ['', '', '', ''], ['', '', '', '']], [2600, 2400, 2600, 1800]);
 
   // ── E. Internal SAR ──────────────────────────────────────────────────
-  h1('APPENDIX E — INTERNAL SUSPICIOUS ACTIVITY REPORT (INTERNAL SAR)');
+  h1('APPENDIX E: INTERNAL SUSPICIOUS ACTIVITY REPORT (INTERNAL SAR)');
   p('To be completed by any employee who has a suspicion, and handed to the MLRO immediately. Do not discuss the report with the customer or with anyone other than the MLRO.');
   table(null, [
     ['Date and time of report', ''],
     ['Reporting employee (name, function)', ''],
     ['Customer / counterparty full name', ''],
-    ['Passport / Emirates ID / trade licence no.', ''],
+    ['Passport / Emirates ID / trade license no.', ''],
     ['Nationality / country', ''],
     ['Address / contact details', ''],
     ['Transaction date(s), amount(s) and currency', ''],
@@ -162,75 +162,8 @@ module.exports = (L) => {
     ['MLRO signature and date', ''],
   ], [3800, 5600]);
 
-  // ── F. CDD checklist ─────────────────────────────────────────────────
-  h1('APPENDIX F — CUSTOMER IDENTIFICATION: DOCUMENT CHECKLIST');
-  table(['Customer type', 'Documents required', 'Done'], [
-    ['Individual — UAE resident', 'Emirates ID (original, scanned both sides)\nPassport copy\nProof of address if not on Emirates ID\nSource-of-funds declaration (and evidence for Medium/High risk or cash ≥ threshold)\nSigned Customer Identification Form', '☐'],
-    ['Individual — visitor / non-resident', 'Valid passport (original)\nEntry stamp or visa\nHome address and contact details\nSource-of-funds declaration (and evidence as above)\nSigned Customer Identification Form', '☐'],
-    ['Company / business', 'Valid trade licence\nMemorandum and articles of association (and amendments)\nCertificate of incorporation / registration\nShareholder and director register; ownership structure chart to the beneficial owners\nVAT / tax registration where applicable\nBoard resolution or power of attorney for signatories\nID of each shareholder 25% or more (10% for High risk), each director and each authorised signatory\nRegistered address and place of business; lease or Ejari where relevant\nLatest financial statements or bank reference for Medium/High risk\nSigned Customer Identification Form', '☐'],
-    ['Partnership, trust, foundation, association, NPO', 'Constituting document (deed, charter, bylaws)\nEvidence of appointment of trustees / managers / guardian\nIdentification of all persons listed in section 5.4\nPurpose and source of funds; MLRO and Senior Management approval', '☐'],
-    ['Supplier / refiner / counterparty', 'As for a company, plus:\nGold origin and supply chain declaration\nRefiner / assay certification and responsible-sourcing evidence\nImport / export licences and customs documents where applicable\nSanctions and adverse media screening record', '☐'],
-  ], [2300, 6400, 700]);
-  h3('Customer profile (completed for every relationship)');
-  table(null, [
-    ['Nature of customer\'s business and how the gold will be used', ''],
-    ['Expected monthly volume and value; usual payment method', ''],
-    ['Source of funds (and wealth for High risk)', ''],
-    ['Countries involved (customer, buyers/suppliers, destination, origin)', ''],
-    ['Prepared by / date', ''],
-  ], [4200, 5200]);
-
-  // ── G. Customer risk assessment ──────────────────────────────────────
-  h1('APPENDIX G — CUSTOMER RISK ASSESSMENT FORM');
-  table(null, [
-    ['Customer name', ''],
-    ['Type (individual / company / other)', ''],
-    ['Beneficial owner(s) identified', ''],
-    ['Date of assessment; assessor', ''],
-    ['Scoring model version; approved by Senior Management on', ''],
-  ], [3200, 6200]);
-  p('Score each factor 1 (Low), 2 (Medium) or 3 (High). Add the scores. The factors, scores and rating bands are the documented model approved by Senior Management (section 4.3); only the MLRO may override a rating, in writing and with reasons.');
-  table(['Factor', 'Low (1)', 'Medium (2)', 'High (3)', 'Score'], [
-    ['Customer type and structure', 'Individual, simple company, transparent ownership', 'Company with layered but traceable ownership', 'Complex or opaque structure, trust/foundation, nominees', ''],
-    ['Nationality / residence / incorporation', 'UAE or low-risk country', 'Other country, no concerns', 'High-risk jurisdiction (Appendix C)', ''],
-    ['Business and occupation', 'Salaried or regulated business', 'Trading or other business', 'Cash-intensive; precious metals trader; unclear business', ''],
-    ['Gold origin / products', 'Refined, documented gold', 'Jewellery or mixed', 'Scrap or undocumented; CAHRA link', ''],
-    ['Payment method', 'Bank transfer from own account', 'Cheque / card', 'Cash; third-party payments', ''],
-    ['Expected volume / value', 'Consistent with profile', 'Higher than average', 'Large, or inconsistent with profile', ''],
-    ['Delivery channel / relationship', 'Face to face, long standing', 'Face to face, new', 'Remote, via intermediary or agent', ''],
-  ], [2300, 1900, 1900, 2400, 900]);
-  table(null, [
-    ['Total score', ''],
-    ['Score rating', '7–10 Low     11–15 Medium     16–21 High'],
-    ['Overrides — High regardless of score', '☐ PEP or linked to a PEP     ☐ sanctions / TFS concern     ☐ high-risk jurisdiction (Call for Action)     ☐ adverse media on financial crime     ☐ beneficial owner not identifiable (refuse)'],
-    ['Screening result (Appendix H ref.)', ''],
-    ['Final risk rating and DD level', '☐ Low – SDD     ☐ Medium – CDD     ☐ High – EDD'],
-    ['Source of funds / wealth assessment', ''],
-    ['MLRO decision', '☐ Approve     ☐ Approve with conditions     ☐ Refuse     ☐ More information needed'],
-    ['MLRO signature / date', ''],
-    ['Senior Management approval (High risk and PEPs)', 'Name / signature / date:'],
-    ['Next review due', ''],
-  ], [3200, 6200]);
-
-  // ── H. TFS record ────────────────────────────────────────────────────
-  h1('APPENDIX H — TFS SCREENING AND MATCH RECORD');
-  table(null, [
-    ['Date and time', ''],
-    ['Trigger', '☐ Onboarding     ☐ Transaction     ☐ List update     ☐ Periodic review     ☐ EOCN notification (reference: ______ )'],
-    ['Names / entities screened', ''],
-    ['Tool and list versions used; list update date', '{{SCREENING_TOOL}}  /  '],
-    ['Result', '☐ No match     ☐ Alert raised'],
-    ['If an alert: details compared (DOB, nationality, ID no., address)', '\n\n'],
-    ['Classification', '☐ Negative match     ☐ False positive     ☐ Partial name match     ☐ Confirmed name match'],
-    ['Reasons and evidence kept (screenshots / exports)', '\n'],
-    ['Action', '☐ Cleared     ☐ Frozen (date/time: ______ )     ☐ PNMR filed     ☐ CNMR filed     ☐ EOCN notified'],
-    ['goAML report reference(s) and date(s)', ''],
-    ['EOCN response given (if any) and confirmation saved', ''],
-    ['MLRO signature and date', ''],
-  ], [3800, 5600]);
-
   // ── I. CAHRA assessment ──────────────────────────────────────────────
-  h1('APPENDIX I — CAHRA ASSESSMENT RECORD');
+  h1('APPENDIX F: CAHRA ASSESSMENT RECORD');
   p('Complete one record for each supply chain (consignment or batch) before the gold is accepted (section 7.5). Keep it with the supplier file.');
   table(null, [
     ['Date; completed by', ''],
@@ -243,8 +176,8 @@ module.exports = (L) => {
     ['Documents obtained (origin certificate, assay, invoices, customs, transport)', ''],
     ['Location red flags found (section 7.5)', '☐ None     ☐ CAHRA or sanctioned origin or transit     ☐ Output beyond known reserves     ☐ CAHRA transit country     ☐ Scrap refined in a transit country     ☐ Weak AML oversight / cash economy'],
     ['Supplier red flags found (section 7.5)', '☐ None     ☐ Operates in or sources from a red-flag location (last 12 months)     ☐ Inconsistent KYC / refusal     ☐ Listed person / sanctions     ☐ No integrity policies     ☐ Weak upstream assessment'],
-    ['ASM checks (if applicable)', '☐ Legally registered / cooperative / government-recognised     ☐ Recognised standards followed     ☐ Not applicable'],
-    ['Conclusion', '☐ No CAHRA link, no red flags – accept     ☐ Red flags or gaps – EDD     ☐ CAHRA link – suspend / refuse / exception'],
+    ['ASM checks (if applicable)', '☐ Legally registered / cooperative / government-recognized     ☐ Recognized standards followed     ☐ Not applicable'],
+    ['Conclusion', '☐ No CAHRA link, no red flags: accept     ☐ Red flags or gaps: EDD     ☐ CAHRA link: suspend / refuse / exception'],
     ['Reasons and evidence', '\n\n'],
     ['MLRO decision, signature, date', ''],
     ['Senior Management approval (exceptions only) and mitigation plan', ''],

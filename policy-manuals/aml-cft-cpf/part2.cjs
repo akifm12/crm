@@ -11,7 +11,7 @@ module.exports = (L) => {
   p('The MLRO prepares a written business (enterprise-wide) risk assessment (BRA) covering ML, TF and PF, taking account of the UAE National Risk Assessment (2024) and the MoET sectoral findings, which rate the DPMS sector as high inherent risk. The BRA is separate from the customer risk assessment: it measures the risk of the business as a whole, while the customer assessment rates one relationship.');
   h3('Method');
   bullets([
-    'Identify the inherent risks from these factors: customer types and their activities; countries and geographic areas of customers, suppliers, gold origin, transit and destination; products and services (bars, coins, jewellery, scrap, refined gold; buying and selling); delivery channels and counterparties; transaction size, frequency and payment methods, especially cash and third-party payments; supply chain and responsible-sourcing exposure; proliferation-financing exposure, including dual-use goods and sanctioned jurisdictions; new products, practices, delivery mechanisms and technologies.',
+    'Identify the inherent risks from these factors: customer types and their activities; countries and geographic areas of customers, suppliers, gold origin, transit and destination; products and services (bars, coins, jewelry, scrap, refined gold; buying and selling); delivery channels and counterparties; transaction size, frequency and payment methods, especially cash and third-party payments; supply chain and responsible-sourcing exposure; proliferation-financing exposure, including dual-use goods and sanctioned jurisdictions; new products, practices, delivery mechanisms and technologies.',
     'Rate each risk for likelihood and impact, using both quantitative data (transaction volumes, cash share, customer mix, report counts) and qualitative input (interviews with staff, the MLRO and management; internal questionnaires; audit and review findings).',
     'Weight the factors, rank the risks and record the rationale for the weights.',
     'Assess how well the existing controls work, using the independent review, MLRO reports, testing and management information.',
@@ -28,7 +28,7 @@ module.exports = (L) => {
   ]);
   p('The results feed the design and testing of controls, the allocation of resources, and the customer risk assessment.');
   h2('4.3 Customer risk assessment');
-  p('Every customer is risk-assessed and rated Low, Medium or High before the relationship starts or any transaction takes place, then reviewed periodically (section 5.9) and whenever risk factors change. The assessment is recorded on the Customer Risk Assessment Form (Appendix G). Factors:');
+  p('Every customer is risk-assessed and rated Low, Medium or High before the relationship starts or any transaction takes place, then reviewed periodically (section 5.9) and whenever risk factors change. The assessment is recorded in the customer risk assessment in the KYC module. Factors:');
   bullets([
     'the customer and each beneficial owner: nature, business, reputation, ownership and control structure;',
     'purpose and intended nature of the relationship and the expected volume and type of transactions;',
@@ -37,7 +37,7 @@ module.exports = (L) => {
     'PEP status, sanctions screening and adverse media results;',
     'the outcome of the business risk assessment.',
   ]);
-  p('The scoring model in Appendix G, including its factors, scores and rating bands, is a documented model: the MLRO explains the rationale and assumptions behind it, and {{SENIOR_MANAGEMENT}} approves it. The MLRO reviews the model at least annually and when the BRA changes. The rating decides the due diligence level. A rating may be overridden only by the MLRO, in writing, with reasons, and never to a lower rating than the Appendix G overrides require. Besides the scheduled reviews in section 5.9, an event-driven review is carried out on: contradictory or outdated CDD information; a change of ownership, structure or control; new legal proceedings involving the customer or a beneficial owner; adverse media; qualified audit opinions or third-party concerns; and transactions inconsistent with the customer\'s profile. Each review decides whether to update the rating, escalate to Senior Management, file an STR/SAR, or suspend or end the relationship.');
+  p('The customer risk scoring model in the KYC module, including its factors, scores and rating bands, is a documented model: the MLRO explains the rationale and assumptions behind it, and {{SENIOR_MANAGEMENT}} approves it. The MLRO reviews the model at least annually and when the BRA changes. The rating decides the due diligence level. A rating may be overridden only by the MLRO, in writing, with reasons, and never below the minimum rating the model requires for a PEP, a sanctions concern, a call-for-action jurisdiction, adverse media on financial crime, or a beneficial owner who cannot be identified. Besides the scheduled reviews in section 5.9, an event-driven review is carried out on: contradictory or outdated CDD information; a change of ownership, structure or control; new legal proceedings involving the customer or a beneficial owner; adverse media; qualified audit opinions or third-party concerns; and transactions inconsistent with the customer\'s profile. Each review decides whether to update the rating, escalate to Senior Management, file an STR/SAR, or suspend or end the relationship.');
   h2('4.4 Lower-risk indicators');
   p('A customer may be rated Low only after the MLRO has assessed its actual exposure, and only if all of the following hold: ownership and activity are transparent; the customer is, for example, a government body or government-owned entity, a company listed on a regulated exchange with equivalent disclosure obligations, or a regulated financial institution supervised for AML/CFT in a jurisdiction with equivalent standards; there is no PEP, sanctions or adverse media concern; no high-risk jurisdiction is involved; and the customer is not cash-intensive. Other DNFBPs (including lawyers, accountants, real estate agents and other precious metals dealers) are not automatically Low risk.');
   h2('4.5 Higher-risk indicators');
@@ -67,7 +67,7 @@ module.exports = (L) => {
   p('The MLRO follows the lists issued by the National Committee for AML/CFT/CPF and the FATF (Appendix C) and applies the following:');
   bullets([
     '**Countries subject to a FATF call for action ("blacklist"):** Enhanced Due Diligence on every business relationship and transaction connected with the country; no branches, representative offices or subsidiaries there; no reliance on third parties located there for CDD; strengthened internal reporting and STRs where appropriate; full compliance with targeted financial sanctions.',
-    '**Countries under increased monitoring ("greylist"):** Enhanced Due Diligence proportionate to the risk, and account taken of FATF updates in risk assessments and relationship reviews.',
+    '**Countries under increased monitoring ("graylist"):** Enhanced Due Diligence proportionate to the risk, and account taken of FATF updates in risk assessments and relationship reviews.',
     '**HRC / HRCA reports:** a transaction or activity related to a high-risk country is reported to the FIU through goAML (section 8.4) and not carried out until three working days after reporting, unless the FIU objects. If it is also suspicious, the STR obligation takes priority.',
   ]);
 
@@ -77,7 +77,7 @@ module.exports = (L) => {
   p('{{COMPANY_SHORT}} applies CDD:');
   bullets([
     'before establishing a business relationship;',
-    'before any occasional transaction of AED 55,000 or more, whether a single transaction or several that appear linked, including instalments, deposits, trade-ins and payments in kind, whatever the payment method (the Supplemental Guidance treats AED 55,000 as the minimum legal trigger and not as an exemption below it) [VERIFY: MoET to confirm the reading of "cash" in Article 3(3) of Cabinet Resolution No. (134) of 2025; this Manual applies the stricter reading];',
+    'before any occasional transaction of AED 55,000 or more, whether a single transaction or several that appear linked, including installments, deposits, trade-ins and payments in kind, whatever the payment method (the Supplemental Guidance treats AED 55,000 as the minimum legal trigger and not as an exemption below it) [VERIFY: MoET to confirm the reading of "cash" in Article 3(3) of Cabinet Resolution No. (134) of 2025; this Manual applies the stricter reading];',
     'when buying gold from any individual or business, whatever the value (section 7.3);',
     'whenever ML, TF or PF is suspected;',
     'whenever there are doubts about the accuracy or adequacy of previously obtained information.',
@@ -86,11 +86,11 @@ module.exports = (L) => {
   h2('5.2 Timing');
   p('CDD, including sanctions and PEP screening, is completed before the relationship is established and before any transaction is carried out. The Executive Regulations allow identity verification to be deferred in low-risk cases; **this Manual does not use that option**. A walk-in customer who cannot be identified and screened is not served.');
   h2('5.3 Identifying and verifying the customer');
-  p('{{COMPANY_SHORT}} identifies the customer and verifies identity from original, valid documents (or certified copies where originals cannot be seen). Copies taken by staff are dated, signed and marked "original sighted". The standard documents are listed in Appendix F.');
+  p('{{COMPANY_SHORT}} identifies the customer and verifies identity from original, valid documents (or certified copies where originals cannot be seen). Copies taken by staff are dated, signed and marked "original sighted". The documents required for each customer type are set out in the KYC module checklist.');
   table(['Customer type', 'Information obtained and verified'], [
     ['Natural person (UAE resident)', 'Full name (and any alias), date of birth, nationality, Emirates ID (original, scanned), residential address, contact details, occupation/employer, purpose of the transaction.'],
     ['Natural person (non-resident / visitor)', 'As above from a valid passport; proof of entry (visa or entry stamp); address abroad; Emirates ID if held.'],
-    ['Company / body corporate', 'Full legal name and trading names; legal form; registered address and place of business; date and place of incorporation; trade licence; memorandum/articles of association; certificate of incorporation/registration; list of directors, managers and shareholders; ownership structure chart; tax registration (TRN) where applicable; authorisation for signatories and ID of each; full names of governing body members and senior managers.'],
+    ['Company / body corporate', 'Full legal name and trading names; legal form; registered address and place of business; date and place of incorporation; trade license; memorandum/articles of association; certificate of incorporation/registration; list of directors, managers and shareholders; ownership structure chart; tax registration (TRN) where applicable; authorization for signatories and ID of each; full names of governing body members and senior managers.'],
     ['Partnership, trust, foundation, association, non-profit', 'Constituting documents (deed, charter, bylaws); documentary evidence of the appointment of the trustees/managers/guardian; identity of settlor, trustees, beneficiaries, founders, council members, protectors and any person with control. Always High risk and approved by the MLRO and Senior Management.'],
     ['Person acting for the customer', 'Valid power of attorney or written authority; identification and verification of the agent and of the customer they represent.'],
   ], [2500, 6900]);
@@ -107,7 +107,7 @@ module.exports = (L) => {
   h2('5.5 Purpose, nature and source of funds');
   p('{{COMPANY_SHORT}} obtains the purpose and intended nature of the relationship, the expected volume, value, frequency and payment method of transactions, and the source of funds. For Medium and High risk customers, and for cash transactions at or above the reporting threshold, the source of funds is obtained and recorded; for High risk it is evidenced by documents (such as bank statements, sale contracts, invoices, or proof of dividends) and source of wealth is also established.');
   h2('5.6 Politically exposed persons (PEPs)');
-  p('{{COMPANY_SHORT}} screens every customer and beneficial owner for PEP status at onboarding and on an ongoing basis ({{SCREENING_TOOL}}). Being a PEP does not by itself make a person unacceptable, but it requires EDD. The law requires Senior Management approval and source-of-wealth checks for all foreign PEPs, and for domestic PEPs and international-organisation officials in high-risk relationships; this Manual applies them to every PEP:');
+  p('{{COMPANY_SHORT}} screens every customer and beneficial owner for PEP status at onboarding and on an ongoing basis ({{SCREENING_TOOL}}). Being a PEP does not by itself make a person unacceptable, but it requires EDD. The law requires Senior Management approval and source-of-wealth checks for all foreign PEPs, and for domestic PEPs and international-organization officials in high-risk relationships; this Manual applies them to every PEP:');
   bullets([
     'approval of Senior Management before the relationship starts or continues, on the MLRO\'s recommendation;',
     'identification and evidence of source of wealth and source of funds;',
@@ -159,20 +159,20 @@ module.exports = (L) => {
   ]);
   table(['What is screened', 'Details'], [
     ['Customers and prospective customers', 'All current customers and everyone seeking to deal with {{COMPANY_SHORT}}, before any transaction or relationship. Former customers are included for 5 years after the relationship ended.'],
-    ['Beneficial owners and related parties', 'Beneficial owners (natural and legal), directors, authorised signatories, agents and anyone with power of attorney, and persons known to be directly or indirectly connected with a designated person.'],
+    ['Beneficial owners and related parties', 'Beneficial owners (natural and legal), directors, authorized signatories, agents and anyone with power of attorney, and persons known to be directly or indirectly connected with a designated person.'],
     ['Transaction parties', 'Buyers, sellers, suppliers, refiners, agents, freight forwarders, shipping and other parties named in a transaction, and payers and payees of any third-party payment (section 7.2).'],
     ['Employees', 'At hiring and periodically.'],
   ], [3000, 6400]);
-  p('Lists: the UN Consolidated List and the UAE Local Terrorist List are mandatory. Others (for example OFAC, EU, UK) are screened as a risk measure (section 6.8). Screening is done with {{SCREENING_TOOL}}. The MLRO makes sure that every system holding customer or transaction data is covered by the screening, checks that the tool carries the current lists, and records when the lists were last updated. Screening is also effective on weekends and public holidays: {{COMPANY_SHORT}} has a procedure so that no assets can be accessed or used during a closure, and screening resumes from the first minute of business. A record is made of every check (Appendix H).');
+  p('Lists: the UN Consolidated List and the UAE Local Terrorist List are mandatory. Others (for example OFAC, EU, UK) are screened as a risk measure (section 6.8). Screening is done with {{SCREENING_TOOL}}. The MLRO makes sure that every system holding customer or transaction data is covered by the screening, checks that the tool carries the current lists, and records when the lists were last updated. Screening is also effective on weekends and public holidays: {{COMPANY_SHORT}} has a procedure so that no assets can be accessed or used during a closure, and screening resumes from the first minute of business. Routine screening results are kept in the screening tool\'s log, which must be exportable and show the date of each list update. Every alert and its outcome is documented in the KYC module or the screening record.');
   h2('6.5 Matching and handling alerts');
   p('Any alert is passed to the MLRO immediately; the transaction or relationship is put on hold, and nothing is released while the alert is open. The MLRO compares the **key identifiers** first, and only then other identifiers such as aliases:');
   table(['Person', 'Key identifiers'], [
     ['Natural person', 'Full name, date of birth, nationality, ID or passport number, last known address.'],
-    ['Entity / company', 'Name, trade licence number, address of registration, address of branches.'],
+    ['Entity / company', 'Name, trade license number, address of registration, address of branches.'],
   ], [2200, 7200]);
   table(['Result', 'Meaning', 'Action'], [
     ['Negative match', 'No match on the key identifiers.', 'Proceed. Record the check.'],
-    ['False positive', 'A name match that, on the key identifiers, is clearly not the designated person.', 'Document the reasons and evidence (Appendix H). No report is needed.'],
+    ['False positive', 'A name match that, on the key identifiers, is clearly not the designated person.', 'Document the reasons and evidence in the screening record. No report is needed.'],
     ['Partial name match', 'Some key identifiers match, but the MLRO cannot conclude it is a false positive or a confirmed match.', 'Section 6.6, PNMR.'],
     ['Confirmed name match', 'All key identifiers match a designated person.', 'Section 6.6, freeze and CNMR.'],
   ], [2000, 4000, 3400]);
@@ -206,19 +206,19 @@ module.exports = (L) => {
   bullets([
     'Every cash transaction is recorded with the customer\'s identity, the amount, the gold bought or sold, the payment method and the source of funds. For cash, staff record as much detail as possible, including banknote denominations and serial numbers.',
     'A **DPMSR** is filed through goAML for: cash transactions of AED 55,000 or more (or the foreign-currency equivalent) with resident individuals; cash transactions of AED 55,000 or more with non-resident individuals; and transactions of AED 55,000 or more with companies and other entities, **in cash or by wire transfer**. The obligation applies even if CDD is complete and there are no red flags. If the transaction is also suspicious, the DPMSR and the STR/SAR are both filed.',
-    'For a resident individual the Emirates ID or passport is obtained; for a non-resident, the passport or ID; for a company, a copy of the trade licence and the ID (Emirates ID or passport) of its representative. Records are kept for the period in section 10 [VERIFY: DPMSR filing deadline in the current goAML/FIU guidance].',
-    'Linked transactions, instalments, deposits, cash equivalents and trade-ins are added together. Splitting one purchase over separate invoices does not avoid the threshold. Staff must not split a transaction or advise a customer to do so. Apparent structuring is escalated to the MLRO as an Internal SAR even if no single transaction reaches the threshold.',
+    'For a resident individual the Emirates ID or passport is obtained; for a non-resident, the passport or ID; for a company, a copy of the trade license and the ID (Emirates ID or passport) of its representative. Records are kept for the period in section 10 [VERIFY: DPMSR filing deadline in the current goAML/FIU guidance].',
+    'Linked transactions, installments, deposits, cash equivalents and trade-ins are added together. Splitting one purchase over separate invoices does not avoid the threshold. Staff must not split a transaction or advise a customer to do so. Apparent structuring is escalated to the MLRO as an Internal SAR even if no single transaction reaches the threshold.',
     'Cash is counted, receipted and banked as soon as practicable.',
   ]);
   h2('7.2 Payments');
   bullets([
     'Payments are accepted only from, and made only to, the customer or supplier named in the transaction, from an account in their own name.',
-    'The payment method must be consistent with the customer\'s profile. Hard-to-trace instruments (cashier\'s or traveller\'s cheques, postal money orders, prepaid cards, third-party endorsed cheques, cryptocurrencies, IOUs and promissory notes) are not accepted unless the MLRO approves in advance.',
+    'The payment method must be consistent with the customer\'s profile. Hard-to-trace instruments (cashier\'s or traveler\'s checks, postal money orders, prepaid cards, third-party endorsed checks, cryptocurrencies, IOUs and promissory notes) are not accepted unless the MLRO approves in advance.',
     'A payment from or to a third party is not accepted unless the MLRO approves it in advance, after establishing the reason, the identity of the third party and its relationship to the customer, and screening the third party. Where fees are collected for services (refining, consignment), funds must come from the known customer, not from third parties or unknown foreign accounts.',
     'Payment to a different account from the one the customer paid from, or to a country unrelated to the transaction, is treated as a red flag.',
     'Virtual assets are not accepted unless Senior Management has approved the channel in writing, with controls in place.',
   ]);
-  h2('7.3 Buying gold from the public (scrap, jewellery and second-hand gold)');
+  h2('7.3 Buying gold from the public (scrap, jewelry and second-hand gold)');
   bullets([
     'The seller is identified, verified and screened for every purchase, whatever the value, and a purchase record is kept (seller ID, date, description, weight, purity, price, payment method).',
     'The seller states, and where possible shows evidence of, how they came to own the gold. Unverifiable "scrap" claims, bulk or recurrent sales of scrap, scrap volumes that exceed what a retail or personal source would produce, gold without a plausible origin, damaged or defaced marks, or items that appear new are treated as high risk: Enhanced Due Diligence and escalation to the MLRO.',
@@ -227,19 +227,19 @@ module.exports = (L) => {
   h2('7.4 Suppliers, refiners and responsible sourcing');
   p('Under Ministerial Decree No. (68) of 2024, precious metals dealers and other participants in the supply chain must apply the first three steps of the Ministry\'s due diligence regulations for responsible sourcing of gold. Refiners and recyclers must also appoint an independent third-party auditor and submit an annual due diligence report. {{COMPANY_SHORT}} applies steps 1 to 3 to every supplier and upstream counterparty before first dealing and periodically:');
   bullets([
-    ['**Step 1 — Management systems:** this Manual is the company-specific policy on due diligence for gold supply chains; the MLRO is responsible; records are kept; staff are trained.', null],
-    ['**Step 2 — Identify and assess risks:** for each supplier and consignment record the supplier\'s identity, ownership and beneficial owners (CDD as for a customer), licence and regulatory status, the type of gold (mined, recycled/scrap, refined, jewellery), the country of origin and transit, and whether any conflict-affected or high-risk area (CAHRA) is involved. Obtain and check the supporting documents: invoices, packing lists, assay and refiner certificates, import/export and customs documents, transport and insurance documents. Check the plausibility of origin and reconcile weight, purity, value and parties. For rough diamonds, verify the Kimberley Process certificate.', null],
-    ['**Step 3 — Manage and mitigate:** accept, suspend or refuse; apply EDD for higher-risk suppliers; reject incomplete or unverifiable documents; do not deal with any supplier linked to sanctions, serious human rights abuses, funding of armed groups, or illicit trade. Document each decision.', null],
+    ['**Step 1: Management systems:** this Manual is the company-specific policy on due diligence for gold supply chains; the MLRO is responsible; records are kept; staff are trained.', null],
+    ['**Step 2: Identify and assess risks:** for each supplier and consignment record the supplier\'s identity, ownership and beneficial owners (CDD as for a customer), license and regulatory status, the type of gold (mined, recycled/scrap, refined, jewelry), the country of origin and transit, and whether any conflict-affected or high-risk area (CAHRA) is involved. Obtain and check the supporting documents: invoices, packing lists, assay and refiner certificates, import/export and customs documents, transport and insurance documents. Check the plausibility of origin and reconcile weight, purity, value and parties. For rough diamonds, verify the Kimberley Process certificate.', null],
+    ['**Step 3: Manage and mitigate:** accept, suspend or refuse; apply EDD for higher-risk suppliers; reject incomplete or unverifiable documents; do not deal with any supplier linked to sanctions, serious human rights abuses, funding of armed groups, or illicit trade. Document each decision.', null],
     ['If {{COMPANY_SHORT}} also operates as a refiner or recycler, it additionally appoints an independent third-party auditor and files the annual due diligence report with MoET. Otherwise, supplier due diligence is included in the annual independent review (section 3.5).', null],
   ]);
   p('Suppliers are rated Low, Medium or High risk and reviewed on the same schedule as customers (section 5.9). Gold of all kinds must also meet the precious metals stamping and trade-monitoring rules in Federal Law No. (11) of 2015.');
   h2('7.5 Conflict-affected and high-risk areas (CAHRA)');
-  p('The UAE does not publish a list of conflict-affected and high-risk areas, and neither does the OECD. MoET\'s Due Diligence Regulations for Responsible Sourcing of Gold (Version 1, August 2022) define CAHRAs as areas of armed conflict, widespread violence (including violence by criminal networks), or other serious and widespread harm to people, and high-risk areas as those with a high risk of conflict or of widespread or serious abuses, as described in Annex II of the OECD Due Diligence Guidance. They are often marked by political instability or repression, institutional weakness, insecurity, collapse of civil infrastructure, and widespread violations of national or international law. Gold or stones that originate in, are routed through, or are linked to a CAHRA need enhanced scrutiny. **{{COMPANY_SHORT}} therefore decides for itself, and records, which areas it treats as CAHRAs (Appendix I).**');
+  p('The UAE does not publish a list of conflict-affected and high-risk areas, and neither does the OECD. MoET\'s Due Diligence Regulations for Responsible Sourcing of Gold (Version 1, August 2022) define CAHRAs as areas of armed conflict, widespread violence (including violence by criminal networks), or other serious and widespread harm to people, and high-risk areas as those with a high risk of conflict or of widespread or serious abuses, as described in Annex II of the OECD Due Diligence Guidance. They are often marked by political instability or repression, institutional weakness, insecurity, collapse of civil infrastructure, and widespread violations of national or international law. Gold or stones that originate in, are routed through, or are linked to a CAHRA need enhanced scrutiny. **{{COMPANY_SHORT}} therefore decides for itself, and records, which areas it treats as CAHRAs (Appendix F).**');
   h3('Assessment of each supply chain');
   bullets([
     'The assessment is made for **each supply chain** (each consignment or batch), not once for the supplier, and is repeated even if earlier supplies from that supplier were clean or showed no high-risk element.',
     'Collect, for each supply: the country and place of origin and the type of source (large-scale mine, artisanal and small-scale mining (ASM), recycled or scrap, mixed); the transport and transit route; where and by whom it was refined; and the upstream suppliers as far as can be established.',
-    'Use KYC and the red flags below to decide whether the gold was mined, transported or traded in a CAHRA. Record the conclusion and the evidence in Appendix I.',
+    'Use KYC and the red flags below to decide whether the gold was mined, transported or traded in a CAHRA. Record the conclusion and the evidence in Appendix F.',
   ]);
   h3('Location red flags');
   bullets([
@@ -258,17 +258,17 @@ module.exports = (L) => {
     'the supplier has no ethics, integrity, anti-money-laundering, bribery and corruption policies;',
     'the supplier cannot show an effective assessment of its own counterparties and upstream supply chain.',
   ]);
-  p('For ASM gold also check whether the supplier, processing plant, trader or exporter is legitimate: legally registered, cooperative-based or government-recognised, or part of a government or central-bank supported initiative, and whether the mining follows recognised standards and good practice.');
+  p('For ASM gold also check whether the supplier, processing plant, trader or exporter is legitimate: legally registered, cooperative-based or government-recognized, or part of a government or central-bank supported initiative, and whether the mining follows recognized standards and good practice.');
   h3('Outcome and action');
   table(['Finding', 'Action'], [
     ['No CAHRA link and no red flags, on the information collected', 'Record the reasoning. Standard supplier CDD and monitoring apply; no further enhanced due diligence on that supply chain.'],
     ['Red flags, or origin or route information is missing', 'Enhanced due diligence: obtain the missing evidence, corroborate origin and route with independent documents, and escalate to the MLRO. Do not accept the gold until the MLRO has cleared it.'],
     ['CAHRA link confirmed, or red flags cannot be resolved', 'Suspend or refuse the supply chain. Any exception needs Senior Management approval and a written risk-mitigation plan with monitoring. The MLRO considers an STR/SAR, and reviews the supplier relationship.'],
   ], [3300, 6100]);
-  p('The MLRO keeps the CAHRA register in Appendix I and reviews it at least quarterly, and whenever circumstances change. Inputs include: UN Security Council and UAE sanctions regimes; the FATF and National Committee lists (Appendix C); MoET circulars and guidance; and reputable government and intergovernmental reporting on conflict, illicit gold and human rights abuse. Records of each assessment are kept under section 10.');
+  p('The MLRO keeps the CAHRA register in Appendix F and reviews it at least quarterly, and whenever circumstances change. Inputs include: UN Security Council and UAE sanctions regimes; the FATF and National Committee lists (Appendix C); MoET circulars and guidance; and reputable government and intergovernmental reporting on conflict, illicit gold and human rights abuse. Records of each assessment are kept under section 10.');
   h2('7.6 Monitoring and record details');
   bullets([
-    'For covered transactions, keep the certificate numbers and identifying characteristics of the metals or stones involved (weight, purity or quality, colour, shape, cut, markings).',
+    'For covered transactions, keep the certificate numbers and identifying characteristics of the metals or stones involved (weight, purity or quality, color, shape, cut, markings).',
     'For items held in safekeeping for a customer or partner, keep the same records and watch for unusual changes or substitutions.',
     'Wholesale and trading flows: watch for price deviations from the market, mismatches between weight, purity and documents, and circular trading.',
     'Retail: monitor cumulative totals per customer, and record cash denominations and serial numbers.',

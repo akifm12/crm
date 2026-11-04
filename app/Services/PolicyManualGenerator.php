@@ -21,7 +21,7 @@ class PolicyManualGenerator
         'Company' => [
             'COMPANY_NAME'         => ['Full legal name', 'As on the trade licence', 'text'],
             'COMPANY_SHORT'        => ['Short name', 'Used throughout the text', 'text'],
-            'TRADE_LICENCE_NO'     => ['Trade licence number', '', 'text'],
+            'TRADE_LICENSE_NO'     => ['Trade license number', '', 'text'],
             'LICENSING_AUTHORITY'  => ['Licensing authority', 'e.g. Dubai Department of Economy and Tourism', 'text'],
             'GOAML_ENTITY_ID'      => ['goAML entity ID', '', 'text'],
             'SENIOR_MANAGEMENT'    => ['Senior management', 'Who holds senior-management authority, e.g. the Managing Director', 'text'],
@@ -51,7 +51,7 @@ class PolicyManualGenerator
 
     /** Template files, relative to resources/policy-manuals. */
     public const TEMPLATES = [
-        'aml-cft-policy' => 'aml-cft-cpf/AML-CFT-CPF-Manual-Template-v2.2.docx',
+        'aml-cft-policy' => 'aml-cft-cpf/AML-CFT-CPF-Manual-Template-v2.3.docx',
     ];
 
     public static function templatePath(string $manual): ?string
@@ -80,7 +80,7 @@ class PolicyManualGenerator
         $defaults = [
             'COMPANY_NAME'      => (string) $tenant->name,
             'COMPANY_SHORT'     => $short,
-            'TRADE_LICENCE_NO'  => (string) ($tenant->trade_license_no ?? ''),
+            'TRADE_LICENSE_NO'  => (string) ($tenant->trade_license_no ?? ''),
             'MLRO_NAME'         => (string) ($tenant->mlro_name ?? ''),
             'MLRO_EMAIL'        => (string) ($tenant->mlro_email ?? ''),
             'MLRO_PHONE'        => (string) ($tenant->mlro_phone ?? ''),
@@ -93,6 +93,9 @@ class PolicyManualGenerator
         ];
 
         $saved = (array) ($tenant->settings['policy_profile'] ?? []);
+        if (isset($saved['TRADE_LICENCE_NO']) && ! isset($saved['TRADE_LICENSE_NO'])) {
+            $saved['TRADE_LICENSE_NO'] = $saved['TRADE_LICENCE_NO']; // key renamed to US spelling
+        }
         $out = [];
         foreach (self::keys() as $k) {
             $v = $saved[$k] ?? null;
