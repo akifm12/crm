@@ -54,7 +54,7 @@
         </a>
 
         {{-- Clients --}}
-        <div x-data="{ open: {{ request()->routeIs('tenant.clients*') ? 'true' : 'false' }} }">
+        <div x-data="{ open: {{ request()->routeIs('tenant.clients*') || request()->routeIs('tenant.transactions*') ? 'true' : 'false' }} }">
             <button @click="open=!open"
                     class="nav-btn {{ request()->routeIs('tenant.clients*') ? 'active' : '' }}">
                 <svg style="width:16px;height:16px;flex-shrink:0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -77,6 +77,10 @@
                 </a>
                 @endforeach
                 <div style="border-top:1px solid rgba(255,255,255,0.08);margin:6px 0"></div>
+                <a href="{{ route('tenant.transactions.index', $slug) }}"
+                   class="nav-sub {{ request()->routeIs('tenant.transactions.*') ? 'active' : '' }}">
+                    All transactions
+                </a>
                 <a href="{{ route('tenant.clients.create', $slug) }}"
                    class="nav-sub {{ request()->routeIs('tenant.clients.create') ? 'active' : '' }}">
                     + Add new client
