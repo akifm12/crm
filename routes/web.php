@@ -170,6 +170,8 @@ Route::middleware(['auth', \App\Http\Middleware\EnsureAdminUser::class])->group(
     // ── Policy manuals ───────────────────────────────────────────
     Route::get('/policy-manuals',          [\App\Http\Controllers\Admin\PolicyManualController::class, 'index'])->name('policy-manuals.index');
     Route::get('/policy-manuals/{manual}', [\App\Http\Controllers\Admin\PolicyManualController::class, 'show'])->name('policy-manuals.show');
+    Route::post('/policy-manuals/{manual}/generate', [\App\Http\Controllers\Admin\PolicyManualController::class, 'generate'])->name('policy-manuals.generate');
+    Route::get('/policy-manuals/{manual}/template',  [\App\Http\Controllers\Admin\PolicyManualController::class, 'template'])->name('policy-manuals.template');
 
     // ── Help ──────────────────────────────────────────────────────────────
     Route::get('/help/user-manual', fn() => view('admin.help.user-manual'))->name('help.user-manual');

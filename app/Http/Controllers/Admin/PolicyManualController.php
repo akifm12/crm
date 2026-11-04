@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Tenant;
+use App\Services\PolicyManualGenerator;
+use Illuminate\Http\Request;
 
 /**
  * Policy manuals shelf. Each manual is one entry below; the sidebar and the index page
@@ -11,7 +14,7 @@ use App\Http\Controllers\Controller;
 class PolicyManualController extends Controller
 {
     public const MANUALS = [
-        'aml-cft-policy'      => ['AML / CFT / CPF Policy',          'Group-wide policy: governance, MLRO, three lines of defence.'],
+        'aml-cft-policy'      => ['AML / CFT / CPF and Sanctions Manual', 'Full manual for gold and bullion dealers: governance, CDD, TFS, DPMSR, forms. Generates a Word document per client.'],
         'kyc-cdd-procedures'  => ['KYC & CDD Procedures',            'Onboarding, ongoing due diligence, EDD and simplified measures.'],
         'risk-assessment'     => ['Business Risk Assessment',        'Methodology for customer, product, channel and geography risk.'],
         'sanctions-tfs'       => ['Sanctions & TFS Procedure',       'Screening, EOCN notifications, freezing and reporting.'],
@@ -25,15 +28,72 @@ class PolicyManualController extends Controller
         return view('admin.policy-manuals.index', ['manuals' => self::MANUALS]);
     }
 
-    public function show(string $manual)
+    public function show(Request $request, string $manual)
     {
         abort_unless(isset(self::MANUALS[$manual]), 404);
 
-        return view('admin.policy-manuals.show', [
-            'slug'   => $manual,
-            'title'  => self::MANUALS[$manual][0],
-            'blurb'  => self::MANUALS[$manual][1],
+        $data = [
+            'slug'    => $manual,
+            'title'   => self::MANUALS[$manual][0],
+            'blurb'   => self::MANUALS[$manual][1],
             'manuals' => self::MANUALS,
-        ]);
+            'hasTemplate' => PolicyManualGenerator::templatePath($manual) !== null,
+        ];
+
+        if ($data['hasTemplate']) {
+            $data['tenants'] = Tenant::orderBy('name')->get(['id', 'name']);
+            $data['tenant']  = $request->filled('tenant') ? Tenant::find($request->integer('tenant')) : null;
+            $data['fields']  = PolicyManualGenerator::FIELDS;
+            $data['values']  = $data['tenant'] ? PolicyManualGenerator::values($data['tenant']) : [];
+            $data['appointmentOptions'] = PolicyManualGenerator::APPOINTMENT_OPTIONS;
+        }
+
+        return view('admin.policy-manuals.show', $data);
+    }
+
+    /** Save the client's details, and optionally download the filled manual. */
+    public function generate(Request $request, string $manual, PolicyManualGenerator $generator)
+    {
+        abort_unless(isset(self::MANUALS[$manual]), 404);
+        $template = PolicyManualGenerator::templatePath($manual);
+        abort_unless($template, 404);
+
+        $rules = ['tenant_id' => 'required|exists:tenants,id', 'action' => 'nullable|in:save,download'];
+        foreach (PolicyManualGenerator::keys() as $k) {
+            $rules["f.$k"] = 'nullable|string|max:300';
+        }
+        $request->validate($rules);
+
+        $tenant = Tenant::findOrFail($request->integer('tenant_id'));
+
+        $profile = [];
+        foreach (PolicyManualGenerator::keys() as $k) {
+            $profile[$k] = trim((string) $request->input("f.$k", ''));
+        }
+        $settings = (array) ($tenant->settings ?? []);
+        $settings['policy_profile'] = $profile;
+        $tenant->settings = $settings;
+        $tenant->save();
+
+        if ($request->input('action') !== 'download') {
+            return redirect()->route('policy-manuals.show', [$manual, 'tenant' => $tenant->id])
+                ->with('success', 'Details saved for ' . $tenant->name . '.');
+        }
+
+        $file = $generator->generate($template, PolicyManualGenerator::values($tenant));
+        $name = trim(preg_replace('/[^A-Za-z0-9 _-]+/', '', 'AML CFT CPF Manual - ' . $tenant->name)) . '.docx';
+
+        return response()->download($file, $name, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        ])->deleteFileAfterSend(true);
+    }
+
+    /** The master template, with placeholders intact. */
+    public function template(string $manual)
+    {
+        $template = PolicyManualGenerator::templatePath($manual);
+        abort_unless($template, 404);
+
+        return response()->download($template, basename($template));
     }
 }

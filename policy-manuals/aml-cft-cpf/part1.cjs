@@ -22,6 +22,7 @@ module.exports = (L) => {
     ['{{VERSION}} / {{ISSUE_DATE}} / {{APPROVER}}', 'Document control', '1.0 / 1 January 2027 / Managing Director'],
   ], [3300, 3900, 2200]);
   p('**Cyan [VERIFY: …] tags** mark statements that depend on the current text of a law, circular or authority guidance (deadlines, thresholds, instrument numbers, report types). They are to be checked against the latest MoET, FIU and EOCN publications and removed once confirmed. The regulatory change log in section 1.6 records each update.');
+  p('End of template guide.');
 
   // ── Cover ──────────────────────────────────────────────────────────────
   add(new Paragraph({ children: [new PageBreak()] }));
@@ -64,7 +65,7 @@ module.exports = (L) => {
     'Cabinet Decision No. (109) of 2023 on beneficial owner procedures, and Cabinet Decision No. (132) of 2023 on the penalties for breaching it.',
     'Cabinet Resolution No. (71) of 2024 on violations and administrative penalties for entities supervised by the Ministry of Justice and MoET [VERIFY: whether this list is still the operative fine schedule alongside Article (17) of Federal Decree-Law No. (10) of 2025].',
     'Ministerial Decree No. (68) of 2024 on adherence to the due diligence regulations for responsible sourcing of gold, and Federal Law No. (11) of 2015 on Monitoring Trade in Precious Metals and its Stamping.',
-    'Ministerial Decision No. (253) of 2025 on the controls and conditions for registration of DNFBPs by licensing authorities (11 December 2025) [VERIFY: content applying to {{COMPANY_SHORT}}; text not yet reviewed].',
+    'Ministerial Decision No. (253) of 2025 on the controls and conditions for registration of DNFBPs by licensing authorities (11 December 2025) [VERIFY: content applying to the company; text not yet reviewed].',
     'Federal Decree-Law No. (31) of 2021 (Crimes and Penalties), No. (38) of 2022 (Criminal Procedure) and No. (34) of 2021 (cybercrimes), and the federal law on combating terrorism offences [VERIFY: current instrument].',
   ]);
   h3('MoET circulars and guidance (DPMS)');
