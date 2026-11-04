@@ -15,6 +15,7 @@ class PolicyManualController extends Controller
 {
     public const MANUALS = [
         'aml-cft-policy'      => ['AML / CFT / CPF and Sanctions Manual', 'Full manual for gold and bullion dealers: governance, CDD, TFS, DPMSR, forms. Generates a Word document per client.'],
+        'supply-chain-policy' => ['Supply Chain Policy for Responsible Sourcing', 'OECD five-step policy for gold and bullion traders under Ministerial Decree 68 of 2024. Generates a Word document per client.'],
         'kyc-cdd-procedures'  => ['KYC & CDD Procedures',            'Onboarding, ongoing due diligence, EDD and simplified measures.'],
         'risk-assessment'     => ['Business Risk Assessment',        'Methodology for customer, product, channel and geography risk.'],
         'sanctions-tfs'       => ['Sanctions & TFS Procedure',       'Screening, EOCN notifications, freezing and reporting.'],
@@ -81,7 +82,7 @@ class PolicyManualController extends Controller
         }
 
         $file = $generator->generate($template, PolicyManualGenerator::values($tenant));
-        $name = trim(preg_replace('/[^A-Za-z0-9 _-]+/', '', 'AML CFT CPF Manual - ' . $tenant->name)) . '.docx';
+        $name = trim(preg_replace('/[^A-Za-z0-9 _-]+/', '', self::MANUALS[$manual][0] . ' - ' . $tenant->name)) . '.docx';
 
         return response()->download($file, $name, [
             'Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',

@@ -35,6 +35,10 @@ class PolicyManualGenerator
             'DEPUTY_MLRO_EMAIL'    => ['Deputy MLRO email', '', 'text'],
             'DEPUTY_MLRO_PHONE'    => ['Deputy MLRO phone', '', 'text'],
         ],
+        'Supply chain policy' => [
+            'WEBSITE'              => ['Website', 'Where the policy statement and grievance mechanism are published', 'text'],
+            'GRIEVANCE_CONTACT'    => ['Grievance contact', 'Confidential channel for concerns (email, hotline or form)', 'text'],
+        ],
         'Controls and document' => [
             'SCREENING_TOOL'       => ['Screening tool', 'Sanctions / PEP / adverse media tool in use', 'text'],
             'RETENTION_YEARS'      => ['Record retention (years)', 'Not less than 5', 'text'],
@@ -52,6 +56,7 @@ class PolicyManualGenerator
     /** Template files, relative to resources/policy-manuals. */
     public const TEMPLATES = [
         'aml-cft-policy' => 'aml-cft-cpf/AML-CFT-CPF-Manual-Template-v2.3.1.docx',
+        'supply-chain-policy' => 'supply-chain/Supply-Chain-Policy-Template-v1.docx',
     ];
 
     public static function templatePath(string $manual): ?string
