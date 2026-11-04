@@ -163,6 +163,9 @@
                     <div x-show="open" x-cloak class="ml-8 mt-1 space-y-0.5">
                         <a href="{{ route('policy-manuals.index') }}"
                            class="block px-3 py-1.5 rounded-md text-xs {{ request()->routeIs('policy-manuals.index') ? 'bg-blue-600 text-white' : 'text-blue-200 hover:bg-blue-600' }}">All manuals</a>
+                        @php $pmNew = \Illuminate\Support\Facades\Schema::hasTable('regulatory_updates') ? \App\Models\RegulatoryUpdate::where('status', 'new')->count() : 0; @endphp
+                        <a href="{{ route('policy-manuals.updates') }}"
+                           class="flex items-center justify-between px-3 py-1.5 rounded-md text-xs {{ request()->routeIs('policy-manuals.updates*') ? 'bg-blue-600 text-white' : 'text-blue-200 hover:bg-blue-600' }}">Regulatory updates @if($pmNew)<span class="ml-2 px-1.5 rounded-full bg-amber-400 text-blue-900 font-semibold">{{ $pmNew }}</span>@endif</a>
                         @foreach(\App\Http\Controllers\Admin\PolicyManualController::MANUALS as $mSlug => $m)
                         <a href="{{ route('policy-manuals.show', $mSlug) }}"
                            class="block px-3 py-1.5 rounded-md text-xs {{ request()->url() === route('policy-manuals.show', $mSlug) ? 'bg-blue-600 text-white' : 'text-blue-200 hover:bg-blue-600' }}">{{ $m[0] }}</a>

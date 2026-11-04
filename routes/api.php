@@ -13,6 +13,9 @@ use App\Http\Controllers\Api\ResourceController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
+    // Daily regulatory check from the administrator's PC (bearer token, see config/services.php)
+    Route::post('/policy-watch', [\App\Http\Controllers\Admin\RegulatoryUpdateController::class, 'ingest'])->middleware('throttle:30,1');
+
     // ── Public reads ─────────────────────────────────────────────────────
     Route::get('/home',                 [HomeController::class, 'index']);
     Route::get('/services',             [PagesController::class, 'services']);

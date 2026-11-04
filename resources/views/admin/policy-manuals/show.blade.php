@@ -36,6 +36,12 @@
     </div>
 
     @if($tenant)
+    @if(!empty($generated))
+    <p class="mt-4 text-xs {{ ($generated['template'] ?? '') === $templateName ? 'text-gray-500' : 'text-amber-700 font-medium' }}">
+        Last generated {{ \Illuminate\Support\Carbon::parse($generated['at'])->format('j M Y') }}.
+        @if(($generated['template'] ?? '') !== $templateName) The template has been updated since, so generate it again to include the changes. @endif
+    </p>
+    @endif
     <form method="POST" action="{{ route('policy-manuals.generate', $slug) }}" class="mt-4 space-y-4">
         @csrf
         <input type="hidden" name="tenant_id" value="{{ $tenant->id }}">

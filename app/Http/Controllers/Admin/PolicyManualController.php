@@ -47,6 +47,9 @@ class PolicyManualController extends Controller
             $data['fields']  = PolicyManualGenerator::FIELDS;
             $data['values']  = $data['tenant'] ? PolicyManualGenerator::values($data['tenant']) : [];
             $data['appointmentOptions'] = PolicyManualGenerator::APPOINTMENT_OPTIONS;
+            $gen = $data['tenant'] ? ($data['tenant']->settings['policy_generated'][$manual] ?? null) : null;
+            $data['generated'] = $gen;
+            $data['templateName'] = basename(PolicyManualGenerator::templatePath($manual));
         }
 
         return view('admin.policy-manuals.show', $data);
@@ -82,6 +85,10 @@ class PolicyManualController extends Controller
         }
 
         $file = $generator->generate($template, PolicyManualGenerator::values($tenant));
+        $settings = (array) ($tenant->settings ?? []);
+        $settings['policy_generated'][$manual] = ['template' => basename($template), 'at' => now()->toDateTimeString()];
+        $tenant->settings = $settings;
+        $tenant->save();
         $name = trim(preg_replace('/[^A-Za-z0-9 _-]+/', '', self::MANUALS[$manual][0] . ' - ' . $tenant->name)) . '.docx';
 
         return response()->download($file, $name, [

@@ -47,4 +47,8 @@ return [
         ],
     ],
 
+    'policy_watch' => [
+        'token' => env('POLICY_WATCH_TOKEN'),
+    ],
+
 ];
