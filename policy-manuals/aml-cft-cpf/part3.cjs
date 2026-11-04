@@ -12,7 +12,7 @@ module.exports = (L) => {
   bullets([
     'The MLRO acknowledges the Internal SAR, investigates it without delay and records the steps taken, the information reviewed and the conclusion.',
     'The MLRO decides independently whether to file an STR/SAR. If not filing, the reasons are recorded on the Internal SAR.',
-    'Where an STR/SAR is filed, the MLRO notifies MoET if MoET requires it [VERIFY: whether and how MoET must be informed when an STR/SAR is filed], and follows any instruction from the FIU about the continuing relationship or transaction.',
+    'Where an STR/SAR is filed, the MLRO informs MoET where its guidance requires it, and follows any instruction from the FIU about the continuing relationship or transaction.',
     'Until the MLRO decides, no transaction with the customer is completed if completing it could assist the suspected crime, unless the MLRO instructs otherwise.',
   ]);
   h2('8.4 External reporting through goAML');

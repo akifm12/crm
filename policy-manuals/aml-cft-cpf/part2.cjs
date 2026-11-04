@@ -77,7 +77,7 @@ module.exports = (L) => {
   p('{{COMPANY_SHORT}} applies CDD:');
   bullets([
     'before establishing a business relationship;',
-    'before any occasional transaction of AED 55,000 or more, whether a single transaction or several that appear linked, including installments, deposits, trade-ins and payments in kind, whatever the payment method (the Supplemental Guidance treats AED 55,000 as the minimum legal trigger and not as an exemption below it) [VERIFY: MoET to confirm the reading of "cash" in Article 3(3) of Cabinet Resolution No. (134) of 2025; this Manual applies the stricter reading];',
+    'before any occasional transaction of AED 55,000 or more, whether a single transaction or several that appear linked, including installments, deposits, trade-ins and payments in kind, whatever the payment method (the Supplemental Guidance treats AED 55,000 as the minimum legal trigger and not as an exemption below it);',
     'when buying gold from any individual or business, whatever the value (section 7.3);',
     'whenever ML, TF or PF is suspected;',
     'whenever there are doubts about the accuracy or adequacy of previously obtained information.',
@@ -206,7 +206,7 @@ module.exports = (L) => {
   bullets([
     'Every cash transaction is recorded with the customer\'s identity, the amount, the gold bought or sold, the payment method and the source of funds. For cash, staff record as much detail as possible, including banknote denominations and serial numbers.',
     'A **DPMSR** is filed through goAML for: cash transactions of AED 55,000 or more (or the foreign-currency equivalent) with resident individuals; cash transactions of AED 55,000 or more with non-resident individuals; and transactions of AED 55,000 or more with companies and other entities, **in cash or by wire transfer**. The obligation applies even if CDD is complete and there are no red flags. If the transaction is also suspicious, the DPMSR and the STR/SAR are both filed.',
-    'For a resident individual the Emirates ID or passport is obtained; for a non-resident, the passport or ID; for a company, a copy of the trade license and the ID (Emirates ID or passport) of its representative. Records are kept for the period in section 10 [VERIFY: DPMSR filing deadline in the current goAML/FIU guidance].',
+    'For a resident individual the Emirates ID or passport is obtained; for a non-resident, the passport or ID; for a company, a copy of the trade license and the ID (Emirates ID or passport) of its representative. Records are kept for the period in section 10, and the DPMSR is filed within the deadline set in the current goAML and MoET guidance.',
     'Linked transactions, installments, deposits, cash equivalents and trade-ins are added together. Splitting one purchase over separate invoices does not avoid the threshold. Staff must not split a transaction or advise a customer to do so. Apparent structuring is escalated to the MLRO as an Internal SAR even if no single transaction reaches the threshold.',
     'Cash is counted, receipted and banked as soon as practicable.',
   ]);

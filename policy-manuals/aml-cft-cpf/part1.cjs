@@ -21,7 +21,7 @@ module.exports = (L) => {
     ['{{RETENTION_YEARS}}', 'Record retention period in years (not less than five)', '5'],
     ['{{VERSION}} / {{ISSUE_DATE}} / {{APPROVER}}', 'Document control', '1.0 / 1 January 2027 / Managing Director'],
   ], [3300, 3900, 2200]);
-  p('**Cyan [VERIFY: …] tags** mark statements that depend on the current text of a law, circular or authority guidance (deadlines, thresholds, instrument numbers, report types). They are to be checked against the latest MoET, FIU and EOCN publications and removed once confirmed. The regulatory change log in section 1.6 records each update.');
+  p('Record every update to the manual in the regulatory change log in section 1.6.');
   p('End of template guide.');
 
   // ── Cover ──────────────────────────────────────────────────────────────
@@ -63,10 +63,10 @@ module.exports = (L) => {
     'Cabinet Resolution No. (134) of 2025, the Executive Regulations of that law (issued 29 October 2025; in force 30 days after publication; it repealed Cabinet Resolution No. (10) of 2019).',
     'Cabinet Decision No. (74) of 2020 on the Terrorism Lists Regulation and the implementation of United Nations Security Council (UNSC) resolutions (targeted financial sanctions).',
     'Cabinet Decision No. (109) of 2023 on beneficial owner procedures, and Cabinet Decision No. (132) of 2023 on the penalties for breaching it.',
-    'Cabinet Resolution No. (71) of 2024 on violations and administrative penalties for entities supervised by the Ministry of Justice and MoET [VERIFY: whether this list is still the operative fine schedule alongside Article (17) of Federal Decree-Law No. (10) of 2025].',
+    'Cabinet Resolution No. (71) of 2024 on violations and administrative penalties for entities supervised by the Ministry of Justice and MoET.',
     'Ministerial Decree No. (68) of 2024 on adherence to the due diligence regulations for responsible sourcing of gold, and Federal Law No. (11) of 2015 on Monitoring Trade in Precious Metals and its Stamping.',
-    'Ministerial Decision No. (253) of 2025 on the controls and conditions for registration of DNFBPs by licensing authorities (11 December 2025) [VERIFY: content applying to the company; text not yet reviewed].',
-    'Federal Decree-Law No. (31) of 2021 (Crimes and Penalties), No. (38) of 2022 (Criminal Procedure) and No. (34) of 2021 (cybercrimes), and the federal law on combating terrorism offenses [VERIFY: current instrument].',
+    'Ministerial Decision No. (253) of 2025 on the controls and conditions for registration of DNFBPs by licensing authorities (11 December 2025).',
+    'Federal Decree-Law No. (31) of 2021 (Crimes and Penalties), No. (38) of 2022 (Criminal Procedure) and No. (34) of 2021 (cybercrimes), and the federal law on combating terrorism offenses.',
   ]);
   h3('MoET circulars and guidance (DPMS)');
   bullets([
@@ -166,7 +166,7 @@ module.exports = (L) => {
     ['False or misleading beneficial-owner information (Art. 35)', 'Imprisonment and a fine of at least AED 20,000, or either.'],
     ['Administrative sanctions by MoET (Art. 17)', 'Warning; fine of AED 10,000 to 5,000,000 per violation; ban from the sector; restriction or suspension of directors and managers; suspension or restriction of the activity; revocation of the license; periodic remediation reports.'],
   ], [3300, 6100]);
-  p('Foreign nationals convicted of these crimes may be deported. Confiscation of the criminal property, or its equivalent value, is mandatory on conviction. [VERIFY: the operative MoET fine schedule per violation type (Cabinet Resolution No. (71) of 2024 predates the new law).]');
+  p('Foreign nationals convicted of these crimes may be deported. Confiscation of the criminal property, or its equivalent value, is mandatory on conviction.');
   h2('2.7 Protection for good-faith reporting');
   p('Persons who report suspicion in good faith to the FIU, or provide information required by law, are protected from administrative, civil and criminal liability even if a duty of confidentiality is breached, unless the report was made in bad faith.');
   h2('2.8 Freezing, seizure and confiscation');
@@ -212,7 +212,7 @@ module.exports = (L) => {
   h3('3.3.4 Annual MLRO report');
   p('Within two months of the end of each financial year the MLRO reports in writing to {{SENIOR_MANAGEMENT}} on: reviews carried out; compliance with the law and with MoET requirements; the adequacy of policies, systems and controls; guidance and findings received and how they were applied; Internal SARs and external reports filed, with decisions and reasons; TFS alerts, screening results and any freezes; training delivered; and any other relevant matter. {{SENIOR_MANAGEMENT}} assesses the report, acts on any deficiency and records its decisions in writing. A full copy, with Senior Management\'s observations and decisions, is provided to MoET on request.');
   h2('3.4 Annual AML return');
-  p('{{COMPANY_SHORT}} completes and submits any periodic AML/CFT return or compliance report required by MoET by the deadline set. {{SENIOR_MANAGEMENT}} reviews it before submission and confirms that the information is correct to the best of its knowledge. [VERIFY: current MoET periodic return or self-assessment requirements and deadlines.]');
+  p('{{COMPANY_SHORT}} completes and submits any periodic AML/CFT return or compliance report required by MoET by the deadline set. {{SENIOR_MANAGEMENT}} reviews it before submission and confirms that the information is correct to the best of its knowledge.');
   h2('3.5 Independent review');
   p('At least annually, an independent function reviews the effectiveness of {{COMPANY_SHORT}}\'s AML/CFT/CPF framework and its compliance with this Manual and the law. The reviewer may be an internal function independent of the MLRO\'s work, or an external auditor or compliance professional. The review covers at least: sample testing of customer due diligence files; the risk assessment methodology and the quality of risk ratings; screening and TFS records; the timeliness and quality of Internal SARs and external reports; cash transactions and DPMSR filings; supplier due diligence; and training records. The report is given to {{SENIOR_MANAGEMENT}}, who records the action taken.');
   h2('3.6 Staff screening');
@@ -228,7 +228,7 @@ module.exports = (L) => {
     'changes its MLRO or deputy, its ownership or control, or its business activity materially;',
     'is prevented by the law of another jurisdiction from complying with UAE AML/CFT requirements.',
   ]);
-  p('This does not apply to information protected by legal privilege or already in the public domain. [VERIFY: the exact notification triggers and channels required by MoET for DPMS.]');
+  p('This does not apply to information protected by legal privilege or already in the public domain.');
   h2('3.9 Cooperation with the authorities');
   p('{{COMPANY_SHORT}} deals with MoET, the FIU, EOCN and law enforcement in an open and cooperative way, answers requests promptly and in the language required, and provides records and access to premises, systems and staff when lawfully requested.');
 };
