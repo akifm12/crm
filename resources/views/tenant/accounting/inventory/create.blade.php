@@ -1,148 +1,113 @@
 @extends('layouts.tenant')
-@section('title', 'New Inventory Item — ' . $tenant->name)
+@section('title', 'New Inventory Item')
 @section('page-title', 'New Inventory Item')
-@section('page-subtitle', 'Define a metal SKU to track stock and cost for')
+@section('page-subtitle', 'Add a gold, silver or precious metal item')
 
 @section('content')
+<div class="max-w-2xl">
+<form action="{{ route('tenant.accounting.inventory.store', $tenant->slug) }}" method="POST" class="space-y-5">
+@csrf
 
-<form method="POST" action="{{ route('tenant.accounting.inventory.store', $tenant->slug) }}"
-      class="bg-white rounded-xl border border-gray-200 p-5 max-w-xl space-y-4"
-      x-data="{
-          metal: '',
-          preset: '',
-          weight: '',
-          purity: '',
-          form: '',
-          name: '',
-          sku: '',
-          skuEdited: false,
-          presets: {{ json_encode(\App\Support\BarWeightPresets::all()) }},
-
-          metalCode: { gold: 'AU', silver: 'AG', platinum: 'PT', palladium: 'PD' },
-          formCode(f) {
-              const map = { bar:'BAR', coin:'COIN', jewellery:'JWLRY', raw:'RAW', scrap:'SCRP' };
-              const key = (f || '').toLowerCase();
-              return map[key] || (f ? f.slice(0,4).toUpperCase() : '');
-          },
-          weightCode(g) {
-              if (!g || parseFloat(g) <= 0) return '';
-              const v = parseFloat(g);
-              if (v >= 1000 && v % 1000 === 0) return (v/1000) + 'KG';
-              return (Number.isInteger(v) ? v : parseFloat(v.toFixed(1))) + 'G';
-          },
-          purityCode(p) {
-              if (!p || parseFloat(p) <= 0) return '';
-              return String(parseFloat(p)).replace('.','');
-          },
-          buildSku() {
-              const parts = [
-                  this.metalCode[this.metal] || '',
-                  this.purityCode(this.purity),
-                  this.formCode(this.form),
-                  this.weightCode(this.weight),
-              ].filter(Boolean);
-              return parts.join('-');
-          },
-          refreshSku() {
-              if (!this.skuEdited) { this.sku = this.buildSku(); }
-          },
-
-          applyPreset() {
-              if (this.preset === '' || this.preset === 'custom') {
-                  if (this.preset === 'custom') { this.weight = ''; }
-                  this.refreshSku();
-                  return;
-              }
-              const p = this.presets[this.preset];
-              this.weight = p.grams;
-              if (this.metal) {
-                  this.name = this.metal.charAt(0).toUpperCase() + this.metal.slice(1) + ' ' + p.label;
-              }
-              this.refreshSku();
-          },
-          onMetalChange() {
-              if (this.preset !== '' && this.preset !== 'custom') { this.applyPreset(); }
-              else { this.refreshSku(); }
-          },
-      }">
-    @csrf
-    <div class="grid grid-cols-2 gap-3">
+<div class="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
+    <h3 class="text-sm font-semibold text-gray-700">Basic Details</h3>
+    <div class="grid grid-cols-2 gap-4">
         <div>
-            <label class="block text-xs font-medium text-gray-600 mb-1">Metal <span class="text-red-500">*</span></label>
-            <select name="metal_type" required x-model="metal" @change="onMetalChange()"
-                    class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white">
-                <option value="">Select metal…</option>
-                @foreach(\App\Models\InventoryItem::METAL_TYPES as $metal)
-                    <option value="{{ $metal }}">{{ ucfirst($metal) }}</option>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Item Code</label>
+            <input type="text" name="code" value="{{ old('code') }}" class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2" placeholder="e.g. AU-1KG-999">
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Category</label>
+            <select name="category" class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2">
+                <option value="gold_bar">Gold Bar</option>
+                <option value="gold_coin">Gold Coin</option>
+                <option value="jewelry">Jewelry</option>
+                <option value="silver_bar">Silver Bar</option>
+                <option value="silver_coin">Silver Coin</option>
+                <option value="other">Other</option>
+            </select>
+        </div>
+        <div class="col-span-2">
+            <label class="block text-xs font-medium text-gray-600 mb-1">Name (English) *</label>
+            <input type="text" name="name" value="{{ old('name') }}" class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2" required placeholder="e.g. 1 KG Gold Bar PAMP Suisse">
+        </div>
+        <div class="col-span-2">
+            <label class="block text-xs font-medium text-gray-600 mb-1">Name (Arabic)</label>
+            <input type="text" name="name_arabic" value="{{ old('name_arabic') }}" class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2" dir="rtl">
+        </div>
+    </div>
+</div>
+
+<div class="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
+    <h3 class="text-sm font-semibold text-gray-700">Gold / Metal Specs</h3>
+    <div class="grid grid-cols-3 gap-4">
+        <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Unit</label>
+            <select name="unit" class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2">
+                <option value="pcs">pcs</option>
+                <option value="grams">grams</option>
+                <option value="oz">troy oz</option>
+                <option value="kg">kg</option>
+            </select>
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Gold Purity (‰)</label>
+            <input type="number" name="gold_purity" value="{{ old('gold_purity') }}" step="0.1" min="0" max="999.9" class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 font-mono" placeholder="999.9">
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Weight per unit (g)</label>
+            <input type="number" name="weight_per_unit_grams" value="{{ old('weight_per_unit_grams') }}" step="0.0001" min="0" class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 font-mono" placeholder="1000.0">
+        </div>
+    </div>
+</div>
+
+<div class="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
+    <h3 class="text-sm font-semibold text-gray-700">Pricing & VAT</h3>
+    <div class="grid grid-cols-3 gap-4">
+        <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Current Sell Price (AED)</label>
+            <input type="number" name="current_price" value="{{ old('current_price', 0) }}" step="0.0001" min="0" class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 font-mono">
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Cost Price (AED)</label>
+            <input type="number" name="cost_price" value="{{ old('cost_price', 0) }}" step="0.0001" min="0" class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 font-mono">
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">VAT Rate (%)</label>
+            <select name="vat_rate" class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2">
+                <option value="0">0% — Investment Gold</option>
+                <option value="5">5% — Standard</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<div class="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
+    <h3 class="text-sm font-semibold text-gray-700">Accounts & Opening Stock</h3>
+    <div class="grid grid-cols-2 gap-4">
+        <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Sales Account</label>
+            <select name="sales_account_id" class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2">
+                <option value="">— none —</option>
+                @foreach($accounts->where('type', 'REVENUE') as $acc)
+                <option value="{{ $acc->id }}">{{ $acc->code }} – {{ $acc->name }}</option>
                 @endforeach
             </select>
         </div>
         <div>
-            <label class="block text-xs font-medium text-gray-600 mb-1">Bar / unit size</label>
-            <select x-model="preset" @change="applyPreset()"
-                    class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white">
-                <option value="">—</option>
-                <template x-for="(p, index) in presets" :key="index">
-                    <option :value="index" x-text="p.label"></option>
-                </template>
-                <option value="custom">Custom weight…</option>
-            </select>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Opening Stock (qty)</label>
+            <input type="number" name="opening_stock" value="{{ old('opening_stock', 0) }}" step="0.0001" min="0" class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 font-mono">
         </div>
     </div>
     <div>
-        <label class="block text-xs font-medium text-gray-600 mb-1">Name <span class="text-red-500">*</span></label>
-        <input type="text" name="name" required placeholder="e.g. Gold Bar 1kg 999.9" x-model="name"
-               class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg">
+        <label class="block text-xs font-medium text-gray-600 mb-1">Notes</label>
+        <textarea name="notes" rows="2" class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2">{{ old('notes') }}</textarea>
     </div>
-    <div class="grid grid-cols-3 gap-3">
-        <div>
-            <label class="block text-xs font-medium text-gray-600 mb-1">Purity</label>
-            <input type="number" step="0.001" name="purity" placeholder="999.900"
-                   x-model="purity" @input="refreshSku()"
-                   class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg">
-        </div>
-        <div>
-            <label class="block text-xs font-medium text-gray-600 mb-1">Form</label>
-            <input type="text" name="form" list="form-types" autocomplete="off"
-                   placeholder="Bar, Coin, Jewellery…"
-                   x-model="form" @input="refreshSku()"
-                   class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg">
-            <datalist id="form-types">
-                @foreach($formTypes as $ft)
-                <option value="{{ ucfirst($ft) }}"></option>
-                @endforeach
-            </datalist>
-        </div>
-        <div>
-            <label class="block text-xs font-medium text-gray-600 mb-1">
-                SKU
-                <button type="button" x-show="skuEdited" @click="skuEdited = false; sku = buildSku()"
-                        class="ml-1 text-xs text-blue-500 hover:underline font-normal">reset</button>
-            </label>
-            <input type="text" name="sku" x-model="sku"
-                   @input="skuEdited = $event.target.value !== buildSku()"
-                   placeholder="Auto-generated"
-                   :class="skuEdited ? 'border-blue-300 bg-blue-50' : 'border-gray-200'"
-                   class="w-full px-3 py-2 text-sm border rounded-lg font-mono">
-            <p class="text-xs text-gray-400 mt-0.5" x-show="!skuEdited && !sku">Fills in as you complete the fields above.</p>
-            <p class="text-xs text-blue-500 mt-0.5" x-show="skuEdited">Custom — click reset to regenerate.</p>
-        </div>
-    </div>
-    <div>
-        <label class="block text-xs font-medium text-gray-600 mb-1">Nominal weight (grams)</label>
-        <input type="number" step="0.0001" name="nominal_weight_grams" x-model="weight"
-               @input="refreshSku()"
-               placeholder="Leave blank for arbitrary/scrap weights"
-               class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg">
-        <p class="text-xs text-gray-400 mt-1">Informational catalog size only — actual stock quantity is always entered per movement.</p>
-    </div>
-    <div class="flex items-center justify-between">
-        <button type="submit" class="px-5 py-2.5 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700">
-            Create item
-        </button>
-        <a href="{{ route('tenant.accounting.inventory.options', $tenant->slug) }}"
-           class="text-xs text-gray-400 hover:text-gray-600">Manage form types →</a>
-    </div>
+</div>
+
+<div class="flex gap-3">
+    <button type="submit" class="px-5 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700">Create Item</button>
+    <a href="{{ route('tenant.accounting.inventory.index', $tenant->slug) }}" class="px-5 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50">Cancel</a>
+</div>
 </form>
-
+</div>
 @endsection

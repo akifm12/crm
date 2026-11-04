@@ -1,287 +1,128 @@
 @extends('layouts.tenant')
-@section('title', 'Edit ' . $bill->bill_number . ' — ' . $tenant->name)
+@section('title', 'Edit ' . $bill->bill_number)
 @section('page-title', 'Edit ' . $bill->bill_number)
-@section('page-subtitle', $bill->supplier_name)
+@section('page-subtitle', 'Draft bill — edit before posting')
 
 @section('content')
-
-@if($errors->any())
-<div class="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 mb-4">
-    <ul class="list-disc pl-4">@foreach($errors->all() as $e)<li>{{ $e }}</li>@endforeach</ul>
-</div>
-@endif
-@if(session('error'))
-<div class="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 mb-4">{{ session('error') }}</div>
-@endif
-
-@php
-$existingLines = $bill->lines->map(fn ($l) => [
-    'description'   => $l->description,
-    'category'      => $l->category,
-    'amount'        => (float) $l->amount,
-    'vat_treatment' => $l->vat_treatment,
-    'vat_rate'      => (float) $l->vat_rate,
-])->values()->all();
-@endphp
-
-<form method="POST" action="{{ route('tenant.accounting.bills.update', [$tenant->slug, $bill->id]) }}"
-      x-data="billForm()"
-      @keydown.enter="if ($event.target.tagName === 'INPUT' && $event.target.type !== 'submit') $event.preventDefault()"
-      class="max-w-4xl">
+<form action="{{ route('tenant.accounting.bills.update', [$tenant->slug, $bill->id]) }}" method="POST">
     @csrf @method('PUT')
-
-    {{-- Header --}}
-    @php
-        $suppliersList   = $suppliers->map(fn($s) => ['id'=>$s->id,'name'=>$s->name,'vat'=>$s->vat_number??''])->values()->toArray();
-        $initSupplierId  = old('supplier_id', $bill->supplier_id ?? ($suppliers->isEmpty() ? '0' : ''));
-        $initManualName  = old('supplier_name', $bill->supplier_name);
-        $initManualVat   = old('supplier_vat_number', $bill->supplier_vat_number);
-    @endphp
-    <script>
-    function supplierPickerEdit() {
-        return {
-            suppliers: @json($suppliersList),
-            added: [], showAdd: false, saving: false, err: '', form: {name: '', vat_number: '', email: '', phone: ''},
-            async addSupplier() {
-                this.saving = true; this.err = '';
-                try {
-                    const r = await fetch(@json(route('tenant.accounting.suppliers.store', $tenant->slug)), {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': @json(csrf_token())},
-                        body: JSON.stringify(this.form)
-                    });
-                    const d = await r.json();
-                    if (!r.ok) { this.err = d.message || 'Could not save the supplier.'; return; }
-                    const s = {id: d.id, name: d.name, vat: d.vat_number || ''};
-                    this.suppliers.push(s); this.added.push(s);
-                    this.form = {name: '', vat_number: '', email: '', phone: ''};
-                    this.showAdd = false;
-                    this.$nextTick(() => this.pick(String(s.id)));
-                } catch (e) { this.err = 'Could not save the supplier.'; }
-                finally { this.saving = false; }
-            },
-            selectedId: @json((string) $initSupplierId),
-            manualName: @json($initManualName),
-            manualVat:  @json($initManualVat),
-            get isManual() { return this.selectedId === '' || this.selectedId === '0'; },
-            pick(id) {
-                this.selectedId = id;
-                if (!this.isManual) {
-                    let s = this.suppliers.find(x => x.id == id);
-                    if (s) { this.manualName = s.name; this.manualVat = s.vat; }
-                }
-            }
-        };
-    }
-    </script>
-    <div class="bg-white rounded-xl border border-gray-200 p-5 mb-5" x-data="supplierPickerEdit()">
-        <div class="grid grid-cols-2 gap-4 mb-4">
-            <div>
-                <label class="flex items-center justify-between text-xs font-medium text-gray-600 mb-1"><span>Supplier <span class="text-red-500">*</span></span>
-                    <button type="button" @click="showAdd = true" class="text-blue-600 hover:underline font-medium">+ Add supplier</button></label>
-                <select name="supplier_id" x-model="selectedId" @change="pick(selectedId)"
-                        class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white">
-                    <option value="">— Select supplier —</option>
-                    @foreach($suppliers as $s)
-                    <option value="{{ $s->id }}">{{ $s->name }}</option>
-                    @endforeach
-                    <template x-for="a in added" :key="a.id"><option :value="a.id" x-text="a.name"></option></template>
-                    <option value="0">Other / manual entry</option>
-                </select>
-            </div>
-            <div x-show="!isManual && selectedId !== ''" x-cloak>
-                <label class="block text-xs font-medium text-gray-600 mb-1">Supplier VAT #</label>
-                <p class="px-3 py-2 text-sm text-gray-700" x-text="manualVat || '—'"></p>
-            </div>
-        </div>
-
-        <div x-show="showAdd" x-cloak class="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" @click.self="showAdd = false" @keydown.escape.window="showAdd = false">
-            <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-5 space-y-3">
-                <h3 class="text-sm font-semibold text-gray-800">Add supplier</h3>
-                <p x-show="err" x-text="err" class="text-xs text-red-600"></p>
-                <input type="text" x-model="form.name" placeholder="Name *" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg">
-                <input type="text" x-model="form.vat_number" placeholder="VAT number" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg">
-                <input type="email" x-model="form.email" placeholder="Email" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg">
-                <input type="text" x-model="form.phone" placeholder="Phone" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg">
-                <div class="flex justify-end gap-2 pt-1">
-                    <button type="button" @click="showAdd = false" class="px-3 py-2 text-sm text-gray-600">Cancel</button>
-                    <button type="button" @click="addSupplier()" :disabled="saving || !form.name.trim()" class="px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg disabled:opacity-40">Save supplier</button>
-                </div>
-            </div>
-        </div>
-        <input type="hidden" name="supplier_name" :value="isManual ? manualName : (suppliers.find(x=>x.id==selectedId)?.name ?? '')">
-        <input type="hidden" name="supplier_vat_number" :value="isManual ? manualVat : (suppliers.find(x=>x.id==selectedId)?.vat ?? '')">
-        <div x-show="isManual" x-cloak class="grid grid-cols-2 gap-4 mb-4">
-            <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">Supplier name <span class="text-red-500">*</span> <span class="font-normal text-gray-400">(saved to your supplier list)</span></label>
-                <input type="text" x-model="manualName" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg">
-            </div>
-            <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">Supplier VAT number</label>
-                <input type="text" x-model="manualVat" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg">
-            </div>
-        </div>
-        <div class="grid grid-cols-3 gap-4">
-            <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">Bill date <span class="text-red-500">*</span></label>
-                <input type="date" name="bill_date" value="{{ old('bill_date', $bill->bill_date->toDateString()) }}" required
-                       class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg">
-            </div>
-            <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">Due date</label>
-                <input type="date" name="due_date" value="{{ old('due_date', $bill->due_date?->toDateString()) }}"
-                       class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg">
-            </div>
-            <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">Supplier's ref / invoice #</label>
-                <input type="text" name="reference" value="{{ old('reference', $bill->reference) }}"
-                       class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg">
-            </div>
-        </div>
-    </div>
-
-    {{-- Lines --}}
-    <div class="bg-white rounded-xl border border-gray-200 p-5 mb-5">
-        <div class="flex items-center justify-between mb-3">
-            <h3 class="text-sm font-semibold text-gray-700">Line items</h3>
-            <button type="button" @click="addLine()"
-                    class="px-3 py-1.5 text-xs font-semibold text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50">
-                + Add line
-            </button>
-        </div>
-
-        <template x-for="(line, i) in lines" :key="i">
-            <div class="border border-gray-200 rounded-lg p-3 mb-3">
-                <div class="grid grid-cols-12 gap-2 mb-2">
-                    <div class="col-span-5">
-                        <label class="block text-xs text-gray-400 mb-0.5">Description</label>
-                        <input type="text" :name="'lines['+i+'][description]'" x-model="line.description" required
-                               class="w-full px-2 py-1.5 text-sm border border-gray-200 rounded-lg">
-                    </div>
-                    <div class="col-span-3">
-                        <label class="block text-xs text-gray-400 mb-0.5">Category</label>
-                        <select :name="'lines['+i+'][category]'" x-model="line.category"
-                                class="w-full px-2 py-1.5 text-sm border border-gray-200 rounded-lg bg-white">
-                            @foreach(App\Models\Bill::CATEGORIES as $key => $label)
-                            <option value="{{ $key }}">{{ $label }}</option>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 space-y-4">
+            <div class="bg-white rounded-xl border border-gray-200 p-5">
+                <h3 class="font-semibold text-gray-800 mb-4">Bill Details</h3>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Supplier *</label>
+                        <select name="supplier_id" class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2" required>
+                            @foreach($suppliers as $s)
+                            <option value="{{ $s->id }}" @selected($bill->supplier_id==$s->id)>{{ $s->name }}</option>
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-span-2">
-                        <label class="block text-xs text-gray-400 mb-0.5">Amount (AED)</label>
-                        <input type="number" step="0.01" min="0.01" :name="'lines['+i+'][amount]'" x-model.number="line.amount" required
-                               class="w-full px-2 py-1.5 text-sm border border-gray-200 rounded-lg text-right">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Bill Date *</label>
+                        <input type="date" name="bill_date" value="{{ $bill->bill_date }}" class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2" required>
                     </div>
-                    <div class="col-span-1 flex items-end pb-1">
-                        <button type="button" @click="removeLine(i)" x-show="lines.length > 1"
-                                class="text-red-400 hover:text-red-600 text-xs">✕</button>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Due Date</label>
+                        <input type="date" name="due_date" value="{{ $bill->due_date }}" class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Vendor Ref</label>
+                        <input type="text" name="vendor_ref" value="{{ $bill->vendor_ref }}" class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2">
                     </div>
                 </div>
-                <div class="grid grid-cols-4 gap-2">
-                    <div>
-                        <label class="block text-xs text-gray-400 mb-0.5">VAT treatment</label>
-                        <select :name="'lines['+i+'][vat_treatment]'" x-model="line.vat_treatment"
-                                @change="applyVatDefault(line)"
-                                class="w-full px-2 py-1.5 text-sm border border-gray-200 rounded-lg bg-white">
-                            <option value="standard">Standard (5%)</option>
-                            <option value="zero_rated">Zero-rated (0%)</option>
-                            <option value="exempt">Exempt</option>
-                            <option value="reverse_charge">Reverse charge</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs text-gray-400 mb-0.5">VAT rate %</label>
-                        <input type="number" step="0.01" min="0" max="100"
-                               :name="'lines['+i+'][vat_rate]'" x-model.number="line.vat_rate"
-                               :readonly="line.vat_treatment !== 'standard' && line.vat_treatment !== 'reverse_charge'"
-                               :class="(line.vat_treatment !== 'standard' && line.vat_treatment !== 'reverse_charge') ? 'bg-gray-50 text-gray-400' : ''"
-                               class="w-full px-2 py-1.5 text-sm border border-gray-200 rounded-lg text-right">
-                    </div>
-                    <div>
-                        <label class="block text-xs text-gray-400 mb-0.5">VAT amount</label>
-                        <input type="number" readonly :value="lineVat(line).toFixed(2)"
-                               class="w-full px-2 py-1.5 text-sm border border-gray-200 rounded-lg bg-gray-50 text-gray-500 text-right">
-                    </div>
-                    <div>
-                        <label class="block text-xs text-gray-400 mb-0.5">Line total</label>
-                        <input type="number" readonly :value="lineTotal(line).toFixed(2)"
-                               class="w-full px-2 py-1.5 text-sm border border-gray-200 rounded-lg bg-gray-50 font-semibold text-right">
-                    </div>
+                <div class="mt-3">
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Notes</label>
+                    <textarea name="notes" rows="2" class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2">{{ $bill->notes }}</textarea>
                 </div>
             </div>
-        </template>
 
-        <div class="mt-4 flex justify-end">
-            <div class="w-56 text-sm space-y-1">
-                <div class="flex justify-between text-gray-500">
-                    <span>Subtotal</span>
-                    <span class="font-mono" x-text="subtotal.toFixed(2)"></span>
+            <div class="bg-white rounded-xl border border-gray-200 p-5">
+                <h3 class="font-semibold text-gray-800 mb-4">Line Items</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead class="bg-gray-50 text-xs text-gray-500">
+                            <tr>
+                                <th class="px-3 py-2 text-left">Account</th>
+                                <th class="px-3 py-2 text-left">Description</th>
+                                <th class="px-3 py-2 w-20 text-right">Qty</th>
+                                <th class="px-3 py-2 w-28 text-right">Price</th>
+                                <th class="px-3 py-2 w-16 text-right">VAT%</th>
+                                <th class="px-3 py-2 w-28 text-right">Total</th>
+                                <th class="px-3 py-2 w-8"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="bill-lines-body">
+                            @foreach($lines as $line)
+                            <tr class="border-t border-gray-100">
+                                <td class="px-2 py-1">
+                                    <select name="accounts[]" class="w-full text-xs border border-gray-200 rounded px-2 py-1">
+                                        <option value="">— select —</option>
+                                        @foreach($accounts as $type => $accs)
+                                        <optgroup label="{{ $type }}">
+                                            @foreach($accs as $acc)
+                                            <option value="{{ $acc->id }}" @selected($line->account_id==$acc->id)>{{ $acc->code }} — {{ $acc->name }}</option>
+                                            @endforeach
+                                        </optgroup>
+                                        @endforeach
+                                    </select>
+                                </td>
+                                <td class="px-2 py-1"><input type="text" name="descriptions[]" value="{{ $line->description }}" class="w-full text-xs border border-gray-200 rounded px-2 py-1"></td>
+                                <td class="px-2 py-1"><input type="number" name="quantities[]" step="0.0001" value="{{ $line->quantity }}" class="w-full text-xs border border-gray-200 rounded px-2 py-1 text-right line-qty"></td>
+                                <td class="px-2 py-1"><input type="number" name="unit_prices[]" step="0.01" value="{{ $line->unit_price }}" class="w-full text-xs border border-gray-200 rounded px-2 py-1 text-right line-price"></td>
+                                <td class="px-2 py-1"><input type="number" name="vat_rates[]" step="0.01" value="{{ $line->vat_rate }}" class="w-full text-xs border border-gray-200 rounded px-2 py-1 text-right line-vat"></td>
+                                <td class="px-2 py-1 text-right text-xs font-mono line-total">{{ number_format($line->total_amount, 2) }}</td>
+                                <td class="px-2 py-1 text-center"><button type="button" onclick="this.closest('tr').remove();recalc()" class="text-red-400 text-xs">×</button></td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                        <tfoot class="border-t-2 border-gray-200">
+                            <tr><td colspan="5" class="px-3 py-2 text-right text-xs font-semibold text-gray-600">Subtotal</td><td class="px-3 py-2 text-right text-xs font-mono" id="sub-total">{{ number_format($bill->subtotal, 2) }}</td><td></td></tr>
+                            <tr><td colspan="5" class="px-3 py-2 text-right text-xs text-gray-500">VAT</td><td class="px-3 py-2 text-right text-xs font-mono" id="vat-total">{{ number_format($bill->total_vat_amount, 2) }}</td><td></td></tr>
+                            <tr class="bg-gray-50"><td colspan="5" class="px-3 py-2 text-right text-sm font-bold text-gray-800">Total</td><td class="px-3 py-2 text-right text-sm font-bold font-mono" id="grand-total">{{ number_format($bill->total_amount, 2) }}</td><td></td></tr>
+                        </tfoot>
+                    </table>
                 </div>
-                <div class="flex justify-between text-gray-500">
-                    <span>VAT</span>
-                    <span class="font-mono" x-text="vatTotal.toFixed(2)"></span>
-                </div>
-                <div class="flex justify-between font-semibold text-gray-800 border-t border-gray-200 pt-1">
-                    <span>Total</span>
-                    <span class="font-mono" x-text="total.toFixed(2)"></span>
-                </div>
+                <button type="button" onclick="addBillLine()" class="mt-3 text-sm text-blue-600 hover:underline">+ Add line</button>
+            </div>
+        </div>
+        <div>
+            <div class="bg-white rounded-xl border border-gray-200 p-5 sticky top-4 space-y-2">
+                <button type="submit" class="w-full py-2.5 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700">Save Changes</button>
+                <a href="{{ route('tenant.accounting.bills.show', [$tenant->slug, $bill->id]) }}" class="block text-center py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50">Cancel</a>
             </div>
         </div>
     </div>
-
-    <div class="bg-white rounded-xl border border-gray-200 p-5 mb-5">
-        <label class="block text-xs font-medium text-gray-600 mb-1">Notes</label>
-        <textarea name="notes" rows="2" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg">{{ old('notes', $bill->notes) }}</textarea>
-    </div>
-
-    <div class="flex items-center gap-3">
-        <button type="submit" class="px-6 py-2.5 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700">
-            Save draft
-        </button>
-        <a href="{{ route('tenant.accounting.bills.show', [$tenant->slug, $bill->id]) }}"
-           class="px-4 py-2.5 text-sm text-gray-600 hover:text-gray-800">Cancel</a>
-    </div>
 </form>
 
+<template id="bill-line-template">
+    <tr class="border-t border-gray-100">
+        <td class="px-2 py-1"><select name="accounts[]" class="w-full text-xs border border-gray-200 rounded px-2 py-1"><option value="">— select —</option>@foreach($accounts as $type => $accs)<optgroup label="{{ $type }}">@foreach($accs as $acc)<option value="{{ $acc->id }}">{{ $acc->code }} — {{ $acc->name }}</option>@endforeach</optgroup>@endforeach</select></td>
+        <td class="px-2 py-1"><input type="text" name="descriptions[]" class="w-full text-xs border border-gray-200 rounded px-2 py-1"></td>
+        <td class="px-2 py-1"><input type="number" name="quantities[]" step="0.0001" value="1" class="w-full text-xs border border-gray-200 rounded px-2 py-1 text-right line-qty"></td>
+        <td class="px-2 py-1"><input type="number" name="unit_prices[]" step="0.01" value="0" class="w-full text-xs border border-gray-200 rounded px-2 py-1 text-right line-price"></td>
+        <td class="px-2 py-1"><input type="number" name="vat_rates[]" step="0.01" value="0" class="w-full text-xs border border-gray-200 rounded px-2 py-1 text-right line-vat"></td>
+        <td class="px-2 py-1 text-right text-xs font-mono line-total">0.00</td>
+        <td class="px-2 py-1 text-center"><button type="button" onclick="this.closest('tr').remove();recalc()" class="text-red-400 text-xs">×</button></td>
+    </tr>
+</template>
 <script>
-function billForm() {
-    return {
-        lines: @json($existingLines),
-        addLine() {
-            this.lines.push({ description: '', category: 'other', amount: '', vat_treatment: 'standard', vat_rate: 5 });
-        },
-        removeLine(i) {
-            this.lines.splice(i, 1);
-        },
-        applyVatDefault(line) {
-            if (line.vat_treatment === 'standard' || line.vat_treatment === 'reverse_charge') {
-                line.vat_rate = 5;
-            } else {
-                line.vat_rate = 0;
-            }
-        },
-        lineVat(line) {
-            const amt = parseFloat(line.amount) || 0;
-            const rate = parseFloat(line.vat_rate) || 0;
-            if (line.vat_treatment === 'standard' || line.vat_treatment === 'reverse_charge') {
-                return Math.round(amt * rate / 100 * 100) / 100;
-            }
-            return 0;
-        },
-        lineTotal(line) {
-            return (parseFloat(line.amount) || 0) + this.lineVat(line);
-        },
-        get subtotal() {
-            return this.lines.reduce((s, l) => s + (parseFloat(l.amount) || 0), 0);
-        },
-        get vatTotal() {
-            return this.lines.reduce((s, l) => s + this.lineVat(l), 0);
-        },
-        get total() {
-            return this.subtotal + this.vatTotal;
-        },
-    };
+document.addEventListener('input', recalc);
+function recalc() {
+    let sub = 0, vat = 0;
+    document.querySelectorAll('#bill-lines-body tr').forEach(row => {
+        const qty = parseFloat(row.querySelector('.line-qty')?.value)||0;
+        const price = parseFloat(row.querySelector('.line-price')?.value)||0;
+        const vatR = parseFloat(row.querySelector('.line-vat')?.value)||0;
+        const line = qty * price; const lineVat = line * vatR / 100;
+        sub += line; vat += lineVat;
+        const t = row.querySelector('.line-total'); if(t) t.textContent = (line+lineVat).toFixed(2);
+    });
+    document.getElementById('sub-total').textContent = sub.toFixed(2);
+    document.getElementById('vat-total').textContent = vat.toFixed(2);
+    document.getElementById('grand-total').textContent = (sub+vat).toFixed(2);
 }
+function addBillLine() { document.getElementById('bill-lines-body').appendChild(document.getElementById('bill-line-template').content.cloneNode(true)); }
 </script>
-
 @endsection

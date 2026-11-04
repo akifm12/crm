@@ -1,90 +1,65 @@
 <?php
-// app/Models/Invoice.php
 
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Invoice extends Model
 {
-    public const TYPES = ['sale', 'purchase', 'exchange'];
-    public const PRICING_TYPES = ['fixed', 'unfixed'];
-
     protected $fillable = [
-        'tenant_id', 'bullion_client_id', 'invoice_number', 'invoice_type', 'status',
-        'invoice_date', 'currency_code', 'exchange_rate', 'subtotal', 'vat_total', 'total',
-        'amount_paid', 'journal_entry_id', 'client_transaction_id', 'notes', 'created_by',
-        'posted_at', 'voided_at', 'pricing_type', 'gold_rate_per_oz', 'gold_rate_per_gram',
-        'usd_aed_rate', 'metal_rates', 'party_reference', 'premium_amount', 'discount_amount', 'fixed_at', 'fixed_by',
+        'tenant_id', 'client_id', 'invoice_number', 'invoice_date', 'due_date',
+        'status', 'customer_name', 'customer_trn', 'customer_address',
+        'subtotal', 'discount_amount', 'vat_amount', 'total_amount',
+        'amount_paid', 'amount_due', 'currency_code', 'exchange_rate',
+        'po_number', 'notes', 'journal_entry_id', 'is_deleted', 'created_by',
     ];
 
     protected $casts = [
-        'invoice_date'       => 'date',
-        'exchange_rate'      => 'decimal:6',
-        'subtotal'           => 'decimal:2',
-        'vat_total'          => 'decimal:2',
-        'total'              => 'decimal:2',
-        'amount_paid'        => 'decimal:2',
-        'posted_at'          => 'datetime',
-        'voided_at'          => 'datetime',
-        'gold_rate_per_oz'   => 'decimal:4',
-        'gold_rate_per_gram' => 'decimal:6',
-        'usd_aed_rate'       => 'decimal:4',
-        'metal_rates'        => 'array',
-        'premium_amount'     => 'decimal:2',
-        'discount_amount'    => 'decimal:2',
-        'fixed_at'           => 'datetime',
+        'invoice_date'    => 'date',
+        'due_date'        => 'date',
+        'subtotal'        => 'float',
+        'discount_amount' => 'float',
+        'amount_paid'     => 'float',
+        'amount_due'      => 'float',
+        'exchange_rate'   => 'float',
+        'is_deleted'      => 'boolean',
     ];
 
-    public function tenant(): BelongsTo
+    public function tenant()       { return $this->belongsTo(Tenant::class); }
+    public function client()       { return $this->belongsTo(BullionClient::class, 'bullion_client_id'); }
+    public function lines()        { return $this->hasMany(InvoiceLine::class)->orderBy('line_order'); }
+    public function journalEntry() { return $this->belongsTo(JournalEntry::class); }
+
+    // Bridge: existing table uses bullion_client_id, vat_total, total
+    public function getClientIdAttribute()       { return $this->attributes['bullion_client_id'] ?? null; }
+    public function setClientIdAttribute($v)     { $this->attributes['bullion_client_id'] = $v; }
+    public function getVatAmountAttribute()      { return (float)($this->attributes['vat_total'] ?? 0); }
+    public function setVatAmountAttribute($v)    { $this->attributes['vat_total'] = $v; }
+    public function getTotalAmountAttribute()    { return (float)($this->attributes['total'] ?? 0); }
+    public function setTotalAmountAttribute($v)  { $this->attributes['total'] = $v; }
+
+    public function getStatusAttribute(): string { return strtoupper($this->attributes['status'] ?? 'DRAFT'); }
+    public function setStatusAttribute(string $v): void { $this->attributes['status'] = strtolower($v); }
+
+    public function statusBadge(): string
     {
-        return $this->belongsTo(Tenant::class);
+        return match(strtolower($this->attributes['status'] ?? '')) {
+            'draft'    => 'bg-gray-100 text-gray-600',
+            'sent'     => 'bg-blue-50 text-blue-700',
+            'approved' => 'bg-green-50 text-green-700',
+            'paid'     => 'bg-emerald-50 text-emerald-700',
+            'partial'  => 'bg-amber-50 text-amber-700',
+            'void'     => 'bg-red-50 text-red-500',
+            default    => 'bg-gray-100 text-gray-500',
+        };
     }
 
-    public function client(): BelongsTo
+    public static function nextNumber(int $tenantId, string $date): string
     {
-        return $this->belongsTo(BullionClient::class, 'bullion_client_id');
-    }
-
-    public function lines(): HasMany
-    {
-        return $this->hasMany(InvoiceLine::class);
-    }
-
-    public function payments(): HasMany
-    {
-        return $this->hasMany(InvoicePayment::class);
-    }
-
-    public function journalEntry(): BelongsTo
-    {
-        return $this->belongsTo(JournalEntry::class);
-    }
-
-    public function clientTransaction(): BelongsTo
-    {
-        return $this->belongsTo(ClientTransaction::class);
-    }
-
-    public function creator(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'created_by');
-    }
-
-    public function fixedByUser(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'fixed_by');
-    }
-
-    public function isFullyPaid(): bool
-    {
-        return (float) $this->amount_paid >= (float) $this->total;
-    }
-
-    public function outstandingBalance(): float
-    {
-        return round((float) $this->total - (float) $this->amount_paid, 2);
+        $year = date('Y', strtotime($date));
+        $count = static::where('tenant_id', $tenantId)
+            ->whereYear('invoice_date', $year)
+            ->count() + 1;
+        return 'INV-' . $year . '-' . str_pad($count, 4, '0', STR_PAD_LEFT);
     }
 }

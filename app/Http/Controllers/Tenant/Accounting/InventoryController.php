@@ -1,138 +1,67 @@
 <?php
 
-// app/Http/Controllers/Tenant/Accounting/InventoryController.php
-
 namespace App\Http\Controllers\Tenant\Accounting;
 
-use App\Exceptions\InsufficientStockException;
 use App\Http\Controllers\Controller;
 use App\Models\InventoryItem;
-use App\Services\Accounting\InventoryService;
-use App\Services\Accounting\LedgerService;
+use App\Models\ChartOfAccount;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class InventoryController extends Controller
 {
-    public function index()
+    public function index(Request $request, string $slug)
     {
-        $tenant = app('tenant');
+        $tenant   = app('tenant');
+        $category = $request->get('category');
 
-        $items = InventoryItem::where('tenant_id', $tenant->id)
-            ->with('balance')
-            ->orderBy('metal_type')
-            ->orderByRaw('nominal_weight_grams IS NULL')
-            ->orderBy('nominal_weight_grams')
-            ->orderBy('name')
-            ->get();
+        $query = InventoryItem::where('tenant_id', $tenant->id)->orderBy('category')->orderBy('name');
+        if ($category) $query->where('category', $category);
 
-        return view('tenant.accounting.inventory.index', compact('tenant', 'items'));
+        $items = $query->get();
+
+        $totalItems    = $items->count();
+        $totalValue    = $items->sum(fn($i) => $i->stock_qty * $i->current_price);
+        $lowStockItems = $items->filter(fn($i) => $i->stock_qty <= 0)->count();
+
+        return view('tenant.accounting.inventory.index', compact('tenant', 'items', 'totalItems', 'totalValue', 'lowStockItems', 'category'));
     }
 
-    public static array $defaultFormTypes = ['bar', 'coin', 'jewellery', 'raw', 'scrap'];
-
-    private function allFormTypes(\App\Models\Tenant $tenant): array
+    public function create(Request $request, string $slug)
     {
-        $custom = $tenant->settings['inventory_form_types'] ?? [];
-        return array_values(array_unique(array_merge(self::$defaultFormTypes, $custom)));
+        $tenant   = app('tenant');
+        $accounts = ChartOfAccount::where('tenant_id', $tenant->id)->where('is_active', true)->orderBy('code')->get();
+        return view('tenant.accounting.inventory.create', compact('tenant', 'accounts'));
     }
 
-    public function create()
+    public function store(Request $request, string $slug)
     {
         $tenant = app('tenant');
-        $formTypes = $this->allFormTypes($tenant);
-
-        return view('tenant.accounting.inventory.create', compact('tenant', 'formTypes'));
-    }
-
-    public function store(Request $request)
-    {
-        $tenant = app('tenant');
-
-        $request->validate([
-            'name'                 => 'required|string|max:255',
-            'sku'                  => [
-                'nullable', 'string', 'max:100',
-                \Illuminate\Validation\Rule::unique('inventory_items')->where('tenant_id', $tenant->id),
-            ],
-            'metal_type'           => 'required|in:'.implode(',', InventoryItem::METAL_TYPES),
-            'purity'               => 'nullable|numeric|min:0|max:999.999',
-            'nominal_weight_grams' => 'nullable|numeric|min:0',
-            'form'                 => 'nullable|string|max:50',
-        ]);
-
-        $form = $request->form ? trim($request->form) : null;
-
-        // Persist any new custom form type into tenant settings
-        if ($form && ! in_array(strtolower($form), array_map('strtolower', $this->allFormTypes($tenant)))) {
-            $settings = $tenant->settings ?? [];
-            $settings['inventory_form_types'] = array_values(array_unique(
-                array_merge($settings['inventory_form_types'] ?? [], [$form])
-            ));
-            $tenant->update(['settings' => $settings]);
-        }
+        $request->validate(['name' => 'required|string']);
 
         InventoryItem::create([
-            'tenant_id'            => $tenant->id,
-            'name'                 => $request->name,
-            'sku'                  => $request->sku,
-            'metal_type'           => $request->metal_type,
-            'purity'               => $request->purity,
-            'nominal_weight_grams' => $request->nominal_weight_grams,
-            'form'                 => $form,
-            'is_active'            => true,
+            'tenant_id'             => $tenant->id,
+            'code'                  => $request->code,
+            'name'                  => $request->name,
+            'name_arabic'           => $request->name_arabic,
+            'category'              => $request->category ?? 'other',
+            'unit'                  => $request->unit ?? 'pcs',
+            'gold_purity'           => $request->gold_purity ?: null,
+            'weight_per_unit_grams' => $request->weight_per_unit_grams ?: null,
+            'current_price'         => floatval($request->current_price ?? 0),
+            'cost_price'            => floatval($request->cost_price ?? 0),
+            'stock_qty'             => floatval($request->opening_stock ?? 0),
+            'vat_rate'              => floatval($request->vat_rate ?? 0),
+            'sales_account_id'      => $request->sales_account_id ?: null,
+            'inventory_account_id'  => $request->inventory_account_id ?: null,
+            'cogs_account_id'       => $request->cogs_account_id ?: null,
+            'is_active'             => true,
+            'notes'                 => $request->notes,
+            'created_by'            => auth()->id(),
         ]);
 
         return redirect()->route('tenant.accounting.inventory.index', $tenant->slug)
-            ->with('success', 'Inventory item created.');
-    }
-
-    public function optionsIndex()
-    {
-        $tenant = app('tenant');
-        $defaultFormTypes = self::$defaultFormTypes;
-        $customFormTypes  = $tenant->settings['inventory_form_types'] ?? [];
-
-        return view('tenant.accounting.inventory.options', compact('tenant', 'defaultFormTypes', 'customFormTypes'));
-    }
-
-    public function optionsStore(Request $request)
-    {
-        $tenant = app('tenant');
-
-        $request->validate(['form_type' => 'required|string|max:50']);
-        $value = trim($request->form_type);
-
-        if (! in_array(strtolower($value), array_map('strtolower', $this->allFormTypes($tenant)))) {
-            $settings = $tenant->settings ?? [];
-            $settings['inventory_form_types'] = array_values(array_unique(
-                array_merge($settings['inventory_form_types'] ?? [], [$value])
-            ));
-            $tenant->update(['settings' => $settings]);
-        }
-
-        return back()->with('success', '"'.$value.'" added.');
-    }
-
-    public function optionsDestroy(Request $request)
-    {
-        $tenant = app('tenant');
-
-        $request->validate(['form_type' => 'required|string']);
-        $value = trim($request->form_type);
-
-        // Only custom types can be deleted — defaults are always present
-        if (in_array(strtolower($value), array_map('strtolower', self::$defaultFormTypes))) {
-            return back()->with('error', 'Built-in form types cannot be removed.');
-        }
-
-        $settings = $tenant->settings ?? [];
-        $settings['inventory_form_types'] = array_values(array_filter(
-            $settings['inventory_form_types'] ?? [],
-            fn ($t) => strtolower($t) !== strtolower($value)
-        ));
-        $tenant->update(['settings' => $settings]);
-
-        return back()->with('success', '"'.$value.'" removed.');
+            ->with('success', 'Item created.');
     }
 
     public function show(string $slug, InventoryItem $item)
@@ -140,82 +69,91 @@ class InventoryController extends Controller
         $tenant = app('tenant');
         abort_if($item->tenant_id !== $tenant->id, 404);
 
-        $item->load('balance');
-        $movements = $item->movements()->orderByDesc('moved_at')->orderByDesc('id')->paginate(25);
+        $movements = DB::table('inventory_movements')
+            ->where('inventory_item_id', $item->id)
+            ->orderByDesc('movement_date')->orderByDesc('id')
+            ->limit(50)->get();
 
         return view('tenant.accounting.inventory.show', compact('tenant', 'item', 'movements'));
     }
 
-    public function adjust(Request $request, string $slug, InventoryItem $item, InventoryService $inventory, LedgerService $ledger)
+    public function adjust(Request $request, string $slug, InventoryItem $item)
     {
         $tenant = app('tenant');
         abort_if($item->tenant_id !== $tenant->id, 404);
+        $request->validate(['movement_type' => 'required|string', 'quantity' => 'required|numeric|min:0.0001', 'movement_date' => 'required|date']);
 
-        $request->validate([
-            'direction' => 'required|in:in,out',
-            'quantity_grams' => 'required|numeric|min:0.001',
-            'pieces' => 'nullable|integer|min:1',
-            'unit_cost' => 'required_if:direction,in|nullable|numeric|min:0',
-            'reason_type' => 'required|in:correction,capital_contribution',
-            'reason' => 'required|string|max:255',
+        $qty  = floatval($request->quantity);
+        $isIn = in_array($request->movement_type, ['purchase_in', 'adjustment_in', 'opening']);
+        $signed = $isIn ? $qty : -$qty;
+
+        DB::transaction(function () use ($tenant, $item, $request, $signed, $qty) {
+            DB::table('inventory_movements')->insert([
+                'tenant_id'          => $tenant->id,
+                'inventory_item_id'  => $item->id,
+                'movement_type'      => $request->movement_type,
+                'movement_date'      => $request->movement_date,
+                'quantity'           => $signed,
+                'unit_price'         => floatval($request->unit_price ?? $item->current_price),
+                'reference'          => $request->reference,
+                'notes'              => $request->notes,
+                'created_by'         => auth()->id(),
+                'created_at'         => now(),
+                'updated_at'         => now(),
+            ]);
+
+            $item->increment('stock_qty', $signed);
+
+            if ($request->update_price && $request->unit_price) {
+                $item->update(['current_price' => floatval($request->unit_price)]);
+            }
+        });
+
+        return redirect()->route('tenant.accounting.inventory.show', [$tenant->slug, $item])
+            ->with('success', 'Stock adjusted.');
+    }
+
+    public function optionsIndex(Request $request, string $slug)
+    {
+        $tenant = app('tenant');
+        $items  = InventoryItem::where('tenant_id', $tenant->id)->orderBy('category')->orderBy('name')->get();
+        return response()->json($items->map(fn($i) => [
+            'id'          => $i->id,
+            'name'        => $i->name,
+            'code'        => $i->code,
+            'unit'        => $i->unit,
+            'price'       => $i->current_price,
+            'vat_rate'    => $i->vat_rate,
+            'weight_grams'=> $i->weight_per_unit_grams,
+            'category'    => $i->category,
+        ]));
+    }
+
+    public function optionsStore(Request $request, string $slug)
+    {
+        // Quick-create a minimal item via AJAX from the invoice form
+        $tenant = app('tenant');
+        $request->validate(['name' => 'required|string']);
+
+        $item = InventoryItem::create([
+            'tenant_id'    => $tenant->id,
+            'name'         => $request->name,
+            'category'     => $request->category ?? 'other',
+            'unit'         => $request->unit ?? 'pcs',
+            'current_price'=> floatval($request->current_price ?? 0),
+            'vat_rate'     => floatval($request->vat_rate ?? 0),
+            'is_active'    => true,
+            'created_by'   => auth()->id(),
         ]);
 
-        $qty = (float) $request->quantity_grams;
-        $pieces = $request->filled('pieces') ? (int) $request->pieces : null;
+        return response()->json(['id' => $item->id, 'name' => $item->name, 'price' => $item->current_price, 'vat_rate' => $item->vat_rate]);
+    }
 
-        // 'correction' = stock-count discrepancy, hits Inventory Adjustments (income-type,
-        // affects P&L). 'capital_contribution' = an owner/shareholder funding or drawing
-        // from the business in physical gold, hits Owner's Equity directly (balance sheet
-        // only, never touches the income statement).
-        $contraSubtype = $request->reason_type === 'capital_contribution' ? 'owners_equity' : 'inventory_adjustment';
-        $inventorySubtype = 'inventory_'.$item->metal_type;
-
-        try {
-            if ($request->direction === 'in') {
-                $movement = $inventory->receiveStock($item, $qty, (float) $request->unit_cost, [
-                    'movement_type' => 'adjustment_in',
-                    'notes' => $request->reason,
-                ], $pieces);
-                $inventoryAccount = $ledger->accountFor($tenant, $inventorySubtype);
-                $contraAccount = $ledger->accountFor($tenant, $contraSubtype);
-
-                $entry = $ledger->post($tenant, [
-                    'entry_date' => now()->toDateString(),
-                    'reference' => 'Stock adjustment — '.$item->name,
-                    'source_type' => 'stock_adjustment',
-                    'source_id' => $movement->id,
-                    'memo' => $request->reason,
-                    'created_by' => auth()->id(),
-                ], [
-                    ['chart_of_account_id' => $inventoryAccount->id, 'debit' => $movement->total_cost, 'credit' => 0, 'description' => $request->reason],
-                    ['chart_of_account_id' => $contraAccount->id, 'debit' => 0, 'credit' => $movement->total_cost, 'description' => $request->reason],
-                ]);
-            } else {
-                $movement = $inventory->issueStock($item, $qty, [
-                    'movement_type' => 'adjustment_out',
-                    'notes' => $request->reason,
-                ], $pieces);
-                $inventoryAccount = $ledger->accountFor($tenant, $inventorySubtype);
-                $contraAccount = $ledger->accountFor($tenant, $contraSubtype);
-
-                $entry = $ledger->post($tenant, [
-                    'entry_date' => now()->toDateString(),
-                    'reference' => 'Stock adjustment — '.$item->name,
-                    'source_type' => 'stock_adjustment',
-                    'source_id' => $movement->id,
-                    'memo' => $request->reason,
-                    'created_by' => auth()->id(),
-                ], [
-                    ['chart_of_account_id' => $contraAccount->id, 'debit' => $movement->total_cost, 'credit' => 0, 'description' => $request->reason],
-                    ['chart_of_account_id' => $inventoryAccount->id, 'debit' => 0, 'credit' => $movement->total_cost, 'description' => $request->reason],
-                ]);
-            }
-
-            $movement->update(['journal_entry_id' => $entry->id]);
-        } catch (InsufficientStockException $e) {
-            return back()->with('error', $e->getMessage());
-        }
-
-        return back()->with('success', 'Stock adjustment recorded.');
+    public function optionsDestroy(Request $request, string $slug)
+    {
+        $tenant = app('tenant');
+        $item   = InventoryItem::where('tenant_id', $tenant->id)->findOrFail($request->item_id);
+        $item->update(['is_active' => false]);
+        return response()->json(['ok' => true]);
     }
 }

@@ -1,108 +1,117 @@
 @extends('layouts.tenant')
-@section('title', $item->name . ' — ' . $tenant->name)
+@section('title', $item->name . ' — Inventory')
 @section('page-title', $item->name)
-@section('page-subtitle', ucfirst($item->metal_type) . ' · Purity ' . ($item->purity ?? '—') . ' · ' . ucfirst($item->form ?? '—'))
+@section('page-subtitle', $item->categoryLabel() . ($item->gold_purity ? ' · ' . $item->gold_purity . '‰' : ''))
 
 @section('content')
-
 @if(session('success'))
-<div class="p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700 mb-4">{{ session('success') }}</div>
+<div class="mb-4 px-4 py-3 bg-green-50 border border-green-200 text-green-700 rounded-lg text-sm">{{ session('success') }}</div>
 @endif
 @if(session('error'))
-<div class="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 mb-4">{{ session('error') }}</div>
+<div class="mb-4 px-4 py-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">{{ session('error') }}</div>
 @endif
 
-<div class="grid grid-cols-2 {{ $item->nominal_weight_grams ? 'sm:grid-cols-4' : 'sm:grid-cols-3' }} gap-4 mb-5">
-    @if($item->nominal_weight_grams)
-    <div class="bg-white rounded-xl border border-gray-200 p-4">
-        <p class="text-xs text-gray-400 mb-1">Pieces on hand</p>
-        <p class="text-lg font-semibold text-gray-800">{{ number_format($item->balance->pieces ?? 0) }} pcs</p>
-    </div>
-    @endif
-    <div class="bg-white rounded-xl border border-gray-200 p-4">
-        <p class="text-xs text-gray-400 mb-1">Quantity on hand</p>
-        <p class="text-lg font-semibold text-gray-800">{{ number_format($item->balance->quantity_grams ?? 0, 3) }} g</p>
-    </div>
-    <div class="bg-white rounded-xl border border-gray-200 p-4">
-        <p class="text-xs text-gray-400 mb-1">Weighted-avg cost</p>
-        <p class="text-lg font-semibold text-gray-800">{{ number_format($item->balance->weighted_avg_cost ?? 0, 4) }} AED/g</p>
-    </div>
-    <div class="bg-white rounded-xl border border-gray-200 p-4">
-        <p class="text-xs text-gray-400 mb-1">Total value</p>
-        <p class="text-lg font-semibold text-gray-800">{{ number_format($item->balance->total_value ?? 0, 2) }} AED</p>
-    </div>
-</div>
-
-<div class="bg-white rounded-xl border border-gray-200 p-5 mb-5 max-w-xl">
-    <h3 class="text-sm font-semibold text-gray-700 mb-3">Manual stock adjustment</h3>
-    <form method="POST" action="{{ route('tenant.accounting.inventory.adjust', [$tenant->slug, $item->id]) }}"
-          x-data="{ direction: 'in', pieces: '', qty: '', nominalWeight: {{ $item->nominal_weight_grams ?? 'null' }} }" class="space-y-3">
-        @csrf
-        <div>
-            <label class="block text-xs font-medium text-gray-600 mb-1">Reason type</label>
-            <select name="reason_type" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white">
-                <option value="correction">Stock-count correction (affects income statement)</option>
-                <option value="capital_contribution">Owner/shareholder capital contribution or draw (affects equity only)</option>
-            </select>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    {{-- Movements --}}
+    <div class="lg:col-span-2 space-y-4">
+        <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+                <h3 class="text-sm font-semibold text-gray-700">Stock Movements</h3>
+                <span class="text-xs text-gray-400">Last 50</span>
+            </div>
+            <table class="w-full text-sm">
+                <thead class="bg-gray-50 text-xs text-gray-500 uppercase">
+                    <tr>
+                        <th class="px-4 py-2 text-left">Date</th>
+                        <th class="px-4 py-2 text-left">Type</th>
+                        <th class="px-4 py-2 text-right">Qty</th>
+                        <th class="px-4 py-2 text-right">Unit Price</th>
+                        <th class="px-4 py-2 text-left">Reference</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    @forelse($movements as $mv)
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-4 py-2 text-xs text-gray-500">{{ $mv->movement_date }}</td>
+                        <td class="px-4 py-2 text-xs">
+                            <span class="px-2 py-0.5 rounded-full text-xs {{ $mv->quantity > 0 ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600' }}">
+                                {{ str_replace('_', ' ', ucfirst($mv->movement_type)) }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-2 text-right font-mono text-xs {{ $mv->quantity > 0 ? 'text-green-700' : 'text-red-600' }}">
+                            {{ $mv->quantity > 0 ? '+' : '' }}{{ number_format($mv->quantity, 4) }}
+                        </td>
+                        <td class="px-4 py-2 text-right font-mono text-xs text-gray-500">{{ $mv->unit_price ? number_format($mv->unit_price, 4) : '—' }}</td>
+                        <td class="px-4 py-2 text-xs text-gray-500">{{ $mv->reference ?: '—' }}</td>
+                    </tr>
+                    @empty
+                    <tr><td colspan="5" class="px-4 py-8 text-center text-gray-400 text-sm">No movements recorded.</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
-        <div class="grid grid-cols-2 {{ $item->nominal_weight_grams ? 'sm:grid-cols-4' : 'sm:grid-cols-3' }} gap-3">
-            <select name="direction" x-model="direction" class="px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white">
-                <option value="in">Stock in</option>
-                <option value="out">Stock out</option>
-            </select>
-            @if($item->nominal_weight_grams)
-            <input type="number" step="1" min="1" x-model.number="pieces"
-                   @input="qty = pieces ? (pieces * nominalWeight).toFixed(3) : qty" placeholder="Pieces"
-                   class="px-3 py-2 text-sm border border-gray-200 rounded-lg">
-            <input type="hidden" name="pieces" :value="pieces">
-            @endif
-            <input type="number" step="0.001" min="0.001" name="quantity_grams" x-model="qty" placeholder="Quantity (g)" required
-                   class="px-3 py-2 text-sm border border-gray-200 rounded-lg">
-            <input type="number" step="0.0001" min="0" name="unit_cost" placeholder="Cost/g (AED)" x-show="direction === 'in'"
-                   class="px-3 py-2 text-sm border border-gray-200 rounded-lg">
+    </div>
+
+    {{-- Sidebar --}}
+    <div class="space-y-4">
+        <div class="bg-white rounded-xl border border-gray-200 p-5">
+            <h4 class="text-xs font-semibold text-gray-500 uppercase mb-3">Item Details</h4>
+            <dl class="space-y-2 text-sm">
+                <div class="flex justify-between"><dt class="text-gray-500">Code</dt><dd class="font-mono text-xs">{{ $item->code ?: '—' }}</dd></div>
+                <div class="flex justify-between"><dt class="text-gray-500">Category</dt><dd>{{ $item->categoryLabel() }}</dd></div>
+                <div class="flex justify-between"><dt class="text-gray-500">Unit</dt><dd>{{ $item->unit }}</dd></div>
+                @if($item->gold_purity)
+                <div class="flex justify-between"><dt class="text-gray-500">Gold Purity</dt><dd class="font-mono text-xs">{{ $item->gold_purity }}‰</dd></div>
+                @endif
+                @if($item->weight_per_unit_grams)
+                <div class="flex justify-between"><dt class="text-gray-500">Weight/unit</dt><dd class="font-mono text-xs">{{ $item->weight_per_unit_grams }}g</dd></div>
+                @endif
+                <div class="flex justify-between border-t pt-2 mt-2"><dt class="text-gray-500">Current Stock</dt>
+                    <dd class="font-semibold {{ $item->stock_qty <= 0 ? 'text-red-600' : 'text-gray-800' }}">{{ number_format($item->stock_qty, 4) }} {{ $item->unit }}</dd>
+                </div>
+                <div class="flex justify-between"><dt class="text-gray-500">Sell Price</dt><dd class="font-mono text-xs">AED {{ number_format($item->current_price, 4) }}</dd></div>
+                <div class="flex justify-between"><dt class="text-gray-500">VAT</dt><dd>{{ $item->vatLabel() }}</dd></div>
+            </dl>
         </div>
-        @if($item->nominal_weight_grams)
-        <p class="text-xs text-gray-400 -mt-1">Enter pieces to auto-fill weight (nominal {{ rtrim(rtrim(number_format($item->nominal_weight_grams, 4), '0'), '.') }}g each), or edit weight directly for real-world tolerance.</p>
-        @endif
-        <input type="text" name="reason" placeholder="Reason (required)" required
-               class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg">
-        <button type="submit" class="px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700">
-            Record adjustment
-        </button>
-    </form>
+
+        {{-- Adjust stock --}}
+        <div class="bg-white rounded-xl border border-gray-200 p-5">
+            <h4 class="text-xs font-semibold text-gray-500 uppercase mb-3">Adjust Stock</h4>
+            <form action="{{ route('tenant.accounting.inventory.adjust', [$tenant->slug, $item->id]) }}" method="POST" class="space-y-3">
+                @csrf
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Type</label>
+                    <select name="movement_type" class="w-full text-sm border border-gray-300 rounded-lg px-3 py-1.5">
+                        <option value="purchase_in">Purchase In</option>
+                        <option value="adjustment_in">Adjustment In</option>
+                        <option value="adjustment_out">Adjustment Out</option>
+                        <option value="opening">Opening Balance</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Date</label>
+                    <input type="date" name="movement_date" value="{{ date('Y-m-d') }}" class="w-full text-sm border border-gray-300 rounded-lg px-3 py-1.5">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Quantity</label>
+                    <input type="number" name="quantity" step="0.0001" min="0.0001" class="w-full text-sm border border-gray-300 rounded-lg px-3 py-1.5 font-mono" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Unit Price (AED)</label>
+                    <input type="number" name="unit_price" step="0.0001" min="0" value="{{ $item->current_price }}" class="w-full text-sm border border-gray-300 rounded-lg px-3 py-1.5 font-mono">
+                </div>
+                <label class="flex items-center gap-2 text-xs text-gray-600 cursor-pointer">
+                    <input type="checkbox" name="update_price" value="1"> Update current price from this movement
+                </label>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Reference</label>
+                    <input type="text" name="reference" class="w-full text-sm border border-gray-300 rounded-lg px-3 py-1.5" placeholder="PO / receipt #">
+                </div>
+                <button type="submit" class="w-full py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700">Record Movement</button>
+            </form>
+        </div>
+
+        <a href="{{ route('tenant.accounting.inventory.index', $tenant->slug) }}" class="block text-center py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50">← Back to Inventory</a>
+    </div>
 </div>
-
-<div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
-    <table class="w-full text-sm">
-        <thead>
-            <tr class="border-b border-gray-100 text-left text-xs font-semibold text-gray-500 uppercase">
-                <th class="px-5 py-3">Date</th>
-                <th class="px-5 py-3">Type</th>
-                <th class="px-5 py-3 text-right">Qty (g)</th>
-                <th class="px-5 py-3 text-right">Unit cost</th>
-                <th class="px-5 py-3 text-right">Total cost</th>
-                <th class="px-5 py-3">Notes</th>
-            </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-100">
-            @forelse($movements as $m)
-            <tr>
-                <td class="px-5 py-2.5 text-gray-700">{{ $m->moved_at->format('d M Y H:i') }}</td>
-                <td class="px-5 py-2.5 text-gray-500">{{ str_replace('_', ' ', $m->movement_type) }}</td>
-                <td class="px-5 py-2.5 text-right font-mono">{{ number_format($m->quantity_grams, 3) }}</td>
-                <td class="px-5 py-2.5 text-right font-mono">{{ number_format($m->unit_cost, 4) }}</td>
-                <td class="px-5 py-2.5 text-right font-mono">{{ number_format($m->total_cost, 2) }}</td>
-                <td class="px-5 py-2.5 text-gray-500">{{ $m->notes }}</td>
-            </tr>
-            @empty
-            <tr><td colspan="6" class="px-5 py-6 text-center text-sm text-gray-400">No movements yet.</td></tr>
-            @endforelse
-        </tbody>
-    </table>
-</div>
-
-@if($movements->hasPages())
-<div class="mt-4">{{ $movements->links() }}</div>
-@endif
-
 @endsection

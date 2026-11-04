@@ -1,376 +1,429 @@
 <?php
 
-// app/Http/Controllers/Tenant/Accounting/InvoiceController.php
-
 namespace App\Http\Controllers\Tenant\Accounting;
 
-use App\Exceptions\InsufficientStockException;
-use App\Exceptions\UnbalancedJournalEntryException;
 use App\Http\Controllers\Controller;
-use App\Models\BullionClient;
-use App\Models\InventoryItem;
 use App\Models\Invoice;
 use App\Models\InvoiceLine;
-use App\Services\Accounting\InvoicingService;
-use Barryvdh\DomPDF\Facade\Pdf;
+use App\Models\InventoryItem;
+use App\Models\BullionClient;
+use App\Models\ChartOfAccount;
+use App\Models\JournalEntry;
+use App\Models\JournalLine;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
-use RuntimeException;
+use Illuminate\Support\Facades\DB;
 
 class InvoiceController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request, string $slug)
     {
-        $tenant = app('tenant');
+        $tenant   = app('tenant');
+        $dateFrom = $request->get('date_from', date('Y-01-01'));
+        $dateTo   = $request->get('date_to', date('Y-m-d'));
+        $status   = $request->get('status', 'all');
+        $search   = $request->get('search');
 
-        $invoices = Invoice::where('tenant_id', $tenant->id)
-            ->with('client')
-            ->when($request->filled('type'), fn ($q) => $q->where('invoice_type', $request->input('type')))
-            ->when($request->filled('status'), fn ($q) => $q->where('status', $request->input('status')))
-            ->orderByDesc('invoice_date')
-            ->orderByDesc('id')
-            ->paginate(25)
-            ->withQueryString();
+        $query = Invoice::where('tenant_id', $tenant->id)
+            ->where('is_deleted', false)
+            ->whereBetween('invoice_date', [$dateFrom, $dateTo])
+            ->orderByDesc('invoice_date')->orderByDesc('id');
 
-        return view('tenant.accounting.invoices.index', compact('tenant', 'invoices'));
-    }
-
-    public function create(Request $request)
-    {
-        $tenant = app('tenant');
-
-        $clients = BullionClient::where('tenant_id', $tenant->id)->orderBy('company_name')->orderBy('full_name')->get();
-        $items = InventoryItem::where('tenant_id', $tenant->id)->where('is_active', true)
-            ->with('balance')
-            ->orderBy('name')
-            ->get();
-        $invoiceType = $request->input('type', 'purchase');
-        $selectedClientId = $request->integer('client_id') ?: null;
-
-        return view('tenant.accounting.invoices.create', compact('tenant', 'clients', 'items', 'invoiceType', 'selectedClientId'));
-    }
-
-    public function store(Request $request, InvoicingService $invoicing)
-    {
-        $tenant = app('tenant');
-
-        $request->validate([
-            'bullion_client_id' => 'required|exists:bullion_clients,id',
-            'invoice_type' => ['required', Rule::in(Invoice::TYPES)],
-            'pricing_type' => ['nullable', Rule::in(Invoice::PRICING_TYPES)],
-            'invoice_date' => 'required|date',
-            'currency_code' => 'nullable|string|size:3',
-            'exchange_rate' => 'nullable|numeric|min:0.000001',
-            'metal_rates' => 'nullable|array',
-            'metal_rates.*.usd_per_oz' => 'nullable|numeric|min:0',
-            'metal_rates.*.usd_aed_rate' => 'nullable|numeric|min:0',
-            'party_reference' => 'nullable|string|max:255',
-            'premium_amount' => 'nullable|numeric|min:0',
-            'discount_amount' => 'nullable|numeric|min:0',
-            'notes' => 'nullable|string',
-            'lines' => 'required|array|min:1',
-            'lines.*.line_type' => ['required', Rule::in(InvoiceLine::LINE_TYPES)],
-            'lines.*.inventory_item_id' => 'nullable|exists:inventory_items,id',
-            'lines.*.metal_type' => 'nullable|string|max:20',
-            'lines.*.description' => 'required|string|max:255',
-        ]);
-
-        // For fixed-price invoices, metal rates are required whenever a metal line is present.
-        $isFixed = ($request->input('pricing_type') ?: 'fixed') === 'fixed';
-        $hasMetalLine = collect($request->input('lines', []))
-            ->contains(fn ($l) => in_array($l['line_type'] ?? '', ['metal_in', 'metal_out']));
-
-        if ($isFixed && $hasMetalLine) {
-            $metalRates = $request->input('metal_rates', []);
-            $missing = [];
-            foreach ($metalRates as $metal => $rate) {
-                if (empty($rate['usd_per_oz']) || (float) $rate['usd_per_oz'] <= 0) {
-                    $missing[] = ucfirst($metal) . ' price/oz (USD)';
-                }
-                if (empty($rate['usd_aed_rate']) || (float) $rate['usd_aed_rate'] <= 0) {
-                    $missing[] = ucfirst($metal) . ' USD→AED rate';
-                }
-            }
-            if ($missing) {
-                return back()->withErrors(['metal_rates' => 'Metal rates are required for fixed invoices: ' . implode(', ', $missing) . '.'])->withInput();
-            }
-            if (empty($metalRates)) {
-                return back()->withErrors(['metal_rates' => 'Enter the metal rate (price/oz and USD→AED) before saving.'])->withInput();
-            }
+        if ($status !== 'all') {
+            $query->where('status', strtolower($status));
+        }
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('invoice_number', 'like', "%{$search}%")
+                  ->orWhere('customer_name', 'like', "%{$search}%");
+            });
         }
 
+        $invoices    = $query->get();
+        $totalAmount = $invoices->sum('total_amount');
+        $totalDue    = $invoices->sum('amount_due');
+
+        return view('tenant.accounting.invoice.index', compact('tenant', 'invoices', 'dateFrom', 'dateTo', 'status', 'search', 'totalAmount', 'totalDue'));
+    }
+
+    public function create(Request $request, string $slug)
+    {
+        $tenant  = app('tenant');
+        $clients = BullionClient::where('tenant_id', $tenant->id)->where('status', 'active')->orderBy('company_name')->orderBy('full_name')->get();
+        $items   = InventoryItem::where('tenant_id', $tenant->id)->where('is_active', true)->orderBy('name')->get();
+        $accounts = ChartOfAccount::where('tenant_id', $tenant->id)->where('is_active', true)->whereIn('type', ['REVENUE', 'ASSET'])->orderBy('code')->get();
+
+        $selectedClient = null;
+        if ($cid = $request->get('client_id')) {
+            $selectedClient = BullionClient::find($cid);
+        }
+
+        return view('tenant.accounting.invoice.create', compact('tenant', 'clients', 'items', 'accounts', 'selectedClient'));
+    }
+
+    public function store(Request $request, string $slug)
+    {
+        $tenant = app('tenant');
         $request->validate([
-            'lines.*.purity' => 'nullable|numeric|min:0|max:1000',
-            'lines.*.quantity_grams' => 'nullable|numeric|min:0',
-            'lines.*.gross_weight_grams' => 'nullable|numeric|min:0',
-            'lines.*.pcs' => 'nullable|integer|min:0',
-            'lines.*.unit_price' => 'nullable|numeric|min:0',
-            'lines.*.line_subtotal' => 'nullable|numeric|min:0',
-            'lines.*.metal_vat_treatment' => ['nullable', Rule::in(InvoiceLine::VAT_TREATMENTS)],
-            'lines.*.metal_vat_rate' => 'nullable|numeric|min:0|max:100',
-            'lines.*.making_charge_rate' => 'nullable|numeric|min:0',
-            'lines.*.making_charge_amount' => 'nullable|numeric|min:0',
-            'lines.*.making_vat_treatment' => ['nullable', Rule::in(InvoiceLine::VAT_TREATMENTS)],
-            'lines.*.making_vat_rate' => 'nullable|numeric|min:0|max:100',
+            'client_id'    => 'required|integer',
+            'invoice_date' => 'required|date',
         ]);
 
-        $client = BullionClient::findOrFail($request->bullion_client_id);
-        abort_if($client->tenant_id !== $tenant->id, 404);
+        $client = BullionClient::findOrFail($request->client_id);
 
-        $invoice = $invoicing->createDraft($tenant, [
-            'bullion_client_id' => $request->bullion_client_id,
-            'invoice_type' => $request->invoice_type,
-            'pricing_type' => $request->pricing_type ?: 'fixed',
-            'invoice_date' => $request->invoice_date,
-            'currency_code' => $request->currency_code ?: 'AED',
-            'exchange_rate' => $request->exchange_rate ?: 1,
-            'metal_rates' => $request->input('metal_rates'),
-            'party_reference' => $request->party_reference,
-            'premium_amount' => $request->premium_amount ?: 0,
-            'discount_amount' => $request->discount_amount ?: 0,
-            'notes' => $request->notes,
-            'created_by' => auth()->id(),
-            'lines' => $request->lines,
-        ]);
+        [$lines, $subtotal, $totalVat] = $this->buildLines($request);
 
-        return redirect()->route('tenant.accounting.invoices.show', [$tenant->slug, $invoice->id])
-            ->with('success', 'Draft invoice created.');
+        if (empty($lines)) {
+            return back()->withInput()->with('error', 'At least one line item is required.');
+        }
+
+        $totalAmount  = $subtotal - floatval($request->discount_amount ?? 0) + $totalVat;
+        $invoiceNumber = Invoice::nextNumber($tenant->id, $request->invoice_date);
+        $dueDate       = $request->due_date ?: date('Y-m-d', strtotime('+30 days', strtotime($request->invoice_date)));
+
+        DB::transaction(function () use ($tenant, $request, $client, $lines, $subtotal, $totalVat, $totalAmount, $invoiceNumber, $dueDate) {
+            $invoice = Invoice::create([
+                'tenant_id'       => $tenant->id,
+                'client_id'       => $client->id,
+                'invoice_number'  => $invoiceNumber,
+                'invoice_date'    => $request->invoice_date,
+                'due_date'        => $dueDate,
+                'status'          => 'draft',
+                'customer_name'   => $client->displayName(),
+                'customer_trn'    => $client->trn_number,
+                'customer_address'=> $client->registered_address ?? $client->operating_address,
+                'subtotal'        => $subtotal,
+                'discount_amount' => floatval($request->discount_amount ?? 0),
+                'vat_amount'      => $totalVat,
+                'total_amount'    => $totalAmount,
+                'amount_due'      => $totalAmount,
+                'currency_code'   => 'AED',
+                'exchange_rate'   => 1.0,
+                'po_number'       => $request->po_number,
+                'notes'           => $request->notes,
+                'created_by'      => auth()->id(),
+            ]);
+
+            foreach ($lines as $i => $line) {
+                InvoiceLine::create(array_merge($line, ['invoice_id' => $invoice->id, 'line_order' => $i + 1]));
+            }
+        });
+
+        return redirect()->route('tenant.accounting.invoices.index', $tenant->slug)
+            ->with('success', "Invoice {$invoiceNumber} created.");
+    }
+
+    public function show(string $slug, Invoice $invoice)
+    {
+        $tenant = app('tenant');
+        abort_if($invoice->tenant_id !== $tenant->id || $invoice->is_deleted, 404);
+        $lines = $invoice->lines()->with('item', 'account')->get();
+        return view('tenant.accounting.invoice.show', compact('tenant', 'invoice', 'lines'));
     }
 
     public function edit(string $slug, Invoice $invoice)
     {
         $tenant = app('tenant');
         abort_if($invoice->tenant_id !== $tenant->id, 404);
-        abort_if($invoice->status === 'void', 403, 'Voided invoices cannot be edited.');
-        abort_if($invoice->status === 'pending_fix', 403, 'Use "Fix Price" to complete this invoice.');
-
-        $invoice->load('lines.inventoryItem', 'client');
-
-        $clients = BullionClient::where('tenant_id', $tenant->id)->orderBy('company_name')->orderBy('full_name')->get();
-        $items   = InventoryItem::where('tenant_id', $tenant->id)->where('is_active', true)
-            ->with('balance')->orderBy('name')->get();
-
-        return view('tenant.accounting.invoices.edit', compact('tenant', 'invoice', 'clients', 'items'));
+        if ($invoice->STATUS !== 'DRAFT') {
+            return redirect()->route('tenant.accounting.invoices.show', [$tenant->slug, $invoice])->with('error', 'Only draft invoices can be edited.');
+        }
+        $clients  = BullionClient::where('tenant_id', $tenant->id)->where('status', 'active')->orderBy('company_name')->orderBy('full_name')->get();
+        $items    = InventoryItem::where('tenant_id', $tenant->id)->where('is_active', true)->orderBy('name')->get();
+        $accounts = ChartOfAccount::where('tenant_id', $tenant->id)->where('is_active', true)->whereIn('type', ['REVENUE', 'ASSET'])->orderBy('code')->get();
+        $lines    = $invoice->lines()->get();
+        return view('tenant.accounting.invoice.edit', compact('tenant', 'invoice', 'clients', 'items', 'accounts', 'lines'));
     }
 
-    public function update(Request $request, string $slug, Invoice $invoice, InvoicingService $invoicing)
+    public function update(Request $request, string $slug, Invoice $invoice)
     {
         $tenant = app('tenant');
         abort_if($invoice->tenant_id !== $tenant->id, 404);
-        abort_if($invoice->status === 'void', 403, 'Voided invoices cannot be edited.');
-        abort_if($invoice->status === 'pending_fix', 403, 'Use "Fix Price" to complete this invoice.');
-
-        // Posted invoices: only safe header fields can change (lines and financials are locked)
-        if ($invoice->status === 'posted') {
-            $request->validate([
-                'invoice_date'    => 'required|date',
-                'party_reference' => 'nullable|string|max:255',
-                'notes'           => 'nullable|string',
-            ]);
-            $invoice->update($request->only('invoice_date', 'party_reference', 'notes'));
-
-            return redirect()->route('tenant.accounting.invoices.show', [$tenant->slug, $invoice->id])
-                ->with('success', 'Invoice updated.');
+        if ($invoice->STATUS !== 'DRAFT') {
+            return back()->with('error', 'Only draft invoices can be edited.');
         }
 
-        // Draft invoices: full edit
-        $request->validate([
-            'invoice_date'     => 'required|date',
-            'currency_code'    => 'nullable|string|size:3',
-            'exchange_rate'    => 'nullable|numeric|min:0.000001',
-            'metal_rates'      => 'nullable|array',
-            'metal_rates.*.usd_per_oz'    => 'nullable|numeric|min:0',
-            'metal_rates.*.usd_aed_rate'  => 'nullable|numeric|min:0',
-            'party_reference'  => 'nullable|string|max:255',
-            'premium_amount'   => 'nullable|numeric|min:0',
-            'discount_amount'  => 'nullable|numeric|min:0',
-            'notes'            => 'nullable|string',
-            'lines'            => 'required|array|min:1',
-            'lines.*.line_type'         => ['required', Rule::in(InvoiceLine::LINE_TYPES)],
-            'lines.*.inventory_item_id' => 'nullable|exists:inventory_items,id',
-            'lines.*.metal_type'        => 'nullable|string|max:20',
-            'lines.*.description'       => 'required|string|max:255',
-            'lines.*.purity'            => 'nullable|numeric|min:0|max:1000',
-            'lines.*.quantity_grams'    => 'nullable|numeric|min:0',
-            'lines.*.gross_weight_grams'=> 'nullable|numeric|min:0',
-            'lines.*.pcs'               => 'nullable|integer|min:0',
-            'lines.*.unit_price'        => 'nullable|numeric|min:0',
-            'lines.*.line_subtotal'     => 'nullable|numeric|min:0',
-            'lines.*.metal_vat_treatment' => ['nullable', Rule::in(InvoiceLine::VAT_TREATMENTS)],
-            'lines.*.metal_vat_rate'    => 'nullable|numeric|min:0|max:100',
-            'lines.*.making_charge_rate'=> 'nullable|numeric|min:0',
-            'lines.*.making_vat_treatment' => ['nullable', Rule::in(InvoiceLine::VAT_TREATMENTS)],
-            'lines.*.making_vat_rate'   => 'nullable|numeric|min:0|max:100',
-        ]);
+        $client = BullionClient::findOrFail($request->client_id);
+        [$lines, $subtotal, $totalVat] = $this->buildLines($request);
+        $totalAmount = $subtotal - floatval($request->discount_amount ?? 0) + $totalVat;
 
-        $isFixed = ($invoice->pricing_type) === 'fixed';
-        $hasMetalLine = collect($request->input('lines', []))
-            ->contains(fn ($l) => in_array($l['line_type'] ?? '', ['metal_in', 'metal_out']));
-
-        if ($isFixed && $hasMetalLine) {
-            $metalRates = $request->input('metal_rates', []);
-            $missing = [];
-            foreach ($metalRates as $metal => $rate) {
-                if (empty($rate['usd_per_oz']) || (float) $rate['usd_per_oz'] <= 0) {
-                    $missing[] = ucfirst($metal) . ' price/oz (USD)';
-                }
-                if (empty($rate['usd_aed_rate']) || (float) $rate['usd_aed_rate'] <= 0) {
-                    $missing[] = ucfirst($metal) . ' USD→AED rate';
-                }
-            }
-            if ($missing) {
-                return back()->withErrors(['metal_rates' => 'Metal rates are required: ' . implode(', ', $missing) . '.'])->withInput();
-            }
-        }
-
-        try {
-            $invoicing->updateDraft($invoice, [
+        DB::transaction(function () use ($invoice, $request, $client, $lines, $subtotal, $totalVat, $totalAmount) {
+            $invoice->update([
+                'client_id'       => $client->id,
                 'invoice_date'    => $request->invoice_date,
-                'currency_code'   => $request->currency_code ?: 'AED',
-                'exchange_rate'   => $request->exchange_rate ?: 1,
-                'metal_rates'     => $request->input('metal_rates'),
-                'party_reference' => $request->party_reference,
-                'premium_amount'  => $request->premium_amount ?: 0,
-                'discount_amount' => $request->discount_amount ?: 0,
+                'due_date'        => $request->due_date ?: $invoice->due_date,
+                'customer_name'   => $client->displayName(),
+                'customer_trn'    => $client->trn_number,
+                'customer_address'=> $client->registered_address ?? $client->operating_address,
+                'subtotal'        => $subtotal,
+                'discount_amount' => floatval($request->discount_amount ?? 0),
+                'vat_amount'      => $totalVat,
+                'total_amount'    => $totalAmount,
+                'amount_due'      => $totalAmount,
+                'po_number'       => $request->po_number,
                 'notes'           => $request->notes,
-                'lines'           => $request->lines,
             ]);
-        } catch (\RuntimeException $e) {
-            return back()->with('error', $e->getMessage())->withInput();
-        }
 
-        return redirect()->route('tenant.accounting.invoices.show', [$tenant->slug, $invoice->id])
-            ->with('success', 'Draft invoice updated.');
-    }
+            $invoice->lines()->delete();
+            foreach ($lines as $i => $line) {
+                InvoiceLine::create(array_merge($line, ['invoice_id' => $invoice->id, 'line_order' => $i + 1]));
+            }
+        });
 
-    public function show(string $slug, Invoice $invoice)
-    {
-        $tenant = app('tenant');
-        abort_if($invoice->tenant_id !== $tenant->id, 404);
-
-        $invoice->load('lines.inventoryItem', 'client', 'payments', 'journalEntry');
-
-        return view('tenant.accounting.invoices.show', compact('tenant', 'invoice'));
-    }
-
-    public function post(string $slug, Invoice $invoice, InvoicingService $invoicing)
-    {
-        $tenant = app('tenant');
-        abort_if($invoice->tenant_id !== $tenant->id, 404);
-
-        try {
-            $invoicing->post($invoice);
-        } catch (InsufficientStockException|UnbalancedJournalEntryException|RuntimeException $e) {
-            return back()->with('error', $e->getMessage());
-        }
-
-        return redirect()->route('tenant.accounting.invoices.show', [$tenant->slug, $invoice->id])
-            ->with('success', 'Invoice posted.');
-    }
-
-    public function fixPriceForm(string $slug, Invoice $invoice)
-    {
-        $tenant = app('tenant');
-        abort_if($invoice->tenant_id !== $tenant->id, 404);
-        abort_if($invoice->status !== 'pending_fix', 422, 'This invoice is not awaiting a price fix.');
-
-        $invoice->load('lines.inventoryItem', 'client');
-
-        return view('tenant.accounting.invoices.fix', compact('tenant', 'invoice'));
-    }
-
-    public function fixPrice(Request $request, string $slug, Invoice $invoice, InvoicingService $invoicing)
-    {
-        $tenant = app('tenant');
-        abort_if($invoice->tenant_id !== $tenant->id, 404);
-
-        $request->validate([
-            'metal_rates' => 'nullable|array',
-            'metal_rates.*.usd_per_oz' => 'nullable|numeric|min:0',
-            'metal_rates.*.usd_aed_rate' => 'nullable|numeric|min:0',
-            'lines' => 'required|array',
-            'lines.*.unit_price' => 'nullable|numeric|min:0',
-            'lines.*.metal_vat_treatment' => ['required', Rule::in(InvoiceLine::VAT_TREATMENTS)],
-            'lines.*.metal_vat_rate' => 'required|numeric|min:0|max:100',
-            'lines.*.making_charge_rate' => 'nullable|numeric|min:0',
-            'lines.*.making_vat_treatment' => ['required', Rule::in(InvoiceLine::VAT_TREATMENTS)],
-            'lines.*.making_vat_rate' => 'required|numeric|min:0|max:100',
-        ]);
-
-        if ($request->filled('metal_rates')) {
-            $invoice->update(['metal_rates' => $request->input('metal_rates')]);
-        }
-
-        try {
-            $invoicing->fixPrice($invoice, $request->input('lines'), auth()->id());
-        } catch (UnbalancedJournalEntryException|RuntimeException $e) {
-            return back()->with('error', $e->getMessage());
-        }
-
-        return redirect()->route('tenant.accounting.invoices.show', [$tenant->slug, $invoice->id])
-            ->with('success', 'Price fixed and invoice posted.');
-    }
-
-    public function void(Request $request, string $slug, Invoice $invoice, InvoicingService $invoicing)
-    {
-        $tenant = app('tenant');
-        abort_if($invoice->tenant_id !== $tenant->id, 404);
-
-        $invoicing->void($invoice, $request->input('reason'));
-
-        return redirect()->route('tenant.accounting.invoices.show', [$tenant->slug, $invoice->id])
-            ->with('success', 'Invoice voided.');
+        return redirect()->route('tenant.accounting.invoices.show', [app('tenant')->slug, $invoice])
+            ->with('success', 'Invoice updated.');
     }
 
     public function destroy(string $slug, Invoice $invoice)
     {
         $tenant = app('tenant');
         abort_if($invoice->tenant_id !== $tenant->id, 404);
-        abort_if($invoice->status !== 'draft', 422, 'Only draft invoices can be deleted.');
+        $invoice->update(['is_deleted' => true]);
+        return redirect()->route('tenant.accounting.invoices.index', $tenant->slug)->with('success', 'Invoice deleted.');
+    }
 
-        $invoice->lines()->delete();
-        $invoice->delete();
+    public function post(Request $request, string $slug, Invoice $invoice)
+    {
+        $tenant = app('tenant');
+        abort_if($invoice->tenant_id !== $tenant->id, 404);
 
-        return redirect()->route('tenant.accounting.invoices.index', $tenant->slug)
-            ->with('success', 'Draft invoice deleted.');
+        // AR account: prefer ASSET type with "receivable" in name, fall back to first ASSET
+        $arAccount = ChartOfAccount::where('tenant_id', $tenant->id)->where('is_active', true)
+            ->where('type', 'ASSET')
+            ->where(function ($q) {
+                $q->where('name', 'like', '%Receivable%')->orWhere('name', 'like', '%AR%');
+            })->first()
+            ?? ChartOfAccount::where('tenant_id', $tenant->id)->where('type', 'ASSET')->where('is_active', true)->first();
+
+        if (!$arAccount) {
+            return back()->with('error', 'No Accounts Receivable account found.');
+        }
+
+        // VAT Output Tax account
+        $vatAccount = ChartOfAccount::where('tenant_id', $tenant->id)->where('is_active', true)
+            ->where(function ($q) {
+                $q->where('name', 'like', '%VAT%Output%')
+                  ->orWhere('name', 'like', '%Output%VAT%')
+                  ->orWhere('name', 'like', '%VAT%Payable%');
+            })->first();
+
+        // Default revenue account fallback
+        $defaultRevenue = ChartOfAccount::where('tenant_id', $tenant->id)
+            ->where('type', 'REVENUE')->where('is_active', true)->orderBy('code')->first();
+
+        DB::transaction(function () use ($tenant, $invoice, $arAccount, $vatAccount, $defaultRevenue) {
+            $je = JournalEntry::create([
+                'tenant_id'     => $tenant->id,
+                'entry_date'    => $invoice->invoice_date,
+                'journal_type'  => 'GENERAL',
+                'status'        => 'posted',
+                'memo'          => "Invoice {$invoice->invoice_number} - {$invoice->customer_name}",
+                'reference'     => $invoice->invoice_number,
+                'currency_code' => 'AED',
+                'exchange_rate' => 1.0,
+                'created_by'    => auth()->id(),
+            ]);
+
+            $lineNum = 1;
+
+            // DR Accounts Receivable (full amount incl. VAT)
+            JournalLine::create(['journal_entry_id' => $je->id, 'chart_of_account_id' => $arAccount->id, 'debit' => $invoice->total_amount, 'credit' => 0, 'description' => "AR - {$invoice->customer_name}", 'line_order' => $lineNum++]);
+
+            // CR Revenue per line (net amount)
+            foreach ($invoice->lines as $line) {
+                $revenueAccount = null;
+                if ($line->chart_of_account_id) {
+                    $revenueAccount = ChartOfAccount::find($line->chart_of_account_id);
+                }
+                if (!$revenueAccount && $line->inventory_item_id) {
+                    $item = InventoryItem::find($line->inventory_item_id);
+                    if ($item?->sales_account_id) {
+                        $revenueAccount = ChartOfAccount::find($item->sales_account_id);
+                    }
+                }
+                $revenueAccount = $revenueAccount ?? $defaultRevenue;
+
+                if ($revenueAccount) {
+                    JournalLine::create(['journal_entry_id' => $je->id, 'chart_of_account_id' => $revenueAccount->id, 'debit' => 0, 'credit' => $line->line_amount, 'description' => $line->description ?: $invoice->invoice_number, 'line_order' => $lineNum++]);
+                }
+            }
+
+            // CR VAT Output Tax (if any)
+            if ($invoice->vat_amount > 0 && $vatAccount) {
+                JournalLine::create(['journal_entry_id' => $je->id, 'chart_of_account_id' => $vatAccount->id, 'debit' => 0, 'credit' => $invoice->vat_amount, 'description' => 'Output VAT', 'line_order' => $lineNum]);
+            }
+
+            $invoice->update(['status' => 'approved', 'journal_entry_id' => $je->id]);
+        });
+
+        return redirect()->route('tenant.accounting.invoices.show', [$tenant->slug, $invoice])
+            ->with('success', 'Invoice approved and journal entry created.');
+    }
+
+    public function fixPriceForm(string $slug, Invoice $invoice)
+    {
+        $tenant = app('tenant');
+        abort_if($invoice->tenant_id !== $tenant->id, 404);
+        $lines = $invoice->lines()->with('item')->get();
+        return view('tenant.accounting.invoice.fix_price', compact('tenant', 'invoice', 'lines'));
+    }
+
+    public function fixPrice(Request $request, string $slug, Invoice $invoice)
+    {
+        $tenant = app('tenant');
+        abort_if($invoice->tenant_id !== $tenant->id, 404);
+
+        DB::transaction(function () use ($request, $invoice) {
+            $subtotal = 0;
+            $totalVat = 0;
+
+            foreach ($invoice->lines as $i => $line) {
+                $newUnitPrice = floatval($request->unit_prices[$line->id] ?? $line->unit_price);
+                $lineAmount   = round($line->quantity * $newUnitPrice, 2);
+                $vatAmount    = round($lineAmount * ($line->vat_rate / 100), 2);
+                $totalLine    = $lineAmount + $vatAmount;
+                $goldWeight   = $line->item ? round($line->quantity * ($line->item->weight_per_unit_grams ?? 0), 4) : $line->gold_weight_grams;
+
+                $line->update([
+                    'unit_price'        => $newUnitPrice,
+                    'line_amount'       => $lineAmount,
+                    'vat_amount'        => $vatAmount,
+                    'total_amount'      => $totalLine,
+                    'gold_weight_grams' => $goldWeight,
+                ]);
+
+                $subtotal += $lineAmount;
+                $totalVat += $vatAmount;
+            }
+
+            $totalAmount = $subtotal - $invoice->discount_amount + $totalVat;
+            $invoice->update([
+                'subtotal'     => $subtotal,
+                'vat_amount'   => $totalVat,
+                'total_amount' => $totalAmount,
+                'amount_due'   => max(0, $totalAmount - $invoice->amount_paid),
+            ]);
+        });
+
+        return redirect()->route('tenant.accounting.invoices.show', [app('tenant')->slug, $invoice])
+            ->with('success', 'Invoice prices updated.');
+    }
+
+    public function void(Request $request, string $slug, Invoice $invoice)
+    {
+        $tenant = app('tenant');
+        abort_if($invoice->tenant_id !== $tenant->id, 404);
+        $invoice->update(['status' => 'void']);
+        return redirect()->route('tenant.accounting.invoices.index', $tenant->slug)->with('success', 'Invoice voided.');
     }
 
     public function pdf(string $slug, Invoice $invoice)
     {
         $tenant = app('tenant');
         abort_if($invoice->tenant_id !== $tenant->id, 404);
-
-        $invoice->load('lines', 'client');
-
-        $pdf = Pdf::loadView('tenant.accounting.invoices.pdf', compact('tenant', 'invoice'));
-
-        return $pdf->stream("{$invoice->invoice_number}.pdf");
+        $lines = $invoice->lines()->with('item')->get();
+        return view('tenant.accounting.invoice.pdf', compact('tenant', 'invoice', 'lines'));
     }
 
-    public function storePayment(Request $request, string $slug, Invoice $invoice, InvoicingService $invoicing)
+    public function storePayment(Request $request, string $slug, Invoice $invoice)
     {
         $tenant = app('tenant');
         abort_if($invoice->tenant_id !== $tenant->id, 404);
+        $request->validate(['payment_date' => 'required|date', 'amount' => 'required|numeric|min:0.01', 'gl_account_id' => 'required|integer']);
 
-        $request->validate([
-            'payment_date' => 'required|date',
-            'amount' => 'required|numeric|min:0.01',
-            'method' => 'nullable|in:cash,bank_transfer,card,other',
-            'reference' => 'nullable|string|max:255',
-            'purpose' => 'nullable|string|max:255',
-        ]);
+        $amount = floatval($request->amount);
 
-        $payment = $invoicing->recordPayment($invoice, [
-            'payment_date' => $request->payment_date,
-            'amount' => $request->amount,
-            'method' => $request->method,
-            'reference' => $request->reference,
-            'purpose' => $request->purpose,
-            'created_by' => auth()->id(),
-        ]);
+        $arAccount = ChartOfAccount::where('tenant_id', $tenant->id)->where('type', 'ASSET')
+            ->where(function ($q) { $q->where('name', 'like', '%Receivable%')->orWhere('name', 'like', '%AR%'); })->first()
+            ?? ChartOfAccount::where('tenant_id', $tenant->id)->where('type', 'ASSET')->where('is_active', true)->first();
 
-        return back()
-            ->with('success', $invoice->status === 'pending_fix' ? 'Deposit recorded.' : ($invoice->invoice_type === 'sale' ? 'Receipt recorded.' : 'Payment recorded.'))
-            ->with('receipt_payment_id', $payment->id);
+        DB::transaction(function () use ($tenant, $invoice, $amount, $request, $arAccount) {
+            $je = JournalEntry::create([
+                'tenant_id'     => $tenant->id,
+                'entry_date'    => $request->payment_date,
+                'journal_type'  => 'BANK_RECEIPT',
+                'status'        => 'posted',
+                'memo'          => "Receipt - {$invoice->invoice_number} - {$invoice->customer_name}",
+                'reference'     => $invoice->invoice_number,
+                'currency_code' => 'AED',
+                'exchange_rate' => 1.0,
+                'created_by'    => auth()->id(),
+            ]);
+
+            // DR Cash/Bank
+            JournalLine::create(['journal_entry_id' => $je->id, 'chart_of_account_id' => $request->gl_account_id, 'debit' => $amount, 'credit' => 0, 'description' => "Receipt - {$invoice->invoice_number}", 'line_order' => 1]);
+
+            // CR AR
+            if ($arAccount) {
+                JournalLine::create(['journal_entry_id' => $je->id, 'chart_of_account_id' => $arAccount->id, 'debit' => 0, 'credit' => $amount, 'description' => "AR cleared - {$invoice->customer_name}", 'line_order' => 2]);
+            }
+
+            $newPaid = $invoice->amount_paid + $amount;
+            $newDue  = round($invoice->total_amount - $newPaid, 2);
+            $invoice->update([
+                'amount_paid' => $newPaid,
+                'amount_due'  => max(0, $newDue),
+                'status'      => $newDue <= 0 ? 'paid' : 'partial',
+            ]);
+        });
+
+        return redirect()->route('tenant.accounting.invoices.show', [$tenant->slug, $invoice])
+            ->with('success', 'Payment recorded.');
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private function buildLines(Request $request): array
+    {
+        $lines    = [];
+        $subtotal = 0;
+        $totalVat = 0;
+
+        $descriptions = $request->descriptions ?? [];
+        $quantities   = $request->quantities ?? [];
+        $unitPrices   = $request->unit_prices ?? [];
+        $vatRates     = $request->vat_rates ?? [];
+        $itemIds      = $request->item_ids ?? [];
+        $accountIds   = $request->account_ids ?? [];
+        $units        = $request->units ?? [];
+
+        foreach ($descriptions as $i => $desc) {
+            $qty      = floatval($quantities[$i] ?? 1);
+            $price    = floatval($unitPrices[$i] ?? 0);
+            $vatRate  = floatval($vatRates[$i] ?? 0);
+            $itemId   = $itemIds[$i] ?? null;
+            $accountId= $accountIds[$i] ?? null;
+
+            if ($qty == 0 && $price == 0) continue;
+
+            $lineAmount  = round($qty * $price, 2);
+            $vatAmount   = round($lineAmount * ($vatRate / 100), 2);
+            $totalLine   = $lineAmount + $vatAmount;
+            $subtotal   += $lineAmount;
+            $totalVat   += $vatAmount;
+
+            $goldWeight = null;
+            if ($itemId) {
+                $item = InventoryItem::find($itemId);
+                if ($item && $item->weight_per_unit_grams) {
+                    $goldWeight = round($qty * $item->weight_per_unit_grams, 4);
+                }
+            }
+
+            $lines[] = [
+                'inventory_item_id'  => $itemId ?: null,
+                'chart_of_account_id'=> $accountId ?: null,
+                'description'        => $desc,
+                'quantity'           => $qty,
+                'unit'               => $units[$i] ?? 'pcs',
+                'unit_price'         => $price,
+                'line_amount'        => $lineAmount,
+                'vat_rate'           => $vatRate,
+                'vat_amount'         => $vatAmount,
+                'total_amount'       => $totalLine,
+                'gold_weight_grams'  => $goldWeight,
+            ];
+        }
+
+        return [$lines, $subtotal, $totalVat];
     }
 }

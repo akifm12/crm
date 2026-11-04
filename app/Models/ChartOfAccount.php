@@ -1,67 +1,57 @@
 <?php
-// app/Models/ChartOfAccount.php
 
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Carbon;
 
 class ChartOfAccount extends Model
 {
-    public const TYPES = ['asset', 'liability', 'equity', 'income', 'expense'];
+    protected $table = 'chart_of_accounts';
 
     protected $fillable = [
-        'tenant_id', 'parent_id', 'code', 'name', 'type', 'subtype',
-        'normal_balance', 'is_system', 'is_active', 'description',
+        'tenant_id','parent_id','code','name','name_arabic','description',
+        'account_type','account_sub_type','normal_balance',
+        'is_control','is_bank','is_cash','is_receivable','is_payable','is_vat_account',
+        'currency_code','is_active','notes','opening_balance','opening_balance_date',
     ];
 
     protected $casts = [
-        'is_system' => 'boolean',
-        'is_active' => 'boolean',
+        'is_control'    => 'boolean',
+        'is_bank'       => 'boolean',
+        'is_cash'       => 'boolean',
+        'is_receivable' => 'boolean',
+        'is_payable'    => 'boolean',
+        'is_vat_account'=> 'boolean',
+        'is_active'     => 'boolean',
     ];
 
-    public function tenant(): BelongsTo
-    {
-        return $this->belongsTo(Tenant::class);
-    }
+    public function tenant()   { return $this->belongsTo(Tenant::class); }
+    public function parent()   { return $this->belongsTo(ChartOfAccount::class, 'parent_id'); }
+    public function children() { return $this->hasMany(ChartOfAccount::class, 'parent_id'); }
 
-    public function parent(): BelongsTo
-    {
-        return $this->belongsTo(self::class, 'parent_id');
-    }
-
-    public function children(): HasMany
-    {
-        return $this->hasMany(self::class, 'parent_id');
-    }
-
-    public function lines(): HasMany
-    {
-        return $this->hasMany(JournalEntryLine::class);
-    }
-
-    /**
-     * Net balance as of a given date, signed according to this account's normal balance
-     * (i.e. a debit-normal account with more debits than credits returns a positive number).
-     * Only counts posted journal entries.
-     */
-    public function balance(?Carbon $asOf = null): float
-    {
-        $query = $this->lines()
-            ->whereHas('journalEntry', function ($q) use ($asOf) {
-                $q->where('status', 'posted');
-                if ($asOf) {
-                    $q->where('entry_date', '<=', $asOf->toDateString());
-                }
-            });
-
-        $totalDebit = (float) $query->sum('base_debit');
-        $totalCredit = (float) $query->sum('base_credit');
-
-        return $this->normal_balance === 'debit'
-            ? $totalDebit - $totalCredit
-            : $totalCredit - $totalDebit;
-    }
+    // The DB column is `type`; expose it as `account_type` for view compatibility
+    public function getAccountTypeAttribute(): string { return $this->attributes['type'] ?? ''; }
+    public function setAccountTypeAttribute(string $v): void { $this->attributes['type'] = $v; }
+    // DB has `subtype` not `account_sub_type`
+    public function getAccountSubTypeAttribute(): ?string { return $this->attributes['subtype'] ?? null; }
+    public function setAccountSubTypeAttribute($v): void { $this->attributes['subtype'] = $v; }
+    // Boolean flags that don't exist in DB — no-ops (DB only has is_system/is_active)
+    public function getIsPayableAttribute(): bool { return false; }
+    public function setIsPayableAttribute($v): void {}
+    public function getIsBankAttribute(): bool { return false; }
+    public function setIsBankAttribute($v): void {}
+    public function getIsCashAttribute(): bool { return false; }
+    public function setIsCashAttribute($v): void {}
+    public function getIsReceivableAttribute(): bool { return false; }
+    public function setIsReceivableAttribute($v): void {}
+    public function getIsVatAccountAttribute(): bool { return false; }
+    public function setIsVatAccountAttribute($v): void {}
+    public function getIsControlAttribute(): bool { return false; }
+    public function setIsControlAttribute($v): void {}
+    // Other missing columns — no-ops
+    public function setCurrencyCodeAttribute($v): void {}
+    public function setNotesAttribute($v): void {}
+    public function setOpeningBalanceAttribute($v): void {}
+    public function setOpeningBalanceDateAttribute($v): void {}
+    public function setNameArabicAttribute($v): void {}
 }

@@ -4,41 +4,50 @@ namespace App\Http\Controllers\Tenant\Accounting;
 
 use App\Http\Controllers\Controller;
 use App\Models\Supplier;
+use App\Models\ChartOfAccount;
 use Illuminate\Http\Request;
 
 class SupplierController extends Controller
 {
-    public function index()
+    public function index(string $slug)
     {
         $tenant    = app('tenant');
         $suppliers = Supplier::where('tenant_id', $tenant->id)
+            ->where('is_active', true)
             ->orderBy('name')
-            ->withCount('bills')
             ->get();
 
         return view('tenant.accounting.suppliers.index', compact('tenant', 'suppliers'));
     }
 
-    public function store(Request $request)
+    public function store(Request $request, string $slug)
     {
         $tenant = app('tenant');
-        $data   = $request->validate([
-            'name'         => 'required|string|max:255',
-            'vat_number'   => 'nullable|string|max:50',
-            'contact_name' => 'nullable|string|max:255',
-            'email'        => 'nullable|email|max:255',
-            'phone'        => 'nullable|string|max:50',
-            'address'      => 'nullable|string|max:500',
-            'notes'        => 'nullable|string',
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'code' => 'required|string|max:30',
         ]);
 
-        $supplier = Supplier::create(array_merge($data, ['tenant_id' => $tenant->id]));
+        $liabilityAccounts = ChartOfAccount::where('tenant_id', $tenant->id)
+            ->where('type', 'LIABILITY')
+            ->where('is_active', true)
+            ->orderBy('code')
+            ->get();
 
-        if ($request->wantsJson()) {
-            return response()->json(['id' => $supplier->id, 'name' => $supplier->name, 'vat_number' => $supplier->vat_number]);
-        }
+        Supplier::create([
+            'tenant_id'    => $tenant->id,
+            'name'         => $request->name,
+            'vat_number'   => $request->trn,
+            'email'        => $request->email,
+            'phone'        => $request->phone,
+            'contact_name' => $request->contact_person,
+            'address'      => $request->address_line1,
+            'is_active'    => true,
+            'notes'        => $request->notes,
+        ]);
 
-        return back()->with('success', 'Supplier added.');
+        return redirect()->route('tenant.accounting.suppliers.index', $tenant->slug)
+            ->with('success', 'Supplier created.');
     }
 
     public function update(Request $request, string $slug, Supplier $supplier)
@@ -46,29 +55,35 @@ class SupplierController extends Controller
         $tenant = app('tenant');
         abort_if($supplier->tenant_id !== $tenant->id, 404);
 
-        $data = $request->validate([
-            'name'         => 'required|string|max:255',
-            'vat_number'   => 'nullable|string|max:50',
-            'contact_name' => 'nullable|string|max:255',
-            'email'        => 'nullable|email|max:255',
-            'phone'        => 'nullable|string|max:50',
-            'address'      => 'nullable|string|max:500',
-            'notes'        => 'nullable|string',
+        $request->validate(['name' => 'required|string|max:255']);
+
+        $supplier->update([
+            'name'         => $request->name,
+            'vat_number'   => $request->trn,
+            'email'        => $request->email,
+            'phone'        => $request->phone,
+            'contact_name' => $request->contact_person,
+            'address'      => $request->address_line1,
+            'notes'        => $request->notes,
         ]);
 
-        $supplier->update($data);
-
-        return back()->with('success', 'Supplier updated.');
+        return redirect()->route('tenant.accounting.suppliers.index', $tenant->slug)
+            ->with('success', 'Supplier updated.');
     }
 
     public function destroy(string $slug, Supplier $supplier)
     {
         $tenant = app('tenant');
         abort_if($supplier->tenant_id !== $tenant->id, 404);
-        abort_if($supplier->bills()->exists(), 422, 'Cannot delete a supplier with existing bills.');
 
-        $supplier->delete();
+        $hasBills = \App\Models\Bill::where('supplier_id', $supplier->id)->exists();
+        if ($hasBills) {
+            return back()->with('error', 'Cannot delete supplier with existing bills.');
+        }
 
-        return back()->with('success', 'Supplier deleted.');
+        $supplier->update(['is_active' => false]);
+
+        return redirect()->route('tenant.accounting.suppliers.index', $tenant->slug)
+            ->with('success', 'Supplier removed.');
     }
 }

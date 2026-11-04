@@ -1,48 +1,32 @@
 <?php
-// app/Models/InvoiceLine.php
 
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class InvoiceLine extends Model
 {
-    public const LINE_TYPES = ['metal_out', 'metal_in', 'cash_topup', 'other'];
-    public const VAT_TREATMENTS = ['standard', 'zero_rated', 'reverse_charge', 'exempt'];
-
     protected $fillable = [
-        'invoice_id', 'line_type', 'inventory_item_id', 'metal_type', 'description', 'purity',
-        'quantity_grams', 'gross_weight_grams', 'pcs', 'unit_price', 'line_subtotal',
-        'metal_vat_treatment', 'metal_vat_rate', 'metal_vat_amount',
-        'making_charge_rate', 'making_charge_amount',
-        'making_vat_treatment', 'making_vat_rate', 'making_vat_amount',
-        'line_total', 'line_order',
+        'invoice_id', 'inventory_item_id', 'chart_of_account_id', 'line_order',
+        'description', 'quantity', 'unit', 'unit_price', 'line_amount',
+        'vat_rate', 'vat_amount', 'total_amount', 'gold_weight_grams',
     ];
 
     protected $casts = [
-        'purity'                => 'decimal:3',
-        'quantity_grams'        => 'decimal:3',
-        'gross_weight_grams'    => 'decimal:3',
-        'pcs'                   => 'integer',
-        'unit_price'            => 'decimal:4',
-        'line_subtotal'         => 'decimal:2',
-        'metal_vat_rate'        => 'decimal:2',
-        'metal_vat_amount'      => 'decimal:2',
-        'making_charge_rate'    => 'decimal:4',
-        'making_charge_amount'  => 'decimal:2',
-        'making_vat_rate'       => 'decimal:2',
-        'making_vat_amount'     => 'decimal:2',
-        'line_total'            => 'decimal:2',
+        'quantity'           => 'float',
+        'unit_price'         => 'float',
+        'vat_rate'           => 'float',
+        'vat_amount'         => 'float',
+        'gold_weight_grams'  => 'float',
     ];
 
-    public function invoice(): BelongsTo
-    {
-        return $this->belongsTo(Invoice::class);
-    }
+    // Bridge: existing table uses line_subtotal and line_total
+    public function getLineAmountAttribute()    { return (float)($this->attributes['line_subtotal'] ?? 0); }
+    public function setLineAmountAttribute($v)  { $this->attributes['line_subtotal'] = $v; }
+    public function getTotalAmountAttribute()   { return (float)($this->attributes['line_total'] ?? 0); }
+    public function setTotalAmountAttribute($v) { $this->attributes['line_total'] = $v; }
 
-    public function inventoryItem(): BelongsTo
-    {
-        return $this->belongsTo(InventoryItem::class, 'inventory_item_id');
-    }
+    public function invoice()       { return $this->belongsTo(Invoice::class); }
+    public function item()          { return $this->belongsTo(InventoryItem::class, 'inventory_item_id'); }
+    public function account()       { return $this->belongsTo(ChartOfAccount::class, 'chart_of_account_id'); }
 }

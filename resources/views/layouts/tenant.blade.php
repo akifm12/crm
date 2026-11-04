@@ -151,9 +151,9 @@
 
         @if($tenant->hasModule('bullion_accounting'))
         {{-- Bullion Accounting accordion --}}
-        <div x-data="{ open: {{ request()->routeIs('tenant.accounting.dashboard') || request()->routeIs('tenant.accounting.invoices*') || request()->routeIs('tenant.accounting.inventory*') || request()->routeIs('tenant.accounting.reports*') || request()->routeIs('tenant.accounting.journal*') || request()->routeIs('tenant.accounting.bills*') || request()->routeIs('tenant.accounting.suppliers*') ? 'true' : 'false' }} }">
+        <div x-data="{ open: {{ request()->routeIs('tenant.accounting.dashboard') || request()->routeIs('tenant.accounting.invoices*') || request()->routeIs('tenant.accounting.inventory*') || request()->routeIs('tenant.accounting.reports*') || request()->routeIs('tenant.accounting.journal*') || request()->routeIs('tenant.accounting.bills*') || request()->routeIs('tenant.accounting.suppliers*') || request()->routeIs('tenant.accounting.payroll*') || request()->routeIs('tenant.accounting.assets*') ? 'true' : 'false' }} }">
             <button type="button" @click="open = !open"
-                    class="nav-btn w-full {{ request()->routeIs('tenant.accounting.dashboard') || request()->routeIs('tenant.accounting.invoices*') || request()->routeIs('tenant.accounting.inventory*') || request()->routeIs('tenant.accounting.reports*') || request()->routeIs('tenant.accounting.journal*') || request()->routeIs('tenant.accounting.bills*') || request()->routeIs('tenant.accounting.suppliers*') ? 'active' : '' }}">
+                    class="nav-btn w-full {{ request()->routeIs('tenant.accounting.dashboard') || request()->routeIs('tenant.accounting.invoices*') || request()->routeIs('tenant.accounting.inventory*') || request()->routeIs('tenant.accounting.reports*') || request()->routeIs('tenant.accounting.journal*') || request()->routeIs('tenant.accounting.bills*') || request()->routeIs('tenant.accounting.suppliers*') || request()->routeIs('tenant.accounting.payroll*') || request()->routeIs('tenant.accounting.assets*') ? 'active' : '' }}">
                 <svg style="width:16px;height:16px;flex-shrink:0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 0v10m0-10L9 17M5 21h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z"/>
                 </svg>
@@ -189,6 +189,10 @@
                    class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.reports.client-statement*') ? 'active' : '' }}">Client Statement</a>
                 <a href="{{ route('tenant.accounting.reports.vat-return', $slug) }}"
                    class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.reports.vat-return') ? 'active' : '' }}">VAT Return</a>
+                <a href="{{ route('tenant.accounting.payroll.index', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.payroll*') ? 'active' : '' }}">Payroll</a>
+                <a href="{{ route('tenant.accounting.assets.index', $slug) }}"
+                   class="nav-link nav-sub {{ request()->routeIs('tenant.accounting.assets*') ? 'active' : '' }}">Fixed Assets</a>
             </div>
         </div>
         @endif

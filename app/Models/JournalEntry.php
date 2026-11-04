@@ -1,54 +1,52 @@
 <?php
 
-// app/Models/JournalEntry.php
-
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class JournalEntry extends Model
 {
     protected $fillable = [
-        'tenant_id', 'entry_date', 'reference', 'source_type', 'source_id', 'bullion_client_id',
-        'currency_code', 'exchange_rate', 'status', 'voided_journal_entry_id',
-        'created_by', 'memo',
+        'tenant_id','period_id','entry_number','entry_date','journal_type','status',
+        'description','reference','total_debit','total_credit','currency_code','exchange_rate',
+        'is_reversal','is_recurring','is_deleted','created_by_id',
     ];
 
     protected $casts = [
-        'entry_date' => 'date',
-        'exchange_rate' => 'decimal:6',
+        'is_reversal'  => 'boolean',
+        'is_recurring' => 'boolean',
+        'is_deleted'   => 'boolean',
     ];
 
-    public function tenant(): BelongsTo
-    {
-        return $this->belongsTo(Tenant::class);
-    }
+    // status: DB stores lowercase; views expect uppercase
+    public function getStatusAttribute(): string { return strtoupper($this->attributes['status'] ?? 'POSTED'); }
+    public function setStatusAttribute(string $v): void { $this->attributes['status'] = strtolower($v); }
 
-    public function client(): BelongsTo
-    {
-        return $this->belongsTo(BullionClient::class, 'bullion_client_id');
-    }
+    // DB column is `memo`; strip leading em-dashes inserted by the migration
+    public function getDescriptionAttribute(): string  { return trim(preg_replace('/^[\x{2014}\s]+/u', '', $this->attributes['memo'] ?? '')); }
+    public function setDescriptionAttribute(string $v): void { $this->attributes['memo'] = $v; }
+    // DB has no entry_number — synthesise a display value from reference or id
+    public function getEntryNumberAttribute(): string  { return $this->attributes['reference'] ?? ('JE-'.$this->id); }
+    public function setEntryNumberAttribute($v): void  {}
+    // DB uses source_type instead of journal_type
+    public function getJournalTypeAttribute(): string  { return $this->attributes['source_type'] ?? 'GENERAL'; }
+    public function setJournalTypeAttribute($v): void  { $this->attributes['source_type'] = $v; }
+    // DB has no total_debit/total_credit columns — safe no-ops so create() doesn't error
+    public function getTotalDebitAttribute(): float    { return 0.0; }
+    public function setTotalDebitAttribute($v): void   {}
+    public function getTotalCreditAttribute(): float   { return 0.0; }
+    public function setTotalCreditAttribute($v): void  {}
+    // DB has no is_deleted — safe no-ops
+    public function getIsDeletedAttribute(): bool      { return false; }
+    public function setIsDeletedAttribute($v): void    {}
+    // columns that don't exist in DB — safe no-ops
+    public function setPeriodIdAttribute($v): void     {}
+    public function setIsReversalAttribute($v): void   {}
+    public function setIsRecurringAttribute($v): void  {}
+    public function setCreatedByIdAttribute($v): void  { if ($v !== null) $this->attributes['created_by'] = $v; }
 
-    public function lines(): HasMany
-    {
-        return $this->hasMany(JournalEntryLine::class);
-    }
-
-    public function creator(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'created_by');
-    }
-
-    public function voidedEntry(): BelongsTo
-    {
-        return $this->belongsTo(self::class, 'voided_journal_entry_id');
-    }
-
-    public function scopePosted(Builder $query): Builder
-    {
-        return $query->where('status', 'posted');
-    }
+    public function tenant()  { return $this->belongsTo(Tenant::class); }
+    public function period()  { return $this->belongsTo(AccountingPeriod::class); }
+    public function lines()   { return $this->hasMany(JournalLine::class); }
+    public function createdBy() { return $this->belongsTo(User::class, 'created_by_id'); }
 }

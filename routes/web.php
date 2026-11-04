@@ -515,6 +515,32 @@ Route::prefix('{slug}')
                 Route::get('/reports/ap-aging',             [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'apAging'])->name('reports.ap-aging');
                 Route::get('/reports/ap-aging/pdf',         [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'apAgingPdf'])->name('reports.ap-aging.pdf');
                 Route::get('/reports/ap-aging/csv',         [\App\Http\Controllers\Tenant\Accounting\LedgerController::class, 'apAgingCsv'])->name('reports.ap-aging.csv');
+
+                // -- Payroll
+                Route::get('/payroll', [\App\Http\Controllers\Tenant\Accounting\PayrollController::class, 'index'])->name('payroll.index');
+                Route::get('/payroll/employees', [\App\Http\Controllers\Tenant\Accounting\PayrollController::class, 'employees'])->name('payroll.employees');
+                Route::get('/payroll/employees/create', [\App\Http\Controllers\Tenant\Accounting\PayrollController::class, 'createEmployee'])->name('payroll.employees.create');
+                Route::post('/payroll/employees', [\App\Http\Controllers\Tenant\Accounting\PayrollController::class, 'storeEmployee'])->name('payroll.employees.store');
+                Route::get('/payroll/employees/{employee}', [\App\Http\Controllers\Tenant\Accounting\PayrollController::class, 'showEmployee'])->name('payroll.employees.show');
+                Route::put('/payroll/employees/{employee}', [\App\Http\Controllers\Tenant\Accounting\PayrollController::class, 'updateEmployee'])->name('payroll.employees.update');
+                Route::delete('/payroll/employees/{employee}', [\App\Http\Controllers\Tenant\Accounting\PayrollController::class, 'destroyEmployee'])->name('payroll.employees.destroy');
+                Route::post('/payroll/departments', [\App\Http\Controllers\Tenant\Accounting\PayrollController::class, 'storeDepartment'])->name('payroll.departments.store');
+                Route::get('/payroll/runs/create', [\App\Http\Controllers\Tenant\Accounting\PayrollController::class, 'createRun'])->name('payroll.runs.create');
+                Route::post('/payroll/runs', [\App\Http\Controllers\Tenant\Accounting\PayrollController::class, 'storeRun'])->name('payroll.runs.store');
+                Route::get('/payroll/runs/{run}', [\App\Http\Controllers\Tenant\Accounting\PayrollController::class, 'showRun'])->name('payroll.show');
+                Route::post('/payroll/runs/{run}/post', [\App\Http\Controllers\Tenant\Accounting\PayrollController::class, 'postRun'])->name('payroll.post');
+                Route::post('/payroll/runs/{run}/void', [\App\Http\Controllers\Tenant\Accounting\PayrollController::class, 'voidRun'])->name('payroll.void');
+                // -- Fixed Assets
+                Route::get('/assets', [\App\Http\Controllers\Tenant\Accounting\FixedAssetController::class, 'index'])->name('assets.index');
+                Route::get('/assets/create', [\App\Http\Controllers\Tenant\Accounting\FixedAssetController::class, 'create'])->name('assets.create');
+                Route::post('/assets', [\App\Http\Controllers\Tenant\Accounting\FixedAssetController::class, 'store'])->name('assets.store');
+                Route::post('/assets/categories', [\App\Http\Controllers\Tenant\Accounting\FixedAssetController::class, 'storeCategory'])->name('assets.categories.store');
+                Route::post('/assets/depreciation', [\App\Http\Controllers\Tenant\Accounting\FixedAssetController::class, 'runDepreciation'])->name('assets.depreciation.run');
+                Route::get('/assets/{asset}', [\App\Http\Controllers\Tenant\Accounting\FixedAssetController::class, 'show'])->name('assets.show');
+                Route::get('/assets/{asset}/edit', [\App\Http\Controllers\Tenant\Accounting\FixedAssetController::class, 'edit'])->name('assets.edit');
+                Route::put('/assets/{asset}', [\App\Http\Controllers\Tenant\Accounting\FixedAssetController::class, 'update'])->name('assets.update');
+                Route::post('/assets/{asset}/dispose', [\App\Http\Controllers\Tenant\Accounting\FixedAssetController::class, 'dispose'])->name('assets.dispose');
+                Route::delete('/assets/{asset}', [\App\Http\Controllers\Tenant\Accounting\FixedAssetController::class, 'destroy'])->name('assets.destroy');
             });
         });
     });
