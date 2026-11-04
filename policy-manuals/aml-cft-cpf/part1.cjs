@@ -125,6 +125,7 @@ module.exports = (L) => {
     ['4 Nov 2026', 'MoET Supplemental Guidance for DPMS and DNFBP Guidelines (March 2026); Circulars 6/2025, 1/2026, 2/2023', 'DPMSR scope; linked-transaction aggregation; SDD; high-risk country measures and HRC/HRCA; data disclosure notice; third-party Compliance Officer.', '3.3, 4.7, 5, 7, 8.4, App. C', ''],
     ['4 Nov 2026', 'Ministerial Decree 68/2024', 'Dealers apply responsible-sourcing steps 1 to 3; audit and report apply to refiners and recyclers.', '7.4', ''],
     ['4 Nov 2026', 'FATF lists of 30 October 2026; National Committee (high-risk jurisdictions); MoET Responsible Sourcing page and Due Diligence Regulations v1; DNFBP Guidelines section 8', 'Dated register of FATF lists; CAHRA assessment per supply chain; risk assessment method, certification and update triggers.', '4.1 to 4.3, 7.5, App. C, F', ''],
+    ['4 Nov 2026', 'EU indicative CAHRA list under Regulation (EU) 2017/821 (cahraslist.net, RAND Europe for the European Commission, September 2026 update)', 'CAHRA register populated with the 31 listed countries and their regional coverage.', '7.5, App. C, F', ''],
     ['', '', '', '', ''],
   ], [1200, 2300, 3000, 1500, 1400]);
 

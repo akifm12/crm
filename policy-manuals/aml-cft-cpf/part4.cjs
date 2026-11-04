@@ -84,32 +84,32 @@ module.exports = (L) => {
   p('Source: FATF publications of 30 October 2026 ("Call for Action" and "Increased Monitoring"), the editions linked from the National Committee website. Last checked by the MLRO: ______ (date).');
   table(['Jurisdiction', 'List', 'Measures'], [
     ['Democratic People\'s Republic of Korea', 'FATF Call for Action', 'Section 4.7: Enhanced Due Diligence on all relationships and transactions, countermeasures, HRC/HRCA reports, no reliance on third parties there, no branches or subsidiaries.'],
-    ['Iran', 'FATF Call for Action', 'As above. Also UN sanctions re-imposed (Circular No. (7) of 2025): screen and freeze under section 6.'],
-    ['Myanmar', 'FATF Call for Action', 'As above.'],
+    ['Iran', 'FATF Call for Action', 'As above. Also UN sanctions re-imposed (Circular No. (7) of 2025): screen and freeze under section 6. Also on the EU CAHRA list (Appendix F).'],
+    ['Myanmar', 'FATF Call for Action', 'As above. Also on the EU CAHRA list (Appendix F).'],
   ], [3000, 2000, 4400]);
   table(['Jurisdiction', 'List', 'Measures'], [
     ['Angola', 'FATF Increased Monitoring', 'Enhanced Due Diligence proportionate to the risk; account taken in risk assessments and reviews; HRC/HRCA where the National Committee list requires.'],
     ['Bolivia', 'FATF Increased Monitoring', 'As above.'],
     ['Bosnia and Herzegovina', 'FATF Increased Monitoring (added June 2026)', 'As above.'],
     ['Bulgaria', 'FATF Increased Monitoring', 'As above. FATF made an initial determination in June 2026 that its action plan is substantially complete; watch for removal.'],
-    ['Cameroon', 'FATF Increased Monitoring', 'As above.'],
+    ['Cameroon', 'FATF Increased Monitoring', 'As above. Also on the EU CAHRA list (Appendix F).'],
     ['Côte d\'Ivoire', 'FATF Increased Monitoring', 'As above.'],
-    ['Democratic Republic of the Congo', 'FATF Increased Monitoring', 'As above. Also treat as a CAHRA candidate (Appendix F).'],
-    ['Haiti', 'FATF Increased Monitoring', 'As above.'],
+    ['Democratic Republic of the Congo', 'FATF Increased Monitoring', 'As above. Also on the EU CAHRA list (Appendix F).'],
+    ['Haiti', 'FATF Increased Monitoring', 'As above. Also on the EU CAHRA list (Appendix F).'],
     ['Iraq', 'FATF Increased Monitoring (added June 2026)', 'As above.'],
     ['Kenya', 'FATF Increased Monitoring', 'As above.'],
     ['Kuwait', 'FATF Increased Monitoring', 'As above.'],
     ['Lao PDR', 'FATF Increased Monitoring', 'As above.'],
-    ['Lebanon', 'FATF Increased Monitoring', 'As above.'],
+    ['Lebanon', 'FATF Increased Monitoring', 'As above. Also on the EU CAHRA list (Appendix F).'],
     ['Monaco', 'FATF Increased Monitoring', 'As above.'],
     ['Nepal', 'FATF Increased Monitoring', 'As above.'],
     ['Papua New Guinea', 'FATF Increased Monitoring', 'As above.'],
-    ['South Sudan', 'FATF Increased Monitoring', 'As above.'],
+    ['South Sudan', 'FATF Increased Monitoring', 'As above. Also on the EU CAHRA list (Appendix F).'],
     ['Syria', 'FATF Increased Monitoring', 'As above.'],
-    ['Venezuela', 'FATF Increased Monitoring', 'As above.'],
+    ['Venezuela', 'FATF Increased Monitoring', 'As above. Also on the EU CAHRA list (Appendix F).'],
     ['Vietnam', 'FATF Increased Monitoring', 'As above.'],
     ['Virgin Islands (UK)', 'FATF Increased Monitoring', 'As above.'],
-    ['Yemen', 'FATF Increased Monitoring', 'As above.'],
+    ['Yemen', 'FATF Increased Monitoring', 'As above. Also on the EU CAHRA list (Appendix F).'],
   ], [3000, 2400, 4000]);
   h3('Other jurisdictions treated as high risk by {{COMPANY_SHORT}}');
   p('Countries {{COMPANY_SHORT}} assesses as high risk for corruption, illicit gold, conflict or weak AML supervision, with the reason, are recorded here. UN and UAE sanctions regimes (including Iran under UNSCR 1737 (2006), and the DPRK) apply in addition. Conflict-affected and high-risk areas for the gold supply chain are recorded in Appendix F.');
@@ -183,8 +183,43 @@ module.exports = (L) => {
     ['Senior Management approval (exceptions only) and mitigation plan', ''],
   ], [3800, 5600]);
   h3('CAHRA register');
-  p('Areas {{COMPANY_SHORT}} treats as conflict-affected or high-risk for gold supply chains, kept by the MLRO and reviewed at least quarterly (section 7.5). No official list exists; record the basis for each entry.');
-  table(['Area / country', 'Why treated as a CAHRA (sources)', 'Date added', 'Last reviewed', 'Reviewed by'], [
-    ['', '', '', '', ''], ['', '', '', '', ''], ['', '', '', '', ''], ['', '', '', '', ''],
-  ], [2000, 3600, 1200, 1400, 1200]);
+  p('Areas {{COMPANY_SHORT}} treats as conflict-affected or high-risk for gold supply chains, kept by the MLRO and reviewed at least quarterly (section 7.5). The register starts from the European Union\'s indicative, non-exhaustive list of conflict-affected and high-risk areas under Regulation (EU) 2017/821, maintained by RAND Europe for the European Commission (list updated September 2026, based on June 2026 data; source: cahraslist.net). That list is not an official EU opinion and is not UAE or MoET guidance. It does not replace {{COMPANY_SHORT}}\'s own assessment: an area missing from it can still be a CAHRA, and where only some regions of a country are listed the assessment looks at the specific region of origin and transit. Being listed does not prohibit trade. It requires enhanced scrutiny (section 7.5).');
+  table(['Area / country', 'Coverage on the EU list', 'Last reviewed', 'Reviewed by'], [
+    ['Afghanistan', 'Whole country (34 of 34 regions)', '', ''],
+    ['Burkina Faso', 'Part of the country: 6 of 13 regions', '', ''],
+    ['Burundi', 'Whole country (17 of 17 regions)', '', ''],
+    ['Cameroon', 'Part of the country: 3 of 10 regions', '', ''],
+    ['Central African Republic', 'Whole country (17 of 17 regions)', '', ''],
+    ['Chad', 'Part of the country: 2 of 23 regions', '', ''],
+    ['Colombia', 'Part of the country: 10 of 32 regions', '', ''],
+    ['Democratic Republic of the Congo', 'Whole country (26 of 26 regions)', '', ''],
+    ['Eritrea', 'Whole country (6 of 6 regions)', '', ''],
+    ['Ethiopia', 'Part of the country: 5 of 11 regions', '', ''],
+    ['Haiti', 'Part of the country: 3 of 10 regions', '', ''],
+    ['India', 'Part of the country: 4 of 35 regions', '', ''],
+    ['Iran', 'Part of the country: 10 of 31 regions', '', ''],
+    ['Lebanon', 'Part of the country: 6 of 8 regions', '', ''],
+    ['Libya', 'Whole country (22 of 22 regions)', '', ''],
+    ['Mali', 'Part of the country: 8 of 9 regions', '', ''],
+    ['Mexico', 'Part of the country: 10 of 32 regions', '', ''],
+    ['Mozambique', 'Part of the country: 2 of 11 regions', '', ''],
+    ['Myanmar', 'Whole country (15 of 15 regions)', '', ''],
+    ['Niger', 'Part of the country: 4 of 8 regions', '', ''],
+    ['Nigeria', 'Part of the country: 9 of 37 regions', '', ''],
+    ['Pakistan', 'Part of the country: 3 of 7 regions', '', ''],
+    ['Russia', 'Part of the country: 2 of 81 regions', '', ''],
+    ['Somalia', 'Whole country (18 of 18 regions)', '', ''],
+    ['South Sudan', 'Whole country (10 of 10 regions)', '', ''],
+    ['Sudan', 'Whole country (18 of 18 regions)', '', ''],
+    ['Togo', 'Part of the country: 1 of 5 regions', '', ''],
+    ['Ukraine', 'Part of the country: 10 of 27 regions', '', ''],
+    ['Venezuela', 'Whole country (25 of 25 regions)', '', ''],
+    ['Yemen', 'Whole country (21 of 21 regions)', '', ''],
+    ['Zimbabwe', 'Whole country (10 of 10 regions)', '', ''],
+  ], [3300, 3700, 1300, 1100]);
+  h3('Additional areas assessed by {{COMPANY_SHORT}}');
+  p('Areas {{COMPANY_SHORT}} adds to the register, with the basis for each (sanctions regimes, FATF and National Committee lists, MoET guidance, credible government or intergovernmental reporting).');
+  table(['Area / country', 'Why treated as a CAHRA (sources)', 'Date added', 'Reviewed by'], [
+    ['', '', '', ''], ['', '', '', ''], ['', '', '', ''],
+  ], [2400, 4400, 1300, 1300]);
 };
