@@ -3,8 +3,12 @@
 @section('page-title', 'Policy Manuals')
 
 @section('content')
+@php $groups = collect($manuals)->groupBy(fn ($m) => $m[2] ?? 'Other manuals', true); @endphp
+@foreach($groups as $groupName => $items)
+<h2 class="text-xs font-semibold text-gray-500 uppercase tracking-wider {{ $loop->first ? '' : 'mt-8' }} mb-3">{{ $groupName }}</h2>
 <div class="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
-    @foreach($manuals as $slug => [$title, $blurb])
+    @foreach($items as $slug => $m)
+    @php $title = $m[0]; $blurb = $m[1]; @endphp
     <a href="{{ route('policy-manuals.show', $slug) }}" class="block bg-white rounded-xl border border-gray-200 p-5 hover:border-blue-400 transition">
         <p class="text-sm font-semibold text-gray-800">{{ $title }}</p>
         <p class="text-xs text-gray-500 mt-1">{{ $blurb }}</p>
@@ -16,4 +20,5 @@
     </a>
     @endforeach
 </div>
+@endforeach
 @endsection

@@ -14,7 +14,9 @@ use Illuminate\Http\Request;
 class PolicyManualController extends Controller
 {
     public const MANUALS = [
-        'aml-cft-policy'      => ['AML / CFT / CPF and Sanctions Manual', 'Full manual for gold and bullion dealers: governance, CDD, TFS, DPMSR, forms. Generates a Word document per client.'],
+        'aml-cft-policy'      => ['AML Policy: Gold and Bullion Traders', 'AML/CFT/CPF and sanctions manual for dealers in precious metals: governance, CDD, TFS, DPMSR and responsible sourcing. Generates a Word document per client.', 'AML Policy'],
+        'aml-real-estate'     => ['AML Policy: Real Estate Brokers and Agents', 'AML/CFT/CPF and sanctions manual for real estate brokers and agents: REAR reporting, source of funds, both sides of the deal. Generates a Word document per client.', 'AML Policy'],
+        'aml-csp'             => ['AML Policy: Trust and Company Service Providers', 'AML/CFT/CPF and sanctions manual for company and trust service providers: beneficial ownership, nominee and trust services. Generates a Word document per client.', 'AML Policy'],
         'supply-chain-policy' => ['Supply Chain Policy for Responsible Sourcing', 'OECD five-step policy for gold and bullion traders under Ministerial Decree 68 of 2024. Generates a Word document per client.'],
         'kyc-cdd-procedures'  => ['KYC & CDD Procedures',            'Onboarding, ongoing due diligence, EDD and simplified measures.'],
         'risk-assessment'     => ['Business Risk Assessment',        'Methodology for customer, product, channel and geography risk.'],

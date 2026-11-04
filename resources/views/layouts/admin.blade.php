@@ -166,9 +166,30 @@
                         @php $pmNew = \Illuminate\Support\Facades\Schema::hasTable('regulatory_updates') ? \App\Models\RegulatoryUpdate::where('status', 'new')->count() : 0; @endphp
                         <a href="{{ route('policy-manuals.updates') }}"
                            class="flex items-center justify-between px-3 py-1.5 rounded-md text-xs {{ request()->routeIs('policy-manuals.updates*') ? 'bg-blue-600 text-white' : 'text-blue-200 hover:bg-blue-600' }}">Regulatory updates @if($pmNew)<span class="ml-2 px-1.5 rounded-full bg-amber-400 text-blue-900 font-semibold">{{ $pmNew }}</span>@endif</a>
-                        @foreach(\App\Http\Controllers\Admin\PolicyManualController::MANUALS as $mSlug => $m)
+                        @php
+                            $pmGroups = collect(\App\Http\Controllers\Admin\PolicyManualController::MANUALS)->groupBy(fn ($m) => $m[2] ?? 'Other manuals', true);
+                            $pmCurrent = request()->route('manual');
+                        @endphp
+                        @foreach($pmGroups as $gName => $gItems)
+                        @if($gName === 'AML Policy')
+                        <div x-data="{ sub: {{ $gItems->has($pmCurrent) ? 'true' : 'false' }} }">
+                            <button type="button" @click="sub = !sub" class="w-full flex items-center justify-between px-3 py-1.5 rounded-md text-xs font-medium text-white hover:bg-blue-600">
+                                <span>AML Policy</span>
+                                <svg class="h-3 w-3 opacity-60 transition-transform" :class="sub ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                            </button>
+                            <div x-show="sub" x-cloak class="ml-3 space-y-0.5">
+                                @foreach($gItems as $mSlug => $m)
+                                <a href="{{ route('policy-manuals.show', $mSlug) }}"
+                                   class="block px-3 py-1.5 rounded-md text-xs {{ $pmCurrent === $mSlug ? 'bg-blue-600 text-white' : 'text-blue-200 hover:bg-blue-600' }}">{{ \Illuminate\Support\Str::after($m[0], 'AML Policy: ') }}</a>
+                                @endforeach
+                            </div>
+                        </div>
+                        @else
+                        @foreach($gItems as $mSlug => $m)
                         <a href="{{ route('policy-manuals.show', $mSlug) }}"
-                           class="block px-3 py-1.5 rounded-md text-xs {{ request()->url() === route('policy-manuals.show', $mSlug) ? 'bg-blue-600 text-white' : 'text-blue-200 hover:bg-blue-600' }}">{{ $m[0] }}</a>
+                           class="block px-3 py-1.5 rounded-md text-xs {{ $pmCurrent === $mSlug ? 'bg-blue-600 text-white' : 'text-blue-200 hover:bg-blue-600' }}">{{ $m[0] }}</a>
+                        @endforeach
+                        @endif
                         @endforeach
                     </div>
                 </div>

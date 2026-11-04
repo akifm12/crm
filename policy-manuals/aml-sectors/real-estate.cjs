@@ -1,0 +1,68 @@
+// Real estate brokers and agents: what differs from the base manual.
+// Sources: MoET Supplemental Guidance for Real Estate Agents and Brokers (2026), MoET Circular No. (5) of 2022
+// (REAR), Cabinet Resolution No. (134) of 2025 Article 3, and the MoET DNFBP Guidelines (March 2026).
+const path = require('path');
+
+module.exports = {
+  key: 'real-estate',
+  outFile: 'AML-CFT-CPF-Manual-Real-Estate-Template-v1.docx',
+  docTitle: 'AML / CFT / CPF and Sanctions Policy and Procedures Manual for Real Estate Brokers and Agents',
+  headerTitle: 'AML / CFT / CPF and Sanctions Manual (Real Estate)',
+  section7: path.join(__dirname, 'real-estate-s7.cjs'),
+  appendixB: path.join(__dirname, 'real-estate-appb.cjs'),
+
+  intro: 'This is the master template of the AML / CFT / CPF and Sanctions Policy Manual for real estate brokers and agents. It is written for a UAE company licensed to act as a real estate broker or agent and supervised by the Ministry of Economy and Tourism (MoET). Replace every highlighted placeholder with the company\'s own details. Nothing else in the text is company specific.',
+  example1: 'Example Realty LLC',
+  example2: 'Example Realty',
+  cover: 'Real Estate Broker and Agent, Trade License No. {{TRADE_LICENSE_NO}}',
+  scope: 'as a real estate broker and agent, including marketing properties, negotiating terms, concluding or facilitating the purchase and sale of real estate for buyers and sellers, and arranging the related payments, deposits and financing.',
+
+  circular: 'Circular No. (5) of 2022: Real Estate Activity Report (REAR) requirements for real estate brokers and agents.',
+  guidance: 'Guidelines for Designated Non-Financial Businesses and Professions (March 2026) and the Supplemental Guidance for Real Estate Agents and Brokers (2026).',
+  fatf: 'FATF Recommendations and the FATF and MENAFATF guidance on the risk-based approach for the real estate sector.',
+  supervisor: 'AML/CFT/CPF supervisor of real estate brokers and agents.',
+  licensing: ['Issues and renews the trade license.', 'Issues and renews the trade license and the broker registration (the Land Department or municipality of the emirate, or the free zone authority).'],
+  fiuReports: 'STR/SAR, REAR, HRC/HRCA and follow-up reports',
+  customerExtra: '(including the buyer and the seller of a property for whom {{COMPANY_SHORT}} acts, and anyone who instructs it on their behalf)',
+  defReport: ['REAR', 'Real Estate Activity Report: the goAML report filed for the property transactions described in section 7.1.'],
+  defA: ['Real estate transaction', 'The purchase or sale of real estate (including off-plan units) that {{COMPANY_SHORT}} concludes or facilitates for a customer, with the connected deposits, installments, financing and settlement.'],
+  defB: ['Developer', 'A person that builds and sells properties, including off-plan units, to buyers.'],
+  changeLog: [
+    ['Nov 2026', 'Federal Decree-Law 10/2025; Cabinet Resolution 134/2025; EOCN TFS guidance (March 2026); MoET Circulars 3/2025, 6/2025, 7/2025 and 1/2026', 'First issue of this Manual for real estate brokers and agents under the current law.', 'All', ''],
+    ['Nov 2026', 'MoET Supplemental Guidance for Real Estate Agents and Brokers (2026); Circular 5/2022', 'Sector risk factors, customer due diligence, REAR reporting and red flags.', '2, 4, 5, 7, 8.4, App. B', ''],
+  ],
+  stagesHeader: 'Examples in real estate',
+  stages: [
+    ['Placement', 'Illegal cash or funds from unclear sources enter the system.', 'Paying for property, deposits or installments in cash, with virtual assets or through third parties; buying through companies, nominees or relatives.'],
+    ['Layering', 'Funds are moved and converted to hide their origin.', 'Buying and selling or assigning properties in quick succession (including off-plan units resold soon after booking); sales between related parties at prices that do not match value; loans, mortgages and valuations that do not fit the property; ownership moved through companies and trusts.'],
+    ['Integration', 'Funds re-enter the economy as apparently legitimate wealth.', 'Holding, renting out or selling the property so that the money looks like rental income or investment gain.'],
+  ],
+  exposureTitle: '2.5 Why the real estate sector is exposed',
+  exposure: [
+    'property transactions involve very high values, so a single deal can move a large amount of money;',
+    'funds and buyers often come from abroad, with cross-border movement of money;',
+    'ownership can be held through complex structures, such as companies, trusts, nominees and relatives, that hide who really owns or controls the property;',
+    'third parties, such as relatives, lawyers, developers and financiers, are often involved, which can distance the real owner from the deal;',
+    'property can store value for years and then be sold, giving the proceeds an apparently legitimate source.',
+  ],
+  mlroReports: '(REAR, HRC/HRCA, CNMR, PNMR) on time',
+  reviewScope: 'ownership and source-of-funds checks on property transactions; cash, virtual asset and third-party payments and REAR filings;',
+  sectorRisk: 'which identify the real estate sector as highly vulnerable to money laundering, terrorist financing and proliferation financing',
+  braFactors: 'Identify the inherent risks from these factors: customer types and their activities (buyers, sellers, investors, developers, companies and individuals); countries and geographic areas of customers, properties and the source of funds; properties and services (off-plan, resale, leasing, commercial, luxury; brokerage for buyers and sellers); delivery channels, intermediaries and counterparties (developers, other brokers, lawyers, valuers and financing institutions); transaction value, frequency and payment methods, especially cash, virtual assets and third-party payments; ownership and control structures, including legal persons and nominees; proliferation-financing exposure, including sanctioned jurisdictions and parties; new products, practices, delivery mechanisms and technologies.',
+  geography: 'geography: nationality, residence, incorporation, place of business, the location of the property, and the origin and route of the funds;',
+  cashFlag: 'cash-intensive business, or cash payment of AED 55,000 or more for any part of a property price (section 7.1);',
+  extraFlag: 'funds of unclear or undocumented origin; payment in cash or virtual assets; payment from unrelated third parties; or a buyer whose financial profile does not match the value, nature and location of the property (sections 7.2 and 7.4);',
+  fiveOne: 'when acting for a buyer or a seller in any property transaction, whatever the price (section 7.3);',
+  sourceFunds: 'and for every property transaction, the source of funds is obtained and recorded;',
+  sddCash: 'or a cash, virtual asset or third-party payment',
+  transParties: 'Buyers, sellers, developers, other brokers, lawyers, valuers, financing institutions and other parties named in a transaction, and payers and payees of any third-party payment (section 7.2).',
+  freezeAssets: 'all funds, property and other assets of the listed person',
+  monitor: 'repeated purchases and sales of the same property in a short time, changes in ownership, payment method or value, and payments through third parties',
+  reportRow: ['REAR', 'Property transactions described in section 7.1.'],
+  step1: ['Sales / front desk', 'Confirm the engagement and the transaction the customer wants. Explain the documents needed. Never act on instructions, take a deposit or accept any payment before CDD is complete.'],
+  records: 'customer correspondence and the supporting records of each transaction, enough for every transaction to be reconstructed (date, parties, property description, price, payment method, source of funds, brokerage and sale contracts, receipts and registry records);',
+  reports66: 'external reports (STR/SAR, REAR, HRC/HRCA, CNMR, PNMR)',
+  training: 'recognizing red flags in property transactions; cash, virtual asset and REAR rules;',
+  mlroFiling: 'filing STRs/SARs, REARs, HRC/HRCA, CNMRs, PNMRs and other goAML reports on time, and notifying MoET where required;',
+  appxERow: 'Property involved (address, type, price)',
+};

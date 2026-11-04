@@ -56,6 +56,8 @@ class PolicyManualGenerator
     /** Template files, relative to resources/policy-manuals. */
     public const TEMPLATES = [
         'aml-cft-policy' => 'aml-cft-cpf/AML-CFT-CPF-Manual-Template-v2.3.2.docx',
+        'aml-real-estate' => 'aml-sectors/AML-CFT-CPF-Manual-Real-Estate-Template-v1.docx',
+        'aml-csp' => 'aml-sectors/AML-CFT-CPF-Manual-CSP-Template-v1.docx',
         'supply-chain-policy' => 'supply-chain/Supply-Chain-Policy-Template-v1.1.docx',
     ];
 

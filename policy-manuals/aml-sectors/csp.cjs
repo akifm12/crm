@@ -1,0 +1,68 @@
+// Trust and company service providers (TCSPs): what differs from the base manual.
+// Sources: MoET Supplemental Guidance for Trust and Company Service Providers (2026), Cabinet Resolution
+// No. (134) of 2025 Article 3(5) and the beneficial owner articles, and the MoET DNFBP Guidelines (March 2026).
+const path = require('path');
+
+module.exports = {
+  key: 'csp',
+  outFile: 'AML-CFT-CPF-Manual-CSP-Template-v1.docx',
+  docTitle: 'AML / CFT / CPF and Sanctions Policy and Procedures Manual for Trust and Company Service Providers',
+  headerTitle: 'AML / CFT / CPF and Sanctions Manual (Company and Trust Service Providers)',
+  section7: path.join(__dirname, 'csp-s7.cjs'),
+  appendixB: path.join(__dirname, 'csp-appb.cjs'),
+
+  intro: 'This is the master template of the AML / CFT / CPF and Sanctions Policy Manual for trust and company service providers (TCSPs). It is written for a UAE company that forms or administers companies and other legal persons or arrangements, or provides directors, nominees, trustees or registered office services, and is supervised by the Ministry of Economy and Tourism (MoET). Replace every highlighted placeholder with the company\'s own details. Nothing else in the text is company specific.',
+  example1: 'Example Corporate Services LLC',
+  example2: 'Example Corporate Services',
+  cover: 'Trust and Company Service Provider, Trade License No. {{TRADE_LICENSE_NO}}',
+  scope: 'as a trust and company service provider (TCSP), including forming legal persons as an agent, acting as or providing directors, secretaries, partners or nominee shareholders, providing registered office and business address services, and acting as, or arranging for another to act as, trustee of an express trust or similar arrangement.',
+
+  circular: null,
+  guidance: 'Guidelines for Designated Non-Financial Businesses and Professions (March 2026) and the Supplemental Guidance for Trust and Company Service Providers (2026).',
+  fatf: 'FATF Recommendations and the FATF and MENAFATF guidance on the risk-based approach for trust and company service providers.',
+  supervisor: 'AML/CFT/CPF supervisor of trust and company service providers in the mainland and the commercial free zones.',
+  licensing: null,
+  fiuReports: 'STR/SAR, HRC/HRCA and follow-up reports',
+  customerExtra: '(including each person for whom {{COMPANY_SHORT}} forms or administers a legal person or arrangement, or acts as director, trustee, nominee or registered agent)',
+  defReport: null,
+  defA: ['Covered activities', 'Acting as an agent in forming or establishing legal persons; acting, or arranging for another person to act, as a director or secretary of a company or as a partner or in a similar position; providing a registered office, business, correspondence or administrative address for a company or other legal person or arrangement; acting, or arranging for another person to act, as trustee of an express trust or equivalent arrangement; and acting, or arranging for another person to act, as a nominee shareholder (Cabinet Resolution No. (134) of 2025, Article 3).'],
+  defB: ['Nominee', 'A person who holds shares or acts as a director or in a similar role on behalf of another person (the nominator). A nominee is never treated as the beneficial owner.'],
+  changeLog: [
+    ['Nov 2026', 'Federal Decree-Law 10/2025; Cabinet Resolution 134/2025; EOCN TFS guidance (March 2026); MoET Circulars 3/2025, 6/2025, 7/2025 and 1/2026', 'First issue of this Manual for trust and company service providers under the current law.', 'All', ''],
+    ['Nov 2026', 'MoET Supplemental Guidance for Trust and Company Service Providers (2026); Cabinet Resolution 134/2025 (beneficial owners, nominees)', 'Sector risk factors, beneficial ownership, nominee and trust services, and red flags.', '2, 4, 5, 7, App. B', ''],
+  ],
+  stagesHeader: 'Examples in company and trust services',
+  stages: [
+    ['Placement', 'Illegal cash or funds from unclear sources enter the system.', 'A company or arrangement is formed to receive illicit money or open accounts that hide the real owner; nominee directors or shareholders are presented as the owners.'],
+    ['Layering', 'Funds are moved and converted to hide their origin.', 'Layered structures across several jurisdictions; frequent changes of ownership; intercompany loans and invoices with no substance; shell or shelf companies passed from one owner to another.'],
+    ['Integration', 'Funds re-enter the economy as apparently legitimate wealth.', 'Companies and trusts used to hold assets, receive apparently legitimate income, and pay out dividends, fees or distributions that give illicit wealth a lawful look.'],
+  ],
+  exposureTitle: '2.5 Why trust and company services are exposed',
+  exposure: [
+    'service providers act as gatekeepers: they create and run the structures through which money and assets are held and moved;',
+    'legal persons and arrangements can separate legal ownership from real control, which can hide the people behind them;',
+    'structures often span several jurisdictions, with layered ownership that makes the owners hard to trace;',
+    'nominee and fiduciary arrangements put another person\'s name on shares, directorships or trust positions;',
+    'registered office and address services can give a company a presence with no real activity behind it.',
+  ],
+  mlroReports: '(HRC/HRCA, CNMR, PNMR) on time',
+  reviewScope: 'beneficial ownership and nominee records; payments received and made;',
+  sectorRisk: 'which identify trust and company service providers as gatekeepers with high exposure to the misuse of legal persons and arrangements',
+  braFactors: 'Identify the inherent risks from these factors: customer types and their activities (individuals, companies, trusts, foundations, funds and other arrangements); countries and geographic areas of customers, beneficial owners, structures and the source of funds; services provided (company formation, directors, secretaries and nominee shareholders, registered office and address services, trust and fiduciary services); delivery channels, introducers and counterparties; transaction size, frequency and payment methods, especially cash and third-party payments; ownership and control structures, including layered, nominee and offshore structures; proliferation-financing exposure, including sanctioned jurisdictions and dual-use trade; new products, practices, delivery mechanisms and technologies.',
+  geography: 'geography: nationality, residence, incorporation, place of business, the jurisdictions of the structures {{COMPANY_SHORT}} forms or administers, and the origin and route of the funds;',
+  cashFlag: 'cash-intensive business, or any payment in cash (section 7.2);',
+  extraFlag: 'nominee directors or shareholders, bearer shares, shelf or dormant companies, or structures with no clear commercial purpose or with layered ownership across several jurisdictions (sections 7.3 and 7.4);',
+  fiveOne: 'when acting as an agent in forming a legal person, or as a director, secretary, nominee, trustee or provider of a registered office, whatever the value (section 7.3);',
+  sourceFunds: 'and for every relationship, the source of funds is obtained and recorded;',
+  sddCash: 'or any payment in cash',
+  transParties: 'Shareholders, directors, nominees and their nominators, trustees, settlors, protectors, beneficiaries, introducers and other parties named in a structure, and payers and payees of any third-party payment (section 7.2).',
+  freezeAssets: 'all funds and other assets of the listed person, including shares and interests in legal persons and arrangements',
+  monitor: 'changes in ownership, directors or address, dormant entities that suddenly become active, and payments through third parties',
+  reportRow: null,
+  step1: ['Client onboarding team', 'Confirm the request and the structure wanted, and why. Explain the documents needed. Never form, register, appoint, provide an address or act for any person before CDD is complete.'],
+  records: 'customer correspondence and the supporting records of each service, enough for every transaction and structure to be reconstructed (date, parties, structure and service, fees, payment method, source of funds, engagement letters, nominee and trust agreements, registers and registry filings);',
+  reports66: 'external reports (STR/SAR, HRC/HRCA, CNMR, PNMR)',
+  training: 'recognizing red flags in company formation and nominee services; beneficial ownership and nominee rules;',
+  mlroFiling: 'filing STRs/SARs, HRC/HRCA, CNMRs, PNMRs and other goAML reports on time, and notifying MoET where required;',
+  appxERow: 'Entity or arrangement involved (name, jurisdiction, service provided)',
+};
