@@ -167,6 +167,10 @@ Route::middleware(['auth', \App\Http\Middleware\EnsureAdminUser::class])->group(
         return back()->with('success', 'Status updated.');
     })->name('quotations.status');
 
+    // ── Policy manuals ───────────────────────────────────────────
+    Route::get('/policy-manuals',          [\App\Http\Controllers\Admin\PolicyManualController::class, 'index'])->name('policy-manuals.index');
+    Route::get('/policy-manuals/{manual}', [\App\Http\Controllers\Admin\PolicyManualController::class, 'show'])->name('policy-manuals.show');
+
     // ── Help ──────────────────────────────────────────────────────────────
     Route::get('/help/user-manual', fn() => view('admin.help.user-manual'))->name('help.user-manual');
 

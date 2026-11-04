@@ -149,6 +149,26 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
                     </svg>
                 </a>
+
+                {{-- Policy Manuals --}}
+                <div x-data="{ open: {{ request()->routeIs('policy-manuals.*') ? 'true' : 'false' }} }">
+                    <button type="button" @click="open = !open"
+                            class="mt-1 w-full flex items-center px-3 py-2 rounded-md text-sm font-medium {{ request()->routeIs('policy-manuals.*') ? 'bg-blue-600 text-white' : 'text-blue-100 hover:bg-blue-600' }}">
+                        <svg class="mr-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                        </svg>
+                        <span class="flex-1 text-left">Policy Manuals</span>
+                        <svg class="h-3 w-3 opacity-60 transition-transform" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div x-show="open" x-cloak class="ml-8 mt-1 space-y-0.5">
+                        <a href="{{ route('policy-manuals.index') }}"
+                           class="block px-3 py-1.5 rounded-md text-xs {{ request()->routeIs('policy-manuals.index') ? 'bg-blue-600 text-white' : 'text-blue-200 hover:bg-blue-600' }}">All manuals</a>
+                        @foreach(\App\Http\Controllers\Admin\PolicyManualController::MANUALS as $mSlug => $m)
+                        <a href="{{ route('policy-manuals.show', $mSlug) }}"
+                           class="block px-3 py-1.5 rounded-md text-xs {{ request()->url() === route('policy-manuals.show', $mSlug) ? 'bg-blue-600 text-white' : 'text-blue-200 hover:bg-blue-600' }}">{{ $m[0] }}</a>
+                        @endforeach
+                    </div>
+                </div>
             </div>
 
             <!-- Public Site -->
