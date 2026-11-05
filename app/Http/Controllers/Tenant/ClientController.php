@@ -180,8 +180,12 @@ PROMPT;
             ]);
 
             if (!$response->successful()) {
-                $apiError = $response->json('error.message') ?? 'Anthropic API error ('.$response->status().')';
-                return response()->json(['error' => $apiError], 422);
+                // Detail goes to the log only; users get a generic message.
+                \Illuminate\Support\Facades\Log::error('Client document scan: API error', [
+                    'status' => $response->status(),
+                    'body'   => $response->json('error.message') ?? $response->body(),
+                ]);
+                return response()->json(['error' => "We couldn't read this document automatically. Please enter the details manually."], 422);
             }
 
             $text = trim($response->json('content.0.text', ''));
@@ -207,7 +211,8 @@ PROMPT;
             ]));
 
         } catch (\Exception $e) {
-            return response()->json(['error' => 'Scan failed: '.$e->getMessage()], 500);
+            \Illuminate\Support\Facades\Log::error('Client document scan failed', ['error' => $e->getMessage()]);
+            return response()->json(['error' => "We couldn't read this document automatically. Please enter the details manually."], 500);
         }
     }
 

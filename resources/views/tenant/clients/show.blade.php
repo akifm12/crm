@@ -763,7 +763,7 @@ $countryName = fn($code) => $code ? (\App\Models\Country::find($code)?->country_
                         </div>
 
                         @if($log->status === 'failed')
-                        <p class="text-xs text-red-500 mt-1">{{ $log->failure_reason }}</p>
+                        <p class="text-xs text-red-500 mt-1">This document could not be read automatically. Please check the details manually.</p>
                         @elseif(count($log->changes ?? []) > 0)
                         <div class="mt-2 space-y-1">
                             @foreach($log->changes as $change)
