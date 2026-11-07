@@ -1021,13 +1021,14 @@ $countryName = fn($code) => $code ? (\App\Models\Country::find($code)?->country_
             {{-- Results panel --}}
             <div class="lg:col-span-2">
                 @if($client->screening_result && isset($client->screening_result['hits']))
-                <div class="bg-white rounded-xl border {{ ($client->screening_result['status'] ?? '') === 'match' ? 'border-red-200' : 'border-gray-200' }}">
-                    <div class="px-5 py-4 border-b {{ ($client->screening_result['status'] ?? '') === 'match' ? 'bg-red-50 border-red-100' : 'bg-gray-50 border-gray-100' }} rounded-t-xl flex items-center justify-between">
-                        <h3 class="text-sm font-semibold {{ ($client->screening_result['status'] ?? '') === 'match' ? 'text-red-700' : 'text-gray-700' }}">
+                @php $coHits = count($client->screening_result['hits'] ?? []); @endphp
+                <div class="bg-white rounded-xl border {{ $coHits > 0 ? 'border-red-200' : 'border-gray-200' }}">
+                    <div class="px-5 py-4 border-b {{ $coHits > 0 ? 'bg-red-50 border-red-100' : 'bg-gray-50 border-gray-100' }} rounded-t-xl flex items-center justify-between">
+                        <h3 class="text-sm font-semibold {{ $coHits > 0 ? 'text-red-700' : 'text-gray-700' }}">
                             Screening results — {{ $client->displayName() }}
                         </h3>
-                        <span class="text-xs px-2 py-0.5 rounded-full {{ $scrColor[$client->screening_result['status'] ?? 'not_screened'] ?? 'bg-gray-100 text-gray-500' }}">
-                            {{ $client->screening_result['total_hits'] ?? 0 }} hit(s)
+                        <span class="text-xs px-2 py-0.5 rounded-full {{ $coHits > 0 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700' }}">
+                            {{ $coHits > 0 ? $coHits . ' hit(s)' : 'Clear' }}
                         </span>
                     </div>
                     @if(!empty($client->screening_result['hits']))
@@ -1075,7 +1076,10 @@ $countryName = fn($code) => $code ? (\App\Models\Country::find($code)?->country_
                             <div class="flex flex-wrap gap-1.5 mt-1">
                                 @if(!empty($hit['type']))<span class="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">{{ $hit['type'] }}</span>@endif
                                 @if(!empty($hit['riskLevel']))<span class="text-xs px-2 py-0.5 rounded-full bg-orange-100 text-orange-700">{{ $hit['riskLevel'] }}</span>@endif
+                                @if(!empty($hit['list']['name']))<span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{{ $hit['list']['name'] }}</span>@endif
+                                @if(!empty($hit['matchScore']))<span class="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">{{ $hit['matchScore'] }}% match</span>@endif
                             </div>
+                            @if(!empty($hit['reason']))<p class="text-xs text-gray-500 mt-1">{{ $hit['reason'] }}</p>@endif
                         </div>
                         @endforeach
                     </div>
