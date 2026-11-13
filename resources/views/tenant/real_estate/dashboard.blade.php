@@ -32,7 +32,7 @@
         <div>
             <a href="{{ route('tenant.accounting.bills.show', [$tenant->slug, $bill->id]) }}"
                class="text-sm font-medium text-blue-600 hover:underline">{{ $bill->bill_number }}</a>
-            <p class="text-xs text-gray-400">{{ $bill->supplier_name }} · {{ $bill->bill_date->format('d M Y') }}</p>
+            <p class="text-xs text-gray-400">{{ $bill->supplier_name }} · {{ CarbonCarbon::parse($bill->bill_date)->format('d M Y') }}</p>
         </div>
         <div class="text-right">
             <p class="text-sm font-mono">AED {{ number_format($bill->total, 2) }}</p>
