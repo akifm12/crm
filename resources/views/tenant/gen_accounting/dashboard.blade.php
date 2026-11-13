@@ -75,7 +75,7 @@
             <div>
                 <a href="{{ route('tenant.accounting.journal.show', [$tenant->slug, $je->id]) }}"
                    class="text-sm font-medium text-blue-600 hover:underline">{{ $je->reference }}</a>
-                <p class="text-xs text-gray-400">{{ $je->entry_date->format('d M Y') }}</p>
+                <p class="text-xs text-gray-400">{{ \Carbon\Carbon::parse($je->entry_date)->format('d M Y') }}</p>
             </div>
         </div>
         @empty

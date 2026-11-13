@@ -30,7 +30,7 @@ class DashboardController extends Controller
             ->get();
 
         $recentJournalEntries = JournalEntry::where('tenant_id', $tenant->id)
-            ->where('is_void', false)
+            ->whereNotIn('status', ['void', 'voided'])
             ->orderByDesc('entry_date')
             ->limit(5)
             ->get();
