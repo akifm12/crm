@@ -38,18 +38,21 @@
             <div class="text-right">
                 <p class="text-sm font-mono">AED {{ number_format($bill->total, 2) }}</p>
                 @php
+                    $st   = strtolower((string) $bill->status);
+                    $paid = $st === 'posted' && (float) $bill->amount_due <= 0;
+                    $late = $st === 'posted' && ! $paid && $bill->due_date && substr((string) $bill->due_date, 0, 10) < date('Y-m-d');
                     $cls = match(true) {
-                        $bill->status === 'draft' => 'bg-amber-50 text-amber-700',
-                        $bill->isFullyPaid()      => 'bg-green-50 text-green-700',
-                        $bill->isOverdue()        => 'bg-red-50 text-red-600',
-                        $bill->status === 'void'  => 'bg-gray-100 text-gray-400',
+                        $st === 'draft' => 'bg-amber-50 text-amber-700',
+                        $paid      => 'bg-green-50 text-green-700',
+                        $late        => 'bg-red-50 text-red-600',
+                        $st === 'void'  => 'bg-gray-100 text-gray-400',
                         default                   => 'bg-blue-50 text-blue-700',
                     };
                     $lbl = match(true) {
-                        $bill->status === 'draft'            => 'Draft',
-                        $bill->status === 'void'             => 'Void',
-                        $bill->isFullyPaid()                 => 'Paid',
-                        $bill->isOverdue()                   => 'Overdue',
+                        $st === 'draft'            => 'Draft',
+                        $st === 'void'             => 'Void',
+                        $paid                 => 'Paid',
+                        $late                   => 'Overdue',
                         default                              => 'Posted',
                     };
                 @endphp
